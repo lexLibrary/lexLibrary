@@ -7,8 +7,16 @@ import (
 	"path/filepath"
 )
 
-//StandardFileLocations builds an OS specific list of standard file locations
-// for where a config file should be loaded from.
+func configLocations(appName string) []string {
+	return getFullLocations(appName, append(userCFGLocations(), systemCFGLocations()...))
+}
+
+func dataLocations(appName string) []string {
+	return getFullLocations(appName, append(userDataLocations(), systemDataLocations()...))
+}
+
+//getFullLocations builds an OS specific list of standard file locations
+// for where a config/ data file should be loaded from.
 // Generally follows this priority list:
 // 1. User locations are used before...
 // 2. System locations which are used before ...
@@ -23,12 +31,10 @@ import (
 //	"./config.json"
 // Note that parent folder paths (myApp in this example) are stripped for the first eligible file location
 // so the config file will exist in the same directory as the running executable
-func StandardFileLocations(cfgPath string) []string {
-	locations := append(userLocations(), systemLocations()...)
-
+func getFullLocations(name string, locations []string) []string {
 	for i := range locations {
 		if locations[i] != "" {
-			locations[i] = filepath.Join(locations[i], cfgPath)
+			locations[i] = filepath.Join(locations[i], name)
 		}
 	}
 
@@ -37,7 +43,7 @@ func StandardFileLocations(cfgPath string) []string {
 	if err != nil {
 		runningDir = "."
 	}
-	runningDir = filepath.Join(runningDir, filepath.Base(cfgPath))
+	runningDir = filepath.Join(runningDir, filepath.Base(name))
 
 	locations = append(locations, runningDir)
 	return locations

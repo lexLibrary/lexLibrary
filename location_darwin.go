@@ -7,6 +7,22 @@ import (
 	"path/filepath"
 )
 
+func userCFGLocations() []string {
+	return userLocations()
+}
+
+func systemCFGLocations() []string {
+	return systemLocations()
+}
+
+func userDataLocations() []string {
+	return userLocations()
+}
+
+func systemDataLocations() []string {
+	return systemLocations()
+}
+
 func userLocations() []string {
 	usr, err := user.Current()
 	if err != nil {
