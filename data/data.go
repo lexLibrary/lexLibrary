@@ -1,13 +1,16 @@
 // Copyright (c) 2017 Townsourced Inc.
 package data
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Config struct {
-	SQLiteFile string
-	SearchFile string
+	DatabaseFile string
+	SearchFile   string
 
-	PostGres PostGresCFG
+	PostGres *PostGresCFG
 }
 
 type PostGresCFG struct {
@@ -23,18 +26,32 @@ type PostGresCFG struct {
 	SSLRootCert    string
 }
 
-func Init(cfg Config) {
+func Init(cfg Config) error {
+	err := initSearch(cfg)
+	if err != nil {
+		return err
+	}
 
+	if cfg.PostGres != nil {
+		err = initPostgres(cfg.PostGres)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = initSQLite(cfg.DatabaseFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func initSQLite(filename string) {
-
+func initSQLite(filename string) error {
+	return fmt.Errorf("TODO")
 }
 
-func initSearch(filename string) {
-
-}
-
-func initPostgres(cfg PostGresCFG) {
+func initPostgres(cfg *PostGresCFG) error {
+	return fmt.Errorf("TODO")
 
 }

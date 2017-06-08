@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
+	"github.com/timshannon/lexLibrary/data"
 )
 
 const appName = "lexLibrary"
@@ -28,6 +29,23 @@ func main() {
 	err := viper.ReadInConfig()
 	if err != nil && os.IsNotExist(err) {
 		log.Fatal(err)
+	}
+
+	cfg := data.Config{}
+
+	viper.Unmarshal(&cfg)
+
+	if cfg.DatabaseFile == "" {
+		cfg.DatabaseFile = getDataFile("lexLibrary.db")
+	}
+
+	if cfg.SearchFile == "" {
+		cfg.SearchFile = getDataFile("lexLibrary.search")
+	}
+
+	err = data.Init(cfg)
+	if err != nil {
+		log.Fatalf("Error initializing data layer: %s", err)
 	}
 
 }
