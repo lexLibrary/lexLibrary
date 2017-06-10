@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/timshannon/lexLibrary/data"
+	"github.com/timshannon/lexLibrary/web"
 )
 
 const appName = "lexLibrary"
@@ -26,32 +27,49 @@ func main() {
 		fmt.Println("\t" + location)
 	}
 
-	err := viper.ReadInConfig()
-	if err != nil && os.IsNotExist(err) {
-		log.Fatal(err)
+	cfg := struct {
+		Web  web.Config
+		Data data.Config
+	}{
+		Web:  web.Config{},
+		Data: data.Config{},
 	}
 
-	cfg := data.Config{}
+	err := viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// create default file
+			cfg.Web = web.DefaultConfig()
+		} else {
+			log.Fatal(err)
+		}
+	}
 
 	viper.Unmarshal(&cfg)
 
-	if cfg.DatabaseFile == "" {
-		cfg.DatabaseFile = getDataFile("lexLibrary.db")
+	if cfg.Data.DatabaseFile == "" {
+		cfg.Data.DatabaseFile = getDataFile("lexLibrary.db")
 	}
 
-	if cfg.SearchFile == "" {
-		cfg.SearchFile = getDataFile("lexLibrary.search")
+	if cfg.Data.SearchFile == "" {
+		cfg.Data.SearchFile = getDataFile("lexLibrary.search")
 	}
 
-	err = data.Init(cfg)
+	err = data.Init(cfg.Data)
 	if err != nil {
 		log.Fatalf("Error initializing data layer: %s", err)
 	}
 
+	err = web.Init(cfg.Web)
+	if err != nil {
+		log.Fatalf("Error initializing web server: %s", err)
+	}
+
 }
 
-// getDataFile will return the first data file it finds, or it will return the last of the available locations
-func getDataFile(filename string) string {
+// getDataFile will return the first data file it finds, or it will return the default location
+func getDataFile(defaultLocation string) string {
+	//FIXME
 	locations := dataLocations(appName)
 
 	file := ""

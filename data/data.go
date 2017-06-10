@@ -26,6 +26,14 @@ type PostGresCFG struct {
 	SSLRootCert    string
 }
 
+// DefaultConfig returns the default configuration for the data layer
+func DefaultConfig() Config {
+	return Config{
+		DatabaseFile: "./lexLibrary.db",
+		SearchFile:   "./lexLibrary.search",
+	}
+}
+
 func Init(cfg Config) error {
 	err := initSearch(cfg)
 	if err != nil {
@@ -53,5 +61,4 @@ func initSQLite(filename string) error {
 
 func initPostgres(cfg *PostGresCFG) error {
 	return fmt.Errorf("TODO")
-
 }
