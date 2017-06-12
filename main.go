@@ -5,8 +5,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/viper"
 	"github.com/timshannon/lexLibrary/data"
@@ -38,22 +36,17 @@ func main() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// create default file
+			fmt.Println("No config file found, using default values")
 			cfg.Web = web.DefaultConfig()
+			cfg.Data = data.DefaultConfig()
 		} else {
 			log.Fatal(err)
 		}
+	} else {
+		fmt.Println("Found and loaded config file %s", viper.ConfigFileUsed())
 	}
 
 	viper.Unmarshal(&cfg)
-
-	if cfg.Data.DatabaseFile == "" {
-		cfg.Data.DatabaseFile = getDataFile("lexLibrary.db")
-	}
-
-	if cfg.Data.SearchFile == "" {
-		cfg.Data.SearchFile = getDataFile("lexLibrary.search")
-	}
 
 	err = data.Init(cfg.Data)
 	if err != nil {
@@ -65,23 +58,4 @@ func main() {
 		log.Fatalf("Error initializing web server: %s", err)
 	}
 
-}
-
-// getDataFile will return the first data file it finds, or it will return the default location
-func getDataFile(defaultLocation string) string {
-	//FIXME
-	locations := dataLocations(appName)
-
-	file := ""
-
-	for _, location := range locations {
-		file = filepath.Join(location, filename)
-
-		_, err := os.Stat(file)
-		if err == nil {
-			return file
-		}
-	}
-
-	return file
 }

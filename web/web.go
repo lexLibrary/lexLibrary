@@ -1,3 +1,5 @@
+// Copyright (c) 2017 Townsourced Inc.
+
 package web
 
 import (
