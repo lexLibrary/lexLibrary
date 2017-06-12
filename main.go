@@ -7,8 +7,8 @@ import (
 	"log"
 
 	"github.com/spf13/viper"
-	"github.com/timshannon/lexLibrary/data"
-	"github.com/timshannon/lexLibrary/web"
+	"gitlab.com/lexLibrary/lexLibrary/data"
+	"gitlab.com/lexLibrary/lexLibrary/web"
 )
 
 const appName = "lexLibrary"
