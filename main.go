@@ -44,9 +44,8 @@ func main() {
 		}
 	} else {
 		fmt.Println("Found and loaded config file %s", viper.ConfigFileUsed())
+		viper.Unmarshal(&cfg)
 	}
-
-	viper.Unmarshal(&cfg)
 
 	err = data.Init(cfg.Data)
 	if err != nil {

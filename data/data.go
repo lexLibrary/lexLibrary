@@ -1,4 +1,6 @@
 // Copyright (c) 2017 Townsourced Inc.
+
+// Package data handles all the data handling for Lex Library
 package data
 
 import (
@@ -6,27 +8,20 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3" // register sqlite3
 )
 
+// Database Types
 const (
-	sqlite      = iota //https://github.com/mattn/go-sqlite3
-	postgres           //https://github.com/lib/pq
-	mysql              //https://github.com/go-sql-driver/mysql/
-	cockroachdb        //https://github.com/lib/pq
-	tidb               //https://github.com/go-sql-driver/mysql/
+	sqlite      = iota // github.com/mattn/go-sqlite3
+	postgres           // github.com/lib/pq
+	mysql              // github.com/go-sql-driver/mysql/
+	cockroachdb        // github.com/lib/pq
+	tidb               // github.com/go-sql-driver/mysql/
 )
 
-// multiQuery is query that contains multiple definitions for different database backend
-// for use with databases where a query can't be shared across all DB backends
-/*
-	q := multiQuery{
-		sqlite:   "select * from tbl LIMIT 10 OFFSET 50",
-		postgres: "select * from tbl OFFSET 10 ROWS FETCH NEXT 50 ROWS ONLY",
-	}
-
-	fmt.Println(q[dbType])
-*/
-type multiQuery map[int]string
+const databaseName = "lexLibrary"
 
 var db *sql.DB
 var dbType int
@@ -36,8 +31,8 @@ type Config struct {
 	DatabaseFile string
 	SearchFile   string
 
-	DBType string
-	URL    string
+	DatabaseType string
+	DatabaseURL  string
 
 	SSLCert     string
 	SSLKey      string
@@ -56,36 +51,58 @@ func DefaultConfig() Config {
 	}
 }
 
+// Init initializes the data layer based on the passed in configuration.
+// Initialization includes things like setting up the database and the connections to it.
 func Init(cfg Config) error {
 	err := initSearch(cfg)
 	if err != nil {
 		return err
 	}
 
-	switch strings.ToLower(cfg.DBType) {
+	switch strings.ToLower(cfg.DatabaseType) {
 	case "postgres":
+		dbType = postgres
 		err = initPostgres(cfg)
 		if err != nil {
 			return err
 		}
 	default:
-		if cfg.DatabaseFile == "" {
-			cfg.DatabaseFile = DefaultConfig().DatabaseFile
-		}
-		err = initSQLite(cfg.DatabaseFile)
+		dbType = sqlite
+
+		err = initSQLite(cfg)
 		if err != nil {
 			return err
 		}
 	}
 
+	err = ensureSchema()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func initSQLite(filename string) error {
-	dbType = sqlite
-	return fmt.Errorf("TODO")
+func initSQLite(cfg Config) error {
+	url := ""
+	if cfg.DatabaseFile == "" && cfg.DatabaseURL == "" {
+		cfg.DatabaseFile = DefaultConfig().DatabaseFile
+	}
+
+	if cfg.DatabaseURL == "" {
+		url = cfg.DatabaseFile
+	}
+
+	var err error
+	db, err = sql.Open("sqlite3", url)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func initPostgres(cfg Config) error {
+	// test if lexLibrary database exists and create if it doesn't
 	return fmt.Errorf("TODO")
 }

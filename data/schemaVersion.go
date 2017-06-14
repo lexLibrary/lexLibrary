@@ -8,10 +8,25 @@ type schemaVer struct {
 }
 
 /*
-   Array index determines the schema version
-   Add new schema versions to the bottom of the array
-   Once you push your changes to the main git repository, add new schema versions for
-   table changes, rather than updating existing ones
+	Array index determines the schema version
+	Add new schema versions to the bottom of the array
+	Once you push your changes to the main git repository, add new schema versions for
+	table changes, rather than updating existing ones
+
+	Stick to the following column types:
+
+	+------------------------------+
+	|go        | sql type          |
+	|----------|-------------------|
+	|nil       | null              |
+	|int       | integer           |
+	|int64     | integer           |
+	|float64   | float             |
+	|bool      | integer           |
+	|[]byte    | blob              |
+	|string    | text              |
+	|time.Time | timestamp/datetime|
+	+------------------------------+
 */
 
 var schemaVersions = []schemaVer{

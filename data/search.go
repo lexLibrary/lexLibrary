@@ -1,4 +1,5 @@
 // Copyright (c) 2017 Townsourced Inc.
+
 package data
 
 import "fmt"

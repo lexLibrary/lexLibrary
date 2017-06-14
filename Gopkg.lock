@@ -20,6 +20,12 @@
   version = "v1.7.2"
 
 [[projects]]
+  name = "github.com/mattn/go-sqlite3"
+  packages = ["."]
+  revision = "ca5e3819723d8eeaf170ad510e7da1d6d2e94a08"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
@@ -65,19 +71,25 @@
   branch = "master"
   name = "github.com/spf13/viper"
   packages = ["."]
-  revision = "0967fc9aceab2ce9da34061253ac10fb99bba5b2"
+  revision = "a1ecfa6a20bd4ef9e9caded262ee1b1b26847675"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "dfe83d419c9403b40b19d08cdba2afec27b002f7"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "b9e8d468b01f806830d387bd9a1fe96dc68129d1"
+  revision = "0b25a408a50076fbbcae6b7ac0ea5fbb0b085e79"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
   packages = ["internal/gen","internal/triegen","internal/ucd","transform","unicode/cldr","unicode/norm"]
-  revision = "ab6d1c143672de99b9dfde433b7f6affb278cc74"
+  revision = "3491b61b9edc56653ad4333e605e2908e46a036b"
 
 [[projects]]
   branch = "v2"
@@ -88,6 +100,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a27887979931c8bde5c91b678d606f959ca883fe682d2b4cc19b50b81e8da2c3"
+  inputs-digest = "f87732c851f92685f4ac78c0dbc38186cb7005ca015a510e5cd4b90aac84f8dd"
   solver-name = "gps-cdcl"
   solver-version = 1
