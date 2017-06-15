@@ -2,8 +2,7 @@
 
 package data
 
-import "fmt"
-
 func initSearch(cfg Config) error {
-	return fmt.Errorf("TODO")
+	//TODO
+	return nil
 }

@@ -36,7 +36,6 @@ var schemaVersions = []schemaVer{
 			version INTEGER NOT NULL PRIMARY KEY,
 			rollback text NOT NULL
 		);
-		insert into schema_versions (version, rollback) values (0, 'drop table schema_versions');
 		`,
 		rollback: "drop table schema_versions",
 	},

@@ -52,6 +52,8 @@ func main() {
 		log.Fatalf("Error initializing data layer: %s", err)
 	}
 
+	log.Println("Data layer initialized")
+
 	err = web.Init(cfg.Web)
 	if err != nil {
 		log.Fatalf("Error initializing web server: %s", err)

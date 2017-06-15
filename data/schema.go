@@ -2,42 +2,103 @@
 
 package data
 
-import "fmt"
+import (
+	"database/sql"
+	"fmt"
+	"log"
+)
 
-func ensureSchema() error {
+var schemaVersionInsert =queryTemplate("insert into schema_versions (version, rollback) values ({{?}}, {{?}})")
+
+func ensureSchema(allowRollback bool) error {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one
 
-	findSchemaTable := multiQuery{
-		sqlite: "SELECT name FROM sqlite_master WHERE type='table' and name = 'schema_versions'",
-		any:    "select table_name from information_schema.tables where table_name = 'schema_versions'",
-	}
-
-	// look up current schema version
-	// if current schemaVer > database schemaVer
-	// run the next schema version script
-	// if current schemaVer < database schemaVer
-	// return error unless force rollback
-
-	rows, err := db.Query(findSchemaTable.String())
+	err := ensureSchemaTable()
 	if err != nil {
 		return err
 	}
 
-	defer func() {
-		if cerr := rows.Close(); cerr != nil && err == nil {
-			err = cerr
+	fmt.Println("table created")
+
+	return ensureSchemaVersion(allowRollback)
+}
+
+func ensureSchemaTable() error {
+	findSchemaTable := multiQuery{
+		sqlite: "SELECT name FROM sqlite_master WHERE type='table' and name = 'schema_versions'",
+		other:  "select table_name from information_schema.tables where table_name = 'schema_versions'",
+	}
+
+	name := ""
+	err := db.QueryRow(findSchemaTable.String()).Scan(&name)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			return err
 		}
-	}()
+		_, err = db.Query(schemaVersions[0].update)
+		if err != nil {
+			return err
+		}
 
-	ver := 0
+		_, err = db.Exec(schemaVersionInsert, 
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	if rows.Next() {
-		// table exists, lookup current version
+func ensureSchemaVersion(allowRollback bool) error {
+	currentVer := len(schemaVersions) - 1
+
+	dbVer := 0
+	err := db.QueryRow("select version from schema_versions order by version desc limit 1").Scan(&dbVer)
+
+	if err != nil {
+		return err
 	}
 
-	for i := ver; ver < len(schemaVersions); i++ {
-		db.Query(schemaVersions[i].update)
+	if dbVer == currentVer {
+		// server and database are on the same schema version
+		return nil
 	}
 
-	return fmt.Errorf("TODO")
+	if dbVer < currentVer {
+		dbVer++
+		log.Printf("Updating database schema to version %d", dbVer)
+		_, err = db.Query(schemaVersions[dbVer].update)
+		if err != nil {
+			return err
+		}
+
+		_, err = db.Query(schemaVersionInsert,	dbVer, schemaVersions[dbVer].rollback)
+		if err != nil {
+			return err
+		}
+
+		return ensureSchemaVersion(allowRollback)
+	}
+	// check for forced rollback
+	if allowRollback {
+		log.Printf("Rolling back database schema to version %d", dbVer)
+		rollback := ""
+		err = db.QueryRow(queryTemplate("select rollback from schema_versions where version = {{?}}"), dbVer).
+			Scan(&rollback)
+		if err != nil {
+			return err
+		}
+
+		_, err = db.Query(rollback)
+		if err != nil {
+			return err
+		}
+
+		_, err = db.Query(queryTemplate("delete from schema_versions where version = {{?}}"), dbVer)
+		if err != nil {
+			return err
+		}
+		return ensureSchemaVersion(allowRollback)
+	}
+	return fmt.Errorf("Database schema version (%d) is newer than the code schema version (%d)", dbVer, currentVer)
+
 }

@@ -4,17 +4,26 @@ package data
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"html/template"
 	"strconv"
 )
+
+func registerQuery(q queryer, stmtPtr *sql.Stmt) {
+
+}
+
+type queryer interface {
+	query() string
+}
 
 // multiQuery is query that contains multiple definitions for different database backend
 // for use with databases where a query can't be shared across all DB backends
 /*
 	q := multiQuery{
 		sqlite:   "select * from tbl LIMIT 10 OFFSET 50",
-		postgres: "select * from tbl OFFSET 50 ROWS FETCH NEXT 10 ROWS ONLY",
+		other: "select * from tbl OFFSET 50 ROWS FETCH NEXT 10 ROWS ONLY",
 	}
 
 	fmt.Println(q.String())
@@ -25,44 +34,46 @@ type multiQuery struct {
 	mysql       string
 	cockroachdb string
 	tidb        string
-	any         string // any will be used where a query isn't specified
+	other       string // other will be used where a query isn't specified
 }
 
-func (q multiQuery) String() string {
+func (q multiQuery) query() string {
 	switch dbType {
 	case sqlite:
 		if q.sqlite != "" {
 			return q.sqlite
 		}
-		return q.any
+		return q.other
 	case postgres:
 		if q.postgres != "" {
 			return q.postgres
 		}
-		return q.any
+		return q.other
 	case cockroachdb:
 		if q.cockroachdb != "" {
 			return q.cockroachdb
 		}
-		return q.any
+		return q.other
 
 	case mysql:
 		if q.mysql != "" {
 			return q.mysql
 		}
-		return q.any
+		return q.other
 	case tidb:
 		if q.tidb != "" {
 			return q.tidb
 		}
-		return q.any
+		return q.other
 	default:
 		panic("Unsupported database type")
 	}
 }
 
-// queryFromTemplate is for easily creating queries that can run against multiple database backends
-func queryFromTemplate(tmpl string) string {
+// queryTemplate is for easily creating queries that can run against multiple database backends
+type queryTemplate string
+
+func (q queryTemplate) query() string {
 	buff := bytes.NewBuffer([]byte{})
 	paramCount := 0
 
@@ -103,7 +114,7 @@ func queryFromTemplate(tmpl string) string {
 		},
 	}
 
-	err := template.Must(template.New("").Funcs(funcs).Parse(tmpl)).Execute(buff, nil)
+	err := template.Must(template.New("").Funcs(funcs).Parse(q)).Execute(buff, nil)
 	if err != nil {
 		panic(fmt.Sprintf("Error build query template: %s", err))
 	}
