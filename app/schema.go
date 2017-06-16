@@ -1,6 +1,6 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-package data
+package app
 
 import (
 	"database/sql"
@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-var schemaVersionInsert =queryTemplate("insert into schema_versions (version, rollback) values ({{?}}, {{?}})")
+var schemaVersionInsert = queryTemplate("insert into schema_versions (version, rollback) values ({{param}}, {{param}})")
 
 func ensureSchema(allowRollback bool) error {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one
@@ -17,8 +17,6 @@ func ensureSchema(allowRollback bool) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("table created")
 
 	return ensureSchemaVersion(allowRollback)
 }
@@ -35,12 +33,12 @@ func ensureSchemaTable() error {
 		if err != sql.ErrNoRows {
 			return err
 		}
-		_, err = db.Query(schemaVersions[0].update)
+		_, err = db.Exec(schemaVersions[0].update)
 		if err != nil {
 			return err
 		}
 
-		_, err = db.Exec(schemaVersionInsert, 
+		_, err := db.Exec(schemaVersionInsert, 0, schemaVersions[0].rollback)
 		if err != nil {
 			return err
 		}
@@ -71,7 +69,7 @@ func ensureSchemaVersion(allowRollback bool) error {
 			return err
 		}
 
-		_, err = db.Query(schemaVersionInsert,	dbVer, schemaVersions[dbVer].rollback)
+		_, err = db.Query(schemaVersionInsert, dbVer, schemaVersions[dbVer].rollback)
 		if err != nil {
 			return err
 		}
@@ -82,7 +80,7 @@ func ensureSchemaVersion(allowRollback bool) error {
 	if allowRollback {
 		log.Printf("Rolling back database schema to version %d", dbVer)
 		rollback := ""
-		err = db.QueryRow(queryTemplate("select rollback from schema_versions where version = {{?}}"), dbVer).
+		err = db.QueryRow(queryTemplate("select rollback from schema_versions where version = {{param}}"), dbVer).
 			Scan(&rollback)
 		if err != nil {
 			return err
@@ -93,7 +91,7 @@ func ensureSchemaVersion(allowRollback bool) error {
 			return err
 		}
 
-		_, err = db.Query(queryTemplate("delete from schema_versions where version = {{?}}"), dbVer)
+		_, err = db.Query(queryTemplate("delete from schema_versions where version = {{param}}"), dbVer)
 		if err != nil {
 			return err
 		}

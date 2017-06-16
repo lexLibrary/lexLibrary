@@ -3,11 +3,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/spf13/viper"
-	"gitlab.com/lexLibrary/lexLibrary/data"
+	"gitlab.com/lexLibrary/lexLibrary/app"
 	"gitlab.com/lexLibrary/lexLibrary/web"
 )
 
@@ -18,43 +17,45 @@ func main() {
 	viper.SetEnvPrefix("LEX")
 	viper.SetConfigName("config")
 
-	fmt.Println("Lex Library is starting up")
-	fmt.Println("Looking for config.yaml, config.toml, or config.json in the following locations: ")
+	log.Println("Lex Library is starting up")
+	msg := "Looking for config.yaml, config.toml, or config.json in the following locations:"
 	for _, location := range configLocations("lexLibrary") {
 		viper.AddConfigPath(location)
-		fmt.Println("\t" + location)
+		msg += "\n\t" + location
 	}
+
+	log.Println(msg)
 
 	cfg := struct {
 		Web  web.Config
-		Data data.Config
+		Data app.Config
 	}{
 		Web:  web.Config{},
-		Data: data.Config{},
+		Data: app.Config{},
 	}
 
 	err := viper.ReadInConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("No config file found, using default values")
+			log.Println("No config file found, using default values")
 			cfg.Web = web.DefaultConfig()
-			cfg.Data = data.DefaultConfig()
+			cfg.Data = app.DefaultConfig()
 		} else {
 			log.Fatal(err)
 		}
 	} else {
-		fmt.Println("Found and loaded config file %s", viper.ConfigFileUsed())
+		log.Printf("Found and loaded config file %s\n", viper.ConfigFileUsed())
 		viper.Unmarshal(&cfg)
 	}
 
-	err = data.Init(cfg.Data)
+	err = app.Init(cfg.Data)
 	if err != nil {
 		log.Fatalf("Error initializing data layer: %s", err)
 	}
 
 	log.Println("Data layer initialized")
 
-	err = web.Init(cfg.Web)
+	err = web.StartServer(cfg.Web)
 	if err != nil {
 		log.Fatalf("Error initializing web server: %s", err)
 	}

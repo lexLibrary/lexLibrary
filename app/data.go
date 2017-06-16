@@ -1,11 +1,12 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-// Package data handles all the data handling for Lex Library
-package data
+// Package app handles all the data and application structures handling for Lex Library
+package app
 
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -40,7 +41,7 @@ type Config struct {
 
 	MaxIdleConnections    int
 	MaxOpenConnections    int
-	MaxConnectionLifetime time.Duration
+	MaxConnectionLifetime string
 
 	AllowSchemaRollback bool
 }
@@ -76,6 +77,17 @@ func Init(cfg Config) error {
 			return err
 		}
 	}
+
+	if cfg.MaxConnectionLifetime != "" {
+		lifetime, err := time.ParseDuration(cfg.MaxConnectionLifetime)
+		if err == nil {
+			db.SetConnMaxLifetime(lifetime)
+		} else {
+			log.Printf("Invalid MaxConnectionLifetime duration format (%s), using default", cfg.MaxConnectionLifetime)
+		}
+	}
+	db.SetMaxIdleConns(cfg.MaxIdleConnections)
+	db.SetMaxOpenConns(cfg.MaxOpenConnections)
 
 	err = ensureSchema(cfg.AllowSchemaRollback)
 	if err != nil {

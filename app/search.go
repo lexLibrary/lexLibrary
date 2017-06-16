@@ -1,6 +1,6 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-package data
+package app
 
 func initSearch(cfg Config) error {
 	//TODO

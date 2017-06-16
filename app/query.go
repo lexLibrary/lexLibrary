@@ -1,26 +1,17 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-package data
+package app
 
 import (
 	"bytes"
-	"database/sql"
 	"fmt"
 	"html/template"
 	"strconv"
 )
 
-func registerQuery(q queryer, stmtPtr *sql.Stmt) {
+/* multiQuery is query that contains multiple definitions for different database backend
+for use with databases where a query can't be shared across all DB backends
 
-}
-
-type queryer interface {
-	query() string
-}
-
-// multiQuery is query that contains multiple definitions for different database backend
-// for use with databases where a query can't be shared across all DB backends
-/*
 	q := multiQuery{
 		sqlite:   "select * from tbl LIMIT 10 OFFSET 50",
 		other: "select * from tbl OFFSET 50 ROWS FETCH NEXT 10 ROWS ONLY",
@@ -37,7 +28,7 @@ type multiQuery struct {
 	other       string // other will be used where a query isn't specified
 }
 
-func (q multiQuery) query() string {
+func (q multiQuery) String() string {
 	switch dbType {
 	case sqlite:
 		if q.sqlite != "" {
@@ -71,14 +62,12 @@ func (q multiQuery) query() string {
 }
 
 // queryTemplate is for easily creating queries that can run against multiple database backends
-type queryTemplate string
-
-func (q queryTemplate) query() string {
+func queryTemplate(tmpl string) string {
 	buff := bytes.NewBuffer([]byte{})
 	paramCount := 0
 
 	funcs := template.FuncMap{
-		"?": func() string {
+		"param": func() string {
 			paramCount++
 			switch dbType {
 			case postgres:
@@ -114,7 +103,7 @@ func (q queryTemplate) query() string {
 		},
 	}
 
-	err := template.Must(template.New("").Funcs(funcs).Parse(q)).Execute(buff, nil)
+	err := template.Must(template.New("").Funcs(funcs).Parse(tmpl)).Execute(buff, nil)
 	if err != nil {
 		panic(fmt.Sprintf("Error build query template: %s", err))
 	}

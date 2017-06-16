@@ -1,6 +1,6 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-package data
+package app
 
 type schemaVer struct {
 	update   string

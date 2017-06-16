@@ -43,7 +43,6 @@ func getFullLocations(name string, locations []string) []string {
 	if err != nil {
 		runningDir = "."
 	}
-	runningDir = filepath.Join(runningDir, filepath.Base(name))
 
 	locations = append(locations, runningDir)
 	return locations
