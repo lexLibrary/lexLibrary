@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-/* multiQuery is query that contains multiple definitions for different database backend
+/* query is a query that contains multiple definitions for different database backend
 for use with databases where a query can't be shared across all DB backends
 
 	q := multiQuery{
@@ -19,16 +19,19 @@ for use with databases where a query can't be shared across all DB backends
 
 	fmt.Println(q.String())
 */
-type multiQuery struct {
+type query struct {
 	sqlite      string
 	postgres    string
 	mysql       string
 	cockroachdb string
 	tidb        string
 	other       string // other will be used where a query isn't specified
+
+	limit  int
+	offset int
 }
 
-func (q multiQuery) String() string {
+func (q query) String() string {
 	switch dbType {
 	case sqlite:
 		if q.sqlite != "" {
@@ -70,13 +73,14 @@ func queryTemplate(tmpl string) string {
 		"param": func() string {
 			paramCount++
 			switch dbType {
-			case postgres:
+			case postgres, cockroachdb:
 				return "$" + strconv.Itoa(paramCount)
 			default:
 				return "?"
 			}
 		},
 		"offsetLimit": func(offset, limit int) string {
+			// FIXME: offset limit is a different order for different database backends
 			switch dbType {
 			case sqlite:
 				return "LIMIT " + strconv.Itoa(limit) + " OFFSET " + strconv.Itoa(offset)
@@ -84,7 +88,6 @@ func queryTemplate(tmpl string) string {
 				return "OFFSET " + strconv.Itoa(offset) + " ROWS FETCH NEXT " + strconv.Itoa(limit) +
 					" ROWS ONLY"
 			}
-
 		},
 		"bytes": func() string {
 			switch dbType {
@@ -99,7 +102,26 @@ func queryTemplate(tmpl string) string {
 			default:
 				panic("Unsupported database type")
 			}
-
+		},
+		"datetime": func() string {
+			switch dbType {
+			case sqlite:
+				return "TEXT"
+			case postgres, cockroachdb:
+				return "TIMESTAMP with time ZONE"
+			case mysql, tidb:
+				return "DATETIME"
+			default:
+				panic("Unsupported database type")
+			}
+		},
+		"text": func() string {
+			switch dbType {
+			case sqlite, postgres, cockroachdb, mysql, tidb:
+				return "TEXT"
+			default:
+				panic("Unsupported database type")
+			}
 		},
 	}
 

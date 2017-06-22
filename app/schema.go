@@ -64,12 +64,12 @@ func ensureSchemaVersion(allowRollback bool) error {
 	if dbVer < currentVer {
 		dbVer++
 		log.Printf("Updating database schema to version %d", dbVer)
-		_, err = db.Query(schemaVersions[dbVer].update)
+		_, err = db.Exec(schemaVersions[dbVer].update)
 		if err != nil {
 			return err
 		}
 
-		_, err = db.Query(schemaVersionInsert, dbVer, schemaVersions[dbVer].rollback)
+		_, err = db.Exec(schemaVersionInsert, dbVer, schemaVersions[dbVer].rollback)
 		if err != nil {
 			return err
 		}
@@ -86,12 +86,12 @@ func ensureSchemaVersion(allowRollback bool) error {
 			return err
 		}
 
-		_, err = db.Query(rollback)
+		_, err = db.Exec(rollback)
 		if err != nil {
 			return err
 		}
 
-		_, err = db.Query(queryTemplate("delete from schema_versions where version = {{param}}"), dbVer)
+		_, err = db.Exec(queryTemplate("delete from schema_versions where version = {{param}}"), dbVer)
 		if err != nil {
 			return err
 		}
