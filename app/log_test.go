@@ -7,7 +7,7 @@ import (
 
 	"fmt"
 
-	"gitlab.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/app"
 )
 
 func TestLog(t *testing.T) {

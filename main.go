@@ -5,9 +5,9 @@ package main
 import (
 	"log"
 
+	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/web"
 	"github.com/spf13/viper"
-	"gitlab.com/lexLibrary/lexLibrary/app"
-	"gitlab.com/lexLibrary/lexLibrary/web"
 )
 
 const appName = "lexLibrary"

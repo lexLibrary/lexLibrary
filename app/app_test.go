@@ -3,7 +3,7 @@
 package app_test
 
 import (
-	"gitlab.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/app"
 )
 
 func initApp() error {
