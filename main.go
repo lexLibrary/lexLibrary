@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"github.com/lexLibrary/lexLibrary/app"
@@ -11,6 +12,13 @@ import (
 )
 
 const appName = "lexLibrary"
+const defaultConfigFile = "./config.yaml"
+
+var flagConfigFile string
+
+func init() {
+	flag.StringVar(&flagConfigFile, "config", defaultConfigFile, "Sets the path to the configuration file. Either a .YAML, .JSON, or .TOML file")
+}
 
 func main() {
 	viper.AutomaticEnv()
@@ -18,13 +26,11 @@ func main() {
 	viper.SetConfigName("config")
 
 	log.Println("Lex Library is starting up")
-	msg := "Looking for config.yaml, config.toml, or config.json in the following locations:"
-	for _, location := range configLocations("lexLibrary") {
-		viper.AddConfigPath(location)
-		msg += "\n\t" + location
-	}
 
-	log.Println(msg)
+	log.Printf("Loading configuration from %s\n", *flagConfigFile)
+	if flagConfigFile == defaultConfigFile {
+		log.Println("You can set the location of the config file with the -config flag")
+	}
 
 	cfg := struct {
 		Web  web.Config

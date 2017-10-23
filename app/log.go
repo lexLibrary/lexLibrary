@@ -29,9 +29,9 @@ func LogError(lerr error) {
 }
 
 // LogGet retrieves logs from the error log in the database
-func LogGet(offset, limit int) ([]Log, error) {
-	db.Query(queryTemplate(`select occurred, message from logs order by occurred desc {{offsetLimit offset, limit}} `), offset, limit)
-}
+// func LogGet(offset, limit int) ([]Log, error) {
+// 	// db.Query(queryTemplate(`select occurred, message from logs order by occurred desc {{offsetLimit offset, limit}} `), offset, limit)
+// }
 
 func (l *Log) insert() error {
 	_, err := db.Exec(queryTemplate("insert into logs (occurred, message) values ({{param}}, {{param}})"), l.occurred, l.message)

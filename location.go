@@ -11,9 +11,9 @@ func configLocations(appName string) []string {
 	return getFullLocations(appName, append(userCFGLocations(), systemCFGLocations()...))
 }
 
-func dataLocations(appName string) []string {
-	return getFullLocations(appName, append(userDataLocations(), systemDataLocations()...))
-}
+// func dataLocations(appName string) []string {
+// 	return getFullLocations(appName, append(userDataLocations(), systemDataLocations()...))
+// }
 
 //getFullLocations builds an OS specific list of standard file locations
 // for where a config/ data file should be loaded from.
