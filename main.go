@@ -5,6 +5,7 @@ package main
 import (
 	"flag"
 	"log"
+	"path/filepath"
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/web"
@@ -23,14 +24,14 @@ func init() {
 func main() {
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("LEX")
-	viper.SetConfigName("config")
 
 	log.Println("Lex Library is starting up")
 
-	log.Printf("Loading configuration from %s\n", *flagConfigFile)
+	log.Printf("Loading configuration from %s\n", flagConfigFile)
 	if flagConfigFile == defaultConfigFile {
 		log.Println("You can set the location of the config file with the -config flag")
 	}
+	setConfigPath()
 
 	cfg := struct {
 		Web  web.Config
@@ -43,9 +44,9 @@ func main() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Println("No config file found, using default values")
 			cfg.Web = web.DefaultConfig()
 			cfg.Data = app.DefaultConfig()
+			log.Printf("No config file found, using default values: \n %+v\n", cfg)
 		} else {
 			log.Fatal(err)
 		}
@@ -66,4 +67,13 @@ func main() {
 		log.Fatalf("Error initializing web server: %s", err)
 	}
 
+}
+
+func setConfigPath() {
+	base := filepath.Base(flagConfigFile)
+	ext := filepath.Ext(flagConfigFile)
+	dir := filepath.Dir(flagConfigFile)
+
+	viper.SetConfigName(base[0 : len(base)-len(ext)])
+	viper.AddConfigPath(dir)
 }

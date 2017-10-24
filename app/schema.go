@@ -22,7 +22,7 @@ func ensureSchema(allowRollback bool) error {
 }
 
 func ensureSchemaTable() error {
-	findSchemaTable := multiQuery{
+	findSchemaTable := query{
 		sqlite: "SELECT name FROM sqlite_master WHERE type='table' and name = 'schema_versions'",
 		other:  "select table_name from information_schema.tables where table_name = 'schema_versions'",
 	}
