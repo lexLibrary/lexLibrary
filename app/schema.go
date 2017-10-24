@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-var schemaVersionInsert = queryTemplate("insert into schema_versions (version, rollback) values ({{param}}, {{param}})")
+var schemaVersionInsert = queryTemplate("insert into schema_versions (version, rollback) values ({{arg 'version'}}, {{arg 'rollback'}})")
 
 func ensureSchema(allowRollback bool) error {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one

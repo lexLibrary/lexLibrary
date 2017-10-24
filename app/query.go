@@ -4,77 +4,27 @@ package app
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"strconv"
+	"database/sql"
 )
 
-/* query is a query that contains multiple definitions for different database backend
+type queryTemplate {
+	template.Template
+	args []sql.NamedArg
+}
+
+/* query is a database query template that contains multiple definitions for different database backend
 for use with databases where a query can't be shared across all DB backends
-
-	q := multiQuery{
-		sqlite:   "select * from tbl LIMIT 10 OFFSET 50",
-		other: "select * from tbl OFFSET 50 ROWS FETCH NEXT 10 ROWS ONLY",
-	}
-
-	fmt.Println(q.String())
 */
-type query struct {
-	sqlite      string
-	postgres    string
-	mysql       string
-	cockroachdb string
-	tidb        string
-	other       string // other will be used where a query isn't specified
-
-	limit  int
-	offset int
-}
-
-func (q query) String() string {
-	switch dbType {
-	case sqlite:
-		if q.sqlite != "" {
-			return q.sqlite
-		}
-		return q.other
-	case postgres:
-		if q.postgres != "" {
-			return q.postgres
-		}
-		return q.other
-	case cockroachdb:
-		if q.cockroachdb != "" {
-			return q.cockroachdb
-		}
-		return q.other
-
-	case mysql:
-		if q.mysql != "" {
-			return q.mysql
-		}
-		return q.other
-	case tidb:
-		if q.tidb != "" {
-			return q.tidb
-		}
-		return q.other
-	default:
-		panic("Unsupported database type")
-	}
-}
-
-// queryTemplate is for easily creating queries that can run against multiple database backends
-func queryTemplate(tmpl string) string {
+func query(tmpl string) *queryTemplate {
 	buff := bytes.NewBuffer([]byte{})
-	paramCount := 0
 
 	funcs := template.FuncMap{
-		"param": func() string {
-			paramCount++
+		"arg": func(name string) string {
 			switch dbType {
 			case postgres, cockroachdb:
-				return "$" + strconv.Itoa(paramCount)
+				return "$" + name
 			default:
 				return "?"
 			}
@@ -123,12 +73,55 @@ func queryTemplate(tmpl string) string {
 				panic("Unsupported database type")
 			}
 		},
+		"db": func() string {
+			switch dbType {
+			case sqlite:
+				return "sqlite"
+			case postgres:
+				return "postgres"
+			case mysql:
+				return "mysql"
+			case cockroachdb:
+				return "cockroachdb"
+			case tidb:
+				return "tidb"
+			default:
+				panic("Unsupported database type")
+			}
+		},
+		"sqlite": func() bool {
+			if dbType == sqlite {
+				return true
+			}
+			return false
+		},
+		"postgres": func() bool {
+			if dbType == postgres {
+				return true
+			}
+			return false
+		},
+		"mysql": func() bool {
+			if dbType == mysql {
+				return true
+			}
+			return false
+		},
+		"cockroachdb": func() bool {
+			if dbType == cockroachdb {
+				return true
+			}
+			return false
+		},
+		"tidb": func() bool {
+			if dbType == tidb {
+				return true
+			}
+			return false
+		},
 	}
 
-	err := template.Must(template.New("").Funcs(funcs).Parse(tmpl)).Execute(buff, nil)
-	if err != nil {
-		panic(fmt.Sprintf("Error build query template: %s", err))
-	}
+	t := template.Must(template.New("").Funcs(funcs).Parse(tmpl))
 
-	return buff.String()
+	return (*queryTemplate)(t)
 }
