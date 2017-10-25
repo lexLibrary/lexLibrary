@@ -4,39 +4,52 @@ package app
 
 import (
 	"bytes"
-	"html/template"
-	"strconv"
 	"database/sql"
+	"fmt"
+	"html/template"
 )
 
-type queryTemplate {
-	template.Template
-	args []sql.NamedArg
-}
-
-/* query is a database query template that contains multiple definitions for different database backend
+/* queryTemplate is a database query template that contains multiple definitions for different database backend
 for use with databases where a query can't be shared across all DB backends
 */
-func query(tmpl string) *queryTemplate {
+type query struct {
+	statement string
+	args      []string
+}
+
+// execute returns the query and the proper order and type for the arguments
+// based on the database type
+func (q *query) exec(args ...sql.NamedArg) (string, []interface{}) {
+	ordered := make([]interface{}, 0, len(q.args))
+
+	for i := range q.args {
+		for j := range args {
+			if args[j].Name == q.args[i] {
+				switch dbType {
+				case postgres, cockroachdb:
+					ordered = append(ordered, args[j])
+				default:
+					ordered = append(ordered, args[j].Value)
+				}
+				break
+			}
+		}
+	}
+	return q.statement, ordered
+}
+
+func newQuery(tmpl string) *query {
+	q := &query{}
 	buff := bytes.NewBuffer([]byte{})
 
 	funcs := template.FuncMap{
 		"arg": func(name string) string {
+			q.args = append(q.args, name)
 			switch dbType {
 			case postgres, cockroachdb:
 				return "$" + name
 			default:
 				return "?"
-			}
-		},
-		"offsetLimit": func(offset, limit int) string {
-			// FIXME: offset limit is a different order for different database backends
-			switch dbType {
-			case sqlite:
-				return "LIMIT " + strconv.Itoa(limit) + " OFFSET " + strconv.Itoa(offset)
-			default:
-				return "OFFSET " + strconv.Itoa(offset) + " ROWS FETCH NEXT " + strconv.Itoa(limit) +
-					" ROWS ONLY"
 			}
 		},
 		"bytes": func() string {
@@ -121,7 +134,12 @@ func query(tmpl string) *queryTemplate {
 		},
 	}
 
-	t := template.Must(template.New("").Funcs(funcs).Parse(tmpl))
+	err := template.Must(template.New("").Funcs(funcs).Parse(tmpl)).Execute(buff, nil)
+	if err != nil {
+		panic(fmt.Errorf("Error building query template: %s", err))
+	}
 
-	return (*queryTemplate)(t)
+	q.statement = buff.String()
+
+	return q
 }

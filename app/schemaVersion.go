@@ -31,22 +31,22 @@ type schemaVer struct {
 
 var schemaVersions = []schemaVer{
 	schemaVer{
-		update: queryTemplate(`
-		create table schema_versions (
-			version INTEGER NOT NULL PRIMARY KEY,
-			rollback {{text}} NOT NULL
-		);
-		`),
+		update: newQuery(`
+			create table schema_versions (
+				version INTEGER NOT NULL PRIMARY KEY,
+				rollback {{text}} NOT NULL
+			);
+		`).statement,
 		rollback: "drop table schema_versions",
 	},
 	schemaVer{
-		update: queryTemplate(`
-		create table logs (
-			occurred {{datetime}} NOT NULL,
-			message {{text}}
-		);
-		create index i_occurred on logs (occurred);
-		`),
-		rollback: `drop table logs`,
+		update: newQuery(`
+			create table logs (
+				occurred {{datetime}} NOT NULL,
+				message {{text}}
+			);
+			create index i_occurred on logs (occurred);
+		`).statement,
+		rollback: "drop table logs",
 	},
 }
