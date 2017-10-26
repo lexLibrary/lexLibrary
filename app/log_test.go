@@ -3,9 +3,8 @@
 package app_test
 
 import (
-	"testing"
-
 	"fmt"
+	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
 )
@@ -22,7 +21,7 @@ func TestLog(t *testing.T) {
 		app.LogError(testErr)
 	})
 	t.Run("Log Get", func(t *testing.T) {
-		for i := 0; i < 20; i++ {
+		for i := 0; i < 12; i++ {
 			app.LogError(fmt.Errorf("Error %d", i))
 		}
 
@@ -44,6 +43,35 @@ func TestLog(t *testing.T) {
 
 			if len(logs) != 10 {
 				t.Fatalf("Invalid number of logs, wanted %d got %d", 10, len(logs))
+			}
+		})
+		t.Run("First Five", func(t *testing.T) {
+			logs, err := app.LogGet(0, 5)
+			if err != nil {
+				t.Fatalf("Error retrieving first five logs: %s", err)
+			}
+			if len(logs) != 5 {
+				t.Fatalf("Invalid number of logs. Wanted %d got %d", 5, len(logs))
+			}
+		})
+		t.Run("Second Five", func(t *testing.T) {
+			logs, err := app.LogGet(5, 5)
+			if err != nil {
+				t.Fatalf("Error retrieving second five logs: %s", err)
+			}
+
+			if len(logs) != 5 {
+				t.Fatalf("Invalid number of logs. Wanted %d got %d", 5, len(logs))
+			}
+		})
+		t.Run("Third Five", func(t *testing.T) {
+			logs, err := app.LogGet(10, 5)
+			if err != nil {
+				t.Fatalf("Error retrieving third five logs: %s", err)
+			}
+
+			if len(logs) != 3 {
+				t.Fatalf("Invalid number of logs. Wanted %d got %d", 3, len(logs))
 			}
 		})
 	})

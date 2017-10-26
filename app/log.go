@@ -6,6 +6,8 @@ import (
 	"database/sql"
 	"log"
 	"time"
+
+	"github.com/lexLibrary/lexLibrary/data"
 )
 
 // Log is a logged error message in the database
@@ -14,8 +16,8 @@ type Log struct {
 	occurred time.Time
 }
 
-var sqlLogInsert = newQuery(`insert into logs (occurred, message) values ({{arg "occurred"}}, {{arg "message"}})`)
-var sqlLogGet = newQuery(`
+var sqlLogInsert = data.NewQuery(`insert into logs (occurred, message) values ({{arg "occurred"}}, {{arg "message"}})`)
+var sqlLogGet = data.NewQuery(`
 	select occurred, message from logs order by occurred desc 
 	{{if sqlite}}
 		LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
@@ -33,7 +35,10 @@ func LogError(lerr error) {
 
 	log.Printf(l.message)
 
-	err := l.insert()
+	_, err := sqlLogInsert.Exec(
+		sql.Named("occurred", l.occurred),
+		sql.Named("message", l.message))
+
 	if err != nil {
 		log.Printf(`Error inserting error log entry. Log entry: %s ERROR: %s`, lerr, err)
 	}
@@ -46,7 +51,7 @@ func LogGet(offset, limit int) ([]*Log, error) {
 	}
 	var logs []*Log
 
-	rows, err := sqlLogGet.query(sql.Named("offset", offset), sql.Named("limit", limit))
+	rows, err := sqlLogGet.Query(sql.Named("offset", offset), sql.Named("limit", limit))
 	if err != nil {
 		return nil, err
 	}
@@ -62,11 +67,4 @@ func LogGet(offset, limit int) ([]*Log, error) {
 	}
 
 	return logs, nil
-}
-
-func (l *Log) insert() error {
-	_, err := sqlLogInsert.exec(
-		sql.Named("occurred", l.occurred),
-		sql.Named("message", l.message))
-	return err
 }

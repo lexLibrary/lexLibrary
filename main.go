@@ -7,7 +7,7 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/web"
 	"github.com/spf13/viper"
 )
@@ -35,17 +35,17 @@ func main() {
 
 	cfg := struct {
 		Web  web.Config
-		Data app.Config
+		Data data.Config
 	}{
 		Web:  web.Config{},
-		Data: app.Config{},
+		Data: data.Config{},
 	}
 
 	err := viper.ReadInConfig()
 	if err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			cfg.Web = web.DefaultConfig()
-			cfg.Data = app.DefaultConfig()
+			cfg.Data = data.DefaultConfig()
 			log.Printf("No config file found, using default values: \n %+v\n", cfg)
 		} else {
 			log.Fatal(err)
@@ -55,7 +55,7 @@ func main() {
 		viper.Unmarshal(&cfg)
 	}
 
-	err = app.Init(cfg.Data)
+	err = data.Init(cfg.Data)
 	if err != nil {
 		log.Fatalf("Error initializing data layer: %s", err)
 	}

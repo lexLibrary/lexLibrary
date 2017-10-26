@@ -1,21 +1,27 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-package app
+package data
 
 import (
 	"bytes"
 	"database/sql"
 	"fmt"
 	"html/template"
+
+	"github.com/pkg/errors"
 )
 
-type query struct {
+// Query is a templated query that can run across
+// multiple database backends
+type Query struct {
 	statement string
 	args      []string
+	tx        *sql.Tx
 }
 
-func newQuery(tmpl string) *query {
-	q := &query{}
+// NewQuery creates a new query from the template passed in
+func NewQuery(tmpl string) *Query {
+	q := &Query{}
 	funcs := template.FuncMap{
 		"arg": func(name string) string {
 			// Args must be named, and must use sql.Named
@@ -46,12 +52,10 @@ func newQuery(tmpl string) *query {
 		},
 		"datetime": func() string {
 			switch dbType {
-			case sqlite:
+			case mysql, tidb, sqlite:
 				return "DATETIME"
 			case postgres, cockroachdb:
 				return "TIMESTAMP with time ZONE"
-			case mysql, tidb:
-				return "DATETIME"
 			default:
 				panic("Unsupported database type")
 			}
@@ -122,7 +126,7 @@ func newQuery(tmpl string) *query {
 	return q
 }
 
-func (q *query) orderedArgs(args []sql.NamedArg) []interface{} {
+func (q *Query) orderedArgs(args []sql.NamedArg) []interface{} {
 	ordered := make([]interface{}, 0, len(q.args))
 
 	for i := range q.args {
@@ -141,16 +145,72 @@ func (q *query) orderedArgs(args []sql.NamedArg) []interface{} {
 	return ordered
 }
 
-func (q *query) exec(args ...sql.NamedArg) (sql.Result, error) {
+// Exec executes a templated query without returning any rows
+func (q *Query) Exec(args ...sql.NamedArg) (sql.Result, error) {
+	if q.tx != nil {
+		return q.tx.Exec(q.statement, q.orderedArgs(args)...)
+	}
 	return db.Exec(q.statement, q.orderedArgs(args)...)
 }
 
-func (q *query) query(args ...sql.NamedArg) (*sql.Rows, error) {
+// Query executes a templated query that returns rows
+func (q *Query) Query(args ...sql.NamedArg) (*sql.Rows, error) {
+	if q.tx != nil {
+		return q.tx.Query(q.statement, q.orderedArgs(args)...)
+	}
 	return db.Query(q.statement, q.orderedArgs(args)...)
 }
-func (q *query) queryRow(args ...sql.NamedArg) *sql.Row {
+
+// QueryRow executes a templated query that returns a single row
+func (q *Query) QueryRow(args ...sql.NamedArg) *sql.Row {
+	if q.tx != nil {
+		return q.tx.QueryRow(q.statement, q.orderedArgs(args)...)
+	}
 	return db.QueryRow(q.statement, q.orderedArgs(args)...)
 }
 
-//TODO: Handle transactions
-// TODO: Handle timeouts
+func (q *Query) copy() *Query {
+	return &Query{
+		statement: q.statement,
+		args:      q.args,
+		tx:        q.tx,
+	}
+}
+
+// Tx returns a new copy of the query that runs in the passed in transaction
+func (q *Query) Tx(tx *sql.Tx) *Query {
+	copy := q.copy()
+	copy.tx = tx
+	return copy
+}
+
+// Statement returns the complied query template
+func (q *Query) Statement() string {
+	return q.statement
+}
+
+// BeginTx begins a transaction on the database
+// If the function passed in returns an error, the transaction rolls back
+// If it returns a nil error, then the transaction commits
+func BeginTx(trnFunc func(tx *sql.Tx) error) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	err = trnFunc(tx)
+	if err != nil {
+		rErr := tx.Rollback()
+		if rErr != nil {
+			return errors.Errorf("Error rolling back transaction.  Rollback error %s, Original error %s", rErr, err)
+		}
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return errors.Wrap(err, "Error committing transaction")
+	}
+
+	return nil
+}

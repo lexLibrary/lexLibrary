@@ -1,6 +1,6 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-package app
+package data
 
 type schemaVer struct {
 	update   string
@@ -31,16 +31,16 @@ type schemaVer struct {
 
 var schemaVersions = []schemaVer{
 	schemaVer{
-		update: newQuery(`
+		update: NewQuery(`
 			create table schema_versions (
 				version INTEGER NOT NULL PRIMARY KEY,
 				rollback {{text}} NOT NULL
 			);
-		`).statement,
+		`).Statement(),
 		rollback: "drop table schema_versions",
 	},
 	schemaVer{
-		update: newQuery(`
+		update: NewQuery(`
 			create table logs (
 				occurred {{datetime}} NOT NULL,
 				message {{text}}

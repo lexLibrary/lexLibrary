@@ -1,16 +1,16 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-// Package app handles all the data and application structures handling for Lex Library
-package app
+// Package data handles all the data and application structures handling for Lex Library
+package data
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3" // register sqlite3
+	"github.com/pkg/errors"
 )
 
 // Database Types
@@ -23,8 +23,6 @@ const (
 )
 
 const databaseName = "lexLibrary"
-
-const maxRows = 10000
 
 var db *sql.DB
 var dbType int
@@ -47,6 +45,8 @@ type Config struct {
 
 	AllowSchemaRollback bool
 }
+
+//TODO: Timeout setting across all databases
 
 // DefaultConfig returns the default configuration for the data layer
 func DefaultConfig() Config {
@@ -120,5 +120,5 @@ func initSQLite(cfg Config) error {
 
 func initPostgres(cfg Config) error {
 	// test if lexLibrary database exists and create if it doesn't
-	return fmt.Errorf("TODO")
+	return errors.Errorf("TODO")
 }
