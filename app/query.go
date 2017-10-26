@@ -47,7 +47,7 @@ func newQuery(tmpl string) *query {
 		"datetime": func() string {
 			switch dbType {
 			case sqlite:
-				return "TEXT"
+				return "DATETIME"
 			case postgres, cockroachdb:
 				return "TIMESTAMP with time ZONE"
 			case mysql, tidb:

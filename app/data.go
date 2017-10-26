@@ -24,6 +24,8 @@ const (
 
 const databaseName = "lexLibrary"
 
+const maxRows = 10000
+
 var db *sql.DB
 var dbType int
 

@@ -40,9 +40,29 @@ func LogError(lerr error) {
 }
 
 // LogGet retrieves logs from the error log in the database
-// func LogGet(offset, limit int) ([]Log, error) {
-// 	db.Query(sqlLogGet.query(sql.Named("offset", offset), sql.Named("limit", limit)))
-// }
+func LogGet(offset, limit int) ([]*Log, error) {
+	if limit == 0 || limit > maxRows {
+		limit = 10
+	}
+	var logs []*Log
+
+	rows, err := sqlLogGet.query(sql.Named("offset", offset), sql.Named("limit", limit))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		log := &Log{}
+		err = rows.Scan(&log.occurred, &log.message)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+
+	return logs, nil
+}
 
 func (l *Log) insert() error {
 	_, err := sqlLogInsert.exec(
