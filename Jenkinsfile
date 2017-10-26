@@ -2,14 +2,14 @@ pipeline {
     agent any
     environment {
         GOPATH = '/go'
-        REPO = '$GOPATH/src/github.com/lexLibrary/lexLibrary'
+        REPO = '/go/src/github.com/lexLibrary/lexLibrary'
     }
     stages {
         stage('build') {
             agent {
                 dockerfile { 
                     dir 'ci/build' 
-                    args '-v $WORKSPACE:$REPO'
+                    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
                 }
             }
             environment {
@@ -29,7 +29,7 @@ pipeline {
                     agent {
                         dockerfile { 
                             dir 'ci/sqlite' 
-                            args '-v $WORKSPACE:$REPO'
+                            args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
                         }
                     }
                     steps {
