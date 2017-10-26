@@ -31,7 +31,7 @@ func ensureSchemaTable() error {
 	`)
 
 	name := ""
-	err := db.QueryRow(findSchemaTable.exec()).Scan(&name)
+	err := findSchemaTable.queryRow().Scan(&name)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return err
@@ -41,8 +41,9 @@ func ensureSchemaTable() error {
 			return err
 		}
 
-		_, err := db.Exec(schemaVersionInsert.exec(sql.Named("version", 0),
-			sql.Named("rollback", schemaVersions[0].rollback)))
+		_, err := schemaVersionInsert.exec(
+			sql.Named("version", 0),
+			sql.Named("rollback", schemaVersions[0].rollback))
 		if err != nil {
 			return err
 		}
@@ -73,8 +74,9 @@ func ensureSchemaVersion(allowRollback bool) error {
 			return err
 		}
 
-		_, err = db.Exec(schemaVersionInsert.exec(sql.Named("version", dbVer), sql.Named("rollback",
-			schemaVersions[dbVer].rollback)))
+		_, err = schemaVersionInsert.exec(
+			sql.Named("version", dbVer),
+			sql.Named("rollback", schemaVersions[dbVer].rollback))
 		if err != nil {
 			return err
 		}
@@ -85,8 +87,8 @@ func ensureSchemaVersion(allowRollback bool) error {
 	if allowRollback {
 		log.Printf("Rolling back database schema to version %d", dbVer)
 		rollback := ""
-		err = db.QueryRow(newQuery(`select rollback from schema_versions where version = {{arg "version"}}`).
-			exec(sql.Named("version", dbVer))).Scan(&rollback)
+		err = newQuery(`select rollback from schema_versions where version = {{arg "version"}}`).queryRow(
+			sql.Named("version", dbVer)).Scan(&rollback)
 		if err != nil {
 			return err
 		}
@@ -96,8 +98,8 @@ func ensureSchemaVersion(allowRollback bool) error {
 			return err
 		}
 
-		_, err = db.Exec(newQuery(`delete from schema_versions where version = {{arg "version"}}`).
-			exec(sql.Named("version", dbVer)))
+		_, err = newQuery(`delete from schema_versions where version = {{arg "version"}}`).exec(
+			sql.Named("version", dbVer))
 		if err != nil {
 			return err
 		}

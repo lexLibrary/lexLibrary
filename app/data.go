@@ -56,7 +56,6 @@ func DefaultConfig() Config {
 
 // Init initializes the data layer based on the passed in configuration.
 // Initialization includes things like setting up the database and the connections to it.
-// The DB object returned is only for testing access currently
 func Init(cfg Config) error {
 	err := initSearch(cfg)
 	if err != nil {

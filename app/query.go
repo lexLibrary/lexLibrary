@@ -9,41 +9,19 @@ import (
 	"html/template"
 )
 
-/* queryTemplate is a database query template that contains multiple definitions for different database backend
-for use with databases where a query can't be shared across all DB backends
-*/
 type query struct {
 	statement string
 	args      []string
 }
 
-// execute returns the query and the proper order and type for the arguments
-// based on the database type
-func (q *query) exec(args ...sql.NamedArg) (string, []interface{}) {
-	ordered := make([]interface{}, 0, len(q.args))
-
-	for i := range q.args {
-		for j := range args {
-			if args[j].Name == q.args[i] {
-				switch dbType {
-				case postgres, cockroachdb:
-					ordered = append(ordered, args[j])
-				default:
-					ordered = append(ordered, args[j].Value)
-				}
-				break
-			}
-		}
-	}
-	return q.statement, ordered
-}
-
 func newQuery(tmpl string) *query {
 	q := &query{}
-	buff := bytes.NewBuffer([]byte{})
-
 	funcs := template.FuncMap{
 		"arg": func(name string) string {
+			// Args must be named, and must use sql.Named
+			if name == "" {
+				panic("Arguments must be named in sql statements")
+			}
 			q.args = append(q.args, name)
 			switch dbType {
 			case postgres, cockroachdb:
@@ -134,12 +112,45 @@ func newQuery(tmpl string) *query {
 		},
 	}
 
+	buff := bytes.NewBuffer([]byte{})
 	err := template.Must(template.New("").Funcs(funcs).Parse(tmpl)).Execute(buff, nil)
 	if err != nil {
 		panic(fmt.Errorf("Error building query template: %s", err))
 	}
 
 	q.statement = buff.String()
-
 	return q
 }
+
+func (q *query) orderedArgs(args []sql.NamedArg) []interface{} {
+	ordered := make([]interface{}, 0, len(q.args))
+
+	for i := range q.args {
+		for j := range args {
+			if args[j].Name == q.args[i] {
+				switch dbType {
+				case postgres, cockroachdb:
+					ordered = append(ordered, args[j])
+				default:
+					ordered = append(ordered, args[j].Value)
+				}
+				break
+			}
+		}
+	}
+	return ordered
+}
+
+func (q *query) exec(args ...sql.NamedArg) (sql.Result, error) {
+	return db.Exec(q.statement, q.orderedArgs(args)...)
+}
+
+func (q *query) query(args ...sql.NamedArg) (*sql.Rows, error) {
+	return db.Query(q.statement, q.orderedArgs(args)...)
+}
+func (q *query) queryRow(args ...sql.NamedArg) *sql.Row {
+	return db.QueryRow(q.statement, q.orderedArgs(args)...)
+}
+
+//TODO: Handle transactions
+// TODO: Handle timeouts

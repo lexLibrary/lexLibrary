@@ -45,6 +45,8 @@ func LogError(lerr error) {
 // }
 
 func (l *Log) insert() error {
-	_, err := db.Exec(sqlLogInsert.exec(sql.Named("occurred", l.occurred), sql.Named("message", l.message)))
+	_, err := sqlLogInsert.exec(
+		sql.Named("occurred", l.occurred),
+		sql.Named("message", l.message))
 	return err
 }
