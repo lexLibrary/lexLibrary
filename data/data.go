@@ -46,8 +46,6 @@ type Config struct {
 	AllowSchemaRollback bool
 }
 
-//TODO: Timeout setting across all databases
-
 // DefaultConfig returns the default configuration for the data layer
 func DefaultConfig() Config {
 	return Config{
@@ -71,13 +69,15 @@ func Init(cfg Config) error {
 		if err != nil {
 			return err
 		}
-	default:
 		dbType = sqlite
 
+	case "sqlite":
 		err = initSQLite(cfg)
 		if err != nil {
 			return err
 		}
+	default:
+		return errors.New("Invalid database type")
 	}
 
 	if cfg.MaxConnectionLifetime != "" {
