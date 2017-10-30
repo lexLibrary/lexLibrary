@@ -5,13 +5,13 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/web"
 	"github.com/spf13/viper"
 )
 
-const appName = "lexLibrary"
 const defaultConfigFile = "./config.yaml"
 
 var flagConfigFile string
@@ -43,7 +43,7 @@ func main() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		if os.IsNotExist(err) && flagConfigFile == defaultConfigFile {
 			cfg.Web = web.DefaultConfig()
 			cfg.Data = data.DefaultConfig()
 			log.Printf("No config file found, using default values: \n %+v\n", cfg)

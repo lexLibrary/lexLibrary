@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/lib/pq"           // register postgres
 	_ "github.com/mattn/go-sqlite3" // register sqlite3
 	"github.com/pkg/errors"
 )
@@ -69,9 +70,8 @@ func Init(cfg Config) error {
 		if err != nil {
 			return err
 		}
-		dbType = sqlite
-
 	case "sqlite":
+		dbType = postgres
 		err = initSQLite(cfg)
 		if err != nil {
 			return err
@@ -119,6 +119,12 @@ func initSQLite(cfg Config) error {
 }
 
 func initPostgres(cfg Config) error {
+	var err error
+	db, err = sql.Open("postgres", cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+
 	// test if lexLibrary database exists and create if it doesn't
-	return errors.Errorf("TODO")
+	return nil
 }

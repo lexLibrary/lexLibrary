@@ -15,6 +15,8 @@ import (
 
 var flagConfigFile string
 
+const defaultConfigFile = "./config.yaml"
+
 func TestMain(m *testing.M) {
 	flag.StringVar(&flagConfigFile, "config", "./config.yaml", "Sets the path to the configuration file. Either a .YAML, .JSON, or .TOML file")
 
@@ -31,8 +33,8 @@ func TestMain(m *testing.M) {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-
-		if os.IsNotExist(err) {
+		if os.IsNotExist(err) && flagConfigFile == defaultConfigFile {
+			log.Printf("No config file found, using default values: \n %+v\n", cfg)
 			// open sqlite db in memory for testing
 			cfg.Data = data.Config{
 				DatabaseType:       "sqlite",

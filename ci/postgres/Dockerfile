@@ -17,5 +17,5 @@ ENV GOPATH=/go
 
 #postgres
 RUN apt-get update && apt-get install -y \
-    postgres
+    postgresql
 
