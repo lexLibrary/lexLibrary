@@ -39,6 +39,20 @@ pipeline {
                         '''
                     }
                 }
+                stage('postgres') {
+                    agent {
+                        dockerfile { 
+                            dir 'ci/postgres' 
+                            args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
+                        }
+                    }
+                    steps {
+                        sh '''
+                            cd $REPO
+                            go test  ./... -config ci/postgres/config.yaml
+                        '''
+                    }
+                }
             }
         }
     }

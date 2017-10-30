@@ -16,3 +16,6 @@ ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH=/go
 
 #postgres
+RUN apt-get update && apt-get install -y \
+    postgres
+
