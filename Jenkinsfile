@@ -35,7 +35,7 @@ pipeline {
                     steps {
                         sh '''
                             cd $REPO
-                            go test  ./...
+                            go test  ./... -config ci/sqlite/config.yaml
                         '''
                     }
                 }

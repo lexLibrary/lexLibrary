@@ -5,7 +5,6 @@ package main
 import (
 	"flag"
 	"log"
-	"path/filepath"
 
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/web"
@@ -22,6 +21,7 @@ func init() {
 }
 
 func main() {
+	flag.Parse()
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("LEX")
 
@@ -31,7 +31,7 @@ func main() {
 	if flagConfigFile == defaultConfigFile {
 		log.Println("You can set the location of the config file with the -config flag")
 	}
-	setConfigPath()
+	viper.SetConfigFile(flagConfigFile)
 
 	cfg := struct {
 		Web  web.Config
@@ -67,13 +67,4 @@ func main() {
 		log.Fatalf("Error initializing web server: %s", err)
 	}
 
-}
-
-func setConfigPath() {
-	base := filepath.Base(flagConfigFile)
-	ext := filepath.Ext(flagConfigFile)
-	dir := filepath.Dir(flagConfigFile)
-
-	viper.SetConfigName(base[0 : len(base)-len(ext)])
-	viper.AddConfigPath(dir)
 }

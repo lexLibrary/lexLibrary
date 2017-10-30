@@ -1,0 +1,33 @@
+Web:
+  Port: 8080
+  ReadTimeout: 60s
+  WriteTimeout: 60s
+  MaxUploadMemoryMB: 10
+  # CertFile: /etc/ssl/certs/lexLibrary.crt
+  # KeyFile: /etc/ssl/certs/lexLibrary.key
+Data:
+  DatabaseFile: ./lexLibrary.db
+  SearchFile: ./lexLibrary.search
+
+  ## Sample Database connection URLs 
+  # DatabaseType: sqlite
+  # DatabaseUrl: "file::memory:?mode=memory&cache=shared" # sqlite in-memory database
+
+  # DatabaseType: postgres
+  # DatabaseUrl: "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full:" #Postgres example URL
+
+
+  ## For making SSL connections to various database backends
+  # SSLCert: /etc/ssl/certs/db_connection.crt
+  # SSLKey: /etc/ssl/certs/db_connection.key
+  # SSLRootCert: /etc/ssl/certs/root_db_connection.key
+
+  ## Database Connection Pool Settings
+  # MaxIdleConnections: 10
+  # MaxOpenConnections: 10
+  # MaxConnectionLifetime: 60s
+
+  ## AllowSchemaRollback will rollback the database schema to the version matching the currently running
+  ## Lex Library Code.  Setting this to true WILL LOSE DATA to get the database version to match the 
+  ## software version.  Backup your data before setting to true
+  # AllowSchemaRollback: false
