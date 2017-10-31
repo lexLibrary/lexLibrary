@@ -1,4 +1,4 @@
-FROM ubuntu:17.04
+FROM postgres:latest
 
 # Golang
 RUN apt-get update && apt-get install -y \
@@ -15,7 +15,6 @@ RUN tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
 ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH=/go
 
-#postgres
-RUN apt-get update && apt-get install -y \
-    postgresql
+ENV LLDATABASE=postgres
 
+ENV POSTGRES_PASSWORD=password

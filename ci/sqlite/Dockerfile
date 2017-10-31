@@ -14,3 +14,5 @@ RUN tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
 
 ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH=/go
+
+ENV LLDATABASE=sqlite

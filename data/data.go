@@ -71,7 +71,7 @@ func Init(cfg Config) error {
 			return err
 		}
 	case "sqlite":
-		dbType = postgres
+		dbType = sqlite
 		err = initSQLite(cfg)
 		if err != nil {
 			return err
