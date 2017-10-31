@@ -34,8 +34,8 @@ pipeline {
                     }
                     steps {
                         sh '''
-                            cd $REPO
-                            go test  ./... -config $PWD/ci/sqlite/config.yaml
+                            cd $REPO/ci
+                            sh ./test.sh
                         '''
                     }
                 }
@@ -48,8 +48,8 @@ pipeline {
                     }
                     steps {
                         sh '''
-                            cd $REPO
-                            go test  ./... -config $PWD/ci/postgres/config.yaml
+                            cd $REPO/ci
+                            sh ./test.sh
                         '''
                     }
                 }
