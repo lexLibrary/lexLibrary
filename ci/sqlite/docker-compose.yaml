@@ -1,0 +1,9 @@
+version: '2'
+services:
+  tests:
+    build: "../build"
+    volumes:
+      - ../..:/go/src/github.com/lexLibrary/lexLibrary
+    environment:
+      LLDATABASE: 'sqlite'
+    command: sh -c 'cd /go/src/github.com/lexLibrary/lexLibrary/ci/ && sh ./test.sh'

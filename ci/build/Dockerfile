@@ -13,7 +13,7 @@ RUN wget https://storage.googleapis.com/golang/go$VERSION.$OS-$ARCH.tar.gz
 RUN tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
 
 ENV PATH=$PATH:/usr/local/go/bin
-ENV GOPATH=$HOME/workspace
+ENV GOPATH=/go
 
 
 # Node
