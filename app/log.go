@@ -33,7 +33,7 @@ func LogError(lerr error) {
 		occurred: time.Now(),
 	}
 
-	log.Printf(l.message)
+	log.Printf("ERROR: %s", l.message)
 
 	_, err := sqlLogInsert.Exec(
 		sql.Named("occurred", l.occurred),

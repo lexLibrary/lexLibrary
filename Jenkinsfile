@@ -1,9 +1,5 @@
 pipeline {
     agent any
-    environment {
-        GOPATH = '/go'
-        REPO = '/go/src/github.com/lexLibrary/lexLibrary'
-    }
     stages {
         stage('build') {
             agent {
@@ -13,6 +9,8 @@ pipeline {
                 }
             }
             environment {
+                GOPATH = '/go'
+                REPO = '/go/src/github.com/lexLibrary/lexLibrary'
                 HOME = '.'
             }
             steps {
@@ -26,30 +24,18 @@ pipeline {
         stage('test') {
             parallel {
                 stage('sqlite') {
-                    agent {
-                        dockerfile { 
-                            dir 'ci/sqlite' 
-                            args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
-                        }
-                    }
                     steps {
                         sh '''
-                            cd $REPO/ci
-                            sh ./test.sh
+                            cd ci
+                            sh ./testDB.sh sqlite
                         '''
                     }
                 }
                 stage('postgres') {
-                    agent {
-                        dockerfile { 
-                            dir 'ci/postgres' 
-                            args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
-                        }
-                    }
                     steps {
                         sh '''
-                            cd $REPO/ci
-                            sh ./test.sh
+                            cd ci
+                            sh ./testDB.sh postgres
                         '''
                     }
                 }

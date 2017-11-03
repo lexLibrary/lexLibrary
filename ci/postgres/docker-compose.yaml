@@ -1,11 +1,17 @@
 version: '2'
 services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: lexlibrary
   tests:
     build: "../build"
+    links:
+      - postgres
     volumes:
       - ../..:/go/src/github.com/lexLibrary/lexLibrary
     environment:
-      LLDATABASE: 'sqlite'
+      LLDATABASE: 'postgres'
       GOPATH: /go
     command: sh -c '
         cd /go/src/github.com/lexLibrary/lexLibrary/ci/ && sh ./test.sh

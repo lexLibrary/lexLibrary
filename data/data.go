@@ -125,6 +125,15 @@ func initPostgres(cfg Config) error {
 		return err
 	}
 
-	// test if lexLibrary database exists and create if it doesn't
+	dbName := ""
+
+	err = db.QueryRow("SELECT current_database();").Scan(&dbName)
+
+	if dbName == "postgres" {
+		// db connection is pointing at default database, check for lexLibrary DB
+		// and create as necessary
+	}
+	// db connection is pointing at a specific database, use as lexLibrary DB
+
 	return nil
 }
