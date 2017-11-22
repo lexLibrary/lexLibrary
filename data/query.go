@@ -214,3 +214,20 @@ func BeginTx(trnFunc func(tx *sql.Tx) error) error {
 
 	return nil
 }
+
+// Debug runs the passed in query and returns a string of the results
+// in a tab delimited format, with columns listed in the first row
+// meant for debugging use
+// func Debug(statement string, args ...sql.NamedArg) (string, error) {
+// 	q := NewQuery(statement)
+
+// 	rows, err := q.Query(args...)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	defer rows.Close()
+// 	for rows.Next() {
+// 	}
+
+// }

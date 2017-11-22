@@ -5,7 +5,10 @@ package data
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -132,6 +135,26 @@ func initPostgres(cfg Config) error {
 	if dbName == "postgres" {
 		// db connection is pointing at default database, check for lexLibrary DB
 		// and create as necessary
+		err = db.QueryRow("SELECT 1 FROM pg_database WHERE datname = $1", databaseName).Scan()
+		if err == sql.ErrNoRows {
+			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
+			if err != nil {
+				return errors.Wrap(err, "Creating lexLibrary database")
+			}
+		} else if err != nil {
+			return errors.Wrap(err, "Looking for LexLibrary Database")
+		}
+		// reopen DB connection on new database
+		u, err := url.Parse(cfg.DatabaseURL)
+		if err != nil {
+			return err
+		}
+
+		u.Path = path.Join(u.Path, databaseName)
+		db, err = sql.Open("postgres", u.String())
+		if err != nil {
+			return err
+		}
 	}
 	// db connection is pointing at a specific database, use as lexLibrary DB
 
