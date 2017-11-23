@@ -130,6 +130,7 @@ func initPostgres(cfg Config) error {
 
 	dbName := ""
 
+	fmt.Println(Debug("select * from pg_database"))
 	err = db.QueryRow("SELECT current_database();").Scan(&dbName)
 
 	if dbName == "postgres" {
