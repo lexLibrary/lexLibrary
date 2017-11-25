@@ -26,7 +26,7 @@ const (
 	tidb               // github.com/go-sql-driver/mysql/
 )
 
-const databaseName = "lexLibrary"
+const databaseName = "lex_library"
 
 var db *sql.DB
 var dbType int

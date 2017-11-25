@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"html/template"
-	"reflect"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -221,7 +220,7 @@ func BeginTx(trnFunc func(tx *sql.Tx) error) error {
 // in a tab delimited format, with columns listed in the first row
 // meant for debugging use. Will panic instead of throwing an error
 func Debug(statement string, args ...sql.NamedArg) string {
-	padding := 4
+	padding := 10
 	result := ""
 	q := NewQuery(statement)
 
@@ -234,35 +233,42 @@ func Debug(statement string, args ...sql.NamedArg) string {
 	if err != nil {
 		panic(err)
 	}
-	types, err := rows.ColumnTypes()
-	if err != nil {
-		panic(err)
-	}
 
 	lengths := make([]int, len(columns))
 
 	for i := range columns {
 		lengths[i] = padding + len(columns[i])
-		result += fmt.Sprintf("%"+strconv.Itoa(lengths[i])+"s", columns[i])
+		result += fmt.Sprintf("%-"+strconv.Itoa(lengths[i])+"s", columns[i])
 	}
 
 	result += "\n"
 
 	values := make([]interface{}, len(columns))
-	for i := range columns {
-		val := reflect.New(types[i].ScanType())
-		values[i] = val.Interface()
+
+	scanArgs := make([]interface{}, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
 	}
 
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(values...)
+		err = rows.Scan(scanArgs...)
 		if err != nil {
 			panic(err)
 		}
 
 		for i := range columns {
-			result += fmt.Sprintf("%"+strconv.Itoa(lengths[i])+"v", values[i])[:lengths[i]]
+			str := ""
+			switch values[i].(type) {
+			case nil:
+				str = "NULL"
+			case []byte:
+				str = string(values[i].([]byte))
+			default:
+				str = fmt.Sprintf("%v", values[i])
+			}
+
+			result += fmt.Sprintf("%-"+strconv.Itoa(lengths[i])+"s", str)[:lengths[i]]
 		}
 		result += "\n"
 	}

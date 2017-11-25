@@ -27,6 +27,10 @@ type schemaVer struct {
 	|string    | text              |
 	|time.Time | timestamp/datetime|
 	+------------------------------+
+
+
+	Keep column and table names in lowercase and separate words with underscores
+	tables should be named for their collections (i.e. plural)
 */
 
 var schemaVersions = []schemaVer{
