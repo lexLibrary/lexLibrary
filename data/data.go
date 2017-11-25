@@ -130,20 +130,25 @@ func initPostgres(cfg Config) error {
 
 	dbName := ""
 
-	fmt.Println(Debug("select * from pg_database"))
 	err = db.QueryRow("SELECT current_database();").Scan(&dbName)
+	if err != nil {
+		return errors.Wrap(err, "Getting current database")
+	}
 
 	if dbName == "postgres" {
 		// db connection is pointing at default database, check for lexLibrary DB
 		// and create as necessary
-		err = db.QueryRow("SELECT 1 FROM pg_database WHERE datname = $1", databaseName).Scan()
-		if err == sql.ErrNoRows {
+		count := 0
+		err = db.QueryRow("SELECT count(*) FROM pg_database WHERE datname = $1", databaseName).Scan(&count)
+		if err != nil {
+			return errors.Wrapf(err, "Looking for $s Database", databaseName)
+		}
+
+		if count == 0 {
 			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
 			if err != nil {
-				return errors.Wrap(err, "Creating lexLibrary database")
+				return errors.Wrapf(err, "Creating $s database", databaseName)
 			}
-		} else if err != nil {
-			return errors.Wrap(err, "Looking for LexLibrary Database")
 		}
 		// reopen DB connection on new database
 		u, err := url.Parse(cfg.DatabaseURL)

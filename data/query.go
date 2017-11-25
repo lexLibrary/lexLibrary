@@ -21,6 +21,7 @@ type Query struct {
 }
 
 // NewQuery creates a new query from the template passed in
+// FIXME: Can't execute query templates until after the DB connection type is set
 func NewQuery(tmpl string) *Query {
 	q := &Query{}
 	funcs := template.FuncMap{
@@ -33,6 +34,7 @@ func NewQuery(tmpl string) *Query {
 			switch dbType {
 			case postgres, cockroachdb:
 				return "$" + name
+				// return "$" + strconv.Itoa(len(q.args))
 			default:
 				return "?"
 			}
@@ -219,10 +221,9 @@ func BeginTx(trnFunc func(tx *sql.Tx) error) error {
 // Debug runs the passed in query and returns a string of the results
 // in a tab delimited format, with columns listed in the first row
 // meant for debugging use. Will panic instead of throwing an error
-func Debug(statement string, args ...sql.NamedArg) string {
+func (q *Query) Debug(args ...sql.NamedArg) string {
 	padding := 10
 	result := ""
-	q := NewQuery(statement)
 
 	rows, err := q.Query(args...)
 	if err != nil {
@@ -236,12 +237,17 @@ func Debug(statement string, args ...sql.NamedArg) string {
 
 	lengths := make([]int, len(columns))
 
+	wrap := ""
+	cols := ""
 	for i := range columns {
 		lengths[i] = padding + len(columns[i])
-		result += fmt.Sprintf("%-"+strconv.Itoa(lengths[i])+"s", columns[i])
+		cols += fmt.Sprintf("%-"+strconv.Itoa(lengths[i])+"s", columns[i])
+		for j := 0; j < lengths[i]; j++ {
+			wrap += "-"
+		}
 	}
 
-	result += "\n"
+	result += wrap + "\n" + cols + "\n" + wrap + "\n"
 
 	values := make([]interface{}, len(columns))
 
@@ -250,6 +256,7 @@ func Debug(statement string, args ...sql.NamedArg) string {
 		scanArgs[i] = &values[i]
 	}
 
+	count := 0
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
@@ -268,10 +275,22 @@ func Debug(statement string, args ...sql.NamedArg) string {
 				str = fmt.Sprintf("%v", values[i])
 			}
 
-			result += fmt.Sprintf("%-"+strconv.Itoa(lengths[i])+"s", str)[:lengths[i]]
+			val := fmt.Sprintf("%-"+strconv.Itoa(lengths[i])+"s", str)
+			if i != len(columns)-1 {
+				// don't trim last column
+				val = val[:lengths[i]]
+			}
+			result += val
+
 		}
 		result += "\n"
+		count++
 	}
 
-	return result
+	return result + wrap + "\n(" + strconv.Itoa(count) + " rows)\n"
+}
+
+// DebugPrint prints out the debug query to the screen
+func (q *Query) DebugPrint(args ...sql.NamedArg) {
+	fmt.Println(q.Debug(args...))
 }
