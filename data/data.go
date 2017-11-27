@@ -83,6 +83,8 @@ func Init(cfg Config) error {
 		return errors.New("Invalid database type")
 	}
 
+	prepareQueries()
+
 	if cfg.MaxConnectionLifetime != "" {
 		lifetime, err := time.ParseDuration(cfg.MaxConnectionLifetime)
 		if err == nil {

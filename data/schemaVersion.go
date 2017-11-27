@@ -3,8 +3,8 @@
 package data
 
 type schemaVer struct {
-	update   string
-	rollback string
+	update   *Query
+	rollback *Query
 }
 
 /*
@@ -40,8 +40,8 @@ var schemaVersions = []schemaVer{
 				version INTEGER NOT NULL PRIMARY KEY,
 				rollback {{text}} NOT NULL
 			);
-		`).Statement(),
-		rollback: "drop table schema_versions",
+		`),
+		rollback: NewQuery("drop table schema_versions"),
 	},
 	schemaVer{
 		update: NewQuery(`
@@ -50,7 +50,7 @@ var schemaVersions = []schemaVer{
 				message {{text}}
 			);
 			create index i_occurred on logs (occurred);
-		`).statement,
-		rollback: "drop table logs",
+		`),
+		rollback: NewQuery("drop table logs"),
 	},
 }

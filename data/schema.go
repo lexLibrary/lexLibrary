@@ -25,7 +25,7 @@ func ensureSchema(allowRollback bool) error {
 func ensureSchemaTable() error {
 	findSchemaTable := NewQuery(`
 		{{if sqlite}}
-			SELECT name FROM sqlite_master WHERE type='table' and name = 'schema_versions'
+			SELECT name FROM sqlite_master WHERE type = 'table' and name = 'schema_versions'
 		{{else}}
 			select table_name from information_schema.tables where table_name = 'schema_versions'
 		{{end}}
@@ -37,14 +37,14 @@ func ensureSchemaTable() error {
 		if err != sql.ErrNoRows {
 			return errors.Wrap(err, "Looking for schema_versions table")
 		}
-		_, err = db.Exec(schemaVersions[0].update)
+		_, err = schemaVersions[0].update.Exec()
 		if err != nil {
 			return errors.Wrap(err, "Creating schema_versions table")
 		}
 
 		_, err := schemaVersionInsert.Exec(
 			sql.Named("version", 0),
-			sql.Named("rollback", schemaVersions[0].rollback))
+			sql.Named("rollback", schemaVersions[0].rollback.Statement()))
 		if err != nil {
 			return errors.Wrap(err, "Inserting first schema version")
 		}
@@ -60,12 +60,11 @@ func ensureSchemaVersion(allowRollback bool) error {
 	if err == sql.ErrNoRows {
 		_, err := schemaVersionInsert.Exec(
 			sql.Named("version", 0),
-			sql.Named("rollback", schemaVersions[0].rollback))
+			sql.Named("rollback", schemaVersions[0].rollback.Statement()))
 		if err != nil {
 			return errors.Wrap(err, "Inserting first schema version")
 		}
-	}
-	if err != nil {
+	} else if err != nil {
 		return errors.Wrap(err, "Getting current schema version from database")
 	}
 
@@ -77,14 +76,14 @@ func ensureSchemaVersion(allowRollback bool) error {
 	if dbVer < currentVer {
 		dbVer++
 		log.Printf("Updating database schema to version %d", dbVer)
-		_, err = db.Exec(schemaVersions[dbVer].update)
+		_, err = schemaVersions[dbVer].update.Exec()
 		if err != nil {
 			return errors.Wrapf(err, "Updating schema to version %d", dbVer)
 		}
 
 		_, err = schemaVersionInsert.Exec(
 			sql.Named("version", dbVer),
-			sql.Named("rollback", schemaVersions[dbVer].rollback))
+			sql.Named("rollback", schemaVersions[dbVer].rollback.Statement()))
 		if err != nil {
 			return errors.Wrapf(err, "Inserting schema version %d", dbVer)
 		}

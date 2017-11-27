@@ -8,22 +8,60 @@ import (
 	"fmt"
 	"html/template"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 )
+
+var queryBuildQueue []*Query
 
 // Query is a templated query that can run across
 // multiple database backends
 type Query struct {
 	statement string
+	built     bool
 	args      []string
 	tx        *sql.Tx
 }
 
 // NewQuery creates a new query from the template passed in
-// FIXME: Can't execute query templates until after the DB connection type is set
 func NewQuery(tmpl string) *Query {
-	q := &Query{}
+	q := &Query{
+		statement: tmpl,
+	}
+
+	if db != nil {
+		q.buildTemplate()
+	} else {
+		queryBuildQueue = append(queryBuildQueue, q)
+	}
+
+	return q
+}
+
+func (q *Query) orderedArgs(args []sql.NamedArg) []interface{} {
+	ordered := make([]interface{}, 0, len(q.args))
+
+	for i := range q.args {
+		for j := range args {
+			if args[j].Name == q.args[i] {
+				switch dbType {
+				case postgres, cockroachdb:
+					ordered = append(ordered, args[j])
+				default:
+					ordered = append(ordered, args[j].Value)
+				}
+				break
+			}
+		}
+	}
+	return ordered
+}
+
+func (q *Query) buildTemplate() {
+	if db == nil {
+		panic("Can't build query templates before the database type is set")
+	}
 	funcs := template.FuncMap{
 		"arg": func(name string) string {
 			// Args must be named, and must use sql.Named
@@ -33,8 +71,7 @@ func NewQuery(tmpl string) *Query {
 			q.args = append(q.args, name)
 			switch dbType {
 			case postgres, cockroachdb:
-				return "$" + name
-				// return "$" + strconv.Itoa(len(q.args))
+				return "$" + strconv.Itoa(len(q.args))
 			default:
 				return "?"
 			}
@@ -120,36 +157,20 @@ func NewQuery(tmpl string) *Query {
 	}
 
 	buff := bytes.NewBuffer([]byte{})
-	err := template.Must(template.New("").Funcs(funcs).Parse(tmpl)).Execute(buff, nil)
+	err := template.Must(template.New("").Funcs(funcs).Parse(q.statement)).Execute(buff, nil)
 	if err != nil {
 		panic(fmt.Errorf("Error building query template: %s", err))
 	}
 
-	q.statement = buff.String()
-	return q
-}
-
-func (q *Query) orderedArgs(args []sql.NamedArg) []interface{} {
-	ordered := make([]interface{}, 0, len(q.args))
-
-	for i := range q.args {
-		for j := range args {
-			if args[j].Name == q.args[i] {
-				switch dbType {
-				case postgres, cockroachdb:
-					ordered = append(ordered, args[j])
-				default:
-					ordered = append(ordered, args[j].Value)
-				}
-				break
-			}
-		}
-	}
-	return ordered
+	q.statement = strings.TrimSpace(buff.String())
+	q.built = true
 }
 
 // Exec executes a templated query without returning any rows
 func (q *Query) Exec(args ...sql.NamedArg) (sql.Result, error) {
+	if !q.built {
+		q.buildTemplate()
+	}
 	if q.tx != nil {
 		return q.tx.Exec(q.statement, q.orderedArgs(args)...)
 	}
@@ -158,6 +179,9 @@ func (q *Query) Exec(args ...sql.NamedArg) (sql.Result, error) {
 
 // Query executes a templated query that returns rows
 func (q *Query) Query(args ...sql.NamedArg) (*sql.Rows, error) {
+	if !q.built {
+		q.buildTemplate()
+	}
 	if q.tx != nil {
 		return q.tx.Query(q.statement, q.orderedArgs(args)...)
 	}
@@ -166,6 +190,9 @@ func (q *Query) Query(args ...sql.NamedArg) (*sql.Rows, error) {
 
 // QueryRow executes a templated query that returns a single row
 func (q *Query) QueryRow(args ...sql.NamedArg) *sql.Row {
+	if !q.built {
+		q.buildTemplate()
+	}
 	if q.tx != nil {
 		return q.tx.QueryRow(q.statement, q.orderedArgs(args)...)
 	}
@@ -176,6 +203,7 @@ func (q *Query) copy() *Query {
 	return &Query{
 		statement: q.statement,
 		args:      q.args,
+		built:     q.built,
 		tx:        q.tx,
 	}
 }
@@ -189,7 +217,14 @@ func (q *Query) Tx(tx *sql.Tx) *Query {
 
 // Statement returns the complied query template
 func (q *Query) Statement() string {
+	if !q.built {
+		q.buildTemplate()
+	}
 	return q.statement
+}
+
+func (q *Query) String() string {
+	return q.Statement()
 }
 
 // BeginTx begins a transaction on the database
@@ -222,7 +257,7 @@ func BeginTx(trnFunc func(tx *sql.Tx) error) error {
 // in a tab delimited format, with columns listed in the first row
 // meant for debugging use. Will panic instead of throwing an error
 func (q *Query) Debug(args ...sql.NamedArg) string {
-	padding := 10
+	padding := 20
 	result := ""
 
 	rows, err := q.Query(args...)
@@ -278,7 +313,7 @@ func (q *Query) Debug(args ...sql.NamedArg) string {
 			val := fmt.Sprintf("%-"+strconv.Itoa(lengths[i])+"s", str)
 			if i != len(columns)-1 {
 				// don't trim last column
-				val = val[:lengths[i]]
+				val = val[:lengths[i]-3] + "..."
 			}
 			result += val
 
@@ -293,4 +328,11 @@ func (q *Query) Debug(args ...sql.NamedArg) string {
 // DebugPrint prints out the debug query to the screen
 func (q *Query) DebugPrint(args ...sql.NamedArg) {
 	fmt.Println(q.Debug(args...))
+}
+
+func prepareQueries() error {
+	for i := range queryBuildQueue {
+		queryBuildQueue[i].buildTemplate()
+	}
+	return nil
 }

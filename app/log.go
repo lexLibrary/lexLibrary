@@ -19,7 +19,7 @@ type Log struct {
 var sqlLogInsert = data.NewQuery(`insert into logs (occurred, message) values ({{arg "occurred"}}, {{arg "message"}})`)
 var sqlLogGet = data.NewQuery(`
 	select occurred, message from logs order by occurred desc 
-	{{if sqlite}}
+	{{if (or sqlite postgres)}}
 		LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
 	{{else}}
 		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
