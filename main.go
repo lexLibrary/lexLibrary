@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/web"
@@ -18,6 +19,23 @@ var flagConfigFile string
 
 func init() {
 	flag.StringVar(&flagConfigFile, "config", defaultConfigFile, "Sets the path to the configuration file. Either a .YAML, .JSON, or .TOML file")
+
+	go func() {
+		//Capture program shutdown, to make sure everything shuts down nicely
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		for sig := range c {
+			if sig == os.Interrupt {
+				log.Print("Lex Library is shutting down")
+				//TODO: Cleanly shutdown web, app
+				err := data.Teardown()
+				if err != nil {
+					log.Fatalf("Error Tearing down Data layer: %s", err)
+				}
+				os.Exit(0)
+			}
+		}
+	}()
 }
 
 func main() {
@@ -59,6 +77,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error initializing data layer: %s", err)
 	}
+	defer data.Teardown()
 
 	log.Println("Data layer initialized")
 
@@ -66,5 +85,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error initializing web server: %s", err)
 	}
-
 }

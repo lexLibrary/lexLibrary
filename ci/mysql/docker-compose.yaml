@@ -1,11 +1,17 @@
 version: '2'
 services:
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: lexlibrary
   tests:
     build: "../build"
+    links:
+      - mysql
     volumes:
       - ../..:/go/src/github.com/lexLibrary/lexLibrary
     environment:
-      LLDATABASE: 'sqlite'
+      LLDATABASE: 'mysql'
       LLTEST: 'true'
       GOPATH: /go
     command: sh -c '

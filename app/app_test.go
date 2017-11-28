@@ -18,6 +18,12 @@ var flagConfigFile string
 const defaultConfigFile = "./config.yaml"
 
 func TestMain(m *testing.M) {
+
+	// Quick env check to prevent tests from being accidentally run against real data, as tables get truncated before
+	// tests run
+	if os.Getenv("LLTEST") != "true" {
+		log.Fatal("LLTEST environment variable is not set to 'true'.  Make sure you are not running the tests in a real environment")
+	}
 	flag.StringVar(&flagConfigFile, "config", "./config.yaml", "Sets the path to the configuration file. Either a .YAML, .JSON, or .TOML file")
 
 	flag.Parse()
@@ -49,10 +55,16 @@ func TestMain(m *testing.M) {
 		viper.Unmarshal(&cfg)
 	}
 
+	// All tests assume the database is empty
 	err = data.Init(cfg.Data)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	os.Exit(m.Run())
+	result := m.Run()
+	err = data.Teardown()
+	if err != nil {
+		log.Fatalf("Error tearing down data connections: %s", err)
+	}
+	os.Exit(result)
 }
