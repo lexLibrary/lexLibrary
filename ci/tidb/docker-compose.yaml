@@ -1,16 +1,15 @@
 version: '2'
 services:
-  cockroachdb:
-    image: cockroachdb/cockroach:latest
-    command: start --insecure
+  tidb:
+    image: pingcap/tidb:latest
   tests:
     build: "../build"
     links:
-      - cockroachdb
+      - tidb
     volumes:
       - ../..:/go/src/github.com/lexLibrary/lexLibrary
     environment:
-      LLDATABASE: 'cockroachdb'
+      LLDATABASE: 'tidb'
       LLTEST: 'true'
       GOPATH: /go
     command: sh -c '

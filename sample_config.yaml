@@ -10,7 +10,7 @@ Data:
   SearchFile: ./lexLibrary.search
 
   # If a database name isn't specified in the connection URL, then lexLibrary will create a lexLibrary database
-  # and connect to it.  If a database name IS specified, it'll use that database as it's own
+  # and connect to it.  If a database name IS specified, it'll use that database as it's own.
 
   ## Sample Database connection URLs 
   # DatabaseType: sqlite
@@ -21,6 +21,13 @@ Data:
 
   # DatabaseType: mysql
   # DatabaseUrl: "username:password@tcp(host)/database"
+
+  # DatabaseType: cockroachdb
+  # DatabaseUrl: "postgres://username:password@host/database?sslmode=disable:"
+
+  # DatabaseType: tidb
+  # DatabaseUrl: "username:password@tcp(host)/database"
+
 
 
   ## For making SSL connections to various database backends

@@ -4,6 +4,7 @@ package app_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
@@ -77,4 +78,20 @@ func TestLog(t *testing.T) {
 		})
 	})
 
+	t.Run("Search", func(t *testing.T) {
+		search := "Search Test"
+		app.LogError(fmt.Errorf("Error message with %s", search))
+		logs, err := app.LogSearch(search, 0, 10)
+		if err != nil {
+			t.Fatalf("Error searching logs: %s", err)
+		}
+
+		if len(logs) != 1 {
+			t.Fatalf("Invalid number of logs. Wanted %d got %d", 1, len(logs))
+		}
+
+		if !strings.Contains(logs[0].Message, search) {
+			t.Fatalf("Log message '%s' does not contain the search value of '%s'", logs[0].Message, search)
+		}
+	})
 }

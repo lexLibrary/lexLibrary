@@ -5,4 +5,4 @@ Web:
   MaxUploadMemoryMB: 10
 Data:
   DatabaseType: cockroachdb
-  DatabaseUrl: "postgres://postgres/?user=postgres&password=lexlibrary&sslmode=disable"
+  DatabaseUrl: "postgresql://cockroachdb:26257/?sslmode=disable"

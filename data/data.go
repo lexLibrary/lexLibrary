@@ -77,6 +77,12 @@ func Init(cfg Config) error {
 	case "sqlite":
 		dbType = sqlite
 		err = initSQLite(cfg)
+	case "cockroachdb":
+		dbType = cockroachdb
+		err = initPostgres(cfg)
+	case "tidb":
+		dbType = tidb
+		err = initMySQL(cfg)
 	default:
 		return errors.New("Invalid database type")
 	}
@@ -106,7 +112,7 @@ func Init(cfg Config) error {
 }
 
 func testDB(attempt int) {
-	maxAttempts := 10
+	maxAttempts := 20
 	sleep := 3 * time.Second
 
 	err := db.Ping()
@@ -158,7 +164,7 @@ func initPostgres(cfg Config) error {
 
 	dbName := ""
 
-	err = db.QueryRow("SELECT current_database()").Scan(&dbName)
+	err = db.QueryRow("SELECT COALESCE(current_database(), 'postgres')").Scan(&dbName)
 	if err != nil {
 		return errors.Wrap(err, "Getting current database")
 	}

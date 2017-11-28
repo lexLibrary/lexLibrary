@@ -47,7 +47,22 @@ pipeline {
                         '''
                     }
                 }
-
+                stage('cockroachdb') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh cockroachdb
+                        '''
+                    }
+                }
+                stage('tidb') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh tidb
+                        '''
+                    }
+                }
             }
         }
     }
