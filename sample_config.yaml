@@ -17,7 +17,10 @@ Data:
   # DatabaseUrl: "file::memory:?mode=memory&cache=shared" # sqlite in-memory database
 
   # DatabaseType: postgres
-  # DatabaseUrl: "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full:" #Postgres example URL
+  # DatabaseUrl: "postgres://username:password@host/database?sslmode=disable:"
+
+  # DatabaseType: mysql
+  # DatabaseUrl: "username:password@tcp(host)/database"
 
 
   ## For making SSL connections to various database backends

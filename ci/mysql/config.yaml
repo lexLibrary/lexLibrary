@@ -5,4 +5,4 @@ Web:
   MaxUploadMemoryMB: 10
 Data:
   DatabaseType: mysql
-  DatabaseUrl: "root:lexlibrary@mysql:3306/"
+  DatabaseUrl: "root:lexlibrary@tcp(mysql:3306)/"

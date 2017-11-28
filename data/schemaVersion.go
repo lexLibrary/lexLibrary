@@ -31,6 +31,8 @@ type schemaVer struct {
 
 	Keep column and table names in lowercase and separate words with underscores
 	tables should be named for their collections (i.e. plural)
+
+	For best compatibility, only have one statement per version; i.e. no semicolons
 */
 
 var schemaVersions = []schemaVer{
@@ -39,7 +41,7 @@ var schemaVersions = []schemaVer{
 			create table schema_versions (
 				version INTEGER NOT NULL PRIMARY KEY,
 				rollback {{text}} NOT NULL
-			);
+			)
 		`),
 		rollback: NewQuery("drop table schema_versions"),
 	},
@@ -48,9 +50,12 @@ var schemaVersions = []schemaVer{
 			create table logs (
 				occurred {{datetime}} NOT NULL,
 				message {{text}}
-			);
-			create index i_occurred on logs (occurred);
+			)
 		`),
-		rollback: NewQuery("drop table logs"),
+		rollback: NewQuery("DROP INDEX i_occurred ON logs"),
+	},
+	schemaVer{
+		update:   NewQuery("create index i_occurred on logs (occurred)"),
+		rollback: NewQuery("Drop index i_occurred"),
 	},
 }

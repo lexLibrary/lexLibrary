@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql" // register mysql
-	_ "github.com/lib/pq"              // register postgres
-	_ "github.com/mattn/go-sqlite3"    // register sqlite3
+	mysqlDriver "github.com/go-sql-driver/mysql" // register mysql
+	_ "github.com/lib/pq"                        // register postgres
+	_ "github.com/mattn/go-sqlite3"              // register sqlite3
 	"github.com/pkg/errors"
 )
 
@@ -105,6 +105,23 @@ func Init(cfg Config) error {
 	return nil
 }
 
+func testDB(attempt int) {
+	maxAttempts := 10
+	sleep := 3 * time.Second
+
+	err := db.Ping()
+
+	if err != nil {
+		if attempt >= maxAttempts {
+			log.Fatalf("Error Connecting to database: %s", err)
+		}
+		left := time.Duration(maxAttempts-attempt) * sleep
+		log.Printf("Error Connecting to database: %s\n ... Retrying for %v. CTRL-c to stop", err, left)
+		time.Sleep(sleep)
+		testDB(attempt + 1)
+	}
+}
+
 // Teardown cleanly tears down any data layer connections
 func Teardown() error {
 	log.Printf("Tearing down data connections")
@@ -126,6 +143,7 @@ func initSQLite(cfg Config) error {
 	if err != nil {
 		return err
 	}
+	testDB(1)
 
 	return nil
 }
@@ -136,6 +154,7 @@ func initPostgres(cfg Config) error {
 	if err != nil {
 		return err
 	}
+	testDB(1)
 
 	dbName := ""
 
@@ -150,13 +169,13 @@ func initPostgres(cfg Config) error {
 		count := 0
 		err = db.QueryRow("SELECT count(*) FROM pg_database WHERE datname = $1", databaseName).Scan(&count)
 		if err != nil {
-			return errors.Wrapf(err, "Looking for $s Database", databaseName)
+			return errors.Wrapf(err, "Looking for %s Database", databaseName)
 		}
 
 		if count == 0 {
 			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
 			if err != nil {
-				return errors.Wrapf(err, "Creating $s database", databaseName)
+				return errors.Wrapf(err, "Creating %s database", databaseName)
 			}
 		}
 		// reopen DB connection on new database
@@ -170,6 +189,8 @@ func initPostgres(cfg Config) error {
 		if err != nil {
 			return err
 		}
+
+		testDB(1)
 	}
 	// db connection is pointing at a specific database, use as lexLibrary DB
 
@@ -177,49 +198,58 @@ func initPostgres(cfg Config) error {
 }
 
 func initMySQL(cfg Config) error {
-	var err error
-	db, err = sql.Open("mysql", cfg.DatabaseURL)
+	mCfg, err := mysqlDriver.ParseDSN(cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}
 
-	dbName := ""
+	mCfg.ParseTime = true
 
-	err = db.QueryRow("SELECT DATABASE()").Scan(&dbName)
+	db, err = sql.Open("mysql", mCfg.FormatDSN())
+	if err != nil {
+		return err
+	}
+	testDB(1)
+
+	var dbName string
+
+	err = db.QueryRow("SELECT IFNULL(DATABASE(),'mysql')").Scan(&dbName)
 	if err != nil {
 		return errors.Wrap(err, "Getting current database")
 	}
 
-	return fmt.Errorf(dbName)
+	if dbName == "mysql" {
+		// db connection is pointing at default database, check for lexLibrary DB
+		// and create as necessary
+		count := 0
+		err = db.QueryRow(`
+			SELECT count(*) 
+			FROM INFORMATION_SCHEMA.SCHEMATA
+			where SCHEMA_NAME = ?
+		`, databaseName).Scan(&count)
+		if err != nil {
+			return errors.Wrapf(err, "Looking for %s Database", databaseName)
+		}
 
-	// if dbName == "postgres" {
-	// 	// db connection is pointing at default database, check for lexLibrary DB
-	// 	// and create as necessary
-	// 	count := 0
-	// 	err = db.QueryRow("SELECT count(*) FROM pg_database WHERE datname = $1", databaseName).Scan(&count)
-	// 	if err != nil {
-	// 		return errors.Wrapf(err, "Looking for $s Database", databaseName)
-	// 	}
+		if count == 0 {
+			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
+			if err != nil {
+				return errors.Wrapf(err, "Creating %s database", databaseName)
+			}
+		}
 
-	// 	if count == 0 {
-	// 		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
-	// 		if err != nil {
-	// 			return errors.Wrapf(err, "Creating $s database", databaseName)
-	// 		}
-	// 	}
-	// 	// reopen DB connection on new database
-	// 	u, err := url.Parse(cfg.DatabaseURL)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+		// reopen DB connection on new database
 
-	// 	u.Path = path.Join(u.Path, databaseName)
-	// 	db, err = sql.Open("postgres", u.String())
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-	// // db connection is pointing at a specific database, use as lexLibrary DB
+		mCfg.DBName = databaseName
 
-	// return nil
+		db, err = sql.Open("mysql", mCfg.FormatDSN())
+		if err != nil {
+			return err
+		}
+
+		testDB(1)
+	}
+	// db connection is pointing at a specific database, use as lexLibrary DB
+
+	return nil
 }

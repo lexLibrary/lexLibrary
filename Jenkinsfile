@@ -39,6 +39,15 @@ pipeline {
                         '''
                     }
                 }
+                stage('mysql') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh mysql
+                        '''
+                    }
+                }
+
             }
         }
     }
