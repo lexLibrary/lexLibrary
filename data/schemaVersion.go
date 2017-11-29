@@ -58,4 +58,14 @@ var schemaVersions = []schemaVer{
 		update:   NewQuery("create index i_occurred on logs (occurred)"),
 		rollback: NewQuery("Drop index i_occurred"),
 	},
+	schemaVer{
+		update: NewQuery(`
+			create table settings (
+				key {{text}} NOT NULL PRIMARY KEY,
+				description {{text}} NOT NULL,
+				value {{text}} NOT NULL
+			)
+		`),
+		rollback: NewQuery("DROP table settings"),
+	},
 }
