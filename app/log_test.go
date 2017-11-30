@@ -94,4 +94,20 @@ func TestLog(t *testing.T) {
 			t.Fatalf("Log message '%s' does not contain the search value of '%s'", logs[0].Message, search)
 		}
 	})
+
+	t.Run("Logger", func(t *testing.T) {
+		entry := "Test Logger entry"
+		logger := app.Logger("Test Prefix: ")
+
+		logger.Print(entry)
+
+		logs, err := app.LogGet(0, 1)
+		if err != nil {
+			t.Fatalf("Error getting logs after logger test")
+		}
+		if !strings.Contains(logs[0].Message, entry) {
+			t.Fatalf("Incorrect logger entry found. Expected log to contain %s, log was %s",
+				entry, logs[0].Message)
+		}
+	})
 }

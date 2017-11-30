@@ -131,7 +131,6 @@ func testDB(attempt int) {
 
 // Teardown cleanly tears down any data layer connections
 func Teardown() error {
-	log.Printf("Tearing down data connections")
 	return db.Close()
 }
 

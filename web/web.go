@@ -4,6 +4,7 @@ package web
 
 import (
 	"compress/gzip"
+	"context"
 	"crypto/tls"
 	"log"
 	"net/http"
@@ -54,6 +55,8 @@ func init() {
 	}
 }
 
+var server *http.Server
+
 // StartServer starts the Lex Library webserver with the passed in
 // configuration
 func StartServer(cfg Config) error {
@@ -81,12 +84,12 @@ func StartServer(cfg Config) error {
 
 	tlsCFG := &tls.Config{MinVersion: cfg.MinTLSVersion}
 
-	server := &http.Server{
+	server = &http.Server{
 		Handler:        setupRoutes(),
 		ReadTimeout:    readTimeout,
 		WriteTimeout:   writeTimeout,
 		MaxHeaderBytes: cfg.MaxHeaderBytes,
-		ErrorLog:       app.Logger("Web Server"),
+		ErrorLog:       app.Logger("Lex Library Web Server: "),
 	}
 
 	//TODO: Error log handling
@@ -112,6 +115,11 @@ func StartServer(cfg Config) error {
 	}
 
 	return err
+}
+
+// Teardown gracefully tears down the webserver
+func Teardown() error {
+	return server.Shutdown(context.TODO())
 }
 
 func standardHeaders(w http.ResponseWriter) {

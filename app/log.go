@@ -111,5 +111,5 @@ func (l *logWriter) Write(p []byte) (n int, err error) {
 // Logger returns a new logger instance that writes the logs to the
 // database Log table.
 func Logger(prefix string) *log.Logger {
-	return log.New(&logWriter{}, prefix, 0)
+	return log.New(&logWriter{}, prefix, log.Llongfile)
 }

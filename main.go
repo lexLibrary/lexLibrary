@@ -27,10 +27,13 @@ func init() {
 		for sig := range c {
 			if sig == os.Interrupt {
 				log.Print("Lex Library is shutting down")
-				//TODO: Cleanly shutdown web, app
-				err := data.Teardown()
+				err := web.Teardown()
 				if err != nil {
-					log.Fatalf("Error Tearing down Data layer: %s", err)
+					log.Fatalf("Error Tearing down the Web layer: %s", err)
+				}
+				err = data.Teardown()
+				if err != nil {
+					log.Fatalf("Error Tearing down the Data layer: %s", err)
 				}
 				os.Exit(0)
 			}
