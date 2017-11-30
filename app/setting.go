@@ -16,7 +16,7 @@ type Setting struct {
 // ErrSettingNotFound is returned when a setting can't be found for the given key
 var ErrSettingNotFound = NotFound("No setting can be found for the given key")
 
-var sqlSettingsGet = data.NewQuery("Select Key, Value from settings")
+var sqlSettingsGet = data.NewQuery("select key, value from settings")
 
 // func Settings() ([]Setting, error) {
 

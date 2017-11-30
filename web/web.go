@@ -32,6 +32,7 @@ func DefaultConfig() Config {
 	return Config{
 		MinTLSVersion:     tls.VersionTLS10,
 		MaxUploadMemoryMB: 10, //10MB default
+		Port:              8080,
 	}
 }
 

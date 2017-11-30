@@ -54,6 +54,7 @@ type Config struct {
 // DefaultConfig returns the default configuration for the data layer
 func DefaultConfig() Config {
 	return Config{
+		DatabaseType: "sqlite",
 		DatabaseFile: "./lexLibrary.db",
 		SearchFile:   "./lexLibrary.search",
 	}
