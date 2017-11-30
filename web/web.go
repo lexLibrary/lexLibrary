@@ -11,8 +11,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/lexLibrary/lexLibrary/app"
 )
 
+// Config is the configurable properties of the LL web server
 type Config struct {
 	ReadTimeout       string
 	WriteTimeout      string
@@ -50,6 +53,8 @@ func init() {
 	}
 }
 
+// StartServer starts the Lex Library webserver with the passed in
+// configuration
 func StartServer(cfg Config) error {
 	if cfg.MaxUploadMemoryMB <= 0 {
 		cfg.MaxUploadMemoryMB = DefaultConfig().MaxUploadMemoryMB
@@ -80,7 +85,7 @@ func StartServer(cfg Config) error {
 		ReadTimeout:    readTimeout,
 		WriteTimeout:   writeTimeout,
 		MaxHeaderBytes: cfg.MaxHeaderBytes,
-		ErrorLog:       nil,
+		ErrorLog:       app.Logger("Web Server"),
 	}
 
 	//TODO: Error log handling

@@ -4,6 +4,7 @@ package app
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -95,4 +96,20 @@ func LogSearch(search string, offset, limit int) ([]*Log, error) {
 	}
 
 	return logs, nil
+}
+
+type logWriter struct {
+}
+
+// Write implements io.Writer by writing the bytes to the Log table
+// Each call to write generates a new entry in the database
+func (l *logWriter) Write(p []byte) (n int, err error) {
+	LogError(fmt.Errorf("%s", p))
+	return len(p), nil
+}
+
+// Logger returns a new logger instance that writes the logs to the
+// database Log table.
+func Logger(prefix string) *log.Logger {
+	return log.New(&logWriter{}, prefix, 0)
 }
