@@ -105,17 +105,13 @@ func Init(cfg Config) error {
 	db.SetMaxOpenConns(cfg.MaxOpenConnections)
 
 	err = ensureSchema(cfg.AllowSchemaRollback)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func testDB(attempt int) {
 	maxAttempts := 20
 	sleep := 3 * time.Second
-
 	err := db.Ping()
 
 	if err != nil {
@@ -160,6 +156,7 @@ func initPostgres(cfg Config) error {
 	if err != nil {
 		return err
 	}
+
 	testDB(1)
 
 	dbName := ""

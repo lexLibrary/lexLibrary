@@ -92,8 +92,6 @@ func StartServer(cfg Config) error {
 		ErrorLog:       app.Logger("Lex Library Web Server: "),
 	}
 
-	//TODO: Error log handling
-
 	if cfg.CertFile == "" || cfg.KeyFile == "" {
 		if cfg.Port <= 0 {
 			cfg.Port = 80
@@ -128,7 +126,7 @@ func standardHeaders(w http.ResponseWriter) {
 	}
 }
 
-// gzipReponse gzips the response data for any respones writers defined to use it
+// gzipResponse gzips the response data for any respones writers defined to use it
 type gzipResponse struct {
 	zip *gzip.Writer
 	http.ResponseWriter

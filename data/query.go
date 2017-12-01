@@ -125,34 +125,19 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"sqlite": func() bool {
-			if dbType == sqlite {
-				return true
-			}
-			return false
+			return dbType == sqlite
 		},
 		"postgres": func() bool {
-			if dbType == postgres {
-				return true
-			}
-			return false
+			return dbType == postgres
 		},
 		"mysql": func() bool {
-			if dbType == mysql {
-				return true
-			}
-			return false
+			return dbType == mysql
 		},
 		"cockroachdb": func() bool {
-			if dbType == cockroachdb {
-				return true
-			}
-			return false
+			return dbType == cockroachdb
 		},
 		"tidb": func() bool {
-			if dbType == tidb {
-				return true
-			}
-			return false
+			return dbType == tidb
 		},
 	}
 
@@ -300,7 +285,7 @@ func (q *Query) Debug(args ...sql.NamedArg) string {
 		}
 
 		for i := range columns {
-			str := ""
+			var str string
 			switch values[i].(type) {
 			case nil:
 				str = "NULL"

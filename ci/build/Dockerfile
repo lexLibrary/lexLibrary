@@ -4,6 +4,7 @@ FROM ubuntu:17.04
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    git \
     wget
 
 ENV VERSION=1.9.2
@@ -12,10 +13,12 @@ ENV ARCH=amd64
 RUN wget https://storage.googleapis.com/golang/go$VERSION.$OS-$ARCH.tar.gz
 RUN tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
 
-ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH=/go
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
+RUN go get -u github.com/alecthomas/gometalinter && gometalinter --install
 
 # Node
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -
 RUN apt-get install -y nodejs
+

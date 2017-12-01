@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+//TODO: handle multiple languages here?
+
 // Fail is an error whos contents can be exposed to the client and is usually the result
 // of incorrect client input
 type Fail struct {

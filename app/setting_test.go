@@ -10,14 +10,14 @@ import (
 
 func TestSetting(t *testing.T) {
 	t.Run("Default", func(t *testing.T) {
-		value, err := app.SettingDefault("AllowPublic")
+		setting, err := app.SettingDefault("AllowPublic")
 		if err != nil {
 			t.Fatalf("Error getting setting default")
 		}
 
-		b, ok := value.(bool)
+		b, ok := setting.Value.(bool)
 		if !ok {
-			t.Fatalf("AllowPublic is not the correct type, expected bool, got %t", value)
+			t.Fatalf("AllowPublic is not the correct type, expected bool, got %t", setting.Value)
 		}
 
 		if !b {
