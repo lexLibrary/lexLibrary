@@ -21,6 +21,28 @@ pipeline {
                 '''
             }
         }
+        stage('lint and cover') {
+            agent {
+                dockerfile { 
+                    dir 'ci/build' 
+                    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
+                }
+            }
+            environment {
+                GOPATH = '/go'
+                REPO = '/go/src/github.com/lexLibrary/lexLibrary'
+                HOME = '.'
+            }
+            steps {
+                sh '''
+                    cd $REPO
+                    gometalinter ./... --vendor --deadline 1m --disable-all \
+                        --enable=megacheck
+                    go test -cover
+
+                '''
+            }
+        }
         stage('test') {
             parallel {
                 stage('sqlite') {
