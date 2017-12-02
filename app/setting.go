@@ -34,9 +34,39 @@ var sqlSettingInsert = data.NewQuery(`
 
 // Settings returns all of the settings in Lex Library.  If a setting is not set in the database
 // the default for that setting is returned
-// func Settings() ([]Setting, error) {
+func Settings() ([]Setting, error) {
+	settings := make([]Setting, len(settingDefaults))
 
-// }
+	copy(settings, settingDefaults)
+
+	rows, err := sqlSettingsGet.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var key string
+		var value string
+
+		err = rows.Scan(&key, &value)
+		if err != nil {
+			return nil, err
+		}
+
+		for i := range settings {
+			if settings[i].Key == key {
+				err = settings[i].setValue(value)
+				if err != nil {
+					return nil, err
+				}
+				break
+			}
+		}
+
+	}
+	return settings, nil
+}
 
 // SettingGet will look for a setting that has the passed in key
 // It's different from SettingVal in that it returns an error if the setting
@@ -59,35 +89,9 @@ func SettingGet(key string) (Setting, error) {
 		return setting, errors.Wrapf(err, "Error getting setting %s", key)
 	}
 
-	var value interface{}
+	err = setting.setValue(strValue)
 
-	switch setting.Value.(type) {
-	case int:
-		value, err = strconv.Atoi(strValue)
-	case string:
-		value = strValue
-	case bool:
-		value, err = strconv.ParseBool(strValue)
-	case time.Duration:
-		value, err = time.ParseDuration(strValue)
-	default:
-		return setting, errors.Errorf("Invalid setting type %T for setting %s", value, key)
-	}
-
-	if err != nil {
-		// if a setting is stored in an un-parsable format in the DB, then update the db to the default value
-		// in a a proper format and log that it occurred
-
-		LogError(errors.Wrapf(err,
-			"The value of setting %s in the database is in an invalid format. Updating to default value", key))
-		err = SettingSet(key, setting.Value)
-		if err != nil {
-			return setting, errors.Wrapf(err, "Error setting default value for %s", key)
-		}
-	}
-
-	setting.Value = value
-	return setting, nil
+	return setting, err
 }
 
 // SettingVal returns a setting.  if the setting does not exist it will panic
@@ -159,6 +163,40 @@ func SettingDefault(key string) (Setting, error) {
 		}
 	}
 	return Setting{}, ErrSettingNotFound
+}
+
+func (s *Setting) setValue(tableValue string) error {
+	var value interface{}
+	var err error
+
+	switch s.Value.(type) {
+	case int:
+		value, err = strconv.Atoi(tableValue)
+	case string:
+		value = tableValue
+	case bool:
+		value, err = strconv.ParseBool(tableValue)
+	case time.Duration:
+		value, err = time.ParseDuration(tableValue)
+	default:
+		return errors.Errorf("Invalid setting type %T for setting %s", s.Value, s.Key)
+	}
+
+	if err != nil {
+		// if a setting is stored in an un-parsable format in the DB, then update the db to the default value
+		// in a a proper format and log that it occurred
+
+		LogError(errors.Wrapf(err,
+			"The value of setting %s in the database is in an invalid format (%s). Updating to default value", s.Key,
+			tableValue))
+		err = SettingSet(s.Key, s.Value)
+		if err != nil {
+			return errors.Wrapf(err, "Error setting default value for %s", s.Key)
+		}
+	}
+
+	s.Value = value
+	return nil
 }
 
 // String returns the string value of the setting
