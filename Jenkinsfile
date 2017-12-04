@@ -40,9 +40,11 @@ pipeline {
                         --enable=megacheck
                 '''
                 sh '''
+                    cd $REPO
                     go test -cover
                 '''
                 sh '''
+                    cd $REPO
                     go test ./... -race
                 '''
             }
