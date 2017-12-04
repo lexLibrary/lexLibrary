@@ -21,7 +21,7 @@ pipeline {
                 '''
             }
         }
-        stage('lint and cover') {
+        stage('static analysis') {
             agent {
                 dockerfile { 
                     dir 'ci/build' 
@@ -38,8 +38,12 @@ pipeline {
                     cd $REPO
                     gometalinter ./... --vendor --deadline 1m --disable-all \
                         --enable=megacheck
+                '''
+                sh '''
                     go test -cover
-
+                '''
+                sh '''
+                    go test ./... -race
                 '''
             }
         }

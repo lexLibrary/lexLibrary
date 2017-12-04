@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -37,9 +36,9 @@ func DefaultConfig() Config {
 	}
 }
 
-const (
-	strictTransportSecurity = "max-age=86400"
-)
+// const (
+// 	strictTransportSecurity = "max-age=86400"
+// )
 
 var (
 	zipPool         sync.Pool
@@ -120,47 +119,47 @@ func Teardown() error {
 	return server.Shutdown(context.TODO())
 }
 
-func standardHeaders(w http.ResponseWriter) {
-	if isSSL {
-		w.Header().Set("Strict-Transport-Security", strictTransportSecurity)
-	}
-}
+// func standardHeaders(w http.ResponseWriter) {
+// 	if isSSL {
+// 		w.Header().Set("Strict-Transport-Security", strictTransportSecurity)
+// 	}
+// }
 
 // gzipResponse gzips the response data for any respones writers defined to use it
-type gzipResponse struct {
-	zip *gzip.Writer
-	http.ResponseWriter
-}
+// type gzipResponse struct {
+// 	zip *gzip.Writer
+// 	http.ResponseWriter
+// }
 
-func (g *gzipResponse) Write(b []byte) (int, error) {
-	if g.zip == nil {
-		return g.ResponseWriter.Write(b)
-	}
-	return g.zip.Write(b)
-}
+// func (g *gzipResponse) Write(b []byte) (int, error) {
+// 	if g.zip == nil {
+// 		return g.ResponseWriter.Write(b)
+// 	}
+// 	return g.zip.Write(b)
+// }
 
-func (g *gzipResponse) Close() error {
-	if g.zip == nil {
-		return nil
-	}
-	err := g.zip.Close()
-	if err != nil {
-		return err
-	}
-	zipPool.Put(g.zip)
-	return nil
-}
+// func (g *gzipResponse) Close() error {
+// 	if g.zip == nil {
+// 		return nil
+// 	}
+// 	err := g.zip.Close()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	zipPool.Put(g.zip)
+// 	return nil
+// }
 
-func responseWriter(w http.ResponseWriter, r *http.Request) *gzipResponse {
-	var writer *gzip.Writer
+// func responseWriter(w http.ResponseWriter, r *http.Request) *gzipResponse {
+// 	var writer *gzip.Writer
 
-	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-		w.Header().Set("Content-Encoding", "gzip")
-		gz := zipPool.Get().(*gzip.Writer)
-		gz.Reset(w)
+// 	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+// 		w.Header().Set("Content-Encoding", "gzip")
+// 		gz := zipPool.Get().(*gzip.Writer)
+// 		gz.Reset(w)
 
-		writer = gz
-	}
+// 		writer = gz
+// 	}
 
-	return &gzipResponse{zip: writer, ResponseWriter: w}
-}
+// 	return &gzipResponse{zip: writer, ResponseWriter: w}
+// }
