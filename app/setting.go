@@ -69,8 +69,6 @@ func Settings() ([]Setting, error) {
 }
 
 // SettingGet will look for a setting that has the passed in key
-// It's different from SettingVal in that it returns an error if the setting
-// doesn't exist, rather than panicing.
 func SettingGet(key string) (Setting, error) {
 	var strValue string
 	setting, err := SettingDefault(key)
@@ -94,10 +92,10 @@ func SettingGet(key string) (Setting, error) {
 	return setting, err
 }
 
-// SettingVal returns a setting.  if the setting does not exist it will panic
+// SettingMust returns a setting.  If the setting does not exist it will panic
 // Meant as a shortcut for setting lookups by the application
 // SettingVal("AllowPublic").Bool()
-func SettingVal(key string) Setting {
+func SettingMust(key string) Setting {
 	setting, err := SettingGet(key)
 	if err != nil {
 		if err == ErrSettingNotFound {
@@ -112,7 +110,7 @@ func SettingVal(key string) Setting {
 
 // SettingSet updates the value of the passed in setting to the passed in value
 func SettingSet(key string, value interface{}) error {
-	setting, err := SettingGet(key)
+	setting, err := SettingDefault(key)
 	if err == ErrSettingNotFound {
 		return err
 	}
@@ -135,6 +133,8 @@ func SettingSet(key string, value interface{}) error {
 		return ErrSettingInvalidType
 	}
 
+	var tmp = ""
+	err = sqlSettingGet.QueryRow(sql.Named("key", key)).Scan(&tmp)
 	if err == sql.ErrNoRows {
 		_, err := sqlSettingInsert.Exec(
 			sql.Named("key", key),
@@ -143,12 +143,13 @@ func SettingSet(key string, value interface{}) error {
 		if err != nil {
 			return errors.Wrapf(err, "Error inserting setting %s", key)
 		}
+		return nil
 	}
 	if err != nil {
 		return err
 	}
 
-	_, err = sqlSettingUpdate.Exec(sql.Named("value", value))
+	_, err = sqlSettingUpdate.Exec(sql.Named("key", key), sql.Named("value", value))
 	if err != nil {
 		return errors.Wrapf(err, "Error updating setting %s", key)
 	}
@@ -189,10 +190,12 @@ func (s *Setting) setValue(tableValue string) error {
 		LogError(errors.Wrapf(err,
 			"The value of setting %s in the database is in an invalid format (%s). Updating to default value", s.Key,
 			tableValue))
+
 		err = SettingSet(s.Key, s.Value)
 		if err != nil {
 			return errors.Wrapf(err, "Error setting default value for %s", s.Key)
 		}
+		return nil
 	}
 
 	s.Value = value
