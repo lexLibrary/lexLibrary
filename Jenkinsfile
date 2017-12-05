@@ -41,7 +41,7 @@ pipeline {
                 '''
                 sh '''
                     cd $REPO
-                    go test -cover
+                    go test ./... -cover
                 '''
                 sh '''
                     cd $REPO
