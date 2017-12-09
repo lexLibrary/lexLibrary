@@ -18,13 +18,15 @@ type Setting struct {
 	Key         string
 	Description string
 	Value       interface{}
+	Options     []interface{}
+	Category    string
 }
 
 // ErrSettingNotFound is returned when a setting can't be found for the given key
 var ErrSettingNotFound = NotFound("No setting can be found for the given key")
 
-// ErrSettingInvalidType is returned when a setting is being set to a type that is invalid for the setting
-var ErrSettingInvalidType = NotFound("The setting cannot be set to a value of this type")
+// ErrSettingInvalidValue is returned when a setting is being set to a value that is invalid for the setting
+var ErrSettingInvalidValue = NotFound("The setting cannot be set to this value")
 
 var sqlSettingsGet = data.NewQuery("select key, value from settings")
 var sqlSettingGet = data.NewQuery(`select value from settings where key = {{arg "key"}}`)
@@ -115,8 +117,8 @@ func SettingSet(key string, value interface{}) error {
 		return err
 	}
 
-	if !reflect.TypeOf(value).AssignableTo(reflect.TypeOf(setting.Value)) {
-		return ErrSettingInvalidType
+	if !setting.canSet(value) {
+		return ErrSettingInvalidValue
 	}
 
 	strValue := ""
@@ -130,7 +132,7 @@ func SettingSet(key string, value interface{}) error {
 	case time.Duration:
 		strValue = value.String()
 	default:
-		return ErrSettingInvalidType
+		return ErrSettingInvalidValue
 	}
 
 	var tmp = ""
@@ -240,4 +242,44 @@ func (s *Setting) Duration() time.Duration {
 		panic(fmt.Sprintf("Setting %s is not of type Duration", s.Key))
 	}
 	return value
+}
+
+// canSet tests if the passed in value can be set for the given setting
+func (s *Setting) canSet(value interface{}) bool {
+	if !reflect.TypeOf(value).AssignableTo(reflect.TypeOf(s.Value)) {
+		return false
+	}
+
+	found := len(s.Options) == 0 //don't check options if there are none
+
+optionsLoop:
+	for i := range s.Options {
+		switch value := value.(type) {
+		case int:
+			if value == s.Options[i].(int) {
+				found = true
+				break optionsLoop
+			}
+		case string:
+			if value == s.Options[i].(string) {
+				found = true
+				break optionsLoop
+			}
+		case bool:
+			if value == s.Options[i].(bool) {
+				found = true
+				break optionsLoop
+			}
+		case time.Duration:
+			if value == s.Options[i].(time.Duration) {
+				found = true
+				break optionsLoop
+			}
+		default:
+			found = false
+			break optionsLoop
+		}
+	}
+
+	return found
 }

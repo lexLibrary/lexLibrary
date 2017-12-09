@@ -7,6 +7,7 @@ package app
 var settingDefaults = []Setting{
 	Setting{
 		Key:         "AllowPublic",
+		Category:    "Documents",
 		Description: "Whether or not to allow documents to be published that are accessible without logging in to Lex Library",
 		Value:       true,
 	},

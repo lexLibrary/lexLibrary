@@ -130,7 +130,7 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("No error returned from a bad Set setting key")
 		}
 
-		if err != app.ErrSettingInvalidType {
+		if err != app.ErrSettingInvalidValue {
 			t.Fatalf("Invalid error returned for Not Found key. Expected %v, got %v", app.ErrSettingNotFound, err)
 		}
 	})
@@ -230,5 +230,7 @@ func TestSetting(t *testing.T) {
 
 		_ = app.SettingMust("badKey")
 	})
+
+	//TODO: Test settings with options
 
 }
