@@ -19,3 +19,8 @@ config.yaml
 config.toml
 lexLibrary.db
 lexLibrary.search
+
+*node_modules*
+*.vscode*
+*npm-debug.log*
+

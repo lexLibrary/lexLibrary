@@ -11,5 +11,8 @@
     "url": "github.com/lexlibrary/lexlibrary"
   },
   "author": "Tim Shannon",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.9.1"
+  }
 }
