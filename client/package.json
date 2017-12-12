@@ -1,0 +1,15 @@
+{
+  "name": "lex-library",
+  "version": "0.0.1",
+  "description": "Web client for Lex Library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/lexlibrary/lexlibrary"
+  },
+  "author": "Tim Shannon",
+  "license": "MIT"
+}
