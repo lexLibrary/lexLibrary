@@ -36,14 +36,15 @@ func DefaultConfig() Config {
 	}
 }
 
-// const (
-// 	strictTransportSecurity = "max-age=86400"
-// )
+const (
+	strictTransportSecurity = "max-age=86400"
+)
 
 var (
 	zipPool         sync.Pool
 	maxUploadMemory = int64(10 << 20)
 	isSSL           = false
+	devMode         = false
 )
 
 func init() {
@@ -58,7 +59,9 @@ var server *http.Server
 
 // StartServer starts the Lex Library webserver with the passed in
 // configuration
-func StartServer(cfg Config) error {
+func StartServer(cfg Config, developMode bool) error {
+	devMode = developMode
+
 	if cfg.MaxUploadMemoryMB <= 0 {
 		cfg.MaxUploadMemoryMB = DefaultConfig().MaxUploadMemoryMB
 	}
@@ -119,11 +122,11 @@ func Teardown() error {
 	return server.Shutdown(context.TODO())
 }
 
-// func standardHeaders(w http.ResponseWriter) {
-// 	if isSSL {
-// 		w.Header().Set("Strict-Transport-Security", strictTransportSecurity)
-// 	}
-// }
+func standardHeaders(w http.ResponseWriter) {
+	if isSSL {
+		w.Header().Set("Strict-Transport-Security", strictTransportSecurity)
+	}
+}
 
 // gzipResponse gzips the response data for any respones writers defined to use it
 // type gzipResponse struct {

@@ -4,6 +4,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -13,12 +14,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+const baseVersion = "0.1.%d"
+
 const defaultConfigFile = "./config.yaml"
 
 var flagConfigFile string
+var flagDevMode bool
 
 func init() {
 	flag.StringVar(&flagConfigFile, "config", defaultConfigFile, "Sets the path to the configuration file. Either a .YAML, .JSON, or .TOML file")
+	flag.BoolVar(&flagDevMode, "dev", false, "Runs Lex Library in Development mode where templates are reloaded and static files are not cached.")
 
 	go func() {
 		//Capture program shutdown, to make sure everything shuts down nicely
@@ -84,8 +89,14 @@ func main() {
 
 	log.Println("Data layer initialized")
 
-	err = web.StartServer(cfg.Web)
+	err = web.StartServer(cfg.Web, flagDevMode)
 	if err != nil {
 		log.Fatalf("Error initializing web server: %s", err)
 	}
+}
+
+// version returns a semver compatible version built on the hard coded Major and Minor Version Above
+// and the buildVersion which is set dynamically by the build process
+func version() string {
+	return fmt.Sprintf(baseVersion, buildVersion)
 }

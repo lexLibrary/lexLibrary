@@ -23,4 +23,6 @@ lexLibrary.search
 *node_modules*
 *.vscode*
 *npm-debug.log*
+# client build directory
+client/deploy/*
 

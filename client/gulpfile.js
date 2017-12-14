@@ -3,11 +3,14 @@
 var gulp = require('gulp');
 // var sass = require('gulp-sass');
 
-gulp.task('js', function (callback) {
-    // rollup
-    // buble
-    // copy veu dist to static
-});
+
+var deployDir = './deploy';
+
+// gulp.task('js', function (callback) {
+//     // rollup
+//     // buble
+//     // copy veu dist to static
+// });
 
 
 // TODO: bulma
@@ -24,22 +27,23 @@ gulp.task('js', function (callback) {
 
 
 // static files
-// gulp.task('html', function () {
-//     return gulp.src('./src/*.html')
-//         .pipe(gulp.dest(staticDir))
-//         .pipe(gulp.dest(cordovaDir));
-// });
+gulp.task('html', function () {
+    return gulp.src([
+        './**/*.html',
+        '!deploy/**/*',
+        '!node_modules/**/*'
+    ]).pipe(gulp.dest(deployDir));
+});
 
 // gulp.task('images', function () {
 //     return gulp.src('./src/images/*')
 //         .pipe(gulp.dest(path.join(staticDir, 'images')))
-//         .pipe(gulp.dest(path.join(cordovaDir, 'images')));
 // });
 
 
 // watch for changes
 gulp.task('watch', function () {
-    // gulp.watch('./src/*.html', ['html']);
+    gulp.watch('./*.html', ['html']);
     // gulp.watch('./src/images/*', ['images']);
     // gulp.watch(['./src/sass/**/*.scss'], ['css']);
     // gulp.watch(['./src/ts/**/*.ts', './src/ts/**/*.vue'], ['js']);
@@ -47,7 +51,7 @@ gulp.task('watch', function () {
 
 
 // start default task
-gulp.task('default', ['images', 'css', 'js', 'watch']);
+gulp.task('default', ['html']);
 
 
 //TODO: Production build task
