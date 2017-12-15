@@ -9,8 +9,12 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/lexLibrary/lexLibrary/files"
+	"github.com/pkg/errors"
 
 	"github.com/lexLibrary/lexLibrary/app"
 )
@@ -45,6 +49,8 @@ var (
 	maxUploadMemory = int64(10 << 20)
 	isSSL           = false
 	devMode         = false
+	version         = ""
+	gitSha          = ""
 )
 
 func init() {
@@ -120,6 +126,21 @@ func StartServer(cfg Config, developMode bool) error {
 // Teardown gracefully tears down the webserver
 func Teardown() error {
 	return server.Shutdown(context.TODO())
+}
+
+func setVersion() error {
+	b, err := files.Asset("version")
+	if err != nil {
+		errors.Wrap(err, "Loading version file")
+	}
+
+	v := strings.Split(string(b), "\n")
+	if len(v) == 2 {
+		version = v[0]
+		gitSha = v[1]
+	}
+
+	return nil
 }
 
 func standardHeaders(w http.ResponseWriter) {

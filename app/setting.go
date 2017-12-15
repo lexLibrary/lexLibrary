@@ -84,7 +84,7 @@ func SettingGet(key string) (Setting, error) {
 		return setting, nil
 	}
 	if err != nil {
-		// an error occurred retriving the setting from the DB
+		// an error occurred retrieving the setting from the DB
 		// return the errror and the default, and let the consumer decide what to do
 		return setting, errors.Wrapf(err, "Error getting setting %s", key)
 	}

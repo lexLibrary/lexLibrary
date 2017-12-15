@@ -16,8 +16,7 @@ pipeline {
             steps {
                 sh '''
                     cd $REPO
-                    go clean -i -a
-                    go build -o lexLibrary
+                    ./build.sh
                 '''
             }
         }
