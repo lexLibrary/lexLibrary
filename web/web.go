@@ -50,7 +50,6 @@ var (
 	isSSL           = false
 	devMode         = false
 	version         = ""
-	gitSha          = ""
 )
 
 func init() {
@@ -68,6 +67,10 @@ var server *http.Server
 func StartServer(cfg Config, developMode bool) error {
 	devMode = developMode
 
+	err := setVersion()
+	if err != nil {
+		return err
+	}
 	if cfg.MaxUploadMemoryMB <= 0 {
 		cfg.MaxUploadMemoryMB = DefaultConfig().MaxUploadMemoryMB
 	}
@@ -75,7 +78,6 @@ func StartServer(cfg Config, developMode bool) error {
 
 	var readTimeout time.Duration
 	var writeTimeout time.Duration
-	var err error
 
 	if cfg.ReadTimeout != "" {
 		readTimeout, err = time.ParseDuration(cfg.ReadTimeout)
@@ -134,11 +136,7 @@ func setVersion() error {
 		errors.Wrap(err, "Loading version file")
 	}
 
-	v := strings.Split(string(b), "\n")
-	if len(v) == 2 {
-		version = v[0]
-		gitSha = v[1]
-	}
+	version = strings.TrimSpace(string(b))
 
 	return nil
 }
@@ -149,7 +147,7 @@ func standardHeaders(w http.ResponseWriter) {
 	}
 }
 
-// gzipResponse gzips the response data for any respones writers defined to use it
+// // gzipResponse gzips the response data for any respones writers defined to use it
 // type gzipResponse struct {
 // 	zip *gzip.Writer
 // 	http.ResponseWriter

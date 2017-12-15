@@ -19,5 +19,11 @@ func setupRoutes() http.Handler {
 		// PanicHandler:           panicHandler,
 	}
 
+	// static folders
+	rootHandler.GET("/images/*image", serveStatic("images/", false))
+
+	// pages
+	rootHandler.GET("/", serveStatic("index.template.html", true))
+
 	return rootHandler
 }

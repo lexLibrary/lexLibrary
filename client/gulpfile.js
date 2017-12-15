@@ -1,6 +1,8 @@
 // Copyright (c) 2017 Townsourced Inc.
 
 var gulp = require('gulp');
+var path = require('path');
+
 // var sass = require('gulp-sass');
 
 
@@ -35,23 +37,23 @@ gulp.task('html', function () {
     ]).pipe(gulp.dest(deployDir));
 });
 
-// gulp.task('images', function () {
-//     return gulp.src('./src/images/*')
-//         .pipe(gulp.dest(path.join(staticDir, 'images')))
-// });
+gulp.task('images', function () {
+    return gulp.src('./images/*')
+        .pipe(gulp.dest(path.join(deployDir, 'images')))
+});
 
 
 // watch for changes
 gulp.task('watch', function () {
-    gulp.watch('./*.html', ['html']);
-    // gulp.watch('./src/images/*', ['images']);
+    gulp.watch('./**/.html', ['html']);
+    gulp.watch('./images/**/*', ['images']);
     // gulp.watch(['./src/sass/**/*.scss'], ['css']);
     // gulp.watch(['./src/ts/**/*.ts', './src/ts/**/*.vue'], ['js']);
 });
 
 
 // start default task
-gulp.task('default', ['html']);
+gulp.task('default', ['html', 'images']);
 
 
 //TODO: Production build task

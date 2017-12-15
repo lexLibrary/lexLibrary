@@ -8,22 +8,13 @@ gulp
 
 cd ..
 
+VERSION=$(git describe --tags --long)
+
 # set version and git sha in version file
-VERSION=$(head -n 1 version)
-SHA=$(git rev-parse --short HEAD)
+echo "$VERSION">version
 
-a=( ${VERSION//./ } )
-
-((++a[2]))
-
-VERSION=${a[0]}.${a[1]}.${a[2]}
-
-echo "$VERSION
-$SHA" > version
-
-
-# embed client and version info into executable
-go-bindata -nomemcopy -pkg files -o files/data.go ./version ./client/deploy
+# embed client data and version info into executable
+go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go ./version ./client/deploy/...
 
 #build executable
 go clean -i -a
