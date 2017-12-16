@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/files"
-	"github.com/pkg/errors"
 
 	"github.com/lexLibrary/lexLibrary/app"
 )
@@ -133,7 +132,8 @@ func Teardown() error {
 func setVersion() error {
 	b, err := files.Asset("version")
 	if err != nil {
-		errors.Wrap(err, "Loading version file")
+		version = "unset"
+		return nil
 	}
 
 	version = strings.TrimSpace(string(b))

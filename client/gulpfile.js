@@ -45,7 +45,7 @@ gulp.task('images', function () {
 
 // watch for changes
 gulp.task('watch', function () {
-    gulp.watch('./**/.html', ['html']);
+    gulp.watch('./**/*.html', ['html']);
     gulp.watch('./images/**/*', ['images']);
     // gulp.watch(['./src/sass/**/*.scss'], ['css']);
     // gulp.watch(['./src/ts/**/*.ts', './src/ts/**/*.vue'], ['js']);

@@ -3,6 +3,7 @@
 set -e
 
 mkdir -p client/deploy
+rm -rf files/
 
 VERSION=$(git describe --tags --long)
 
@@ -13,14 +14,19 @@ go-bindata -debug -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bind
 
 go build -o lexLibrary
 
+ORANGE='\x1b[0;33m'
+NC='\x1b[0m' # No Color
+LIGHTGREEN='\x1b[1;32m'
+
 
 cd client 
-gulp watch | sed -e 's/^/[Gulp] /' &
+gulp watch |& sed -e "s/^/${LIGHTGREEN}[Gulp]${NC} /" &
+
 gpid=$!
 
 cd ..
  
-./lexLibrary | sed -e 's/^/[LexLibrary] /' &
+./lexLibrary "$@" |& sed -e "s/^/${ORANGE}[LexLibrary]${NC} /" &
 
 lpid=$!
 
