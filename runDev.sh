@@ -14,7 +14,7 @@ go-bindata -debug -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bind
 
 go build -o lexLibrary
 
-ORANGE='\x1b[0;33m'
+YELLOW='\x1b[1;33m'
 NC='\x1b[0m' # No Color
 LIGHTGREEN='\x1b[1;32m'
 
@@ -26,7 +26,7 @@ gpid=$!
 
 cd ..
  
-./lexLibrary "$@" |& sed -e "s/^/${ORANGE}[LexLibrary]${NC} /" &
+./lexLibrary "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 
 lpid=$!
 

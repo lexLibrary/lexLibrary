@@ -11,7 +11,7 @@ var deployDir = './deploy';
 // gulp.task('js', function (callback) {
 //     // rollup
 //     // buble
-//     // copy veu dist to static
+//     // copy vue dist to static
 // });
 
 
