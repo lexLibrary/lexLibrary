@@ -16,7 +16,7 @@ pipeline {
             steps {
                 sh '''
                     cd $REPO
-                    git tag
+                    git pull
                     ./build.sh
                 '''
             }
