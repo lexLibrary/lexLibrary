@@ -22,7 +22,7 @@ import (
 func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		if !devMode {
-			w.Header().Set("ETag", version)
+			w.Header().Set("ETag", version) // FIXME: Proper caching based on compiled version
 		}
 		if r.Method != "GET" {
 			//TODO: use LL 404 handler

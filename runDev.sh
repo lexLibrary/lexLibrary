@@ -20,13 +20,15 @@ LIGHTGREEN='\x1b[1;32m'
 
 
 cd client 
+gulp clean
+gulp dev
 gulp watch |& sed -e "s/^/${LIGHTGREEN}[Gulp]${NC} /" &
 
 gpid=$!
 
 cd ..
  
-./lexLibrary "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
+./lexLibrary -dev "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 
 lpid=$!
 

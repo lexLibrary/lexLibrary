@@ -80,6 +80,10 @@ func main() {
 		viper.Unmarshal(&cfg)
 	}
 
+	if flagDevMode {
+		log.Println("Starting in Development mode")
+	}
+
 	err = data.Init(cfg.Data)
 	if err != nil {
 		log.Fatalf("Error initializing data layer: %s", err)

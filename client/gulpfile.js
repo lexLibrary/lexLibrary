@@ -2,11 +2,13 @@
 
 var gulp = require('gulp');
 var path = require('path');
-
-// var sass = require('gulp-sass');
+var sass = require('gulp-sass');
+var sourcemaps = require('gulp-sourcemaps');
+var del = require('del');
 
 
 var deployDir = './deploy';
+var dev = false;
 
 // gulp.task('js', function (callback) {
 //     // rollup
@@ -15,17 +17,25 @@ var deployDir = './deploy';
 // });
 
 
-// TODO: bulma
-// gulp.task('css', function () {
-//     return gulp.src('./src/sass/**/*.scss')
-//         .pipe(sass({
-//             outputStyle: 'compressed',
-//             includePaths: 'node_modules'
-//         }).on('error', sass.logError))
-//         .pipe(gulp.dest(path.join(staticDir, 'css')))
-//         .pipe(gulp.dest(path.join(cordovaDir, 'css')));
-// });
+gulp.task('css', function () {
+    return gulp.src('./scss/**/*.scss')
+        .pipe(sass({
+            outputStyle: 'compressed',
+            includePaths: 'node_modules'
+        }).on('error', sass.logError))
+        .pipe(gulp.dest(path.join(deployDir, 'css')));
+});
 
+gulp.task('devCss', function () {
+    return gulp.src('./scss/**/*.scss')
+        .pipe(sourcemaps.init())
+        .pipe(sass({
+            outputStyle: 'compressed',
+            includePaths: 'node_modules'
+        }).on('error', sass.logError))
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest(path.join(deployDir, 'css')));
+});
 
 
 // static files
@@ -47,13 +57,18 @@ gulp.task('images', function () {
 gulp.task('watch', function () {
     gulp.watch('./**/*.html', ['html']);
     gulp.watch('./images/**/*', ['images']);
-    // gulp.watch(['./src/sass/**/*.scss'], ['css']);
+    gulp.watch(['./scss/**/*.scss'], ['devCss']);
     // gulp.watch(['./src/ts/**/*.ts', './src/ts/**/*.vue'], ['js']);
 });
 
+gulp.task('clean', function () {
+    return del([
+        'deploy',
+    ]);
+});
+
+
+gulp.task('dev', ['html', 'images', 'devCss']);
 
 // start default task
-gulp.task('default', ['html', 'images']);
-
-
-//TODO: Production build task
+gulp.task('default', ['html', 'images', 'css']);

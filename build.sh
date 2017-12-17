@@ -4,6 +4,7 @@ set -e
 # build client
 cd client
 npm install
+gulp clean
 gulp
 
 cd ..
