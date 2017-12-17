@@ -16,7 +16,7 @@ pipeline {
             steps {
                 sh '''
                     cd $REPO
-                    git describe --tags --long
+                    git tag
                     ./build.sh
                 '''
             }
