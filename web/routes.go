@@ -24,7 +24,10 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/css/*file", serveStatic("css/", true))
 
 	// pages
-	rootHandler.GET("/", serveStatic("index.template.html", true))
+	rootHandler.GET("/", templateHandler{
+		handler:       rootTemplate,
+		templateFiles: []string{"index.template.html"},
+	}.ServeHTTP)
 
 	return rootHandler
 }
