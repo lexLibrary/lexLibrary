@@ -48,7 +48,7 @@ func init() {
 func main() {
 	flag.Parse()
 	viper.AutomaticEnv()
-	viper.SetEnvPrefix("LEX")
+	viper.SetEnvPrefix("LL")
 
 	log.Println("Lex Library is starting up")
 

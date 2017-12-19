@@ -32,7 +32,8 @@ type schemaVer struct {
 	Keep column and table names in lowercase and separate words with underscores
 	tables should be named for their collections (i.e. plural)
 
-	For best compatibility, only have one statement per version; i.e. no semicolons
+	For best compatibility, only have one statement per version; i.e. no semicolons,
+	and wrap reserved word column names with []
 */
 
 var schemaVersions = []schemaVer{
@@ -40,7 +41,7 @@ var schemaVersions = []schemaVer{
 		update: NewQuery(`
 			create table schema_versions (
 				version INTEGER NOT NULL PRIMARY KEY,
-				rollback {{text}} NOT NULL
+				[rollback] {{text}} NOT NULL
 			)
 		`),
 		rollback: NewQuery("drop table schema_versions"),

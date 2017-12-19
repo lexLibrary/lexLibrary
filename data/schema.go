@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var schemaVersionInsert = NewQuery(`insert into schema_versions (version, rollback) values ({{arg "version"}}, {{arg "rollback"}})`)
+var schemaVersionInsert = NewQuery(`insert into schema_versions (version, [rollback]) values ({{arg "version"}}, {{arg "rollback"}})`)
 
 func ensureSchema(allowRollback bool) error {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one
@@ -42,6 +42,7 @@ func ensureSchemaTable() error {
 			return errors.Wrap(err, "Creating schema_versions table")
 		}
 
+		//FIXME: no @version variable?
 		_, err := schemaVersionInsert.Exec(
 			sql.Named("version", 0),
 			sql.Named("rollback", schemaVersions[0].rollback.Statement()))
@@ -94,7 +95,7 @@ func ensureSchemaVersion(allowRollback bool) error {
 	if allowRollback {
 		log.Printf("Rolling back database schema to version %d", dbVer)
 		rollback := ""
-		err = NewQuery(`select rollback from schema_versions where version = {{arg "version"}}`).QueryRow(
+		err = NewQuery(`select [rollback] from schema_versions where version = {{arg "version"}}`).QueryRow(
 			sql.Named("version", dbVer)).Scan(&rollback)
 		if err != nil {
 			return errors.Wrapf(err, "Looking for rollback script for version %d", dbVer)

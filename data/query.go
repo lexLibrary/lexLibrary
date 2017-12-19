@@ -72,6 +72,8 @@ func (q *Query) buildTemplate() {
 			switch dbType {
 			case postgres, cockroachdb:
 				return "$" + strconv.Itoa(len(q.args))
+			case sqlserver:
+				return "@" + name
 			default:
 				return "?"
 			}
@@ -86,6 +88,8 @@ func (q *Query) buildTemplate() {
 				return "BYTES"
 			case mysql, tidb:
 				return "VARBINARY"
+			case sqlserver:
+				return "VARBINARY(max)"
 			default:
 				panic("Unsupported database type")
 			}
@@ -96,6 +100,8 @@ func (q *Query) buildTemplate() {
 				return "DATETIME"
 			case postgres, cockroachdb:
 				return "TIMESTAMP with time ZONE"
+			case sqlserver:
+				return "DATETIME2"
 			default:
 				panic("Unsupported database type")
 			}
@@ -104,6 +110,8 @@ func (q *Query) buildTemplate() {
 			switch dbType {
 			case sqlite, postgres, cockroachdb, mysql, tidb:
 				return "TEXT"
+			case sqlserver:
+				return "nvarchar(max)"
 			default:
 				panic("Unsupported database type")
 			}
@@ -120,6 +128,8 @@ func (q *Query) buildTemplate() {
 				return "cockroachdb"
 			case tidb:
 				return "tidb"
+			case sqlserver:
+				return "sqlserver"
 			default:
 				panic("Unsupported database type")
 			}
@@ -138,6 +148,9 @@ func (q *Query) buildTemplate() {
 		},
 		"tidb": func() bool {
 			return dbType == tidb
+		},
+		"sqlserver": func() bool {
+			return dbType == sqlserver
 		},
 	}
 

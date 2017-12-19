@@ -3,11 +3,15 @@ package web
 
 import (
 	"compress/gzip"
+	"fmt"
 	"html/template"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lexLibrary/lexLibrary/files"
+	"github.com/pkg/errors"
 )
 
 type ctx struct {
@@ -133,6 +137,31 @@ func (t *templateWriter) execute(data interface{}) error {
 func (t *templateHandler) loadTemplates() {
 	tmpl := ""
 
-	//TODO: Load partials then load t.templateFiles
+	partialsDir := "partials"
+
+	partials, err := files.AssetDir(partialsDir)
+	if err != nil {
+		panic(errors.Wrap(err, "Loading partials directory"))
+	}
+	fmt.Println(partials)
+
+	for i := range partials {
+		str, err := files.Asset(filepath.Join(partialsDir, partials[i]))
+		if err != nil {
+			panic(errors.Wrapf(err, "Loading partial %s", filepath.Join(partialsDir, partials[i])))
+		}
+		tmpl += string(str)
+	}
+
+	for i := range t.templateFiles {
+		str, err := files.Asset(t.templateFiles[i])
+		if err != nil {
+			panic(errors.Wrapf(err, "Loading template file %s", t.templateFiles[i]))
+		}
+		tmpl += string(str)
+	}
+
+	fmt.Println(tmpl)
+
 	t.template = template.Must(template.New("").Funcs(map[string]interface{}{}).Parse(tmpl))
 }

@@ -1,6 +1,6 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-// Package data handles all the data and application structures handling for Lex Library
+// Package data handles all the data connections and management for Lex Library
 package data
 
 import (
@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/denisenkom/go-mssqldb"         // register sqlserver
 	mysqlDriver "github.com/go-sql-driver/mysql" // register mysql
 	_ "github.com/lib/pq"                        // register postgres
 	_ "github.com/mattn/go-sqlite3"              // register sqlite3
@@ -23,6 +24,7 @@ const (
 	sqlite      = iota // github.com/mattn/go-sqlite3
 	postgres           // github.com/lib/pq
 	mysql              // github.com/go-sql-driver/mysql/
+	sqlserver          // github.com/denisenkom/go-mssqldb
 	cockroachdb        // github.com/lib/pq
 	tidb               // github.com/go-sql-driver/mysql/
 )
@@ -84,6 +86,9 @@ func Init(cfg Config) error {
 	case "tidb":
 		dbType = tidb
 		err = initMySQL(cfg)
+	case "sqlserver":
+		dbType = sqlserver
+		err = initSQLServer(cfg)
 	default:
 		return errors.New("Invalid database type")
 	}
@@ -246,6 +251,60 @@ func initMySQL(cfg Config) error {
 		mCfg.DBName = databaseName
 
 		db, err = sql.Open("mysql", mCfg.FormatDSN())
+		if err != nil {
+			return err
+		}
+
+		testDB(1)
+	}
+	// db connection is pointing at a specific database, use as lexLibrary DB
+
+	return nil
+}
+
+func initSQLServer(cfg Config) error {
+	var err error
+	db, err = sql.Open("sqlserver", cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+
+	testDB(1)
+
+	dbName := ""
+
+	err = db.QueryRow("SELECT DB_NAME()").Scan(&dbName)
+	if err != nil {
+		return errors.Wrap(err, "Getting current database")
+	}
+
+	if dbName == "master" {
+		// db connection is pointing at default database, check for lexLibrary DB
+		// and create as necessary
+		count := 0
+		err = db.QueryRow("SELECT count(*) FROM master.dbo.sysdatabases WHERE [name] = @name",
+			sql.Named("name", databaseName)).Scan(&count)
+		if err != nil {
+			return errors.Wrapf(err, "Looking for %s Database", databaseName)
+		}
+
+		if count == 0 {
+			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
+			if err != nil {
+				return errors.Wrapf(err, "Creating %s database", databaseName)
+			}
+		}
+		// reopen DB connection on new database
+		u, err := url.Parse(cfg.DatabaseURL)
+		if err != nil {
+			return err
+		}
+
+		val := url.Values{}
+		val.Set("database", databaseName)
+		u.RawQuery = val.Encode()
+
+		db, err = sql.Open("sqlserver", u.String())
 		if err != nil {
 			return err
 		}

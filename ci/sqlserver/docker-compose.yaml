@@ -1,0 +1,21 @@
+version: '2'
+services:
+  sqlserver:
+    image: microsoft/mssql-server-linux
+    environment:
+      ACCEPT_EULA: 'Y'
+      SA_PASSWORD: lexlibraryP!ssw0rd
+      MSSQL_PID: Express
+  tests:
+    build: "../build"
+    links:
+      - sqlserver
+    volumes:
+      - ../..:/go/src/github.com/lexLibrary/lexLibrary
+    environment:
+      LLDATABASE: 'sqlserver'
+      LLTEST: 'true'
+      GOPATH: /go
+    command: sh -c '
+        cd /go/src/github.com/lexLibrary/lexLibrary/ci/ && sh ./test.sh
+      '
