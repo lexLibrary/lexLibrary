@@ -125,7 +125,7 @@ func (q *Query) buildTemplate() {
 			case postgres:
 				return "CITEXT"
 			case cockroachdb:
-				return "TEXT COLLATE en_u_ks_level2"
+				return "TEXT COLLATE en_u_ks_level2" //FIXME: can't insert into this column?
 			case sqlite:
 				return "TEXT COLLATE nocase"
 			case mysql, tidb:
