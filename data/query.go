@@ -46,9 +46,11 @@ func (q *Query) orderedArgs(args []sql.NamedArg) []interface{} {
 		for j := range args {
 			if args[j].Name == q.args[i] {
 				switch dbType {
-				case postgres, cockroachdb:
+				case postgres, cockroachdb, sqlserver:
+					// named args
 					ordered = append(ordered, args[j])
 				default:
+					// unnamed values
 					ordered = append(ordered, args[j].Value)
 				}
 				break
@@ -107,11 +109,29 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"text": func() string {
+			// case sensitive strings
 			switch dbType {
 			case sqlite, postgres, cockroachdb, mysql, tidb:
 				return "TEXT"
 			case sqlserver:
 				return "nvarchar(max)"
+			default:
+				panic("Unsupported database type")
+			}
+		},
+		"citext": func() string {
+			// case in-sensitive strings
+			switch dbType {
+			case postgres:
+				return "CITEXT"
+			case cockroachdb:
+				return "TEXT COLLATE en_u_ks_level2"
+			case sqlite:
+				return "TEXT COLLATE nocase"
+			case mysql, tidb:
+				return "TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci"
+			case sqlserver:
+				return "nvarchar(max) COLLATE Latin1_General_CI_AS"
 			default:
 				panic("Unsupported database type")
 			}

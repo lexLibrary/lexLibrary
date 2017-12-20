@@ -25,6 +25,7 @@ type schemaVer struct {
 	|bool      | integer           |
 	|[]byte    | blob              |
 	|string    | text              |
+	|string    | citext            |
 	|time.Time | timestamp/datetime|
 	+------------------------------+
 
@@ -32,8 +33,10 @@ type schemaVer struct {
 	Keep column and table names in lowercase and separate words with underscores
 	tables should be named for their collections (i.e. plural)
 
-	For best compatibility, only have one statement per version; i.e. no semicolons,
-	and wrap reserved word column names with []
+	For best compatibility, only have one statement per version; i.e. no semicolons, and don't use any reserved words
+
+	String / Text types will be assumed case sensitive and unicode supported. The default database collations should
+	reflect that. Case Insensitive column types can be used in specific columns {{citext}}
 */
 
 var schemaVersions = []schemaVer{
@@ -41,7 +44,7 @@ var schemaVersions = []schemaVer{
 		update: NewQuery(`
 			create table schema_versions (
 				version INTEGER NOT NULL PRIMARY KEY,
-				[rollback] {{text}} NOT NULL
+				rollback_script {{text}} NOT NULL
 			)
 		`),
 		rollback: NewQuery("drop table schema_versions"),
@@ -50,7 +53,7 @@ var schemaVersions = []schemaVer{
 		update: NewQuery(`
 			create table logs (
 				occurred {{datetime}} NOT NULL,
-				message {{text}}
+				message {{citext}}
 			)
 		`),
 		rollback: NewQuery("DROP INDEX i_occurred ON logs"),
@@ -62,7 +65,7 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update: NewQuery(`
 			create table settings (
-				key {{text}} NOT NULL PRIMARY KEY,
+				id {{text}} NOT NULL PRIMARY KEY,
 				description {{text}} NOT NULL,
 				value {{text}} NOT NULL
 			)

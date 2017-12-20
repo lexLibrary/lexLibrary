@@ -35,28 +35,28 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("AllowPublic setting isn't defaulted to true")
 		}
 	})
-	t.Run("Default with invalid key", func(t *testing.T) {
+	t.Run("Default with invalid id", func(t *testing.T) {
 		_, err := app.SettingDefault("badKey")
 		if err == nil {
-			t.Fatalf("No error returned from a bad default setting key")
+			t.Fatalf("No error returned from a bad default setting id")
 		}
 
 		if err != app.ErrSettingNotFound {
-			t.Fatalf("Invalid error returned for Not Found key. Expected %v, got %v", app.ErrSettingNotFound, err)
+			t.Fatalf("Invalid error returned for Not Found id. Expected %v, got %v", app.ErrSettingNotFound, err)
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		key := "AllowPublic"
-		s, err := app.SettingGet(key)
+		id := "AllowPublic"
+		s, err := app.SettingGet(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
 		}
-		if s.Key != key {
-			t.Fatalf("Invalid Key returned. Expected %s got %s", key, s.Key)
+		if s.ID != id {
+			t.Fatalf("Invalid ID returned. Expected %s got %s", id, s.ID)
 		}
 
-		d, err := app.SettingDefault(key)
+		d, err := app.SettingDefault(id)
 		if err != nil {
 			t.Fatalf("Error getting setting default: %s", err)
 		}
@@ -67,30 +67,30 @@ func TestSetting(t *testing.T) {
 		}
 	})
 
-	t.Run("Get with Invalid key", func(t *testing.T) {
+	t.Run("Get with Invalid id", func(t *testing.T) {
 		_, err := app.SettingGet("badKey")
 		if err == nil {
-			t.Fatalf("No error returned from a bad get setting key")
+			t.Fatalf("No error returned from a bad get setting id")
 		}
 
 		if err != app.ErrSettingNotFound {
-			t.Fatalf("Invalid error returned for Not Found key. Expected %v, got %v", app.ErrSettingNotFound, err)
+			t.Fatalf("Invalid error returned for Not Found id. Expected %v, got %v", app.ErrSettingNotFound, err)
 		}
 	})
 
 	t.Run("Set", func(t *testing.T) {
-		key := "AllowPublic"
-		d, err := app.SettingDefault(key)
+		id := "AllowPublic"
+		d, err := app.SettingDefault(id)
 		if err != nil {
 			t.Fatalf("Error getting setting default: %s", err)
 		}
 
-		err = app.SettingSet(key, !d.Bool())
+		err = app.SettingSet(id, !d.Bool())
 		if err != nil {
 			t.Fatalf("Error setting value: %s", err)
 		}
 
-		s, err := app.SettingGet(key)
+		s, err := app.SettingGet(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
 		}
@@ -99,12 +99,12 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Setting value was not set.  Expected %v, got %v", !d.Bool(), s.Bool())
 		}
 
-		app.SettingSet(key, d.Bool())
+		app.SettingSet(id, d.Bool())
 		if err != nil {
 			t.Fatalf("Error updating setting value: %s", err)
 		}
 
-		s, err = app.SettingGet(key)
+		s, err = app.SettingGet(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
 		}
@@ -114,41 +114,41 @@ func TestSetting(t *testing.T) {
 		}
 
 	})
-	t.Run("Set with Invalid key", func(t *testing.T) {
+	t.Run("Set with Invalid id", func(t *testing.T) {
 		err := app.SettingSet("badKey", "badValue")
 		if err == nil {
-			t.Fatalf("No error returned from a bad Set setting key")
+			t.Fatalf("No error returned from a bad Set setting id")
 		}
 
 		if err != app.ErrSettingNotFound {
-			t.Fatalf("Invalid error returned for Not Found key. Expected %v, got %v", app.ErrSettingNotFound, err)
+			t.Fatalf("Invalid error returned for Not Found id. Expected %v, got %v", app.ErrSettingNotFound, err)
 		}
 	})
 	t.Run("Set with Invalid Type", func(t *testing.T) {
 		err := app.SettingSet("AllowPublic", "badValue")
 		if err == nil {
-			t.Fatalf("No error returned from a bad Set setting key")
+			t.Fatalf("No error returned from a bad Set setting id")
 		}
 
 		if err != app.ErrSettingInvalidValue {
-			t.Fatalf("Invalid error returned for Not Found key. Expected %v, got %v", app.ErrSettingNotFound, err)
+			t.Fatalf("Invalid error returned for Not Found id. Expected %v, got %v", app.ErrSettingNotFound, err)
 		}
 	})
 
 	t.Run("Bad setting format in database", func(t *testing.T) {
-		_, err := data.NewQuery("update settings set value = 'garbage' where key = 'AllowPublic'").Exec()
+		_, err := data.NewQuery("update settings set value = 'garbage' where id = 'AllowPublic'").Exec()
 		if err != nil {
 			t.Fatalf("Error setting bad value in database: %s", err)
 		}
 
-		key := "AllowPublic"
+		id := "AllowPublic"
 
-		d, err := app.SettingDefault(key)
+		d, err := app.SettingDefault(id)
 		if err != nil {
 			t.Fatalf("Error getting default: %s", err)
 		}
 
-		s, err := app.SettingGet(key)
+		s, err := app.SettingGet(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
 		}
@@ -168,9 +168,9 @@ func TestSetting(t *testing.T) {
 		}
 
 		for i := range settings {
-			d, err := app.SettingDefault(settings[i].Key)
+			d, err := app.SettingDefault(settings[i].ID)
 			if err != nil {
-				t.Fatalf("Error getting default setting for %s: %s", settings[i].Key, err)
+				t.Fatalf("Error getting default setting for %s: %s", settings[i].ID, err)
 			}
 
 			if !reflect.DeepEqual(d.Value, settings[i].Value) {
@@ -178,13 +178,13 @@ func TestSetting(t *testing.T) {
 			}
 		}
 
-		key := "AllowPublic"
-		d, err := app.SettingDefault(key)
+		id := "AllowPublic"
+		d, err := app.SettingDefault(id)
 		if err != nil {
-			t.Fatalf("Error getting default setting for %s: %s", key, err)
+			t.Fatalf("Error getting default setting for %s: %s", id, err)
 		}
 
-		app.SettingSet(key, !d.Bool())
+		app.SettingSet(id, !d.Bool())
 
 		settings, err = app.Settings()
 		if err != nil {
@@ -192,7 +192,7 @@ func TestSetting(t *testing.T) {
 		}
 
 		for i := range settings {
-			if settings[i].Key == key {
+			if settings[i].ID == id {
 				if settings[i].Bool() == d.Bool() {
 					t.Fatalf("Settings value didn't update. Expected %v got %v", d.Bool(), settings[i].Bool())
 					break
@@ -204,13 +204,13 @@ func TestSetting(t *testing.T) {
 
 	t.Run("Must", func(t *testing.T) {
 		settingReset(t)
-		key := "AllowPublic"
-		s := app.SettingMust(key)
-		if s.Key != key {
-			t.Fatalf("Invalid Key returned. Expected %s got %s", key, s.Key)
+		id := "AllowPublic"
+		s := app.SettingMust(id)
+		if s.ID != id {
+			t.Fatalf("Invalid ID returned. Expected %s got %s", id, s.ID)
 		}
 
-		d, err := app.SettingDefault(key)
+		d, err := app.SettingDefault(id)
 		if err != nil {
 			t.Fatalf("Error getting setting default: %s", err)
 		}
@@ -221,10 +221,10 @@ func TestSetting(t *testing.T) {
 		}
 	})
 
-	t.Run("Must with Invalid key", func(t *testing.T) {
+	t.Run("Must with Invalid id", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r == nil {
-				t.Fatalf("SettingMust did not panic with a bad key")
+				t.Fatalf("SettingMust did not panic with a bad id")
 			}
 		}()
 

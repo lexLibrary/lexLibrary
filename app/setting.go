@@ -15,24 +15,24 @@ import (
 
 // Setting is a defaulted value that changes how LexLibrary functions
 type Setting struct {
-	Key         string
+	ID          string
 	Description string
 	Value       interface{}
 	Options     []interface{}
 	Category    string
 }
 
-// ErrSettingNotFound is returned when a setting can't be found for the given key
-var ErrSettingNotFound = NotFound("No setting can be found for the given key")
+// ErrSettingNotFound is returned when a setting can't be found for the given id
+var ErrSettingNotFound = NotFound("No setting can be found for the given id")
 
 // ErrSettingInvalidValue is returned when a setting is being set to a value that is invalid for the setting
 var ErrSettingInvalidValue = NotFound("The setting cannot be set to this value")
 
-var sqlSettingsGet = data.NewQuery("select key, value from settings")
-var sqlSettingGet = data.NewQuery(`select value from settings where key = {{arg "key"}}`)
-var sqlSettingUpdate = data.NewQuery(`update settings set value = {{arg "value"}} where key = {{arg "key"}}`)
+var sqlSettingsGet = data.NewQuery("select id, value from settings")
+var sqlSettingGet = data.NewQuery(`select value from settings where id = {{arg "id"}}`)
+var sqlSettingUpdate = data.NewQuery(`update settings set value = {{arg "value"}} where id = {{arg "id"}}`)
 var sqlSettingInsert = data.NewQuery(`
-	insert into settings (key, description, value) values ({{arg "key"}}, {{arg "description"}}, {{arg "value"}})`)
+	insert into settings (id, description, value) values ({{arg "id"}}, {{arg "description"}}, {{arg "value"}})`)
 
 // Settings returns all of the settings in Lex Library.  If a setting is not set in the database
 // the default for that setting is returned
@@ -48,16 +48,16 @@ func Settings() ([]Setting, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var key string
+		var id string
 		var value string
 
-		err = rows.Scan(&key, &value)
+		err = rows.Scan(&id, &value)
 		if err != nil {
 			return nil, err
 		}
 
 		for i := range settings {
-			if settings[i].Key == key {
+			if settings[i].ID == id {
 				err = settings[i].setValue(value)
 				if err != nil {
 					return nil, err
@@ -70,15 +70,15 @@ func Settings() ([]Setting, error) {
 	return settings, nil
 }
 
-// SettingGet will look for a setting that has the passed in key
-func SettingGet(key string) (Setting, error) {
+// SettingGet will look for a setting that has the passed in id
+func SettingGet(id string) (Setting, error) {
 	var strValue string
-	setting, err := SettingDefault(key)
+	setting, err := SettingDefault(id)
 	if err != nil {
 		return Setting{}, err
 	}
 
-	err = sqlSettingGet.QueryRow(sql.Named("key", key)).Scan(&strValue)
+	err = sqlSettingGet.QueryRow(sql.Named("id", id)).Scan(&strValue)
 	if err == sql.ErrNoRows {
 		// nothing in the DB return the default setting value
 		return setting, nil
@@ -86,7 +86,7 @@ func SettingGet(key string) (Setting, error) {
 	if err != nil {
 		// an error occurred retrieving the setting from the DB
 		// return the errror and the default, and let the consumer decide what to do
-		return setting, errors.Wrapf(err, "Error getting setting %s", key)
+		return setting, errors.Wrapf(err, "Error getting setting %s", id)
 	}
 
 	err = setting.setValue(strValue)
@@ -97,22 +97,22 @@ func SettingGet(key string) (Setting, error) {
 // SettingMust returns a setting.  If the setting does not exist it will panic
 // Meant as a shortcut for setting lookups by the application
 // SettingVal("AllowPublic").Bool()
-func SettingMust(key string) Setting {
-	setting, err := SettingGet(key)
+func SettingMust(id string) Setting {
+	setting, err := SettingGet(id)
 	if err != nil {
 		if err == ErrSettingNotFound {
-			panic(fmt.Sprintf("Setting %s does not exist", key))
+			panic(fmt.Sprintf("Setting %s does not exist", id))
 		}
 		// if there is an error retriving the setting, log the error and return the default
-		LogError(errors.Wrapf(err, "Error getting setting value for  %s, using default", key))
+		LogError(errors.Wrapf(err, "Error getting setting value for  %s, using default", id))
 	}
 
 	return setting
 }
 
 // SettingSet updates the value of the passed in setting to the passed in value
-func SettingSet(key string, value interface{}) error {
-	setting, err := SettingDefault(key)
+func SettingSet(id string, value interface{}) error {
+	setting, err := SettingDefault(id)
 	if err == ErrSettingNotFound {
 		return err
 	}
@@ -136,14 +136,14 @@ func SettingSet(key string, value interface{}) error {
 	}
 
 	var tmp = ""
-	err = sqlSettingGet.QueryRow(sql.Named("key", key)).Scan(&tmp)
+	err = sqlSettingGet.QueryRow(sql.Named("id", id)).Scan(&tmp)
 	if err == sql.ErrNoRows {
 		_, err := sqlSettingInsert.Exec(
-			sql.Named("key", key),
+			sql.Named("id", id),
 			sql.Named("description", setting.Description),
 			sql.Named("value", strValue))
 		if err != nil {
-			return errors.Wrapf(err, "Error inserting setting %s", key)
+			return errors.Wrapf(err, "Error inserting setting %s", id)
 		}
 		return nil
 	}
@@ -151,17 +151,17 @@ func SettingSet(key string, value interface{}) error {
 		return err
 	}
 
-	_, err = sqlSettingUpdate.Exec(sql.Named("key", key), sql.Named("value", value))
+	_, err = sqlSettingUpdate.Exec(sql.Named("id", id), sql.Named("value", value))
 	if err != nil {
-		return errors.Wrapf(err, "Error updating setting %s", key)
+		return errors.Wrapf(err, "Error updating setting %s", id)
 	}
 	return nil
 }
 
-// SettingDefault returns the default setting for the given setting key
-func SettingDefault(key string) (Setting, error) {
+// SettingDefault returns the default setting for the given setting id
+func SettingDefault(id string) (Setting, error) {
 	for i := range settingDefaults {
-		if settingDefaults[i].Key == key {
+		if settingDefaults[i].ID == id {
 			return settingDefaults[i], nil
 		}
 	}
@@ -182,7 +182,7 @@ func (s *Setting) setValue(tableValue string) error {
 	case time.Duration:
 		value, err = time.ParseDuration(tableValue)
 	default:
-		return errors.Errorf("Invalid setting type %T for setting %s", s.Value, s.Key)
+		return errors.Errorf("Invalid setting type %T for setting %s", s.Value, s.ID)
 	}
 
 	if err != nil {
@@ -190,12 +190,12 @@ func (s *Setting) setValue(tableValue string) error {
 		// in a a proper format and log that it occurred
 
 		LogError(errors.Wrapf(err,
-			"The value of setting %s in the database is in an invalid format (%s). Updating to default value", s.Key,
+			"The value of setting %s in the database is in an invalid format (%s). Updating to default value", s.ID,
 			tableValue))
 
-		err = SettingSet(s.Key, s.Value)
+		err = SettingSet(s.ID, s.Value)
 		if err != nil {
-			return errors.Wrapf(err, "Error setting default value for %s", s.Key)
+			return errors.Wrapf(err, "Error setting default value for %s", s.ID)
 		}
 		return nil
 	}
@@ -209,7 +209,7 @@ func (s *Setting) setValue(tableValue string) error {
 func (s *Setting) String() string {
 	value, ok := s.Value.(string)
 	if !ok {
-		panic(fmt.Sprintf("Setting %s is not of type int", s.Key))
+		panic(fmt.Sprintf("Setting %s is not of type int", s.ID))
 	}
 	return value
 }
@@ -219,7 +219,7 @@ func (s *Setting) String() string {
 func (s *Setting) Int() int {
 	value, ok := s.Value.(int)
 	if !ok {
-		panic(fmt.Sprintf("Setting %s is not of type int", s.Key))
+		panic(fmt.Sprintf("Setting %s is not of type int", s.ID))
 	}
 	return value
 }
@@ -229,7 +229,7 @@ func (s *Setting) Int() int {
 func (s *Setting) Bool() bool {
 	value, ok := s.Value.(bool)
 	if !ok {
-		panic(fmt.Sprintf("Setting %s is not of type bool", s.Key))
+		panic(fmt.Sprintf("Setting %s is not of type bool", s.ID))
 	}
 	return value
 }
@@ -239,7 +239,7 @@ func (s *Setting) Bool() bool {
 func (s *Setting) Duration() time.Duration {
 	value, ok := s.Value.(time.Duration)
 	if !ok {
-		panic(fmt.Sprintf("Setting %s is not of type Duration", s.Key))
+		panic(fmt.Sprintf("Setting %s is not of type Duration", s.ID))
 	}
 	return value
 }

@@ -20,12 +20,20 @@ type Log struct {
 var sqlLogInsert = data.NewQuery(`insert into logs (occurred, message) values ({{arg "occurred"}}, {{arg "message"}})`)
 var sqlLogGet = data.NewQuery(`
 	select occurred, message from logs order by occurred desc 
-	LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+	{{if sqlserver}}
+		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+	{{else}}
+		LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+	{{end}}
 `)
 var sqlLogSearch = data.NewQuery(`
 	select occurred, message from logs where message like {{arg "search"}} order by occurred desc 
-	LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-`) //TODO: Make case insensitive?
+	{{if sqlserver}}
+		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+	{{else}}
+		LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+	{{end}}
+`)
 
 // LogError logs an error to the logs table
 func LogError(lerr error) {

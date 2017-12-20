@@ -73,7 +73,7 @@ func Init(cfg Config) error {
 	switch strings.ToLower(cfg.DatabaseType) {
 	case "postgres":
 		dbType = postgres
-		err = initPostgres(cfg)
+		err = initPostgresAndCDB(cfg)
 	case "mysql":
 		dbType = mysql
 		err = initMySQL(cfg)
@@ -82,7 +82,7 @@ func Init(cfg Config) error {
 		err = initSQLite(cfg)
 	case "cockroachdb":
 		dbType = cockroachdb
-		err = initPostgres(cfg)
+		err = initPostgresAndCDB(cfg)
 	case "tidb":
 		dbType = tidb
 		err = initMySQL(cfg)
@@ -155,7 +155,7 @@ func initSQLite(cfg Config) error {
 	return nil
 }
 
-func initPostgres(cfg Config) error {
+func initPostgresAndCDB(cfg Config) error {
 	var err error
 	db, err = sql.Open("postgres", cfg.DatabaseURL)
 	if err != nil {
@@ -202,7 +202,10 @@ func initPostgres(cfg Config) error {
 	}
 	// db connection is pointing at a specific database, use as lexLibrary DB
 
-	return nil
+	if dbType == postgres {
+		_, err = db.Exec("CREATE EXTENSION IF NOT EXISTS citext")
+	}
+	return err
 }
 
 func initMySQL(cfg Config) error {
@@ -289,7 +292,7 @@ func initSQLServer(cfg Config) error {
 		}
 
 		if count == 0 {
-			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
+			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s COLLATE Latin1_General_CS_AS", databaseName))
 			if err != nil {
 				return errors.Wrapf(err, "Creating %s database", databaseName)
 			}

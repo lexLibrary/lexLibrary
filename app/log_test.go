@@ -81,7 +81,7 @@ func TestLog(t *testing.T) {
 	t.Run("Search", func(t *testing.T) {
 		search := "Search Test"
 		app.LogError(fmt.Errorf("Error message with %s", search))
-		logs, err := app.LogSearch(search, 0, 10)
+		logs, err := app.LogSearch(strings.ToLower(search), 0, 10)
 		if err != nil {
 			t.Fatalf("Error searching logs: %s", err)
 		}
