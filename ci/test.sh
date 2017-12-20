@@ -6,3 +6,5 @@ echo Running Tests against $LLDATABASE
 cd ..
 ./build.sh
 go test  ./... -config $PWD/ci/$LLDATABASE/config.yaml
+
+#TODO: gulp test - frontend tests

@@ -28,12 +28,35 @@ gulp watch |& sed -e "s/^/${LIGHTGREEN}[Gulp]${NC} /" &
 gpid=$!
 
 cd ..
- 
-./lexLibrary -dev "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 
-lpid=$!
+dbType=$1
 
+if [$dbType == 'sqlite']
+then
+    mkdir -p db_data/sqlite
+    LL_DATA.DATABASETYPE='sqlite'
+    LL_DATA.DATABASEFILE='./db_data/sqlite/lexLibrary.db'
 
-trap "kill ${lpid}; kill ${gpid}" SIGINT
+    ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
+    lpid=$!
+
+    trap "kill ${lpid}; kill ${gpid}" SIGINT
+elif [$dbType == 'mysql']
+then
+elif [$dbType == 'postgres']
+then
+elif [$dbType == 'cockroachdb']
+then
+elif [$dbType == 'tidb']
+then
+elif [$dbType == 'sqlserver']
+then
+else
+    ./lexLibrary -dev "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
+
+    lpid=$!
+
+    trap "kill ${lpid}; kill ${gpid}" SIGINT
+fi
 
 wait
