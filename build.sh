@@ -20,5 +20,3 @@ go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go 
 #build executable
 go clean -i -a
 go build -o lexLibrary
-gulp clean
-

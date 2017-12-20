@@ -91,6 +91,14 @@ pipeline {
                         '''
                     }
                 }
+                stage('sqlserver') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh sqlserver
+                        '''
+                    }
+                }
             }
         }
     }
