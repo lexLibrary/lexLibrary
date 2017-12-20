@@ -36,7 +36,7 @@ type schemaVer struct {
 
 	For best compatibility, only have one statement per version; i.e. no semicolons, and don't use any reserved words
 
-	String / Text types will be assumed case sensitive and unicode supported. The default database collations should
+	String / Text types will be by default case sensitive and unicode supported. The default database collations should
 	reflect that. Case Insensitive column types can be used in specific columns {{citext}}
 */
 
@@ -66,7 +66,7 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update: NewQuery(`
 			create table settings (
-				id {{varchar 256}} NOT NULL PRIMARY KEY,
+				id {{varchar 256}} NOT NULL PRIMARY KEY, -- necessary for mysql PK
 				description {{text}} NOT NULL,
 				value {{text}} NOT NULL
 			)
