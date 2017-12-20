@@ -3,8 +3,8 @@ set -e
 
 # build client
 cd client
+rm -rf deploy
 npm install
-gulp clean
 gulp
 
 cd ..

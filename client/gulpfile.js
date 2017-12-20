@@ -4,8 +4,6 @@ var gulp = require('gulp');
 var path = require('path');
 var sass = require('gulp-sass');
 var sourcemaps = require('gulp-sourcemaps');
-var del = require('del');
-
 
 var deployDir = './deploy';
 var dev = false;
@@ -59,12 +57,6 @@ gulp.task('watch', function () {
     gulp.watch('./images/**/*', ['images']);
     gulp.watch(['./scss/**/*.scss'], ['devCss']);
     // gulp.watch(['./src/ts/**/*.ts', './src/ts/**/*.vue'], ['js']);
-});
-
-gulp.task('clean', function () {
-    return del([
-        'deploy',
-    ]);
 });
 
 

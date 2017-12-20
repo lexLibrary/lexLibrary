@@ -20,8 +20,8 @@ LIGHTGREEN='\x1b[1;32m'
 
 
 cd client 
+rm -rf deploy
 npm install
-gulp clean
 gulp dev
 gulp watch |& sed -e "s/^/${LIGHTGREEN}[Gulp]${NC} /" &
 

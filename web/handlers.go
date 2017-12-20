@@ -3,7 +3,6 @@ package web
 
 import (
 	"compress/gzip"
-	"fmt"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -143,7 +142,6 @@ func (t *templateHandler) loadTemplates() {
 	if err != nil {
 		panic(errors.Wrap(err, "Loading partials directory"))
 	}
-	fmt.Println(partials)
 
 	for i := range partials {
 		str, err := files.Asset(filepath.Join(partialsDir, partials[i]))
@@ -160,8 +158,6 @@ func (t *templateHandler) loadTemplates() {
 		}
 		tmpl += string(str)
 	}
-
-	fmt.Println(tmpl)
 
 	t.template = template.Must(template.New("").Funcs(map[string]interface{}{}).Parse(tmpl))
 }
