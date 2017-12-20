@@ -136,6 +136,18 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
+		"varchar": func(size int) string {
+			switch dbType {
+			case postgres, cockroachdb, mysql, tidb:
+				return fmt.Sprintf("varchar(%d)", size)
+			case sqlite:
+				return "TEXT"
+			case sqlserver:
+				return fmt.Sprintf("nvarchar(%d)", size)
+			default:
+				panic("Unsupported database type")
+			}
+		},
 		"db": func() string {
 			switch dbType {
 			case sqlite:

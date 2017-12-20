@@ -26,6 +26,7 @@ type schemaVer struct {
 	|[]byte    | blob              |
 	|string    | text              |
 	|string    | citext            |
+	|string    | nvarchar(size)    |
 	|time.Time | timestamp/datetime|
 	+------------------------------+
 
@@ -65,7 +66,7 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update: NewQuery(`
 			create table settings (
-				id {{text}} NOT NULL PRIMARY KEY,
+				id {{varchar 256}} NOT NULL PRIMARY KEY,
 				description {{text}} NOT NULL,
 				value {{text}} NOT NULL
 			)
