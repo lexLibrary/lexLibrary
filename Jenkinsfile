@@ -50,58 +50,56 @@ pipeline {
         }
         stage('test') {
             parallel {
-                lock('two-at-a-time') {
-                    stage('sqlite') {
-                        steps {
-                            sh '''
-                                cd ci
-                                sh ./testDB.sh sqlite
-                            '''
-                        }
-                    }
-                    stage('postgres') {
-                        steps {
-                            sh '''
-                                cd ci
-                                sh ./testDB.sh postgres
-                            '''
-                        }
+                stage('sqlite') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh sqlite
+                        '''
                     }
                 }
-                lock('two-at-a-time') {
-                    stage('mysql') {
-                        steps {
-                            sh '''
-                                cd ci
-                                sh ./testDB.sh mysql
-                            '''
-                        }
-                    }
-                    stage('cockroachdb') {
-                        steps {
-                            sh '''
-                                cd ci
-                                sh ./testDB.sh cockroachdb
-                            '''
-                        }
+                stage('postgres') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh postgres
+                        '''
                     }
                 }
-                lock('two-at-a-time') {
-                    stage('tidb') {
-                        steps {
-                            sh '''
-                                cd ci
-                                sh ./testDB.sh tidb
-                            '''
-                        }
+            }
+            parallel {
+                stage('mysql') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh mysql
+                        '''
                     }
-                    stage('sqlserver') {
-                        steps {
-                            sh '''
-                                cd ci
-                                sh ./testDB.sh sqlserver
-                            '''
-                        }
+                }
+                stage('cockroachdb') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh cockroachdb
+                        '''
+                    }
+                }
+            }
+            parallel {
+                stage('tidb') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh tidb
+                        '''
+                    }
+                }
+                stage('sqlserver') {
+                    steps {
+                        sh '''
+                            cd ci
+                            sh ./testDB.sh sqlserver
+                        '''
                     }
                 }
             }
