@@ -4,9 +4,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/web"
@@ -49,6 +51,7 @@ func main() {
 	flag.Parse()
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("LL")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	log.Println("Lex Library is starting up")
 
@@ -77,8 +80,14 @@ func main() {
 		}
 	} else {
 		log.Printf("Found and loaded config file %s\n", viper.ConfigFileUsed())
-		viper.Unmarshal(&cfg)
 	}
+
+	err = viper.Unmarshal(&cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(cfg.Data.DatabaseFile)
+	fmt.Println(viper.Get("Data.DatabaseFile"))
 
 	if flagDevMode {
 		log.Println("Starting in Development mode")

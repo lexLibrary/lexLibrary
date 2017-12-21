@@ -29,28 +29,27 @@ gpid=$!
 
 cd ..
 
-dbType=$1
 
-if [$dbType == 'sqlite']
+if [ "$1" == "sqlite" ]
 then
-    mkdir -p db_data/sqlite
-    LL_DATA.DATABASETYPE='sqlite'
-    LL_DATA.DATABASEFILE='./db_data/sqlite/lexLibrary.db'
+    mkdir -p "db_data/sqlite"
+    export LL_DATA_DATABASETYPE="sqlite"
+    export LL_DATA_DATABASEFILE="./db_data/sqlite/lexLibrary.db"
 
     ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
     lpid=$!
 
     trap "kill ${lpid}; kill ${gpid}" SIGINT
-elif [$dbType == 'mysql']
-then
-elif [$dbType == 'postgres']
-then
-elif [$dbType == 'cockroachdb']
-then
-elif [$dbType == 'tidb']
-then
-elif [$dbType == 'sqlserver']
-then
+# elif [$1 == 'mysql']
+# then
+# elif [$1 == 'postgres']
+# then
+# elif [$1 == 'cockroachdb']
+# then
+# elif [$1 == 'tidb']
+# then
+# elif [$1 == 'sqlserver']
+# then
 else
     ./lexLibrary -dev "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 
