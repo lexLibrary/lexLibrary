@@ -101,8 +101,6 @@ func Init(cfg Config) error {
 
 	prepareQueries()
 
-	NewQuery("select @@version").DebugPrint()
-
 	if cfg.MaxConnectionLifetime != "" {
 		lifetime, err := time.ParseDuration(cfg.MaxConnectionLifetime)
 		if err == nil {
@@ -252,7 +250,7 @@ func initMySQL(cfg Config) error {
 		}
 
 		if count == 0 {
-			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
+			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s character set utf8 collate utf8_bin", databaseName))
 			if err != nil {
 				return errors.Wrapf(err, "Creating %s database", databaseName)
 			}

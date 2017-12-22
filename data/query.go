@@ -89,7 +89,7 @@ func (q *Query) buildTemplate() {
 			case cockroachdb:
 				return "BYTES"
 			case mysql, tidb:
-				return "VARBINARY"
+				return "BLOB"
 			case sqlserver:
 				return "VARBINARY(max)"
 			default:
@@ -129,7 +129,7 @@ func (q *Query) buildTemplate() {
 			case sqlite:
 				return "TEXT COLLATE nocase"
 			case mysql, tidb:
-				return "TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci"
+				return "TEXT character set utf8 collate utf8_general_ci"
 			case sqlserver:
 				return "nvarchar(max) COLLATE Latin1_General_CI_AS"
 			default:

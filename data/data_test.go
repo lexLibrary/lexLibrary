@@ -1,6 +1,6 @@
 // Copyright (c) 2017 Townsourced Inc.
 
-package app_test
+package data_test
 
 import (
 	"log"
