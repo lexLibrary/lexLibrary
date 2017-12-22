@@ -4,10 +4,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"reflect"
 	"strings"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -53,6 +53,19 @@ func main() {
 	viper.SetEnvPrefix("LL")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
+	cfg := struct {
+		Web  web.Config
+		Data data.Config
+	}{
+		Web:  web.DefaultConfig(),
+		Data: data.DefaultConfig(),
+	}
+
+	viper.SetDefault("Web", cfg.Web)
+	viper.SetDefault("Data", cfg.Data)
+	setDefaultSubKeys("web.", cfg.Web)
+	setDefaultSubKeys("data.", cfg.Data)
+
 	log.Println("Lex Library is starting up")
 
 	log.Printf("Loading configuration from %s\n", flagConfigFile)
@@ -61,19 +74,9 @@ func main() {
 	}
 	viper.SetConfigFile(flagConfigFile)
 
-	cfg := struct {
-		Web  web.Config
-		Data data.Config
-	}{
-		Web:  web.Config{},
-		Data: data.Config{},
-	}
-
 	err := viper.ReadInConfig()
 	if err != nil {
 		if os.IsNotExist(err) && flagConfigFile == defaultConfigFile {
-			cfg.Web = web.DefaultConfig()
-			cfg.Data = data.DefaultConfig()
 			log.Printf("No config file found, using default values: \n %+v\n", cfg)
 		} else {
 			log.Fatal(err)
@@ -86,8 +89,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(cfg.Data.DatabaseFile)
-	fmt.Println(viper.Get("Data.DatabaseFile"))
 
 	if flagDevMode {
 		log.Println("Starting in Development mode")
@@ -104,5 +105,16 @@ func main() {
 	err = web.StartServer(cfg.Web, flagDevMode)
 	if err != nil {
 		log.Fatalf("Error initializing web server: %s", err)
+	}
+}
+
+// necessary work around for the fact that viper doesn't seem to handle environment overides for nested
+// keys when unmarshaled. TODO: update this with an issue link
+func setDefaultSubKeys(prefix string, cfg interface{}) {
+	t := reflect.TypeOf(cfg)
+	v := reflect.ValueOf(cfg)
+
+	for i := 0; i < t.NumField(); i++ {
+		viper.SetDefault(prefix+t.Field(i).Name, v.FieldByName(t.Field(i).Name).Interface())
 	}
 }

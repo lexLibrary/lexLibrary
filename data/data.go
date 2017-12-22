@@ -136,12 +136,13 @@ func Teardown() error {
 }
 
 func initSQLite(cfg Config) error {
-	url := ""
+	url := cfg.DatabaseURL
+
 	if cfg.DatabaseFile == "" && cfg.DatabaseURL == "" {
 		cfg.DatabaseFile = DefaultConfig().DatabaseFile
 	}
 
-	if cfg.DatabaseURL == "" {
+	if url == "" {
 		url = cfg.DatabaseFile
 	}
 
