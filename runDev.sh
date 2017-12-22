@@ -18,6 +18,7 @@ YELLOW='\x1b[1;33m'
 NC='\x1b[0m' # No Color
 LIGHTGREEN='\x1b[1;32m'
 LIGHTBLUE='\x1b[1;34m'
+DOCKERNAME="lex_library_dev_$1"
 
 
 cd client 
@@ -29,10 +30,6 @@ gulp watch |& sed -e "s/^/${LIGHTGREEN}[Gulp]${NC} /" &
 gpid=$!
 
 cd ..
-
-DB_NAME='lex_library'
-DB_PASSWORD='!Passw0rd'
-DB_USER='lexlibrary'
 
 
 if [ "$1" == "sqlite" ]
@@ -48,43 +45,44 @@ then
 elif [ $1 == 'mysql' ]
 then
     mkdir -p "db_data/mysql"
+
+    DB_PASSWORD='!Passw0rd'
+    DB_PORT=3306
+
     export LL_DATA_DATABASETYPE="mysql"
-    export LL_DATA_DATABASEURL="root:lexlibrary@tcp(mysql:3306)/"
+    export LL_DATA_DATABASEURL="root:$DB_PASSWORD@tcp(localhost:$DB_PORT)/"
 
-    echo $PWD
-    docker run -p 5432:$DB_PORT -v $PWD/db_data/postgres:/var/lib/postgresql/data \
-        -e POSTGRES_PASSWORD=$DB_PASSWORD \
-        -e POSTGRES_USER=$DB_USER \
-        -e POSTGRES_DB=$DB_NAME \
-        postgres |& sed -e "s/^/${LIGHTBLUE}[Postgres]${NC} /" &
-
-    cpid=$!
+    docker run --name=$DOCKERNAME --rm -p 3306:$DB_PORT -v $PWD/db_data/mysql:/var/lib/mysql \
+        -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
+        mysql:latest |& sed -e "s/^/${LIGHTBLUE}[MySQL]${NC} /" &
 
     ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
     lpid=$!
 
-    trap "kill ${cpid}; kill ${lpid}; kill ${gpid}" SIGINT
+    trap "docker stop ${DOCKERNAME}; kill ${lpid}; kill ${gpid}" SIGINT
 
 elif [ $1 == 'postgres' ]
 then
     mkdir -p "db_data/postgres"
+
+    DB_NAME='lex_library'
+    DB_PASSWORD='!Passw0rd'
+    DB_USER='lexlibrary'
     DB_PORT=5432
+
     export LL_DATA_DATABASETYPE="postgres"
     export LL_DATA_DATABASEURL="postgres://localhost/$DB_NAME?user=$DB_USER&password=$DB_PASSWORD&sslmode=disable"
-
-    echo $PWD
-    docker run -p 5432:$DB_PORT -v $PWD/db_data/postgres:/var/lib/postgresql/data \
+     
+    docker run --name=$DOCKERNAME --rm -p 5432:$DB_PORT -v $PWD/db_data/postgres:/var/lib/postgresql/data \
         -e POSTGRES_PASSWORD=$DB_PASSWORD \
         -e POSTGRES_USER=$DB_USER \
         -e POSTGRES_DB=$DB_NAME \
-        postgres |& sed -e "s/^/${LIGHTBLUE}[Postgres]${NC} /" &
-
-    cpid=$!
+        postgres:latest |& sed -e "s/^/${LIGHTBLUE}[Postgres]${NC} /" &
 
     ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
     lpid=$!
 
-    trap "kill ${cpid}; kill ${lpid}; kill ${gpid}" SIGINT
+    trap "kill ${lpid}; kill ${gpid}; docker stop ${DOCKERNAME};" SIGINT
 # elif [ $1 == 'cockroachdb' ]
 # then
 # elif [ $1 == 'tidb' ]

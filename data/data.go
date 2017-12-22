@@ -31,8 +31,10 @@ const (
 
 const databaseName = "lex_library"
 
-var db *sql.DB
-var dbType int
+var (
+	db     *sql.DB
+	dbType int
+)
 
 // Config is the data layer configuration used to determine how to initialize the data layer
 type Config struct {
@@ -65,6 +67,7 @@ func DefaultConfig() Config {
 // Init initializes the data layer based on the passed in configuration.
 // Initialization includes things like setting up the database and the connections to it.
 func Init(cfg Config) error {
+	log.Printf("Initializing Data Layer on %s", cfg.DatabaseType)
 	err := initSearch(cfg)
 	if err != nil {
 		return err
@@ -115,7 +118,7 @@ func Init(cfg Config) error {
 }
 
 func testDB(attempt int) {
-	maxAttempts := 20
+	maxAttempts := 100
 	sleep := 3 * time.Second
 	err := db.Ping()
 
