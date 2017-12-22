@@ -126,7 +126,10 @@ func StartServer(cfg Config, developMode bool) error {
 
 // Teardown gracefully tears down the webserver
 func Teardown() error {
-	return server.Shutdown(context.TODO())
+	if server != nil {
+		return server.Shutdown(context.TODO())
+	}
+	return nil
 }
 
 func setVersion() error {

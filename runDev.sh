@@ -2,6 +2,8 @@
 
 set -e
 
+DBTYPE=${1:-none}
+
 mkdir -p client/deploy
 rm -rf files/
 
@@ -18,7 +20,7 @@ YELLOW='\x1b[1;33m'
 NC='\x1b[0m' # No Color
 LIGHTGREEN='\x1b[1;32m'
 LIGHTBLUE='\x1b[1;34m'
-DOCKERNAME="lex_library_dev_$1"
+DOCKERNAME="lex_library_dev_$DBTYPE"
 
 
 cd client 
@@ -32,7 +34,7 @@ gpid=$!
 cd ..
 
 
-if [ "$1" == "sqlite" ]
+if [ "$DBTYPE" == "sqlite" ]
 then
     mkdir -p "db_data/sqlite"
     export LL_DATA_DATABASETYPE="sqlite"
@@ -42,7 +44,7 @@ then
     lpid=$!
 
     trap "kill ${lpid}; kill ${gpid}" SIGINT
-elif [ $1 == 'mysql' ]
+elif [ $DBTYPE == 'mysql' ]
 then
     mkdir -p "db_data/mysql"
 
@@ -52,16 +54,16 @@ then
     export LL_DATA_DATABASETYPE="mysql"
     export LL_DATA_DATABASEURL="root:$DB_PASSWORD@tcp(localhost:$DB_PORT)/"
 
-    docker run --name=$DOCKERNAME --rm -p 3306:$DB_PORT -v $PWD/db_data/mysql:/var/lib/mysql \
+    docker run --name=$DOCKERNAME --rm \
+        -p 3306:$DB_PORT \
+        -v $PWD/db_data/mysql:/var/lib/mysql \
         -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
         mysql:latest |& sed -e "s/^/${LIGHTBLUE}[MySQL]${NC} /" &
 
     ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
-    lpid=$!
 
-    trap "docker stop ${DOCKERNAME}; kill ${lpid}; kill ${gpid}" SIGINT
-
-elif [ $1 == 'postgres' ]
+    trap "docker stop ${DOCKERNAME};" SIGINT
+elif [ $DBTYPE == 'postgres' ]
 then
     mkdir -p "db_data/postgres"
 
@@ -73,22 +75,73 @@ then
     export LL_DATA_DATABASETYPE="postgres"
     export LL_DATA_DATABASEURL="postgres://localhost/$DB_NAME?user=$DB_USER&password=$DB_PASSWORD&sslmode=disable"
      
-    docker run --name=$DOCKERNAME --rm -p 5432:$DB_PORT -v $PWD/db_data/postgres:/var/lib/postgresql/data \
+    docker run --name=$DOCKERNAME --rm \
+        -p 5432:$DB_PORT \
+        -v $PWD/db_data/postgres:/var/lib/postgresql/data \
         -e POSTGRES_PASSWORD=$DB_PASSWORD \
         -e POSTGRES_USER=$DB_USER \
         -e POSTGRES_DB=$DB_NAME \
         postgres:latest |& sed -e "s/^/${LIGHTBLUE}[Postgres]${NC} /" &
 
     ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
-    lpid=$!
 
-    trap "kill ${lpid}; kill ${gpid}; docker stop ${DOCKERNAME};" SIGINT
-# elif [ $1 == 'cockroachdb' ]
-# then
-# elif [ $1 == 'tidb' ]
-# then
-# elif [ $1 == 'sqlserver' ]
-# then
+    trap "docker stop ${DOCKERNAME};" SIGINT
+elif [ $DBTYPE == 'cockroachdb' ]
+then
+    mkdir -p "db_data/cockroachdb"
+
+    DB_PORT=26257
+
+    export LL_DATA_DATABASETYPE="cockroachdb"
+    export LL_DATA_DATABASEURL="postgresql://localhost:26257/?user=root&sslmode=disable"
+     
+    docker run --name=$DOCKERNAME --rm \
+        -p 26257:$DB_PORT \
+        -v $PWD/db_data/cockroachdb:/cockroach/cockroach-data \
+        cockroachdb/cockroach:latest start --insecure |& sed -e "s/^/${LIGHTBLUE}[CockroachDB]${NC} /" &
+
+    ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
+
+    trap "docker stop ${DOCKERNAME};" SIGINT
+elif [ $DBTYPE == 'tidb' ]
+then
+    mkdir -p "db_data/tidb"
+
+    DB_PORT=4000
+
+    export LL_DATA_DATABASETYPE="tidb"
+    export LL_DATA_DATABASEURL="root:@tcp(localhost:$DB_PORT)/"
+
+    docker run --name=$DOCKERNAME --rm \
+        -p 4000:$DB_PORT \
+        -v $PWD/db_data/tidb:/tidb_data \
+        pingcap/tidb:latest -path=/tidb_data |& sed -e "s/^/${LIGHTBLUE}[TiDB]${NC} /" &
+
+    ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
+
+    trap "docker stop ${DOCKERNAME};" SIGINT
+elif [ $DBTYPE == 'sqlserver' ]
+then
+    mkdir -p "db_data/sqlserver"
+
+    DB_NAME='lex_library'
+    DB_PASSWORD='!Passw0rd'
+    DB_PORT=1433
+
+    export LL_DATA_DATABASETYPE="sqlserver"
+    export LL_DATA_DATABASEURL="sqlserver://sa:$DB_PASSWORD@localhost:$DB_PORT"
+     
+    docker run --name=$DOCKERNAME --rm \
+        -p 1433:$DB_PORT \
+        -v $PWD/db_data/sqlserver:/var/opt/mssql/data \
+        -e ACCEPT_EULA=Y \
+        -e SA_PASSWORD=$DB_PASSWORD \
+        -e MSSQL_PID=Express \
+        microsoft/mssql-server-linux |& sed -e "s/\r/${LIGHTBLUE}[SQLServer]${NC} /" &
+
+    ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
+
+    trap "docker stop ${DOCKERNAME};" SIGINT
 else
     ./lexLibrary -dev "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 

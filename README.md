@@ -2,7 +2,7 @@
 Lex Library is an open-source documentation repository with modern features, like importing from a wide variety of documentation files and web sites, and natural language processing for automatic tagging and summaries.
 
 
-# Building
+# Quickstart
 
 **Requirements**:
  * Go 1.9 or greater
@@ -13,7 +13,8 @@ Lex Library is an open-source documentation repository with modern features, lik
 `runDev.sh` - build LL, build the client files, and run LL in dev mode where web files are rebuilt and loaded on the fly, 
     and templates are rebuilt on each request. If you have docker installed you can spin up a local instance running against
     any of the supported database backends by passing the database type into the command: `runDev.sh mysql`.  Data will
-    be stored in the `db_data` folder.
+    be stored in the `db_data` folder. If you just want to run your databases separately (not in a container), then
+    simply run the script with any Lex Library arguments you want: `runDev.sh -config=config.yaml`.
 
 
 `build.sh` - build LL, build the client files, and embed the static files into the binary, made for release.  Increments

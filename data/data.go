@@ -101,6 +101,8 @@ func Init(cfg Config) error {
 
 	prepareQueries()
 
+	NewQuery("select @@version").DebugPrint()
+
 	if cfg.MaxConnectionLifetime != "" {
 		lifetime, err := time.ParseDuration(cfg.MaxConnectionLifetime)
 		if err == nil {
@@ -135,7 +137,10 @@ func testDB(attempt int) {
 
 // Teardown cleanly tears down any data layer connections
 func Teardown() error {
-	return db.Close()
+	if db != nil {
+		return db.Close()
+	}
+	return nil
 }
 
 func initSQLite(cfg Config) error {
