@@ -1,0 +1,8 @@
+Web:
+  Port: 8080
+  ReadTimeout: 60s
+  WriteTimeout: 60s
+  MaxUploadMemoryMB: 10
+Data:
+  DatabaseType: sqlserver
+  DatabaseUrl: "sqlserver://sa:lexlibraryP!ssw0rd@sqlserver"
