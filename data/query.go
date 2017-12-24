@@ -6,9 +6,9 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"html/template"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/pkg/errors"
 )
@@ -103,7 +103,7 @@ func (q *Query) buildTemplate() {
 			case postgres, cockroachdb:
 				return "TIMESTAMP with time ZONE"
 			case sqlserver:
-				return "DATETIME2"
+				return "DATETIME"
 			default:
 				panic("Unsupported database type")
 			}

@@ -37,6 +37,8 @@ type schemaVer struct {
 
 	String / Text types will be by default case sensitive and unicode supported. The default database collations should
 	reflect that.
+
+	DateTime types are only precise up to seconds
 */
 
 var schemaVersions = []schemaVer{

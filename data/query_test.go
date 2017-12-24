@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
 )
@@ -90,12 +91,76 @@ func TestDataTypes(t *testing.T) {
 	t.Run("datetime", func(t *testing.T) {
 		reset()
 
-	})
-	t.Run("text", func(t *testing.T) {
+		expected := time.Now().Round(time.Second)
 
+		_, err := data.NewQuery(`insert into data_types (datetime_type) values ({{arg "datetime_type"}})`).
+			Exec(sql.Named("datetime_type", expected))
+		if err != nil {
+			t.Fatalf("Error inserting datetime type: %s", err)
+		}
+
+		var got time.Time
+		err = data.NewQuery("Select datetime_type from data_types").QueryRow().Scan(&got)
+		if err != nil {
+			t.Fatalf("Error retrieving datetime type: %s", err)
+		}
+
+		if !expected.Equal(got) {
+			t.Fatalf("datetime type does not match expected %v, got %v", expected, got)
+		}
+
+	})
+
+	stringTest := func(t *testing.T, columnType string) {
+		t.Helper()
+		reset()
+		col := columnType + "_type"
+		expected := "CaseSEnsitiveStrIng"
+		_, err := data.NewQuery(`insert into data_types (` + col + `) values ({{arg "` + col + `"}})`).
+			Exec(sql.Named(col, expected))
+
+		if err != nil {
+			t.Fatalf("Error inserting case sensitive text: %s", err)
+		}
+
+		got := ""
+		err = data.NewQuery("select " + col + " from data_types").QueryRow().Scan(&got)
+
+		if err != nil {
+			t.Fatalf("Error retrieving case sensitive text: %s", err)
+		}
+		if expected != got {
+			t.Fatalf("Could not retrieve equal case sensitive values. Expected %s got %s", expected, got)
+		}
+
+		count := 0
+
+		err = data.NewQuery(`select count(*) from data_types where ` + col + ` = {{arg "` + col + `"}}`).
+			QueryRow(sql.Named(col, expected)).Scan(&count)
+		if err != nil {
+			t.Fatalf("Error testing sql equality for case: %s", err)
+		}
+
+		if count != 1 {
+			t.Fatalf("Case is not propery equal in the database. Expected %d, got %d", 1, count)
+		}
+
+		err = data.NewQuery(`select count(*) from data_types where ` + col + ` <> {{arg "` + col + `"}}`).
+			QueryRow(sql.Named(col, expected)).Scan(&count)
+		if err != nil {
+			t.Fatalf("Error testing sql inequality for case: %s", err)
+		}
+
+		if count != 0 {
+			t.Fatalf("Case is not propery equal in the database. Expected %d, got %d", 0, count)
+		}
+	}
+
+	t.Run("text unicode", func(t *testing.T) {
+		stringTest(t, "text")
 	})
 	t.Run("varchar", func(t *testing.T) {
-
+		stringTest(t, "varchar")
 	})
 	dropTable()
 }
