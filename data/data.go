@@ -209,9 +209,6 @@ func initPostgresAndCDB(cfg Config) error {
 	}
 	// db connection is pointing at a specific database, use as lexLibrary DB
 
-	if dbType == postgres {
-		_, err = db.Exec("CREATE EXTENSION IF NOT EXISTS citext")
-	}
 	return err
 }
 

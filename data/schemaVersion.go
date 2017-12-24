@@ -25,7 +25,6 @@ type schemaVer struct {
 	|bool      | integer           |
 	|[]byte    | blob              |
 	|string    | text              |
-	|string    | citext            |
 	|string    | nvarchar(size)    |
 	|time.Time | timestamp/datetime|
 	+------------------------------+
@@ -37,7 +36,7 @@ type schemaVer struct {
 	For best compatibility, only have one statement per version; i.e. no semicolons, and don't use any reserved words
 
 	String / Text types will be by default case sensitive and unicode supported. The default database collations should
-	reflect that. Case Insensitive column types can be used in specific columns {{citext}}
+	reflect that.
 */
 
 var schemaVersions = []schemaVer{
@@ -54,7 +53,7 @@ var schemaVersions = []schemaVer{
 		update: NewQuery(`
 			create table logs (
 				occurred {{datetime}} NOT NULL,
-				message {{citext}}
+				message {{text}}
 			)
 		`),
 		rollback: NewQuery("DROP INDEX i_occurred ON logs"),

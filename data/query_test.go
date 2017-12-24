@@ -13,12 +13,12 @@ import (
 
 func TestDataTypes(t *testing.T) {
 	createTable := func() {
+		t.Helper()
 		_, err := data.NewQuery(`
 			create table data_types (
 				bytes_type {{bytes}},
 				datetime_type {{datetime}},
 				text_type {{text}},
-				citext_type {{citext}},
 				varchar_type {{varchar 30}}
 			)
 		`).Exec()
@@ -27,12 +27,14 @@ func TestDataTypes(t *testing.T) {
 		}
 	}
 	dropTable := func() {
+		t.Helper()
 		_, err := data.NewQuery("drop table data_types").Exec()
 		if err != nil {
 			t.Fatalf("Error resetting data_types table: %s", err)
 		}
 	}
 	reset := func() {
+		t.Helper()
 		dropTable()
 		createTable()
 	}
@@ -90,9 +92,6 @@ func TestDataTypes(t *testing.T) {
 
 	})
 	t.Run("text", func(t *testing.T) {
-
-	})
-	t.Run("citext", func(t *testing.T) {
 
 	})
 	t.Run("varchar", func(t *testing.T) {

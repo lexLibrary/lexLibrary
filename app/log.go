@@ -26,8 +26,13 @@ var sqlLogGet = data.NewQuery(`
 		LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
 	{{end}}
 `)
+
+// Performance of this search will be poor, and I may just remove this functionality altogether
+// but it's an admin only thing, so maybe it's worth keeping around.  There is no nice way to do case-insensitve
+// columns across all of the databases, unless I drop support for TiDB, Cockroach, and DB2.  It might be
+// worth it if other features require case insensitivity, but I think we can get by without it.
 var sqlLogSearch = data.NewQuery(`
-	select occurred, message from logs where message like {{arg "search"}} order by occurred desc 
+	select occurred, message from logs where lower(message) like lower({{arg "search"}}) order by occurred desc 
 	{{if sqlserver}}
 		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
 	{{else}}

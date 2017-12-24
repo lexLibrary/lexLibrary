@@ -119,23 +119,6 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
-		"citext": func() string {
-			// case in-sensitive strings
-			switch dbType {
-			case postgres:
-				return "CITEXT"
-			case cockroachdb:
-				return "TEXT COLLATE en_u_ks_level2" //FIXME: can't insert into this column?
-			case sqlite:
-				return "TEXT COLLATE nocase"
-			case mysql, tidb:
-				return "TEXT character set utf8 collate utf8_general_ci"
-			case sqlserver:
-				return "nvarchar(max) COLLATE Latin1_General_CI_AS"
-			default:
-				panic("Unsupported database type")
-			}
-		},
 		"varchar": func(size int) string {
 			switch dbType {
 			case postgres, cockroachdb, mysql, tidb:

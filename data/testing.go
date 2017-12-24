@@ -15,6 +15,7 @@ var flagConfigFile string
 
 const defaultConfigFile = "./config.yaml"
 
+// TestingSetup setups the database for use with running on the go test suite
 func TestingSetup() error {
 	flag.StringVar(&flagConfigFile, "config", "./config.yaml", "Sets the path to the configuration file. Either a .YAML, .JSON, or .TOML file")
 

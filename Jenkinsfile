@@ -75,25 +75,22 @@ pipeline {
                 '''
             }
         }
-        // removing cockroachdb for now until I can get case insensitivity working
-        // stage('test cockroachdb') {
-        //     steps {
-        //         sh '''
-        //             cd ci
-        //             sh ./testDB.sh cockroachdb
-        //         '''
-        //     }
-        // }
-        // TiDB currently doesn't support case insensitivity
-        // https://github.com/pingcap/tidb/issues/1161
-        // stage('test tidb') {
-        //     steps {
-        //         sh '''
-        //             cd ci
-        //             sh ./testDB.sh tidb
-        //         '''
-        //     }
-        // }
+        stage('test cockroachdb') {
+            steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh cockroachdb
+                '''
+            }
+        }
+        stage('test tidb') {
+            steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh tidb
+                '''
+            }
+        }
         stage('test sqlserver') {
             steps {
                 sh '''
