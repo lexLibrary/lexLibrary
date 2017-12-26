@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$GOPATH/src/github.com/lexLibrary/lexLibrary/vendor/gopkg.in/rana/ora.v4/contrib/
+
 # build client
 cd client
 rm -rf deploy

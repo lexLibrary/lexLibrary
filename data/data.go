@@ -17,6 +17,7 @@ import (
 	_ "github.com/lib/pq"                        // register postgres
 	_ "github.com/mattn/go-sqlite3"              // register sqlite3
 	"github.com/pkg/errors"
+
 	_ "gopkg.in/rana/ora.v4" // register oracle
 )
 
@@ -28,7 +29,7 @@ const (
 	sqlserver          // github.com/denisenkom/go-mssqldb
 	cockroachdb        // github.com/lib/pq
 	tidb               // github.com/go-sql-driver/mysql/
-	oracle             //	gopkg.in/rana/ora.v4
+	oracle             // gopkg.in/rana/ora.v4
 )
 
 const databaseName = "lex_library"
