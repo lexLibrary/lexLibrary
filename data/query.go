@@ -81,6 +81,7 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"bytes": func() string {
+			// binary data with no size limits
 			switch dbType {
 			case sqlite:
 				return "BLOB"
@@ -97,6 +98,7 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"datetime": func() string {
+			// date + time with precision to seconds
 			switch dbType {
 			case mysql, tidb, sqlite:
 				return "DATETIME"
@@ -109,7 +111,7 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"text": func() string {
-			// case sensitive strings
+			// case sensitive unicode with no limit on size
 			switch dbType {
 			case sqlite, postgres, cockroachdb, mysql, tidb:
 				return "TEXT"
@@ -120,6 +122,7 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"varchar": func(size int) string {
+			// case sensitive unicode with size limits
 			switch dbType {
 			case postgres, cockroachdb, mysql, tidb:
 				return fmt.Sprintf("varchar(%d)", size)
@@ -132,8 +135,23 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"int": func() string {
+			// 64bit integers
 			switch dbType {
-			case postgres, cockroachdb, mysql, tidb, sqlite, sqlserver:
+			case sqlite:
+				return "int"
+			case postgres, mysql, cockroachdb, tidb, sqlserver:
+				return "bigint"
+			default:
+				panic("Unsupported database type")
+			}
+		},
+		"bool": func() string {
+			switch dbType {
+			case postgres, cockroachdb, mysql, tidb:
+				return "boolean"
+			case sqlserver:
+				return "bit"
+			case sqlite:
 				return "int"
 			default:
 				panic("Unsupported database type")

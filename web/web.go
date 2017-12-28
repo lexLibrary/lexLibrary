@@ -1,5 +1,7 @@
 // Copyright (c) 2017 Townsourced Inc.
 
+// Package web contains all the handling for the web server.  It should handle cookies and routing, but
+// all application logic and access rules should happen in the app layer.
 package web
 
 import (

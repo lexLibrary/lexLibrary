@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"database/sql"
 	"io"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -22,7 +23,8 @@ func TestDataTypes(t *testing.T) {
 				datetime_type {{datetime}},
 				text_type {{text}},
 				varchar_type {{varchar 30}},
-				int_type {{int}}
+				int_type {{int}},
+				bool_type {{bool}}
 			)
 		`).Exec()
 		if err != nil {
@@ -224,6 +226,62 @@ func TestDataTypes(t *testing.T) {
 	})
 	t.Run("varchar", func(t *testing.T) {
 		caseTest(t, "varchar", "CaseSEnsitiveStrIng")
+	})
+
+	testInt := func(t *testing.T, expected int) {
+		reset()
+		t.Helper()
+
+		_, err := data.NewQuery(`insert into data_types (int_type) values ({{arg "int_type"}})`).
+			Exec(sql.Named("int_type", expected))
+		if err != nil {
+			t.Fatalf("Error inserting int type: %s", err)
+		}
+
+		var got int
+		err = data.NewQuery("Select int_type from data_types").QueryRow().Scan(&got)
+		if err != nil {
+			t.Fatalf("Error retrieving int type: %s", err)
+		}
+
+		if expected != got {
+			t.Fatalf("int type does not match expected %v, got %v", expected, got)
+		}
+
+	}
+
+	t.Run("int", func(t *testing.T) {
+		testInt(t, 32)
+	})
+
+	t.Run("int max", func(t *testing.T) {
+		testInt(t, math.MaxInt64)
+	})
+
+	t.Run("int negative", func(t *testing.T) {
+		testInt(t, -1*math.MaxInt64)
+	})
+
+	t.Run("bool", func(t *testing.T) {
+		reset()
+		t.Helper()
+		expected := true
+
+		_, err := data.NewQuery(`insert into data_types (bool_type) values ({{arg "bool_type"}})`).
+			Exec(sql.Named("bool_type", expected))
+		if err != nil {
+			t.Fatalf("Error inserting bool type: %s", err)
+		}
+
+		var got bool
+		err = data.NewQuery("Select bool_type from data_types").QueryRow().Scan(&got)
+		if err != nil {
+			t.Fatalf("Error retrieving bool type: %s", err)
+		}
+
+		if expected != got {
+			t.Fatalf("bool type does not match expected %v, got %v", expected, got)
+		}
 	})
 
 	dropTable()

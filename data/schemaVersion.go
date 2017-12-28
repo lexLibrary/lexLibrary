@@ -39,6 +39,10 @@ type schemaVer struct {
 	reflect that.
 
 	DateTime types are only precise up to seconds
+
+	Integers are 64 bit
+
+	Add new versions for changes to exising tables if the changes have been checked into the Dev or master branches
 */
 
 var schemaVersions = []schemaVer{
@@ -78,9 +82,12 @@ var schemaVersions = []schemaVer{
 		update: NewQuery(`
 			create table users (
 				username {{varchar 256}} NOT NULL PRIMARY KEY,
+				first_name {{text}},
+				last_name {{text}},
 				auth_type {{text}},
 				password {{bytes}},
-				password_version {{int}}
+				password_version {{int}},
+				active {{bool}},
 				updated {{datetime}},
 				created {{datetime}}
 			)

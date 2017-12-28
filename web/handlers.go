@@ -159,5 +159,6 @@ func (t *templateHandler) loadTemplates() {
 		tmpl += string(str)
 	}
 
-	t.template = template.Must(template.New("").Funcs(map[string]interface{}{}).Parse(tmpl))
+	// change delims to work with Vuejs
+	t.template = template.Must(template.New("").Funcs(map[string]interface{}{}).Delims("[[", "]]").Parse(tmpl))
 }
