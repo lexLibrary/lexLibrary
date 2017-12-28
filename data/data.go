@@ -17,8 +17,6 @@ import (
 	_ "github.com/lib/pq"                        // register postgres
 	_ "github.com/mattn/go-sqlite3"              // register sqlite3
 	"github.com/pkg/errors"
-
-	_ "gopkg.in/rana/ora.v4" // register oracle
 )
 
 // Database Types
@@ -29,7 +27,6 @@ const (
 	sqlserver          // github.com/denisenkom/go-mssqldb
 	cockroachdb        // github.com/lib/pq
 	tidb               // github.com/go-sql-driver/mysql/
-	oracle             // gopkg.in/rana/ora.v4
 )
 
 const databaseName = "lex_library"
@@ -93,9 +90,6 @@ func Init(cfg Config) error {
 		dbType = tidb
 		err = initMySQL(cfg)
 	case "sqlserver":
-		dbType = sqlserver
-		err = initSQLServer(cfg)
-	case "oracle":
 		dbType = sqlserver
 		err = initSQLServer(cfg)
 	default:
@@ -278,60 +272,6 @@ func initMySQL(cfg Config) error {
 func initSQLServer(cfg Config) error {
 	var err error
 	db, err = sql.Open("sqlserver", cfg.DatabaseURL)
-	if err != nil {
-		return err
-	}
-
-	testDB(1)
-
-	dbName := ""
-
-	err = db.QueryRow("SELECT DB_NAME()").Scan(&dbName)
-	if err != nil {
-		return errors.Wrap(err, "Getting current database")
-	}
-
-	if dbName == "master" {
-		// db connection is pointing at default database, check for lexLibrary DB
-		// and create as necessary
-		count := 0
-		err = db.QueryRow("SELECT count(*) FROM master.dbo.sysdatabases WHERE [name] = @name",
-			sql.Named("name", databaseName)).Scan(&count)
-		if err != nil {
-			return errors.Wrapf(err, "Looking for %s Database", databaseName)
-		}
-
-		if count == 0 {
-			_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s COLLATE Latin1_General_CS_AS", databaseName))
-			if err != nil {
-				return errors.Wrapf(err, "Creating %s database", databaseName)
-			}
-		}
-		// reopen DB connection on new database
-		u, err := url.Parse(cfg.DatabaseURL)
-		if err != nil {
-			return err
-		}
-
-		val := url.Values{}
-		val.Set("database", databaseName)
-		u.RawQuery = val.Encode()
-
-		db, err = sql.Open("sqlserver", u.String())
-		if err != nil {
-			return err
-		}
-
-		testDB(1)
-	}
-	// db connection is pointing at a specific database, use as lexLibrary DB
-
-	return nil
-}
-
-func initOracle(cfg Config) error {
-	var err error
-	db, err = sql.Open("oracle", cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}

@@ -117,12 +117,6 @@
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/sync"
-  packages = ["errgroup"]
-  revision = "fd80eb99c8f653c847d294a001bdf2a3a6f768f5"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "fb4cac33e3196ff7f507ab9b2d2a44b0142f5b5a"
@@ -134,12 +128,6 @@
   revision = "9e2f80a6ba7ed4ba13e0cd4b1f094bf916875735"
 
 [[projects]]
-  name = "gopkg.in/rana/ora.v4"
-  packages = [".","date","num"]
-  revision = "711f361c6a264539c5e41aa3037a1aa92eb31ccd"
-  version = "v4.1.14"
-
-[[projects]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
@@ -148,6 +136,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0c01c4c03c1f5ce99ac9d66f7311e168087ffffa52792bf4da042c1611885cab"
+  inputs-digest = "f4c124da6d581f4a8c4fe0ef5f4746d699bda6dad4478e39ce64e0159c53d744"
   solver-name = "gps-cdcl"
   solver-version = 1
