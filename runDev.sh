@@ -142,29 +142,6 @@ then
     ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 
     trap "docker stop ${DOCKERNAME};" SIGINT
-elif [ $DBTYPE == 'oracle' ]
-then
-    mkdir -p "db_data/oracle"
-
-    DB_NAME='lex_library'
-    DB_PASSWORD='!Passw0rd'
-    DB_PORT=1433
-
-    export LL_DATA_DATABASETYPE="oracle"
-    export LL_DATA_DATABASEURL="oracle://sa:$DB_PASSWORD@localhost:$DB_PORT"
-     
-    docker run --name=$DOCKERNAME --rm \
-        -p 1433:$DB_PORT \
-        -v $PWD/db_data/sqlserver:/var/opt/mssql/data \
-        -e ACCEPT_EULA=Y \
-        -e SA_PASSWORD=$DB_PASSWORD \
-        -e MSSQL_PID=Express \
-        microsoft/mssql-server-linux |& sed -e "s/\r/${LIGHTBLUE}[SQLServer]${NC} /" &
-
-    ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
-
-    trap "docker stop ${DOCKERNAME};" SIGINT
-
 else
     ./lexLibrary -dev "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 

@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:$GOPATH/src/github.com/lexLibrary/lexLibrary/vendor/github.com/mattn/go-oci8
-
 # build client
 cd client
 rm -rf deploy
