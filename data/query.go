@@ -131,6 +131,14 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
+		"int": func() string {
+			switch dbType {
+			case postgres, cockroachdb, mysql, tidb, sqlite, sqlserver:
+				return "int"
+			default:
+				panic("Unsupported database type")
+			}
+		},
 		"db": func() string {
 			switch dbType {
 			case sqlite:

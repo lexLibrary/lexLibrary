@@ -74,4 +74,17 @@ var schemaVersions = []schemaVer{
 		`),
 		rollback: NewQuery("DROP table settings"),
 	},
+	schemaVer{
+		update: NewQuery(`
+			create table users (
+				username {{varchar 256}} NOT NULL PRIMARY KEY,
+				auth_type {{text}},
+				password {{bytes}},
+				password_version {{int}}
+				updated {{datetime}},
+				created {{datetime}}
+			)
+		`),
+		rollback: NewQuery("drop table users"),
+	},
 }
