@@ -232,5 +232,6 @@ func TestSetting(t *testing.T) {
 	})
 
 	//TODO: Test settings with options
+	//TODO: Test settings with validation funcs
 
 }

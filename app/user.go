@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
-	"github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -18,7 +17,7 @@ type User struct {
 	FirstName       string    `json:"firstName"`
 	LastName        string    `json:"lastName"`
 	AuthType        string    `json:"authType"`
-	Password        string    `json:"-"`
+	Password        []byte    `json:"-"`
 	PasswordVersion int       `json:"-"`
 	Active          bool      `json:"active"`  // whether or not the user is active and can log in
 	Version         int       `json:"version"` // version of this record starting with 0
@@ -62,10 +61,38 @@ var (
 // UserNew creates a new user
 func UserNew(username, firstName, lastName, authType, password string) (*User, error) {
 	// validate username length and authtype
-	// validate password
-	// insert user
+	err := validatePassword(password)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, errors.New("TODO")
+	passVer := len(passwordVersions) - 1
+
+	hash, err := passwordVersions[passVer].hash(password)
+	if err != nil {
+		return nil, err
+	}
+
+	u := &User{
+		ID:              xid.New(),
+		Username:        username,
+		FirstName:       firstName,
+		LastName:        lastName,
+		AuthType:        authType,
+		Password:        hash,
+		PasswordVersion: passVer,
+		Active:          true,
+		Version:         0,
+		Updated:         time.Now(),
+		Created:         time.Now(),
+	}
+
+	err = u.insert()
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }
 
 func (u *User) insert() error {

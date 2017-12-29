@@ -21,9 +21,15 @@ var settingDefaults = []Setting{
 		},
 	},
 	Setting{
-		ID:          "PasswordMinimumLength",
+		ID:          "PasswordMinLength",
 		Category:    "Users",
-		Description: "Minimum required lenth for passwords",
+		Description: "Required minimum length for passwords",
 		Value:       10,
+		validate: func(value interface{}) error {
+			if value.(int) < 8 {
+				return NewFailure("Minimum password length must be greater than 8")
+			}
+			return nil
+		},
 	},
 }

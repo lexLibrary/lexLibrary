@@ -20,7 +20,7 @@ type Setting struct {
 	Value       interface{}   `json:"value"`
 	Options     []interface{} `json:"options"`
 	Category    string        `json:"category"`
-	validate    func() *Fail
+	validate    func(value interface{}) error
 }
 
 // ErrSettingNotFound is returned when a setting can't be found for the given id
@@ -125,7 +125,7 @@ func SettingSet(id string, value interface{}) error {
 	}
 
 	if setting.validate != nil {
-		err := setting.validate()
+		err = setting.validate(value)
 		if err != nil {
 			return err
 		}
@@ -216,7 +216,7 @@ func (s *Setting) setValue(tableValue string) error {
 
 // String returns the string value of the setting
 // will panic if setting is not of type string
-func (s *Setting) String() string {
+func (s Setting) String() string {
 	value, ok := s.Value.(string)
 	if !ok {
 		panic(fmt.Sprintf("Setting %s is not of type int", s.ID))
@@ -226,7 +226,7 @@ func (s *Setting) String() string {
 
 // Int returns the int value of the setting
 // will panic if setting is not of type int
-func (s *Setting) Int() int {
+func (s Setting) Int() int {
 	value, ok := s.Value.(int)
 	if !ok {
 		panic(fmt.Sprintf("Setting %s is not of type int", s.ID))
@@ -236,7 +236,7 @@ func (s *Setting) Int() int {
 
 // Bool returns the int value of the setting
 // will panic if setting is not of type bool
-func (s *Setting) Bool() bool {
+func (s Setting) Bool() bool {
 	value, ok := s.Value.(bool)
 	if !ok {
 		panic(fmt.Sprintf("Setting %s is not of type bool", s.ID))
@@ -246,7 +246,7 @@ func (s *Setting) Bool() bool {
 
 // Duration returns the Duration value of the setting
 // will panic if setting is not of type Duration
-func (s *Setting) Duration() time.Duration {
+func (s Setting) Duration() time.Duration {
 	value, ok := s.Value.(time.Duration)
 	if !ok {
 		panic(fmt.Sprintf("Setting %s is not of type Duration", s.ID))

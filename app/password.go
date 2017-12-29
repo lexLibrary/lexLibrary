@@ -27,7 +27,11 @@ var passwordVersions = []passworder{
 // validatePassword validates if the passed in password
 // meets the requirements for a good password in lex library
 func validatePassword(password string) error {
-	// check length
+	min := SettingMust("PasswordMinLength").Int()
+
+	if len(password) < min {
+		return NewFailure("The password must be at least %d characters long", min)
+	}
 	// check against bad password list
 	return nil
 }
