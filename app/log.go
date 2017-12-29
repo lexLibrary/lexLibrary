@@ -13,8 +13,8 @@ import (
 
 // Log is a logged error message in the database
 type Log struct {
-	Message  string
-	Occurred time.Time
+	Message  string    `json:"message,omitempty"`
+	Occurred time.Time `json:"occurred,omitempty"`
 }
 
 var sqlLogInsert = data.NewQuery(`insert into logs (occurred, message) values ({{arg "occurred"}}, {{arg "message"}})`)

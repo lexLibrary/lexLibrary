@@ -62,11 +62,11 @@ var schemaVersions = []schemaVer{
 				message {{text}}
 			)
 		`),
-		rollback: NewQuery("DROP INDEX i_occurred ON logs"),
+		rollback: NewQuery("drop table logs"),
 	},
 	schemaVer{
 		update:   NewQuery("create index i_occurred on logs (occurred)"),
-		rollback: NewQuery("Drop index i_occurred"),
+		rollback: NewQuery("drop index i_occurred"),
 	},
 	schemaVer{
 		update: NewQuery(`
@@ -81,15 +81,17 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update: NewQuery(`
 			create table users (
-				username {{varchar 256}} NOT NULL PRIMARY KEY,
+				id {{bytes}} NOT NULL PRIMARY KEY,
+				username {{text}} NOT NULL,
 				first_name {{text}},
 				last_name {{text}},
-				auth_type {{text}},
+				auth_type {{text}} NOT NULL,
 				password {{bytes}},
 				password_version {{int}},
-				active {{bool}},
-				updated {{datetime}},
-				created {{datetime}}
+				active {{bool}} NOT NULL,
+				version {{int}} NOT NULL,
+				updated {{datetime}} NOT NULL,
+				created {{datetime}} NOT NULL
 			)
 		`),
 		rollback: NewQuery("drop table users"),

@@ -15,11 +15,12 @@ import (
 
 // Setting is a defaulted value that changes how LexLibrary functions
 type Setting struct {
-	ID          string
-	Description string
-	Value       interface{}
-	Options     []interface{}
-	Category    string
+	ID          string        `json:"id"`
+	Description string        `json:"description"`
+	Value       interface{}   `json:"value"`
+	Options     []interface{} `json:"options"`
+	Category    string        `json:"category"`
+	validate    func() *Fail
 }
 
 // ErrSettingNotFound is returned when a setting can't be found for the given id
@@ -28,11 +29,13 @@ var ErrSettingNotFound = NotFound("No setting can be found for the given id")
 // ErrSettingInvalidValue is returned when a setting is being set to a value that is invalid for the setting
 var ErrSettingInvalidValue = NotFound("The setting cannot be set to this value")
 
-var sqlSettingsGet = data.NewQuery("select id, value from settings")
-var sqlSettingGet = data.NewQuery(`select value from settings where id = {{arg "id"}}`)
-var sqlSettingUpdate = data.NewQuery(`update settings set value = {{arg "value"}} where id = {{arg "id"}}`)
-var sqlSettingInsert = data.NewQuery(`
-	insert into settings (id, description, value) values ({{arg "id"}}, {{arg "description"}}, {{arg "value"}})`)
+var (
+	sqlSettingsGet   = data.NewQuery("select id, value from settings")
+	sqlSettingGet    = data.NewQuery(`select value from settings where id = {{arg "id"}}`)
+	sqlSettingUpdate = data.NewQuery(`update settings set value = {{arg "value"}} where id = {{arg "id"}}`)
+	sqlSettingInsert = data.NewQuery(`insert into settings (id, description, value) 
+		values ({{arg "id"}}, {{arg "description"}}, {{arg "value"}})`)
+)
 
 // Settings returns all of the settings in Lex Library.  If a setting is not set in the database
 // the default for that setting is returned
@@ -119,6 +122,13 @@ func SettingSet(id string, value interface{}) error {
 
 	if !setting.canSet(value) {
 		return ErrSettingInvalidValue
+	}
+
+	if setting.validate != nil {
+		err := setting.validate()
+		if err != nil {
+			return err
+		}
 	}
 
 	strValue := ""
