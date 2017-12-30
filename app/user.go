@@ -4,6 +4,7 @@ package app
 
 import (
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -28,6 +29,17 @@ type User struct {
 // AuthType determines the authentication method for a given user
 const (
 	AuthTypePassword = "password"
+	//AuthType...
+)
+
+// user constants
+const (
+	UserMaxNameLength = 64 // This is pretty arbitrary but there should probably be some limit
+)
+
+var (
+	// ErrLogonFailure is when a user fails a login attempt
+	ErrLogonFailure = NewFailure("Invalid user and / or password")
 )
 
 var (
@@ -56,12 +68,29 @@ var (
 		{{arg "updated"}}, 
 		{{arg "created"}}
 	)`)
+	sqlUserIDFromUsername = data.NewQuery(`select id from users where username = {{arg "username"}}`)
 )
 
 // UserNew creates a new user
-func UserNew(username, firstName, lastName, authType, password string) (*User, error) {
-	// validate username length and authtype
-	err := validatePassword(password)
+func UserNew(username, firstName, lastName, password string) (*User, error) {
+	u := &User{
+		ID:        xid.New(),
+		Username:  strings.ToLower(username),
+		FirstName: firstName,
+		LastName:  lastName,
+		AuthType:  AuthTypePassword,
+		Active:    true,
+		Version:   0,
+		Created:   time.Now(),
+		Updated:   time.Now(),
+	}
+
+	err := u.validate()
+	if err != nil {
+		return nil, err
+	}
+
+	err = validatePassword(password)
 	if err != nil {
 		return nil, err
 	}
@@ -73,18 +102,16 @@ func UserNew(username, firstName, lastName, authType, password string) (*User, e
 		return nil, err
 	}
 
-	u := &User{
-		ID:              xid.New(),
-		Username:        username,
-		FirstName:       firstName,
-		LastName:        lastName,
-		AuthType:        authType,
-		Password:        hash,
-		PasswordVersion: passVer,
-		Active:          true,
-		Version:         0,
-		Updated:         time.Now(),
-		Created:         time.Now(),
+	u.PasswordVersion = passVer
+	u.Password = hash
+
+	exists, err := u.exists()
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return nil, NewFailure("A user with the username %s already exists", u.Username)
 	}
 
 	err = u.insert()
@@ -111,4 +138,40 @@ func (u *User) insert() error {
 	)
 
 	return err
+}
+
+func (u *User) exists() (bool, error) {
+	var id xid.ID
+	err := sqlUserIDFromUsername.QueryRow(sql.Named("username", u.Username)).Scan(&id)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (u *User) validate() error {
+	if u.Username == "" {
+		return NewFailure("A username is required")
+	}
+
+	if !urlify(u.Username).is() {
+		return NewFailure("A username can only contain letters, numbers and dashes")
+	}
+
+	if len(u.FirstName) > UserMaxNameLength {
+		return NewFailure("First name must be less than %d characters", UserMaxNameLength)
+	}
+	if len(u.LastName) > UserMaxNameLength {
+		return NewFailure("Last name must be less than %d characters", UserMaxNameLength)
+	}
+
+	if u.AuthType != AuthTypePassword {
+		return NewFailure("Invalid user Authentication Type")
+	}
+
+	return nil
 }

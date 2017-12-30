@@ -19,7 +19,6 @@ type Setting struct {
 	Description string        `json:"description"`
 	Value       interface{}   `json:"value"`
 	Options     []interface{} `json:"options"`
-	Category    string        `json:"category"`
 	validate    func(value interface{}) error
 }
 

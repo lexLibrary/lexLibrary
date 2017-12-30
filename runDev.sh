@@ -12,7 +12,10 @@ VERSION=$(git describe --tags --long)
 # set version and git sha in version file
 echo "$VERSION">version
 
-go-bindata -debug -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go ./version ./client/deploy/...
+go-bindata -debug -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go \
+    ./version \
+    ./client/deploy/... \
+    ./app/bad_passwords.txt
 
 go build -o lexLibrary
 

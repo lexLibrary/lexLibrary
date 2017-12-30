@@ -10,17 +10,17 @@ import (
 	"github.com/lexLibrary/lexLibrary/data"
 )
 
-func settingReset(t *testing.T) {
-	_, err := data.NewQuery("delete from settings").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying settings table before running tests: %s", err)
-	}
-}
-
 func TestSetting(t *testing.T) {
-	settingReset(t)
+	reset := func() {
+		t.Helper()
+		_, err := data.NewQuery("delete from settings").Exec()
+		if err != nil {
+			t.Fatalf("Error emptying settings table before running tests: %s", err)
+		}
+	}
 
 	t.Run("Default", func(t *testing.T) {
+		reset()
 		setting, err := app.SettingDefault("AllowPublic")
 		if err != nil {
 			t.Fatalf("Error getting setting default")
@@ -160,7 +160,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Settings List", func(t *testing.T) {
-		settingReset(t)
+		reset()
 
 		settings, err := app.Settings()
 		if err != nil {
@@ -203,7 +203,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Must", func(t *testing.T) {
-		settingReset(t)
+		reset()
 		id := "AllowPublic"
 		s := app.SettingMust(id)
 		if s.ID != id {
@@ -231,7 +231,26 @@ func TestSetting(t *testing.T) {
 		_ = app.SettingMust("badKey")
 	})
 
-	//TODO: Test settings with options
-	//TODO: Test settings with validation funcs
+	t.Run("Settings with options", func(t *testing.T) {
+		reset()
 
+		err := app.SettingSet("AuthenticationType", "bad value")
+		if err == nil {
+			t.Fatalf("Setting an an invalid value on a setting with options did not fail")
+		}
+
+		if err != app.ErrSettingInvalidValue {
+			t.Fatalf("Invalid value on a setting with options did not return the correct error. Expected %s got %s",
+				app.ErrSettingInvalidValue, err)
+		}
+	})
+
+	t.Run("Setting with validate func", func(t *testing.T) {
+		reset()
+
+		err := app.SettingSet("PasswordMinLength", 3)
+		if err == nil {
+			t.Fatalf("Setting an an invalid value on a setting with a validate func did not fail")
+		}
+	})
 }

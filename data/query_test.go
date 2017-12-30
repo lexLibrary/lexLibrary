@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/rs/xid"
 )
 
 func TestDataTypes(t *testing.T) {
@@ -24,7 +25,8 @@ func TestDataTypes(t *testing.T) {
 				text_type {{text}},
 				varchar_type {{varchar 30}},
 				int_type {{int}},
-				bool_type {{bool}}
+				bool_type {{bool}},
+				xid_type {{varchar 20}}
 			)
 		`).Exec()
 		if err != nil {
@@ -264,7 +266,6 @@ func TestDataTypes(t *testing.T) {
 
 	t.Run("bool", func(t *testing.T) {
 		reset()
-		t.Helper()
 		expected := true
 
 		_, err := data.NewQuery(`insert into data_types (bool_type) values ({{arg "bool_type"}})`).
@@ -281,6 +282,43 @@ func TestDataTypes(t *testing.T) {
 
 		if expected != got {
 			t.Fatalf("bool type does not match expected %v, got %v", expected, got)
+		}
+	})
+
+	t.Run("xid", func(t *testing.T) {
+		reset()
+		expected := xid.New()
+
+		_, err := data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).
+			Exec(sql.Named("xid_type", expected))
+		if err != nil {
+			t.Fatalf("Error inserting xid type: %s", err)
+		}
+		_, err = data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).
+			Exec(sql.Named("xid_type", xid.New()))
+		if err != nil {
+			t.Fatalf("Error inserting xid type: %s", err)
+		}
+
+		var got xid.ID
+		err = data.NewQuery(`Select xid_type from data_types where xid_type = {{arg "xid_type"}}`).QueryRow(
+			sql.Named("xid_type", expected)).Scan(&got)
+		if err != nil {
+			t.Fatalf("Error retrieving xid type: %s", err)
+		}
+
+		if expected != got {
+			t.Fatalf("xid type does not match expected %v, got %v", expected, got)
+		}
+
+		err = data.NewQuery(`Select xid_type from data_types where xid_type <> {{arg "xid_type"}}`).QueryRow(
+			sql.Named("xid_type", expected)).Scan(&got)
+		if err != nil {
+			t.Fatalf("Error retrieving xid type: %s", err)
+		}
+
+		if expected == got {
+			t.Fatalf("xid type matches wrong value")
 		}
 	})
 

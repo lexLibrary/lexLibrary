@@ -7,13 +7,11 @@ package app
 var settingDefaults = []Setting{
 	Setting{
 		ID:          "AllowPublic",
-		Category:    "Documents",
 		Description: "Whether or not to allow documents to be published that are accessible without logging in to Lex Library",
 		Value:       true,
 	},
 	Setting{
 		ID:          "AuthenticationType",
-		Category:    "Users",
 		Description: "How users log into Lex Library.", // TODO add description of auth options into setting description
 		Value:       AuthTypePassword,
 		Options: []interface{}{
@@ -22,7 +20,6 @@ var settingDefaults = []Setting{
 	},
 	Setting{
 		ID:          "PasswordMinLength",
-		Category:    "Users",
 		Description: "Required minimum length for passwords",
 		Value:       10,
 		validate: func(value interface{}) error {
@@ -31,5 +28,25 @@ var settingDefaults = []Setting{
 			}
 			return nil
 		},
+	},
+	Setting{
+		ID:          "BadPasswordCheck",
+		Description: "Don't allow passwords that exist in the top 10,000 most common passwords list",
+		Value:       true,
+	},
+	Setting{
+		ID:          "PasswordRequireSpecial",
+		Description: "Require that all new passwords have at least one special character",
+		Value:       false,
+	},
+	Setting{
+		ID:          "PasswordRequireNumber",
+		Description: "Require that all new passwords have at least one number",
+		Value:       false,
+	},
+	Setting{
+		ID:          "PasswordRequireMixedCase",
+		Description: "Require that all new passwords have at least one upper and one lower case letter",
+		Value:       false,
 	},
 }

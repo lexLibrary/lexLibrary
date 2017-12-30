@@ -36,7 +36,7 @@ type schemaVer struct {
 	For best compatibility, only have one statement per version; i.e. no semicolons, and don't use any reserved words
 
 	String / Text types will be by default case sensitive and unicode supported. The default database collations should
-	reflect that.
+	reflect that.  Prefer Text over varchar except where necessary such as PKs.
 
 	DateTime types are only precise up to seconds
 
@@ -71,7 +71,7 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update: NewQuery(`
 			create table settings (
-				id {{varchar 256}} NOT NULL PRIMARY KEY, -- necessary for mysql PK
+				id {{varchar 64}} NOT NULL PRIMARY KEY,
 				description {{text}} NOT NULL,
 				value {{text}} NOT NULL
 			)
@@ -81,7 +81,7 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update: NewQuery(`
 			create table users (
-				id {{bytes}} NOT NULL PRIMARY KEY,
+				id {{varchar 20}} NOT NULL PRIMARY KEY,
 				username {{text}} NOT NULL,
 				first_name {{text}},
 				last_name {{text}},

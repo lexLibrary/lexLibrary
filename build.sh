@@ -15,7 +15,10 @@ VERSION=$(git describe --tags --long)
 echo "$VERSION">version
 
 # embed client data and version info into executable
-go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go ./version ./client/deploy/...
+go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go \
+    ./version \
+    ./client/deploy/... \
+    ./app/bad_passwords.txt
 
 #build executable
 go clean -i -a
