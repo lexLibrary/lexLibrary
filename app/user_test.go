@@ -109,14 +109,15 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Incorrect new user version. Expected %d, got %d", 0, other.Version)
 		}
 
-		if other.Updated.After(time.Now()) {
-			t.Fatalf("Incorrect Updated date")
+		if !other.Updated.Before(time.Now()) {
+			t.Fatalf("Incorrect Updated date: %v", other.Updated)
 		}
-		if other.Created.After(time.Now()) {
-			t.Fatalf("Incorrect Created date")
+		if !other.Created.Before(time.Now()) {
+			t.Fatalf("Incorrect Created date: %v", other.Created)
 		}
 		if other.Created.After(other.Updated) {
-			t.Fatalf("User created data was after user updated date")
+			t.Fatalf("User created data was after user updated date. Created %v Updated %v", other.Created,
+				other.Updated)
 		}
 	})
 
