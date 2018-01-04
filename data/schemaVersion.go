@@ -96,4 +96,20 @@ var schemaVersions = []schemaVer{
 		`),
 		rollback: NewQuery("drop table users"),
 	},
+	schemaVer{
+		update: NewQuery(`
+			create table sessions (
+				id {{varchar 32}} NOT NULL PRIMARY KEY,
+				user_id {{varchar 20}} NOT NULL,
+				valid {{bool}},
+				expires {{datetime}} NOT NULL,
+				ip_address {{text}},
+				user_agent {{text}},
+				csrf_token {{text}} NOT NULL,
+				updated {{datetime}} NOT NULL,
+				created {{datetime}} NOT NULL
+			)
+		`),
+		rollback: NewQuery("drop table sessions"),
+	},
 }

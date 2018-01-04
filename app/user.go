@@ -69,6 +69,9 @@ var (
 		{{arg "created"}}
 	)`)
 	sqlUserIDFromUsername = data.NewQuery(`select id from users where username = {{arg "username"}}`)
+	sqlUserFromID         = data.NewQuery(`
+		select id, username, first_name, last_name, auth_type, active, version,	updated, created 
+		from users where id = {{arg "id"}}`)
 )
 
 // UserNew creates a new user

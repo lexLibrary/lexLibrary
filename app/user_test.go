@@ -38,6 +38,9 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding new user: %s", err)
 		}
 
+		// sleep for one second because that's the minimum precision of some database's datetime fields
+		time.Sleep(1 * time.Second)
+
 		if u.FirstName != firstname || u.LastName != lastname || u.Username != username {
 			t.Fatalf("Returned user doesn't match passed in values")
 		}
