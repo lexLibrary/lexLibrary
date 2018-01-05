@@ -94,7 +94,6 @@ func (a *argon) compare(password string, hash []byte) error {
 	}
 
 	salt := parts[5]
-	arHash := parts[6]
 
 	ar := &argon{
 		time:    uint32(time),
@@ -108,7 +107,7 @@ func (a *argon) compare(password string, hash []byte) error {
 		return errors.Wrap(err, "Hashing password for comparison")
 	}
 
-	if subtle.ConstantTimeCompare(arHash, other) == 1 {
+	if subtle.ConstantTimeCompare(hash, other) == 1 {
 		return nil
 	}
 
