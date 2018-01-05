@@ -21,7 +21,10 @@ func TestSession(t *testing.T) {
 
 	}
 
-	u, err := app.UserNew("testusername", "", "", "ODSjflaksjdfhiasfd323")
+	username := "testusername"
+	password := "ODSjflaksjdfhiasfd323"
+
+	u, err := app.UserNew(username, "", "", password)
 	if err != nil {
 		t.Fatalf("Error adding user for session testing")
 	}
@@ -117,6 +120,33 @@ func TestSession(t *testing.T) {
 			t.Fatalf("CSRF token was not updated properly: %s", token)
 		}
 
+	})
+
+	t.Run("Login", func(t *testing.T) {
+		_, err := app.Login(username, password)
+		if err != nil {
+			t.Fatalf("Error logging in: %s", err)
+		}
+
+		_, err = app.Login("badusername", password)
+		if err != app.ErrLogonFailure {
+			t.Fatalf("Logging in with bad username was not a login failure: %s", err)
+		}
+
+		_, err = app.Login(username, password+"bad")
+		if err != app.ErrLogonFailure {
+			t.Fatalf("Logging in with bad password was not a login failure: %s", err)
+		}
+
+		_, err = app.Login("", password)
+		if err != app.ErrLogonFailure {
+			t.Fatalf("Logging in with empty username was not a login failure: %s", err)
+		}
+
+		_, err = app.Login(username, "1")
+		if err != app.ErrLogonFailure {
+			t.Fatalf("Logging in with short password was not a login failure: %s", err)
+		}
 	})
 
 }

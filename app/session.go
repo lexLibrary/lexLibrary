@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -21,10 +22,16 @@ type Session struct {
 	CSRFToken string
 	Created   time.Time
 	Updated   time.Time
+
+	user *User // cached user record
 }
 
-// ErrSessionInvalid is returned when a sesssion is invalid or expired
-var ErrSessionInvalid = NewFailure("Invalid or expired session")
+var (
+	// ErrSessionInvalid is returned when a sesssion is invalid or expired
+	ErrSessionInvalid = NewFailure("Invalid or expired session")
+	// ErrLogonFailure is when a user fails a login attempt
+	ErrLogonFailure = NewFailure("Invalid user and / or password")
+)
 
 var (
 	sqlSessionInsert = data.NewQuery(`insert into sessions (
@@ -52,6 +59,40 @@ var (
 	sqlSessionSetCSRF  = data.NewQuery(`update sessions set csrf_token = {{arg "csrf_token"}} where id = {{arg "id"}}`)
 )
 
+// Login logs a new user into Lex Library.
+func Login(username string, password string) (*User, error) {
+	if username == "" || len(password) < passwordMinLength {
+		return nil, ErrLogonFailure
+	}
+	//TODO: Rate limit login attempts
+
+	u, err := userGet(username)
+	if err == ErrUserNotFound {
+		return nil, ErrLogonFailure
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if !u.Active {
+		return nil, ErrSessionInvalid
+	}
+
+	if u.AuthType == AuthTypePassword {
+		err = passwordVersions[u.PasswordVersion].compare(password, u.Password)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.Errorf("The user %s is stored in the database with an invalid authentication type."+
+			" This could mean that an older version of Lex Library is running on a newer version of the database.",
+			u.Username)
+	}
+	u.Password = nil
+	u.PasswordVersion = 0
+	return u, nil
+}
+
 // SessionNew generates a new session for the passed in user
 func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Session, error) {
 	if expires.IsZero() {
@@ -75,6 +116,7 @@ func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Se
 	if err != nil {
 		return nil, err
 	}
+	s.user = user
 
 	return s, nil
 }
@@ -103,6 +145,9 @@ func (s *Session) Logout() error {
 
 // User returns the user for the given login session
 func (s *Session) User() (*User, error) {
+	if s.user != nil {
+		return s.user, nil
+	}
 	u := &User{}
 	err := sqlUserFromID.QueryRow(sql.Named("id", s.UserID)).Scan(
 		&u.ID,
@@ -124,6 +169,8 @@ func (s *Session) User() (*User, error) {
 	if !u.Active {
 		return nil, ErrSessionInvalid
 	}
+
+	s.user = u
 
 	return u, nil
 }

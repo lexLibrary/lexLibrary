@@ -10,7 +10,10 @@ import (
 	"github.com/lexLibrary/lexLibrary/files"
 )
 
-const passwordSpecialCharacters = ` !"#$%&'()*+,-./:;<=>?@[\]^_` + "`{|}~"
+const (
+	passwordSpecialCharacters = ` !"#$%&'()*+,-./:;<=>?@[\]^_` + "`{|}~"
+	passwordMinLength         = 6 // minimum password length that the PasswordMinLength can be set to
+)
 
 type passworder interface {
 	hash(password string) ([]byte, error)

@@ -23,8 +23,8 @@ var settingDefaults = []Setting{
 		Description: "Required minimum length for passwords",
 		Value:       10,
 		validate: func(value interface{}) error {
-			if value.(int) < 8 {
-				return NewFailure("Minimum password length must be greater than 8")
+			if value.(int) < passwordMinLength {
+				return NewFailure("Minimum password length must be greater than %d", passwordMinLength)
 			}
 			return nil
 		},

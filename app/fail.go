@@ -60,11 +60,11 @@ func IsFail(err error) bool {
 }
 
 // NotFound creates a NotFound failure that returns to the user as a 404
-func NotFound(message string) error {
-	return NewFailureWithStatus(message, http.StatusNotFound)
+func NotFound(message string, args ...interface{}) error {
+	return NewFailureWithStatus(fmt.Sprintf(message, args...), http.StatusNotFound)
 }
 
 // Unauthorized returns an Unauthorized error for when a user doesn't have access to a resource
-func Unauthorized(message string) error {
-	return NewFailureWithStatus(message, http.StatusUnauthorized)
+func Unauthorized(message string, args ...interface{}) error {
+	return NewFailureWithStatus(fmt.Sprintf(message, args...), http.StatusUnauthorized)
 }

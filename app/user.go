@@ -37,10 +37,7 @@ const (
 	UserMaxNameLength = 64 // This is pretty arbitrary but there should probably be some limit
 )
 
-var (
-	// ErrLogonFailure is when a user fails a login attempt
-	ErrLogonFailure = NewFailure("Invalid user and / or password")
-)
+var ErrUserNotFound = NotFound("User Not found")
 
 var (
 	sqlUserInsert = data.NewQuery(`insert into users (
@@ -68,10 +65,13 @@ var (
 		{{arg "updated"}}, 
 		{{arg "created"}}
 	)`)
-	sqlUserIDFromUsername = data.NewQuery(`select id from users where username = {{arg "username"}}`)
-	sqlUserFromID         = data.NewQuery(`
-		select id, username, first_name, last_name, auth_type, active, version,	updated, created 
+	sqlUserFromID = data.NewQuery(`
+		select id, username, first_name, last_name, auth_type, active, version, updated, created 
 		from users where id = {{arg "id"}}`)
+	sqlUserFromUsername = data.NewQuery(`
+		select id, username, first_name, last_name, auth_type, password, password_version, active, version, updated, created 
+		from users where username = {{arg "username"}}`)
+	sqlUserUpdateActive = data.NewQuery(`update users set active = {{arg "active"}} where id = {{arg "id"}}`)
 )
 
 // UserNew creates a new user
@@ -108,16 +108,45 @@ func UserNew(username, firstName, lastName, password string) (*User, error) {
 	u.PasswordVersion = passVer
 	u.Password = hash
 
-	exists, err := u.exists()
+	_, err = userGet(u.Username)
+
+	if err == nil {
+		return nil, NewFailure("A user with the username %s already exists", u.Username)
+	}
+
+	if err != ErrUserNotFound {
+		return nil, err
+	}
+
+	err = u.insert()
 	if err != nil {
 		return nil, err
 	}
 
-	if exists {
-		return nil, NewFailure("A user with the username %s already exists", u.Username)
+	return u, nil
+}
+
+func userGet(username string) (*User, error) {
+	u := &User{}
+
+	err := sqlUserFromUsername.QueryRow(sql.Named("username", username)).
+		Scan(
+			&u.ID,
+			&u.Username,
+			&u.FirstName,
+			&u.LastName,
+			&u.AuthType,
+			&u.Password,
+			&u.PasswordVersion,
+			&u.Active,
+			&u.Version,
+			&u.Updated,
+			&u.Created,
+		)
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
 	}
 
-	err = u.insert()
 	if err != nil {
 		return nil, err
 	}
@@ -143,19 +172,6 @@ func (u *User) insert() error {
 	return err
 }
 
-func (u *User) exists() (bool, error) {
-	var id xid.ID
-	err := sqlUserIDFromUsername.QueryRow(sql.Named("username", u.Username)).Scan(&id)
-	if err == sql.ErrNoRows {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
 func (u *User) validate() error {
 	if u.Username == "" {
 		return NewFailure("A username is required")
@@ -177,4 +193,14 @@ func (u *User) validate() error {
 	}
 
 	return nil
+}
+
+// SetActive sets the active status of the given user
+func (u *User) SetActive(active bool, who *User) error {
+	//TODO: Admin Permissions
+	if who.ID != u.ID {
+		return Unauthorized("You do not have permission to update this user")
+	}
+	_, err := sqlUserUpdateActive.Exec(sql.Named("active", active), sql.Named("id", u.ID))
+	return err
 }

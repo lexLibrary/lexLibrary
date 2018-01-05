@@ -341,5 +341,9 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on short password is not a failure")
 		}
 	})
+	t.Run("SetActive", func(t *testing.T) {
+		//TODO:
+	})
+
 	reset()
 }

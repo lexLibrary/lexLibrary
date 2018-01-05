@@ -99,7 +99,7 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update: NewQuery(`
 			create table sessions (
-				id {{varchar 32}} NOT NULL PRIMARY KEY,
+				id {{varchar 32}} NOT NULL,
 				user_id {{varchar 20}} NOT NULL,
 				valid {{bool}},
 				expires {{datetime}} NOT NULL,
@@ -107,9 +107,14 @@ var schemaVersions = []schemaVer{
 				user_agent {{text}},
 				csrf_token {{text}} NOT NULL,
 				updated {{datetime}} NOT NULL,
-				created {{datetime}} NOT NULL
+				created {{datetime}} NOT NULL,
+				PRIMARY KEY(id, user_id)
 			)
 		`),
 		rollback: NewQuery("drop table sessions"),
+	},
+	schemaVer{
+		update:   NewQuery("create index i_username on users (username)"),
+		rollback: NewQuery("drop index i_username"),
 	},
 }
