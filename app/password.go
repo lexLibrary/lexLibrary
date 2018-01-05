@@ -4,7 +4,6 @@ package app
 
 import (
 	"bytes"
-	"runtime"
 	"unicode"
 
 	"github.com/lexLibrary/lexLibrary/files"
@@ -25,7 +24,7 @@ var passwordVersions = []passworder{
 	&argon{
 		time:    4,
 		memory:  32 * 1024,
-		threads: uint8(runtime.GOMAXPROCS(-1)),
+		threads: 2, //FIXME: Should this be hardcoded?
 		keyLen:  32,
 	},
 }

@@ -3,7 +3,6 @@
 package app
 
 import (
-	"strings"
 	"unicode"
 )
 
@@ -28,13 +27,13 @@ func (u urlify) validRune(c rune) bool {
 	return unicode.IsLetter(c) || unicode.IsNumber(c) || c == '-'
 }
 
-func (u urlify) make() string {
-	for i, c := range u {
-		if !u.validRune(c) {
-			//TODO: benchmark vs buffer
-			u = u[:i] + "-" + u[i+1:]
-		}
-	}
+// func (u urlify) make() string {
+// 	for i, c := range u {
+// 		if !u.validRune(c) {
+// 			//TODO: benchmark vs buffer
+// 			u = u[:i] + "-" + u[i+1:]
+// 		}
+// 	}
 
-	return strings.ToLower(string(u))
-}
+// 	return strings.ToLower(string(u))
+// }

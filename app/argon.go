@@ -57,7 +57,6 @@ func (a *argon) hashWithSalt(password string, salt []byte) ([]byte, error) {
 	}, []byte(passwordDelim))
 
 	return result, nil
-
 }
 
 func (a *argon) compare(password string, hash []byte) error {
