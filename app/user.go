@@ -201,6 +201,8 @@ func (u *User) SetActive(active bool, who *User) error {
 	if who.ID != u.ID {
 		return Unauthorized("You do not have permission to update this user")
 	}
-	_, err := sqlUserUpdateActive.Exec(sql.Named("active", active), sql.Named("id", u.ID))
+
+	u.Active = active
+	_, err := sqlUserUpdateActive.Exec(sql.Named("active", u.Active), sql.Named("id", u.ID))
 	return err
 }

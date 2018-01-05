@@ -342,7 +342,31 @@ func TestUser(t *testing.T) {
 		}
 	})
 	t.Run("SetActive", func(t *testing.T) {
-		//TODO:
+		reset()
+		u, err := app.UserNew("testuser", "", "", "reallygoodlongpassword")
+		if err != nil {
+			t.Fatalf("Error adding user for SetActive testing")
+		}
+
+		other, err := app.UserNew("othertestuser", "", "", "reallygoodlongpassword")
+		if err != nil {
+			t.Fatalf("Error adding other user for SetActive testing")
+		}
+
+		err = u.SetActive(false, other)
+		if err == nil {
+			t.Fatalf("Setting active from other user did not fail")
+		}
+
+		err = u.SetActive(false, u)
+		if err != nil {
+			t.Fatalf("Error setting active to false: %s", err)
+		}
+
+		if u.Active {
+			t.Fatalf("User was not inactive")
+		}
+
 	})
 
 	reset()
