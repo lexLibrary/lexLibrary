@@ -343,7 +343,10 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("SetActive", func(t *testing.T) {
 		reset()
-		u, err := app.UserNew("testuser", "", "", "reallygoodlongpassword")
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, "", "", password)
 		if err != nil {
 			t.Fatalf("Error adding user for SetActive testing")
 		}
@@ -365,6 +368,11 @@ func TestUser(t *testing.T) {
 
 		if u.Active {
 			t.Fatalf("User was not inactive")
+		}
+
+		_, err = app.Login(username, password)
+		if err != app.ErrLogonFailure {
+			t.Fatalf("No logon failure error when logging in with an inactive user")
 		}
 
 	})
