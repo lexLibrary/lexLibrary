@@ -82,7 +82,7 @@ var schemaVersions = []schemaVer{
 		update: NewQuery(`
 			create table users (
 				id {{varchar 20}} NOT NULL PRIMARY KEY,
-				username {{text}} NOT NULL,
+				username {{varchar 64}} NOT NULL,
 				first_name {{text}},
 				last_name {{text}},
 				auth_type {{text}} NOT NULL,
