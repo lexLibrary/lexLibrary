@@ -12,21 +12,25 @@ import (
 )
 
 func TestSession(t *testing.T) {
+	username := "testusername"
+	password := "ODSjflaksjd$hiasfd323"
+	var u *app.User
+
 	reset := func() {
 		t.Helper()
 		_, err := data.NewQuery("delete from sessions").Exec()
 		if err != nil {
 			t.Fatalf("Error emptying sessions table before running tests: %s", err)
 		}
+		_, err = data.NewQuery("delete from users").Exec()
+		if err != nil {
+			t.Fatalf("Error emptying users table before running tests: %s", err)
+		}
 
-	}
-
-	username := "testusername"
-	password := "ODSjflaksjdfhiasfd323"
-
-	u, err := app.UserNew(username, "", "", password)
-	if err != nil {
-		t.Fatalf("Error adding user for session testing")
+		u, err = app.UserNew(username, "", "", password)
+		if err != nil {
+			t.Fatalf("Error adding user for session testing")
+		}
 	}
 
 	t.Run("New", func(t *testing.T) {
@@ -123,6 +127,7 @@ func TestSession(t *testing.T) {
 	})
 
 	t.Run("Login", func(t *testing.T) {
+		reset()
 		_, err := app.Login(username, password)
 		if err != nil {
 			t.Fatalf("Error logging in: %s", err)
@@ -147,6 +152,17 @@ func TestSession(t *testing.T) {
 		if err != app.ErrLogonFailure {
 			t.Fatalf("Logging in with short password was not a login failure: %s", err)
 		}
+
+		err = u.SetActive(false, u)
+		if err != nil {
+			t.Fatalf("Error inactivating user: %s", err)
+		}
+
+		_, err = app.Login(username, password)
+		if err != app.ErrLogonFailure {
+			t.Fatalf("Logging in with inactive user was not a login failure: %s", err)
+		}
+
 	})
 
 }

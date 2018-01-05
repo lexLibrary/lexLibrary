@@ -3,7 +3,6 @@
 package app
 
 import (
-	"bytes"
 	"crypto/rand"
 	"crypto/sha512"
 	"crypto/subtle"
@@ -11,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/argon2"
@@ -30,14 +30,13 @@ type argon struct {
 func (a *argon) hash(password string) ([]byte, error) {
 	maxSaltSize := 16
 
-	unencodedSalt := make([]byte, maxSaltSize)
-	_, err := io.ReadFull(rand.Reader, unencodedSalt)
+	salt := make([]byte, maxSaltSize)
+	_, err := io.ReadFull(rand.Reader, salt)
 	if err != nil {
 		return nil, err
 	}
 
-	salt := base64.RawStdEncoding.EncodeToString(unencodedSalt)
-	return a.hashWithSalt(password, []byte(salt))
+	return a.hashWithSalt(password, salt)
 }
 
 func (a *argon) hashWithSalt(password string, salt []byte) ([]byte, error) {
@@ -46,27 +45,28 @@ func (a *argon) hashWithSalt(password string, salt []byte) ([]byte, error) {
 	hash := argon2.Key(sha[:], salt, a.time, a.memory, a.threads, a.keyLen)
 
 	// version$time$memory$threads$keyLen$salt$hash
-	result := bytes.Join([][]byte{
-		[]byte(fmt.Sprintf("%02d", argon2.Version)),
-		[]byte(fmt.Sprintf("%02d", a.time)),
-		[]byte(fmt.Sprintf("%02d", a.memory)),
-		[]byte(fmt.Sprintf("%02d", a.threads)),
-		[]byte(fmt.Sprintf("%02d", a.keyLen)),
-		salt,
-		hash,
-	}, []byte(passwordDelim))
+	// salt := unencodedSalt)
+	result := strings.Join([]string{
+		fmt.Sprintf("%02d", argon2.Version),
+		fmt.Sprintf("%02d", a.time),
+		fmt.Sprintf("%02d", a.memory),
+		fmt.Sprintf("%02d", a.threads),
+		fmt.Sprintf("%02d", a.keyLen),
+		base64.RawStdEncoding.EncodeToString(salt),
+		base64.RawStdEncoding.EncodeToString(hash),
+	}, passwordDelim)
 
-	return result, nil
+	return []byte(result), nil
 }
 
 func (a *argon) compare(password string, hash []byte) error {
-	parts := bytes.Split(hash, []byte(passwordDelim))
+	parts := strings.Split(string(hash), passwordDelim)
 
 	if len(parts) != 7 {
-		return errors.New("Invalid password delimited length for argon2")
+		return errors.Errorf("%d is an invalid password delimited length for argon2", len(parts))
 	}
 
-	version, err := strconv.Atoi(string(parts[0]))
+	version, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return errors.Wrap(err, "Getting version from password")
 	}
@@ -75,26 +75,28 @@ func (a *argon) compare(password string, hash []byte) error {
 		return errors.New("Invalid argon2 version")
 	}
 
-	time, err := strconv.Atoi(string(parts[1]))
+	time, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return errors.Wrap(err, "Getting time factor from password")
 	}
-	memory, err := strconv.Atoi(string(parts[2]))
+	memory, err := strconv.Atoi(parts[2])
 	if err != nil {
 		return errors.Wrap(err, "Getting memory factor from password")
 	}
 
-	threads, err := strconv.Atoi(string(parts[3]))
+	threads, err := strconv.Atoi(parts[3])
 	if err != nil {
 		return errors.Wrap(err, "Getting threads factor from password")
 	}
-	keyLen, err := strconv.Atoi(string(parts[4]))
+	keyLen, err := strconv.Atoi(parts[4])
 	if err != nil {
 		return errors.Wrap(err, "Getting keyLen factor from password")
 	}
 
-	salt := parts[5]
-
+	salt, err := base64.RawStdEncoding.DecodeString(parts[5])
+	if err != nil {
+		return errors.Wrap(err, "Decoding salt from DB")
+	}
 	ar := &argon{
 		time:    uint32(time),
 		memory:  uint32(memory),

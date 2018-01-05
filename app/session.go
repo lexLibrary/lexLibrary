@@ -75,7 +75,7 @@ func Login(username string, password string) (*User, error) {
 	}
 
 	if !u.Active {
-		return nil, ErrSessionInvalid
+		return nil, ErrLogonFailure
 	}
 
 	if u.AuthType == AuthTypePassword {
