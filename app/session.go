@@ -57,6 +57,8 @@ var (
 	)`)
 	sqlSessionSetValid = data.NewQuery(`update sessions set valid = {{arg "valid"}} where id = {{arg "id"}}`)
 	sqlSessionSetCSRF  = data.NewQuery(`update sessions set csrf_token = {{arg "csrf_token"}} where id = {{arg "id"}}`)
+	sqlSessionGet      = data.NewQuery(`select id, user_id, valid, expires, csrf_token 
+		from sessions where id = {{arg "id"}} and user_id = {{arg "user_id"}}`)
 )
 
 // Login logs a new user into Lex Library.
@@ -118,6 +120,32 @@ func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Se
 	}
 	s.user = user
 
+	return s, nil
+}
+
+// SessionGet retrieves a session
+func SessionGet(sessionID string, userID xid.ID) (*Session, error) {
+	s := &Session{}
+	err := sqlSessionGet.QueryRow(sql.Named("id", sessionID), sql.Named("user_id", userID)).
+		Scan(
+			&s.ID,
+			&s.UserID,
+			&s.Valid,
+			&s.Expires,
+			&s.CSRFToken,
+		)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrSessionInvalid
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !s.Valid || s.Expires.Before(time.Now()) {
+		return nil, ErrSessionInvalid
+	}
 	return s, nil
 }
 

@@ -15,6 +15,8 @@ var schemaVersionInsert = NewQuery(`insert into schema_versions (version, rollba
 func ensureSchema(allowRollback bool) error {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one
 
+	//TODO: Run this on a separate thread and startup the app and web layer in "Maintenance mode"
+
 	err := ensureSchemaTable()
 	if err != nil {
 		return err

@@ -165,4 +165,36 @@ func TestSession(t *testing.T) {
 
 	})
 
+	t.Run("Get", func(t *testing.T) {
+		reset()
+		s, err := app.SessionNew(u, time.Now().AddDate(0, 0, 1), "", "")
+		if err != nil {
+			t.Fatalf("Error adding new session: %s", err)
+		}
+
+		other, err := app.SessionGet(s.ID, u.ID)
+
+		if err != nil {
+			t.Fatalf("Error getting valid session: %s", err)
+		}
+
+		if s.ID != other.ID ||
+			s.UserID != other.UserID ||
+			!s.Expires.Equal(other.Expires) ||
+			s.CSRFToken != other.CSRFToken ||
+			s.Valid != other.Valid {
+			t.Fatalf("Retrieved session does not match. Expected %v got %v", s, other)
+		}
+
+		err = s.Logout()
+		if err != nil {
+			t.Fatalf("Error logging out session")
+		}
+		_, err = app.SessionGet(s.ID, u.ID)
+
+		if err != app.ErrSessionInvalid {
+			t.Fatalf("Session isnot invalid when logged out")
+		}
+
+	})
 }
