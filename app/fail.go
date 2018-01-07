@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-//TODO: handle multiple languages here?
+//TODO: handle multiple languages here, or do it all in the client?
 
 // Fail is an error whos contents can be exposed to the client and is usually the result
 // of incorrect client input

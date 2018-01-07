@@ -13,10 +13,9 @@ func setupRoutes() http.Handler {
 		RedirectTrailingSlash:  true,
 		RedirectFixedPath:      true,
 		HandleMethodNotAllowed: true,
-		// TODO:
-		// NotFound:               http.HandlerFunc(four04),
-		// MethodNotAllowed:       http.HandlerFunc(four04),
-		// PanicHandler:           panicHandler,
+		NotFound:               http.HandlerFunc(notFound),
+		MethodNotAllowed:       http.HandlerFunc(notFound),
+		PanicHandler:           panicHandler,
 	}
 
 	// static folders
@@ -27,6 +26,11 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/", templateHandler{
 		handler:       rootTemplate,
 		templateFiles: []string{"index.template.html"},
+	}.ServeHTTP)
+
+	rootHandler.GET("/login", templateHandler{
+		handler:       loginTemplate,
+		templateFiles: []string{"login.template.html"},
 	}.ServeHTTP)
 
 	return rootHandler

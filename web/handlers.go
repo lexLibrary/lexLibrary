@@ -9,42 +9,44 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/files"
 	"github.com/pkg/errors"
 )
 
 type ctx struct {
-	params httprouter.Params
-	// s app.Session
+	params  httprouter.Params
+	session *app.Session
 }
 
 type llHandlerFunc func(http.ResponseWriter, *http.Request, ctx)
 
 func llPreHandle(w http.ResponseWriter, r *http.Request, p httprouter.Params, llFunc llHandlerFunc) {
-	// s, err := session(r)
+	s, err := session(r)
 	c := ctx{
-		params: p,
-		// session: s,
+		params:  p,
+		session: s,
 	}
 
-	// if errHandled(err, w, r, c) {
-	// 	return
-	// }
-	// if s != nil {
-	// 	// If user is logged in, handle csrf token
-	// 	if errHandled(handleCSRF(w, r, s), w, r, c) {
-	// 		return
-	// 	}
-	// 	// if user is logged in rate-limit based on userkey not ip address
-	// 	if errHandled(app.AttemptRequest(string(s.UserKey), app.RequestType{}), w, r, c) {
-	// 		return
-	// 	}
-	// } else {
-	// 	//if not logged in access, rate limit based on IP
-	// 	if errHandled(app.AttemptRequest(ipAddress(r), app.RequestType{}), w, r, c) {
-	// 		return
-	// 	}
-	// }
+	if errHandled(err, w, r) {
+		return
+	}
+	if s != nil {
+		// If user is logged in, handle csrf token
+		if errHandled(handleCSRF(w, r, s), w, r) {
+			return
+		}
+		//TODO: Rate limit
+		// if user is logged in rate-limit based on userkey not ip address
+		// if errHandled(app.AttemptRequest(string(s.UserKey), app.RequestType{}), w, r, c) {
+		// 	return
+		// }
+	} else {
+		//if not logged in access, rate limit based on IP
+		// if errHandled(app.AttemptRequest(ipAddress(r), app.RequestType{}), w, r) {
+		// 	return
+		// }
+	}
 
 	standardHeaders(w)
 

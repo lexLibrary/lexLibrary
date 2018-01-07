@@ -124,7 +124,7 @@ func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Se
 }
 
 // SessionGet retrieves a session
-func SessionGet(sessionID string, userID xid.ID) (*Session, error) {
+func SessionGet(userID xid.ID, sessionID string) (*Session, error) {
 	s := &Session{}
 	err := sqlSessionGet.QueryRow(sql.Named("id", sessionID), sql.Named("user_id", userID)).
 		Scan(

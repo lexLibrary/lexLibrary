@@ -172,7 +172,7 @@ func TestSession(t *testing.T) {
 			t.Fatalf("Error adding new session: %s", err)
 		}
 
-		other, err := app.SessionGet(s.ID, u.ID)
+		other, err := app.SessionGet(u.ID, s.ID)
 
 		if err != nil {
 			t.Fatalf("Error getting valid session: %s", err)
@@ -190,10 +190,10 @@ func TestSession(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error logging out session")
 		}
-		_, err = app.SessionGet(s.ID, u.ID)
+		_, err = app.SessionGet(u.ID, s.ID)
 
 		if err != app.ErrSessionInvalid {
-			t.Fatalf("Session isnot invalid when logged out")
+			t.Fatalf("Session is not invalid when logged out")
 		}
 
 	})
