@@ -117,13 +117,18 @@ func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p htt
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		llPreHandle(&templateWriter{w, t.template}, r, p, t.handler)
 
-		_ = writer.Close()
+		err := writer.Close()
+		if err != nil {
+			app.LogError(errors.Wrap(err, "Closing Template writer"))
+		}
 		return
 	}
 	//template handlers only respond to gets
 	notFound(w, r)
-
-	_ = writer.Close()
+	err := writer.Close()
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Closing Template writer after non-GET template call"))
+	}
 }
 
 func (t *templateWriter) execute(data interface{}) error {

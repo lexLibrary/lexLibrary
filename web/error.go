@@ -31,17 +31,6 @@ var (
 		templateFiles: []string{"not_found.template.html"},
 	}
 	errorHandler = templateHandler{
-		handler: func(w http.ResponseWriter, r *http.Request, c ctx) {
-			w.WriteHeader(http.StatusInternalServerError)
-			err := w.(*templateWriter).execute(struct {
-				ErrorID xid.ID
-			}{
-				ErrorID: xid.New(),
-			})
-			if err != nil {
-				app.LogError(errors.Wrap(err, "Executing error template: %s"))
-			}
-		},
 		templateFiles: []string{"error.template.html"},
 	}
 )
@@ -53,6 +42,7 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 
 	var errMsg string
 	var status int
+	var errID xid.ID
 
 	switch err.(type) {
 
@@ -65,7 +55,7 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 		errMsg = fmt.Sprintf("We had trouble parsing your input, please check your input and try again: %s", err)
 		status = http.StatusBadRequest
 	default:
-		errID := app.LogError(err)
+		errID = app.LogError(err)
 		status = http.StatusInternalServerError
 		if !devMode {
 			errMsg = fmt.Sprintf("An internal server error has occurred. Error ID: %s", errID)
@@ -85,7 +75,15 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 		case http.StatusUnauthorized:
 			// TODO:unauthorized page
 		default:
-			// TODO: 500 page with errID
+			w.WriteHeader(status)
+			terr := errorHandler.template.Execute(w, struct {
+				ErrorID xid.ID
+			}{
+				ErrorID: errID,
+			})
+			if terr != nil {
+				app.LogError(errors.Wrap(terr, "Writing error page template"))
+			}
 		}
 
 		return true
