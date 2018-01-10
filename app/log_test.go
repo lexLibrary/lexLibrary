@@ -9,6 +9,7 @@ import (
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/pkg/errors"
 )
 
 func TestLog(t *testing.T) {
@@ -112,18 +113,17 @@ func TestLog(t *testing.T) {
 	})
 
 	t.Run("GetByID", func(t *testing.T) {
-		app.LogError(fmt.Errorf("Error message with %s", search))
-		logs, err := app.LogSearch(strings.ToLower(search), 0, 10)
+		test := errors.New("New error")
+		id := app.LogError(test)
+
+		log, err := app.LogGetByID(id)
 		if err != nil {
-			t.Fatalf("Error searching logs: %s", err)
+			t.Fatalf("Error getting log by ID: %s", err)
 		}
 
-		if len(logs) != 1 {
-			t.Fatalf("Invalid number of logs. Wanted %d got %d", 1, len(logs))
+		if log.ID != id || log.Message != test.Error() {
+			t.Fatalf("Logged error doesn't match error")
 		}
 
-		if !strings.Contains(logs[0].Message, search) {
-			t.Fatalf("Log message '%s' does not contain the search value of '%s'", logs[0].Message, search)
-		}
 	})
 }

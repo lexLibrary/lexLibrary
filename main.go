@@ -102,11 +102,6 @@ func main() {
 
 	log.Println("Data layer initialized")
 
-	_, err = data.NewQuery("insert into logs (occurred, message) values ('2017-12-22 23:08:25.286276742 +0000', 'test')").Exec()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	err = web.StartServer(cfg.Web, flagDevMode)
 	if err != nil {
 		log.Fatalf("Error initializing web server: %s", err)

@@ -91,7 +91,6 @@ func panicHandler(w http.ResponseWriter, r *http.Request, rec interface{}) {
 
 func notFoundTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	err := w.(*templateWriter).execute(nil)
-
 	if err != nil {
 		app.LogError(errors.Wrap(err, "Executing not found template: %s"))
 	}
