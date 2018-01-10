@@ -121,8 +121,7 @@ func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p htt
 		return
 	}
 	//template handlers only respond to gets
-	//TODO: use LL 404 handler
-	http.NotFound(w, r)
+	notFound(w, r)
 
 	_ = writer.Close()
 }

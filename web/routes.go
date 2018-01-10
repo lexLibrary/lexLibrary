@@ -34,10 +34,7 @@ func setupRoutes() http.Handler {
 		templateFiles: []string{"login.template.html"},
 	}.ServeHTTP)
 
-	rootHandler.GET("/404", templateHandler{
-		handler:       notFoundTemplate,
-		templateFiles: []string{"not_found.template.html"},
-	}.ServeHTTP)
+	rootHandler.GET("/404", notFoundHandler.ServeHTTP)
 
 	return rootHandler
 }

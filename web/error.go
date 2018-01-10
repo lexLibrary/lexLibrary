@@ -18,6 +18,19 @@ const (
 	acceptHTML = "text/html"
 )
 
+var (
+	notFoundHandler = templateHandler{
+		handler: func(w http.ResponseWriter, r *http.Request, c ctx) {
+			w.WriteHeader(http.StatusNotFound)
+			err := w.(*templateWriter).execute(nil)
+			if err != nil {
+				app.LogError(errors.Wrap(err, "Executing not_found template: %s"))
+			}
+		},
+		templateFiles: []string{"not_found.template.html"},
+	}
+)
+
 func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 	if err == nil {
 		return false
@@ -53,12 +66,13 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 			// generic failure page
 
 		case http.StatusNotFound:
-			notFoundTemplate(w, r, ctx{})
+			notFoundHandler.ServeHTTP(w, r, nil)
 		case http.StatusUnauthorized:
 			// TODO:unauthorized page
 		default:
 			// TODO: 500 page with errID
 		}
+
 		return true
 	}
 	respond(w, response{
@@ -86,12 +100,5 @@ func panicHandler(w http.ResponseWriter, r *http.Request, rec interface{}) {
 		}
 		errHandled(errors.Errorf("Lex Library has panicked on %v and has recovered", rec), w, r)
 		return
-	}
-}
-
-func notFoundTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
-	err := w.(*templateWriter).execute(nil)
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing not found template: %s"))
 	}
 }
