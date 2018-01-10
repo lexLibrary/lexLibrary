@@ -35,6 +35,7 @@ func setupRoutes() http.Handler {
 	}.ServeHTTP)
 
 	rootHandler.GET("/404", notFoundHandler.ServeHTTP)
+	rootHandler.GET("/500", errorHandler.ServeHTTP)
 
 	return rootHandler
 }

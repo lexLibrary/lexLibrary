@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	[[template "header"]]
+	<title>Error - Lex Library</title>
+</head>
+
+<body>
+	<div class="text-center">
+		<h1>An internal server error has occurred</h1>
+		[[if .ErrorID]]
+			<small>Give your admin this ID: [[.ErrorID]]</small>
+		[[end]]
+	</div>
+</body>
+
+</html>

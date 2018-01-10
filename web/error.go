@@ -12,6 +12,7 @@ import (
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/pkg/errors"
+	"github.com/rs/xid"
 )
 
 const (
@@ -28,6 +29,20 @@ var (
 			}
 		},
 		templateFiles: []string{"not_found.template.html"},
+	}
+	errorHandler = templateHandler{
+		handler: func(w http.ResponseWriter, r *http.Request, c ctx) {
+			w.WriteHeader(http.StatusInternalServerError)
+			err := w.(*templateWriter).execute(struct {
+				ErrorID xid.ID
+			}{
+				ErrorID: xid.New(),
+			})
+			if err != nil {
+				app.LogError(errors.Wrap(err, "Executing error template: %s"))
+			}
+		},
+		templateFiles: []string{"error.template.html"},
 	}
 )
 
