@@ -9,6 +9,7 @@ import (
 )
 
 func setupRoutes() http.Handler {
+
 	rootHandler := &httprouter.Router{
 		RedirectTrailingSlash:  true,
 		RedirectFixedPath:      true,
@@ -31,6 +32,11 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/login", templateHandler{
 		handler:       loginTemplate,
 		templateFiles: []string{"login.template.html"},
+	}.ServeHTTP)
+
+	rootHandler.GET("/404", templateHandler{
+		handler:       notFoundTemplate,
+		templateFiles: []string{"not_found.template.html"},
 	}.ServeHTTP)
 
 	return rootHandler

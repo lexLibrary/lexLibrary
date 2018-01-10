@@ -58,6 +58,7 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update: NewQuery(`
 			create table logs (
+				id {{varchar 20}} NOT NULL PRIMARY KEY,
 				occurred {{datetime}} NOT NULL,
 				message {{text}}
 			)

@@ -110,4 +110,20 @@ func TestLog(t *testing.T) {
 				entry, logs[0].Message)
 		}
 	})
+
+	t.Run("GetByID", func(t *testing.T) {
+		app.LogError(fmt.Errorf("Error message with %s", search))
+		logs, err := app.LogSearch(strings.ToLower(search), 0, 10)
+		if err != nil {
+			t.Fatalf("Error searching logs: %s", err)
+		}
+
+		if len(logs) != 1 {
+			t.Fatalf("Invalid number of logs. Wanted %d got %d", 1, len(logs))
+		}
+
+		if !strings.Contains(logs[0].Message, search) {
+			t.Fatalf("Log message '%s' does not contain the search value of '%s'", logs[0].Message, search)
+		}
+	})
 }

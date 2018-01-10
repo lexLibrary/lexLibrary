@@ -9,17 +9,20 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/rs/xid"
 )
 
 // Log is a logged error message in the database
 type Log struct {
+	ID       xid.ID    `json:"id"`
 	Message  string    `json:"message,omitempty"`
 	Occurred time.Time `json:"occurred,omitempty"`
 }
 
-var sqlLogInsert = data.NewQuery(`insert into logs (occurred, message) values ({{arg "occurred"}}, {{arg "message"}})`)
+var sqlLogInsert = data.NewQuery(`insert into logs (id, occurred, message) 
+	values ({{arg "id"}}, {{arg "occurred"}}, {{arg "message"}})`)
 var sqlLogGet = data.NewQuery(`
-	select occurred, message from logs order by occurred desc 
+	select id, occurred, message from logs order by occurred desc 
 	{{if sqlserver}}
 		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
 	{{else}}
@@ -32,7 +35,7 @@ var sqlLogGet = data.NewQuery(`
 // columns across all of the databases, unless I drop support for TiDB, Cockroach, and DB2.  It might be
 // worth it if other features require case insensitivity, but I think we can get by without it.
 var sqlLogSearch = data.NewQuery(`
-	select occurred, message from logs where lower(message) like lower({{arg "search"}}) order by occurred desc 
+	select id, occurred, message from logs where lower(message) like lower({{arg "search"}}) order by occurred desc 
 	{{if sqlserver}}
 		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
 	{{else}}
@@ -40,9 +43,12 @@ var sqlLogSearch = data.NewQuery(`
 	{{end}}
 `)
 
+var sqlLogGetByID = data.NewQuery(`select id, occurred, message from logs where id = {{arg "id"}}`)
+
 // LogError logs an error to the logs table
-func LogError(lerr error) {
+func LogError(lerr error) xid.ID {
 	l := Log{
+		ID:       xid.New(),
 		Message:  lerr.Error(),
 		Occurred: time.Now(),
 	}
@@ -50,12 +56,15 @@ func LogError(lerr error) {
 	log.Printf("ERROR: %s", l.Message)
 
 	_, err := sqlLogInsert.Exec(
+		sql.Named("id", l.ID),
 		sql.Named("occurred", l.Occurred),
 		sql.Named("message", l.Message))
 
 	if err != nil {
-		log.Printf(`Error inserting error log entry. Log entry: %s ERROR: %s`, lerr, err)
+		log.Printf(`Error inserting error log entry %s. Log entry: %s ERROR: %s`, l.ID, lerr, err)
 	}
+
+	return l.ID
 }
 
 // LogGet retrieves logs from the error log in the database
@@ -73,7 +82,7 @@ func LogGet(offset, limit int) ([]*Log, error) {
 
 	for rows.Next() {
 		log := &Log{}
-		err = rows.Scan(&log.Occurred, &log.Message)
+		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
 		if err != nil {
 			return nil, err
 		}
@@ -81,6 +90,18 @@ func LogGet(offset, limit int) ([]*Log, error) {
 	}
 
 	return logs, nil
+}
+
+// LogGetByID retrieves logs from the error log in the database for the given ID
+func LogGetByID(id xid.ID) (*Log, error) {
+	log := &Log{}
+
+	err := sqlLogGetByID.QueryRow(sql.Named("id", id)).Scan(&log.ID, &log.Occurred, &log.Message)
+	if err != nil {
+		return nil, err
+	}
+
+	return log, nil
 }
 
 // LogSearch retrieves logs from the error log in the database that contain the search value in it's message
@@ -101,7 +122,7 @@ func LogSearch(search string, offset, limit int) ([]*Log, error) {
 
 	for rows.Next() {
 		log := &Log{}
-		err = rows.Scan(&log.Occurred, &log.Message)
+		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
 		if err != nil {
 			return nil, err
 		}

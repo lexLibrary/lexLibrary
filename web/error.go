@@ -37,10 +37,10 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 		errMsg = fmt.Sprintf("We had trouble parsing your input, please check your input and try again: %s", err)
 		status = http.StatusBadRequest
 	default:
-		app.LogError(err)
+		errID := app.LogError(err)
 		status = http.StatusInternalServerError
 		if !devMode {
-			errMsg = "An internal server error has occurred"
+			errMsg = fmt.Sprintf("An internal server error has occurred. Error ID: %s", errID)
 		} else {
 			errMsg = err.Error()
 		}
@@ -53,11 +53,11 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 			// generic failure page
 
 		case http.StatusNotFound:
-			//NotFound
+			notFoundTemplate(w, r, ctx{})
 		case http.StatusUnauthorized:
-			//unauthorized page
+			// TODO:unauthorized page
 		default:
-			// 500 page
+			// TODO: 500 page with errID
 		}
 		return true
 	}
@@ -86,5 +86,13 @@ func panicHandler(w http.ResponseWriter, r *http.Request, rec interface{}) {
 		}
 		errHandled(errors.Errorf("Lex Library has panicked on %v and has recovered", rec), w, r)
 		return
+	}
+}
+
+func notFoundTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+	err := w.(*templateWriter).execute(nil)
+
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Executing not found template: %s"))
 	}
 }
