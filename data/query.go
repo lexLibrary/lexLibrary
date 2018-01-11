@@ -296,7 +296,7 @@ func BeginTx(trnFunc func(tx *sql.Tx) error) error {
 // in a tab delimited format, with columns listed in the first row
 // meant for debugging use. Will panic instead of throwing an error
 func (q *Query) Debug(args ...sql.NamedArg) string {
-	padding := 20
+	padding := 25
 	result := ""
 
 	rows, err := q.Query(args...)

@@ -2,13 +2,14 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 )
 
 func rootTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
-	// if errHandled(errors.New("test"), w, r) {
-	// 	return
-	// }
+	if errHandled(errors.New("test"), w, r) {
+		return
+	}
 	errHandled(w.(*templateWriter).execute(struct {
 		Test string
 	}{

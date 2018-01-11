@@ -35,6 +35,10 @@ var (
 	}
 )
 
+func init() {
+	errorHandler.loadTemplates()
+}
+
 func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 	if err == nil {
 		return false
@@ -67,9 +71,6 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 	accept := r.Header.Get("Accept")
 	if strings.Contains(accept, acceptHTML) {
 		switch status {
-		case http.StatusBadRequest:
-			// generic failure page
-
 		case http.StatusNotFound:
 			notFoundHandler.ServeHTTP(w, r, nil)
 		case http.StatusUnauthorized:
