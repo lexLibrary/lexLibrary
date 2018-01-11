@@ -19,8 +19,8 @@ type rateKey struct {
 //TODO: periodically clear out expired rates
 var rates = struct {
 	sync.RWMutex
-	r map[rateKey]*RateLimitResult
-}{r: make(map[rateKey]*RateLimitResult)}
+	r map[rateKey]*RateLeft
+}{r: make(map[rateKey]*RateLeft)}
 
 // RateLimit Fails immediately when the limit is reached within the Reset period
 type RateLimit struct {
@@ -29,8 +29,8 @@ type RateLimit struct {
 	Period time.Duration
 }
 
-// RateLimitResult is the status of a given user's rate limit
-type RateLimitResult struct {
+// RateLeft is the status of a given user's rate limit
+type RateLeft struct {
 	Limit     int32
 	Remaining int32
 	Reset     time.Time
@@ -51,14 +51,15 @@ type RateDelay struct {
 var ErrTooManyRequests = NewFailureWithStatus("Too many requests", http.StatusTooManyRequests)
 
 // Attempt checks to see if a request is rate limited. Will return an error if it is
-func (rl *RateLimit) Attempt(id string) (RateLimitResult, error) {
+func (rl *RateLimit) Attempt(id string) (RateLeft, error) {
 	key := rateKey{id: id, rateType: rl.Type}
 	result, ok := key.find()
-	if ok && result.Reset.Before(time.Now()) {
-		if result.Remaining <= 0 {
+	if ok {
+		if result.Remaining <= 0 || result.Reset.Before(time.Now()) {
 			return *result, ErrTooManyRequests
 		}
-		result.Remaining = atomic.AddInt32(&result.Remaining, -1)
+		remains := atomic.AddInt32(&result.Remaining, -1)
+		result.Remaining = remains
 
 		return *result, nil
 	}
@@ -69,8 +70,8 @@ func (rl *RateLimit) Attempt(id string) (RateLimitResult, error) {
 func (rd *RateDelay) Attempt(id string) error {
 	key := rateKey{id: id, rateType: rd.Type}
 	result, ok := key.find()
-	if ok && result.Reset.Before(time.Now()) {
-		if result.Remaining <= 0 {
+	if ok {
+		if result.Remaining <= 0 || result.Reset.Before(time.Now()) {
 			delay := rd.Delay * time.Duration(-1*result.Remaining)
 			if delay >= rd.Max {
 				return ErrTooManyRequests
@@ -78,7 +79,8 @@ func (rd *RateDelay) Attempt(id string) error {
 			time.Sleep(delay)
 			return nil
 		}
-		result.Remaining = atomic.AddInt32(&result.Remaining, -1)
+		remains := atomic.AddInt32(&result.Remaining, -1)
+		result.Remaining = remains
 
 		return nil
 	}
@@ -86,7 +88,7 @@ func (rd *RateDelay) Attempt(id string) error {
 	return nil
 }
 
-func (rk *rateKey) find() (*RateLimitResult, bool) {
+func (rk *rateKey) find() (*RateLeft, bool) {
 	rates.RLock()
 	defer rates.RUnlock()
 
@@ -94,10 +96,10 @@ func (rk *rateKey) find() (*RateLimitResult, bool) {
 	return result, ok
 }
 
-func (rk *rateKey) add(limit int32, reset time.Time) RateLimitResult {
+func (rk *rateKey) add(limit int32, reset time.Time) RateLeft {
 	rates.Lock()
 	defer rates.Unlock()
-	rr := &RateLimitResult{
+	rr := &RateLeft{
 		Limit:     limit,
 		Reset:     reset,
 		Remaining: limit,
