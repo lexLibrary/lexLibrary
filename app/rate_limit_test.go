@@ -18,7 +18,7 @@ func TestRateLimit(t *testing.T) {
 	}
 
 	// free attempts
-	for i := 0; i < int(rType.Limit); i++ {
+	for i := 0; i <= int(rType.Limit); i++ {
 		left, err := rType.Attempt("testID")
 		if err != nil {
 			t.Fatalf("Error attempting rate limit withing limits: %s", err)
