@@ -77,7 +77,7 @@ func Init(cfg Config) error {
 	case "postgres":
 		dbType = postgres
 		err = initPostgresAndCDB(cfg)
-	case "mysql":
+	case "mysql", "mariadb":
 		dbType = mysql
 		err = initMySQL(cfg)
 	case "sqlite":

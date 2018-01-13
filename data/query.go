@@ -98,9 +98,11 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"datetime": func() string {
-			// date + time with precision to seconds
+			// date + time with precision to milliseconds
 			switch dbType {
-			case mysql, tidb, sqlite:
+			case mysql, tidb:
+				return "DATETIME(5)"
+			case sqlite:
 				return "DATETIME"
 			case postgres, cockroachdb:
 				return "TIMESTAMP with time ZONE"

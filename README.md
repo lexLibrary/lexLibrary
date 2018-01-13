@@ -1,5 +1,6 @@
 # Lex Library
-Lex Library is an open-source documentation repository with modern features, like importing from a wide variety of documentation files and web sites, and natural language processing for automatic tagging and summaries.
+Lex Library is an open-source documentation repository with modern features, like importing from a wide variety of 
+documentation files and web sites, and natural language processing for automatic tagging and summaries.
 
 
 # Quickstart
@@ -7,6 +8,7 @@ Lex Library is an open-source documentation repository with modern features, lik
 **Requirements**:
  * Go 1.9 or greater
  * Node 8 or greater
+ * yarn
  * go-binddata - `go get -u github.com/shuLhan/go-bindata/...`
 
 

@@ -180,7 +180,6 @@ func TestSession(t *testing.T) {
 
 		if s.ID != other.ID ||
 			s.UserID != other.UserID ||
-			!s.Expires.Round(time.Second).Equal(other.Expires.Round(time.Second)) ||
 			s.CSRFToken != other.CSRFToken ||
 			s.Valid != other.Valid {
 			t.Fatalf("Retrieved session does not match. Expected %v got %v", s, other)

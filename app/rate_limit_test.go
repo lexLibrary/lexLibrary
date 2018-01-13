@@ -48,3 +48,61 @@ func TestRateLimit(t *testing.T) {
 	}
 
 }
+
+func TestRateDelay(t *testing.T) {
+
+	rType := app.RateDelay{
+		Type:   "TestRateDelay",
+		Limit:  10,
+		Period: 5 * time.Second,
+		Delay:  2 * time.Second,
+		Max:    10 * time.Second,
+	}
+
+	// free attempts
+	for i := 0; i <= int(rType.Limit); i++ {
+		err := rType.Attempt("testID")
+		if err != nil {
+			t.Fatalf("Error attempting rate delay withing limits: %s", err)
+		}
+	}
+
+	if testing.Short() {
+		t.SkipNow()
+	}
+
+	c := make(chan bool)
+	go func() {
+		err := rType.Attempt("testID")
+		if err != nil {
+			t.Fatalf("Error attempting rate delay withing limits: %s", err)
+		}
+		c <- true
+	}()
+
+	select {
+	case <-c:
+		t.Fatalf("Rate was not delayed")
+	case <-time.After(1 * time.Second):
+	}
+
+	max := int(rType.Max/rType.Delay) - 2 //one spent already, and one is the Max delay, which we run separately
+
+	// these requests will be delayed, but shouldn't error
+	for i := 0; i < max; i++ {
+		go func() {
+			err := rType.Attempt("testID")
+			if err != nil {
+				t.Fatalf("Error attempting rate delay withing limits: %s", err)
+			}
+		}()
+	}
+
+	// sleep a bit to ensure that this attempt happens last
+	time.Sleep(1 * time.Millisecond)
+	err := rType.Attempt("testID")
+	if err != app.ErrTooManyRequests {
+		t.Fatalf("Rate delayed request past it's max delay didn't return an error")
+	}
+
+}

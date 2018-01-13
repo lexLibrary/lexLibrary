@@ -28,7 +28,7 @@ DOCKERNAME="lex_library_dev_$DBTYPE"
 
 cd client 
 rm -rf deploy
-npm install
+yarn
 gulp dev
 gulp watch |& sed -e "s/^/${LIGHTGREEN}[Gulp]${NC} /" &
 
@@ -145,6 +145,26 @@ then
     ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 
     trap "docker stop ${DOCKERNAME};" SIGINT
+elif [ $DBTYPE == 'mariadb' ]
+then
+    mkdir -p "db_data/mariadb"
+
+    DB_PASSWORD='!Passw0rd'
+    DB_PORT=3306
+
+    export LL_DATA_DATABASETYPE="mariadb"
+    export LL_DATA_DATABASEURL="root:$DB_PASSWORD@tcp(localhost:$DB_PORT)/"
+
+    docker run --name=$DOCKERNAME --rm \
+        -p 3306:$DB_PORT \
+        -v $PWD/db_data/mysql:/var/lib/mysql \
+        -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
+        mariadb:latest |& sed -e "s/^/${LIGHTBLUE}[MariaDB]${NC} /" &
+
+    ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
+
+    trap "docker stop ${DOCKERNAME};" SIGINT
+
 else
     ./lexLibrary -dev "$@" |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 

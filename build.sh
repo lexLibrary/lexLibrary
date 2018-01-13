@@ -4,7 +4,7 @@ set -e
 # build client
 cd client
 rm -rf deploy
-npm install
+yarn
 gulp
 
 cd ..

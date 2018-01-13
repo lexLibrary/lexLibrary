@@ -38,7 +38,7 @@ type schemaVer struct {
 	String / Text types will be by default case sensitive and unicode supported. The default database collations should
 	reflect that.  Prefer Text over varchar except where necessary such as PKs.
 
-	DateTime types are only precise up to seconds
+	DateTime types are only precise up to Milliseconds
 
 	Integers are 64 bit
 

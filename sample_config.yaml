@@ -21,6 +21,9 @@ Data:
 
   # DatabaseType: mysql
   # DatabaseUrl: "username:password@tcp(host)/database"
+  #
+  # DatabaseType: mariadb
+  # DatabaseUrl: "username:password@tcp(host)/database"
 
   # DatabaseType: cockroachdb
   # DatabaseUrl: "postgres://username:password@host/database?sslmode=disable:"

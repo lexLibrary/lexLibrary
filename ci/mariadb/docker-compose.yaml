@@ -1,0 +1,19 @@
+version: '2'
+services:
+  mariadb:
+    image: mariadb:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: lexlibrary
+  tests:
+    build: "../build"
+    links:
+      - mariadb
+    volumes:
+      - ../..:/go/src/github.com/lexLibrary/lexLibrary
+    environment:
+      LLDATABASE: 'mariadb'
+      LLTEST: 'true'
+      GOPATH: /go
+    command: sh -c '
+        cd /go/src/github.com/lexLibrary/lexLibrary/ci/ && sh ./test.sh
+      '

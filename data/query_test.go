@@ -95,10 +95,42 @@ func TestDataTypes(t *testing.T) {
 	})
 	t.Run("datetime", func(t *testing.T) {
 		reset()
+		expected := time.Now()
 
-		expected := time.Now().Round(time.Second)
+		expectedRound := expected.Round(time.Millisecond)
+		expectedTruncate := expected.Truncate(time.Millisecond)
 
 		_, err := data.NewQuery(`insert into data_types (datetime_type) values ({{arg "datetime_type"}})`).
+			Exec(sql.Named("datetime_type", expected))
+		if err != nil {
+			t.Fatalf("Error inserting datetime type: %s", err)
+		}
+
+		var got time.Time
+		err = data.NewQuery("Select datetime_type from data_types").QueryRow().Scan(&got)
+		if err != nil {
+			t.Fatalf("Error retrieving datetime type: %s", err)
+		}
+
+		gotRound := got.Round(time.Millisecond)
+		gotTruncate := got.Truncate(time.Millisecond)
+
+		// Databases will either round to milisecond or truncate to milisecond
+		if !expected.Equal(got) && !expectedTruncate.Equal(gotTruncate) && !expectedRound.Equal(gotRound) {
+			t.Fatalf("datetime type does not match expected %v, got %v", expected, got)
+		}
+
+	})
+	t.Run("datetime overflow", func(t *testing.T) {
+		reset()
+
+		expected, err := time.Parse("2006-01-02 15:04:05", "9999-12-31 23:59:59.9")
+		expected.Round(time.Millisecond)
+		if err != nil {
+			t.Fatalf("Error parsing overflow date: %s", err)
+		}
+
+		_, err = data.NewQuery(`insert into data_types (datetime_type) values ({{arg "datetime_type"}})`).
 			Exec(sql.Named("datetime_type", expected))
 		if err != nil {
 			t.Fatalf("Error inserting datetime type: %s", err)

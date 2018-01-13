@@ -99,5 +99,14 @@ pipeline {
                 '''
             }
         }
+	stage('test mariadb') {
+            steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh mariadb
+                '''
+            }
+        }
+
     }
 }
