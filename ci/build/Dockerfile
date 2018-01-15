@@ -22,5 +22,4 @@ RUN go get -u github.com/shuLhan/go-bindata/...
 # Node
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -
 RUN apt-get install -y nodejs
-RUN curl -o- -L https://yarnpkg.com/install.sh | bash
-RUN yarn global install gulp
+RUN curl -o- -L https://yarnpkg.com/install.sh | bash && yarn global install gulp
