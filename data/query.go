@@ -107,7 +107,7 @@ func (q *Query) buildTemplate() {
 			case postgres, cockroachdb:
 				return "TIMESTAMP with time ZONE"
 			case sqlserver:
-				return "DATETIME"
+				return "DATETIME2"
 			default:
 				panic("Unsupported database type")
 			}
