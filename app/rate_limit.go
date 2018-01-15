@@ -55,7 +55,7 @@ func (rl *RateLimit) Attempt(id string) (RateLeft, error) {
 	key := rateKey{id: id, rateType: rl.Type}
 	result, ok := key.find()
 	if ok {
-		if result.Remaining <= 0 && result.Reset.After(time.Now()) {
+		if result.remaining() <= 0 && result.Reset.After(time.Now()) {
 			return *result, ErrTooManyRequests
 		}
 		result.decrement()
@@ -70,8 +70,8 @@ func (rd *RateDelay) Attempt(id string) error {
 	key := rateKey{id: id, rateType: rd.Type}
 	result, ok := key.find()
 	if ok {
-		if result.Remaining <= 0 && result.Reset.After(time.Now()) {
-			delay := rd.Delay * (time.Duration(-1*result.Remaining) + 1)
+		if result.remaining() <= 0 && result.Reset.After(time.Now()) {
+			delay := rd.Delay * (time.Duration(-1*result.remaining()) + 1)
 			if delay >= rd.Max {
 				return ErrTooManyRequests
 			}
@@ -110,6 +110,9 @@ func (rk *rateKey) add(limit int32, reset time.Time) RateLeft {
 }
 
 func (rl *RateLeft) decrement() {
-	remains := atomic.AddInt32(&rl.Remaining, -1)
-	rl.Remaining = remains
+	atomic.AddInt32(&rl.Remaining, -1)
+}
+
+func (rl *RateLeft) remaining() int32 {
+	return atomic.LoadInt32(&rl.Remaining)
 }
