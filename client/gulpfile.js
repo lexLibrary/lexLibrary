@@ -4,16 +4,47 @@ var gulp = require('gulp');
 var path = require('path');
 var sass = require('gulp-sass');
 var sourcemaps = require('gulp-sourcemaps');
+var rename = require('gulp-rename');
+var rollup = require('gulp-rollup');
+var uglify = require('rollup-plugin-uglify');
+var buble = require('rollup-plugin-buble');
 
 var deployDir = './deploy';
-var dev = false;
 
-// gulp.task('js', function (callback) {
-//     // rollup
+var rollupCFG = {
+	input: [
+		'js/login.js',
+	],
+	format: 'iife',
+	plugins: [
+		uglify(),
+		buble(),
+	]
+};
+
+gulp.task('js', function (callback) {
 //     // buble
-//     // copy vue dist to static
-// });
+	return [
+		gulp.src('./js/**/*.js')
+			.pipe(rollup(rollupCFG))
+			.pipe(gulp.dest(path.join(deployDir, 'js'))),
+		gulp.src('./node_modules/vue/dist/vue.min.js')
+			.pipe(rename('vue.js'))
+			.pipe(gulp.dest(path.join(deployDir, 'js')))
+	];
+});
 
+gulp.task('devJs', function (callback) {
+	return [
+		gulp.src('./js/**/*.js')
+			.pipe(sourcemaps.init())
+			.pipe(rollup(rollupCFG))
+			.pipe(sourcemaps.write())
+			.pipe(gulp.dest(path.join(deployDir, 'js'))),
+		 gulp.src('./node_modules/vue/dist/vue.js')
+			.pipe(gulp.dest(path.join(deployDir, 'js')))
+	];
+});
 
 gulp.task('css', function () {
     return gulp.src('./scss/**/*.scss')
@@ -56,11 +87,10 @@ gulp.task('watch', function () {
     gulp.watch('./**/*.html', ['html']);
     gulp.watch('./images/**/*', ['images']);
     gulp.watch(['./scss/**/*.scss'], ['devCss']);
-    // gulp.watch(['./src/ts/**/*.ts', './src/ts/**/*.vue'], ['js']);
+    gulp.watch(['./js/**/*.js'], ['devJs']);
 });
 
-
-gulp.task('dev', ['html', 'images', 'devCss']);
+gulp.task('dev', ['html', 'images', 'devCss', 'devJs']);
 
 // start default task
-gulp.task('default', ['html', 'images', 'css']);
+gulp.task('default', ['html', 'images', 'css', 'js']);

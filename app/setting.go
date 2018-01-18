@@ -20,6 +20,7 @@ type Setting struct {
 	Value       interface{}   `json:"value"`
 	Options     []interface{} `json:"options"`
 	validate    func(value interface{}) error
+	Restart     bool `json:"restart"` // Restart required for this setting to take effect
 }
 
 // ErrSettingNotFound is returned when a setting can't be found for the given id

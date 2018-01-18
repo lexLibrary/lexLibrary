@@ -12,6 +12,13 @@ VERSION=$(git describe --tags --long)
 # set version and git sha in version file
 echo "$VERSION">version
 
+cd client 
+rm -rf deploy
+yarn
+gulp dev
+
+cd ..
+
 go-bindata -debug -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go \
     ./version \
     ./client/deploy/... \
@@ -27,9 +34,6 @@ DOCKERNAME="lex_library_dev_$DBTYPE"
 
 
 cd client 
-rm -rf deploy
-yarn
-gulp dev
 gulp watch |& sed -e "s/^/${LIGHTGREEN}[Gulp]${NC} /" &
 
 gpid=$!

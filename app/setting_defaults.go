@@ -49,4 +49,10 @@ var settingDefaults = []Setting{
 		Description: "Require that all new passwords have at least one upper and one lower case letter",
 		Value:       false,
 	},
+	Setting{
+		ID:          "RateLimit",
+		Description: "Number of requests per minute a unique user or ip address is allowed to make",
+		Value:       2000,
+		Restart:     true,
+	},
 }

@@ -36,16 +36,19 @@ func llPreHandle(w http.ResponseWriter, r *http.Request, p httprouter.Params, ll
 		if errHandled(handleCSRF(w, r, s), w, r) {
 			return
 		}
-		//TODO: Rate limit
 		// if user is logged in rate-limit based on userkey not ip address
-		// if errHandled(app.AttemptRequest(string(s.UserKey), app.RequestType{}), w, r, c) {
-		// 	return
-		// }
+		left, err := requestLimit.Attempt(s.UserID.String())
+		rateLimitHeader(w, left)
+		if errHandled(err, w, r) {
+			return
+		}
 	} else {
 		//if not logged in access, rate limit based on IP
-		// if errHandled(app.AttemptRequest(ipAddress(r), app.RequestType{}), w, r) {
-		// 	return
-		// }
+		left, err := requestLimit.Attempt(ipAddress(r))
+		rateLimitHeader(w, left)
+		if errHandled(err, w, r) {
+			return
+		}
 	}
 
 	standardHeaders(w)

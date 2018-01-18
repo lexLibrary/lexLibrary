@@ -22,6 +22,7 @@ func setupRoutes() http.Handler {
 	// static folders
 	rootHandler.GET("/images/*image", serveStatic("images/", false))
 	rootHandler.GET("/css/*file", serveStatic("css/", true))
+	rootHandler.GET("/js/*file", serveStatic("js/", true))
 
 	// pages
 	rootHandler.GET("/", templateHandler{

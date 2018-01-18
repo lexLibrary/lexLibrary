@@ -4,7 +4,6 @@ package web
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -25,8 +24,7 @@ func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 			w.Header().Set("ETag", version) // FIXME: Proper caching based on compiled version
 		}
 		if r.Method != "GET" {
-			//TODO: use LL 404 handler
-			http.NotFound(w, r)
+			notFound(w, r)
 			return
 		}
 
@@ -45,17 +43,14 @@ func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 			// TODO: return already compressed data https://github.com/shuLhan/go-bindata/issues/25
 			data, err := files.Asset(file)
 			if err != nil {
-				//TODO: use LL 404 handler
-				http.NotFound(w, r)
+				notFound(w, r)
 				return
 			}
 			reader = bytes.NewReader(data)
 		} else {
 			data, err := files.Asset(file)
 			if err != nil {
-				//TODO: use LL 404 handler
-				fmt.Println("error: ", err)
-				http.NotFound(w, r)
+				notFound(w, r)
 				return
 			}
 			reader = bytes.NewReader(data)
@@ -64,6 +59,5 @@ func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 		standardHeaders(w)
 
 		http.ServeContent(w, r, file, time.Time{}, reader)
-
 	}
 }
