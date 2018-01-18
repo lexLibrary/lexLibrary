@@ -7,3 +7,8 @@
 package app
 
 const maxRows = 10000
+
+func Init() error {
+	err := settingTriggerInit()
+	return err
+}

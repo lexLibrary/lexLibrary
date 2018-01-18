@@ -2,22 +2,29 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
 )
 
-// X-RateLimit-Limit: 60
-// X-RateLimit-Remaining: 56
-// X-RateLimit-Reset: 1372700873
+func init() {
+	app.SettingTrigger("RateLimit", func(value interface{}) {
+		requestLimit.Limit = int32(value.(int))
+		fmt.Println("Rate limit set")
+	})
+}
 
 var requestLimit = &app.RateLimit{
 	Type:   "General",
-	Limit:  int32(app.SettingMust("RateLimit").Int()),
+	Limit:  2000,
 	Period: 1 * time.Minute,
 }
 
 func rateLimitHeader(w http.ResponseWriter, left app.RateLeft) {
-
+	w.Header().Add("X-RateLimit-Limit", strconv.Itoa(int(left.Limit)))
+	w.Header().Add("X-RateLimit-Remaining", strconv.Itoa(int(left.Remaining)))
+	w.Header().Add("X-RateLimit-Reset", strconv.Itoa(int(left.Reset.Unix())))
 }

@@ -53,6 +53,5 @@ var settingDefaults = []Setting{
 		ID:          "RateLimit",
 		Description: "Number of requests per minute a unique user or ip address is allowed to make",
 		Value:       2000,
-		Restart:     true,
 	},
 }

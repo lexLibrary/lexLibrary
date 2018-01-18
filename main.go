@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/web"
 	"github.com/spf13/viper"
@@ -101,6 +102,12 @@ func main() {
 	defer data.Teardown()
 
 	log.Println("Data layer initialized")
+
+	err = app.Init()
+	if err != nil {
+		log.Fatalf("Error initializing app layer: %s", err)
+	}
+	log.Println("App layer initialized")
 
 	err = web.StartServer(cfg.Web, flagDevMode)
 	if err != nil {

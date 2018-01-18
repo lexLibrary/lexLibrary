@@ -20,7 +20,7 @@ type Setting struct {
 	Value       interface{}   `json:"value"`
 	Options     []interface{} `json:"options"`
 	validate    func(value interface{}) error
-	Restart     bool `json:"restart"` // Restart required for this setting to take effect
+	triggers    []func(value interface{})
 }
 
 // ErrSettingNotFound is returned when a setting can't be found for the given id
@@ -211,6 +211,32 @@ func (s *Setting) setValue(tableValue string) error {
 	}
 
 	s.Value = value
+	return nil
+}
+
+// SettingTrigger registers a function to trigger when a setting value is updated, gets triggered once automatically
+// when LexLibrary loads
+func SettingTrigger(id string, triggerFunc func(value interface{})) {
+	for i := range settingDefaults {
+		if settingDefaults[i].ID == id {
+			settingDefaults[i].triggers = append(settingDefaults[i].triggers, triggerFunc)
+			return
+		}
+	}
+	panic(fmt.Sprintf("Setting %s does not exist", id))
+}
+
+func settingTriggerInit() error {
+	settings, err := Settings()
+	if err != nil {
+		return err
+	}
+
+	for _, s := range settings {
+		for _, f := range s.triggers {
+			f(s.Value)
+		}
+	}
 	return nil
 }
 
