@@ -3,6 +3,8 @@
 var gulp = require('gulp');
 var path = require('path');
 var sass = require('gulp-sass');
+var postcss = require('gulp-postcss');
+var autoprefixer = require('autoprefixer');
 var sourcemaps = require('gulp-sourcemaps');
 var rename = require('gulp-rename');
 var rollup = require('gulp-rollup');
@@ -12,38 +14,38 @@ var buble = require('rollup-plugin-buble');
 var deployDir = './deploy';
 
 var rollupCFG = {
-	input: [
-		'js/login.js',
-	],
-	format: 'iife',
-	plugins: [
-		uglify(),
-		buble(),
-	]
+    input: [
+        'js/login.js',
+    ],
+    format: 'iife',
+    plugins: [
+        uglify(),
+        buble(),
+    ]
 };
 
 gulp.task('js', function (callback) {
-//     // buble
-	return [
-		gulp.src('./js/**/*.js')
-			.pipe(rollup(rollupCFG))
-			.pipe(gulp.dest(path.join(deployDir, 'js'))),
-		gulp.src('./node_modules/vue/dist/vue.min.js')
-			.pipe(rename('vue.js'))
-			.pipe(gulp.dest(path.join(deployDir, 'js')))
-	];
+    //     // buble
+    return [
+        gulp.src('./js/**/*.js')
+            .pipe(rollup(rollupCFG))
+            .pipe(gulp.dest(path.join(deployDir, 'js'))),
+        gulp.src('./node_modules/vue/dist/vue.min.js')
+            .pipe(rename('vue.js'))
+            .pipe(gulp.dest(path.join(deployDir, 'js')))
+    ];
 });
 
 gulp.task('devJs', function (callback) {
-	return [
-		gulp.src('./js/**/*.js')
-			.pipe(sourcemaps.init())
-			.pipe(rollup(rollupCFG))
-			.pipe(sourcemaps.write())
-			.pipe(gulp.dest(path.join(deployDir, 'js'))),
-		 gulp.src('./node_modules/vue/dist/vue.js')
-			.pipe(gulp.dest(path.join(deployDir, 'js')))
-	];
+    return [
+        gulp.src('./js/**/*.js')
+            .pipe(sourcemaps.init())
+            .pipe(rollup(rollupCFG))
+            .pipe(sourcemaps.write())
+            .pipe(gulp.dest(path.join(deployDir, 'js'))),
+        gulp.src('./node_modules/vue/dist/vue.js')
+            .pipe(gulp.dest(path.join(deployDir, 'js')))
+    ];
 });
 
 gulp.task('css', function () {
@@ -52,6 +54,12 @@ gulp.task('css', function () {
             outputStyle: 'compressed',
             includePaths: 'node_modules'
         }).on('error', sass.logError))
+        .pipe(postcss([
+            autoprefixer({
+                cascade: false
+            })
+        ]
+        ))
         .pipe(gulp.dest(path.join(deployDir, 'css')));
 });
 
@@ -62,6 +70,12 @@ gulp.task('devCss', function () {
             outputStyle: 'compressed',
             includePaths: 'node_modules'
         }).on('error', sass.logError))
+        .pipe(postcss([
+            autoprefixer({
+                cascade: false
+            })
+        ]
+        ))
         .pipe(sourcemaps.write())
         .pipe(gulp.dest(path.join(deployDir, 'css')));
 });
