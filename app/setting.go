@@ -145,6 +145,7 @@ func SettingSet(id string, value interface{}) error {
 		return ErrSettingInvalidValue
 	}
 
+	setting.Value = value
 	var tmp = ""
 	err = sqlSettingGet.QueryRow(sql.Named("id", id)).Scan(&tmp)
 	if err == sql.ErrNoRows {
@@ -155,6 +156,7 @@ func SettingSet(id string, value interface{}) error {
 		if err != nil {
 			return errors.Wrapf(err, "Error inserting setting %s", id)
 		}
+		setting.runTriggers()
 		return nil
 	}
 	if err != nil {
@@ -165,6 +167,7 @@ func SettingSet(id string, value interface{}) error {
 	if err != nil {
 		return errors.Wrapf(err, "Error updating setting %s", id)
 	}
+	setting.runTriggers()
 	return nil
 }
 
@@ -233,9 +236,7 @@ func settingTriggerInit() error {
 	}
 
 	for _, s := range settings {
-		for _, f := range s.triggers {
-			f(s.Value)
-		}
+		s.runTriggers()
 	}
 	return nil
 }
@@ -318,4 +319,10 @@ optionsLoop:
 	}
 
 	return found
+}
+
+func (s *Setting) runTriggers() {
+	for _, f := range s.triggers {
+		f(s.Value)
+	}
 }

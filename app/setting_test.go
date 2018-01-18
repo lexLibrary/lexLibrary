@@ -253,4 +253,22 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Setting an an invalid value on a setting with a validate func did not fail")
 		}
 	})
+
+	t.Run("Setting Triggers", func(t *testing.T) {
+		reset()
+		got := 0
+		app.SettingTrigger("PasswordMinLength", func(value interface{}) {
+			got = value.(int)
+		})
+
+		expected := 20
+		err := app.SettingSet("PasswordMinLength", expected)
+		if err != nil {
+			t.Fatalf("Error setting setting value: %s", err)
+		}
+		if got != expected {
+			t.Fatalf("Setting trigger did not run. Expected %d, got %d", expected, got)
+		}
+
+	})
 }
