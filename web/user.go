@@ -77,3 +77,23 @@ func userGet(w http.ResponseWriter, r *http.Request, c ctx) {
 
 	respond(w, success(u))
 }
+
+func passwordTest(w http.ResponseWriter, r *http.Request, c ctx) {
+	input := &userInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	password := ""
+	if input.Password != nil {
+		password = *input.Password
+	}
+
+	err = app.ValidatePassword(password)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	respond(w, success(nil))
+}

@@ -30,9 +30,9 @@ var passwordVersions = []passworder{
 	},
 }
 
-// validatePassword validates if the passed in password
+// ValidatePassword validates if the passed in password
 // meets the requirements for a good password in lex library
-func validatePassword(password string) error {
+func ValidatePassword(password string) error {
 	min := SettingMust("PasswordMinLength").Int()
 
 	if len(password) < min {

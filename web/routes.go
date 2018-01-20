@@ -40,8 +40,9 @@ func setupRoutes() http.Handler {
 		templateFiles: []string{"signup.template.html"},
 	}.ServeHTTP)
 
-	rootHandler.POST("/signup", makeHandle(userPost))
+	rootHandler.POST("/user", makeHandle(userPost))
 	rootHandler.GET("/user/:username", makeHandle(userGet))
+	rootHandler.POST("/password", makeHandle(passwordTest))
 
 	return rootHandler
 }

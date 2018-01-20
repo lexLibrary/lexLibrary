@@ -93,7 +93,7 @@ func UserNew(username, password string) (*User, error) {
 		return nil, err
 	}
 
-	err = validatePassword(password)
+	err = ValidatePassword(password)
 	if err != nil {
 		return nil, err
 	}
