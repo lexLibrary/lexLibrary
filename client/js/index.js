@@ -1,4 +1,5 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2018 Townsourced Inc.
+import './lib/polyfill';
 
-// make sure vuejs works
-// buble and rollup
+var vm = new Vue({
+});

@@ -3,27 +3,36 @@
 
 <head>
 	[[template "header"]]
-	<title>Login - Lex Library</title>
+	<title>Log In - Lex Library</title>
 </head>
 
 <body>
 	<div class="container">
-		<div class="login">
+		<div id="login" class="auth-form">
 			<h1 class="text-center">Log In to Lex Library</h1>
 			<div class="row justify-content-center">
 				<div class="col-md-5">
 					<div class="card login-card">
 						<div class="card-body">
-							<form>
+							<form v-on:submit="login">
 								<div class="form-group">
 									<label for="inputUsername">Username</label>
-									<input type="text" class="form-control is-invalid" id="inputUsername" 
+									<input v-model="username" type="text" class="form-control is-invalid" id="inputUsername" 
 										placeholder="Enter username">
 									<div class="invalid-feedback">Invalid Username or Password</div>
 								</div>
 								<div class="form-group">
 									<label for="inputPassword">Password</label>
-									<input type="password" class="form-control" id="inputPassword" placeholder="Enter password">
+									<input v-model="password" type="password" class="form-control" id="inputPassword"
+										placeholder="Enter password">
+								</div>
+								<div class="form-group">
+									<div class="form-check">
+										<input class="form-check-input" type="checkbox" id="inputRememberMe">
+										<label class="form-check-label" for="gridCheck">
+											Remember Me	
+										</label>
+									</div>
 								</div>
 								<button type="submit" class="btn btn-primary btn-block">Log In</button>
 							</form>
@@ -34,7 +43,6 @@
 		</div>
 	</div>
 </body>
-<script src="/js/login.js"></script>
 <script src="/js/vue.js"></script>
-
+<script src="/js/login.js"></script>
 </html>

@@ -17,11 +17,11 @@ type User struct {
 	Username        string    `json:"username"`
 	FirstName       string    `json:"firstName"`
 	LastName        string    `json:"lastName"`
-	AuthType        string    `json:"authType"`
+	AuthType        string    `json:"authType,omitempty"`
 	Password        []byte    `json:"-"`
 	PasswordVersion int       `json:"-"`
-	Active          bool      `json:"active"`  // whether or not the user is active and can log in
-	Version         int       `json:"version"` // version of this record starting with 0
+	Active          bool      `json:"active"`            // whether or not the user is active and can log in
+	Version         int       `json:"version,omitempty"` // version of this record starting with 0
 	Updated         time.Time `json:"updated,omitempty"`
 	Created         time.Time `json:"created,omitempty"`
 }
@@ -72,20 +72,20 @@ var (
 		select id, username, first_name, last_name, auth_type, password, password_version, active, version, updated, created 
 		from users where username = {{arg "username"}}`)
 	sqlUserUpdateActive = data.NewQuery(`update users set active = {{arg "active"}} where id = {{arg "id"}}`)
+	sqlUserUpdateName   = data.NewQuery(`update users set first_name = {{arg "first_name"}}, 
+		last_name = {{arg "last_name"}} where id = {{arg "id"}}`)
 )
 
 // UserNew creates a new user
-func UserNew(username, firstName, lastName, password string) (*User, error) {
+func UserNew(username, password string) (*User, error) {
 	u := &User{
-		ID:        xid.New(),
-		Username:  strings.ToLower(username),
-		FirstName: firstName,
-		LastName:  lastName,
-		AuthType:  AuthTypePassword,
-		Active:    true,
-		Version:   0,
-		Created:   time.Now(),
-		Updated:   time.Now(),
+		ID:       xid.New(),
+		Username: strings.ToLower(username),
+		AuthType: AuthTypePassword,
+		Active:   true,
+		Version:  0,
+		Created:  time.Now(),
+		Updated:  time.Now(),
 	}
 
 	err := u.validate()
@@ -121,6 +121,22 @@ func UserNew(username, firstName, lastName, password string) (*User, error) {
 	err = u.insert()
 	if err != nil {
 		return nil, err
+	}
+
+	return u, nil
+}
+
+// UserGet retrieves a user based on the passed in username
+func UserGet(username string, who *User) (*User, error) {
+	u, err := userGet(username)
+	if err != nil {
+		return nil, err
+	}
+
+	if who == nil || who.ID != u.ID {
+		u.clearPrivate()
+	} else {
+		u.clearPassword()
 	}
 
 	return u, nil
@@ -205,4 +221,35 @@ func (u *User) SetActive(active bool, who *User) error {
 	u.Active = active
 	_, err := sqlUserUpdateActive.Exec(sql.Named("active", u.Active), sql.Named("id", u.ID))
 	return err
+}
+
+// SetName sets the user's name
+func (u *User) SetName(firstName, lastName string, who *User) error {
+	if who.ID != u.ID {
+		return Unauthorized("You do not have permission to update this user")
+	}
+
+	u.FirstName = firstName
+	u.LastName = lastName
+	err := u.validate()
+	if err != nil {
+		return err
+	}
+
+	_, err = sqlUserUpdateName.Exec(sql.Named("first_name", u.FirstName), sql.Named("last_name", u.LastName),
+		sql.Named("id", u.ID))
+	return err
+}
+
+func (u *User) clearPrivate() {
+	u.clearPassword()
+	u.AuthType = ""
+	u.Version = 0
+	u.Updated = time.Time{}
+	u.Created = time.Time{}
+}
+
+func (u *User) clearPassword() {
+	u.Password = nil
+	u.PasswordVersion = 0
 }

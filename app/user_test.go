@@ -30,10 +30,8 @@ func TestUser(t *testing.T) {
 	t.Run("New", func(t *testing.T) {
 		reset()
 		username := "newusęr"
-		firstname := "firstname"
-		lastname := "lastname"
 
-		u, err := app.UserNew(username, firstname, lastname, "ODSjflaksjdfhiasfd323")
+		u, err := app.UserNew(username, "ODSjflaksjdfhiasfd323")
 		if err != nil {
 			t.Fatalf("Error adding new user: %s", err)
 		}
@@ -41,7 +39,7 @@ func TestUser(t *testing.T) {
 		// sleep for one second because that's the minimum precision of some database's datetime fields
 		time.Sleep(1 * time.Second)
 
-		if u.FirstName != firstname || u.LastName != lastname || u.Username != username {
+		if u.Username != username {
 			t.Fatalf("Returned user doesn't match passed in values")
 		}
 
@@ -84,14 +82,6 @@ func TestUser(t *testing.T) {
 		if other.Username != username {
 			t.Fatalf("Username not set properly expected %s, got %s", username, other.Username)
 		}
-
-		if other.FirstName != firstname {
-			t.Fatalf("First Name not set properly expected %s, got %s", firstname, other.FirstName)
-		}
-		if other.LastName != lastname {
-			t.Fatalf("Last Name not set properly expected %s, got %s", lastname, other.LastName)
-		}
-
 		if other.Password == nil {
 			t.Fatalf("Password not set properly")
 		}
@@ -129,7 +119,9 @@ func TestUser(t *testing.T) {
 		firstname := fmt.Sprintf("%70s", "firstname")
 		lastname := fmt.Sprintf("%70s", "firstname")
 
-		_, err := app.UserNew("testusername", firstname, "", "ODSjflaksjdfhiasfd323")
+		u, err := app.UserNew("testusername", "ODSjflaksjdfhiasfd323")
+
+		err = u.SetName(firstname, "", u)
 		if err == nil {
 			t.Fatalf("No error adding too long first name")
 		}
@@ -137,7 +129,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on too long first name is not a failure")
 		}
 
-		_, err = app.UserNew("testusername", "", lastname, "ODSjflaksjdfhiasfd323")
+		err = u.SetName("", lastname, u)
 		if err == nil {
 			t.Fatalf("No error adding too long last name")
 		}
@@ -148,21 +140,21 @@ func TestUser(t *testing.T) {
 
 	t.Run("Invalid Username", func(t *testing.T) {
 		reset()
-		_, err := app.UserNew("", "", "", "ODSjflaksjdfhiasfd323")
+		_, err := app.UserNew("", "ODSjflaksjdfhiasfd323")
 		if err == nil {
 			t.Fatalf("No error adding user without a username")
 		}
 		if !app.IsFail(err) {
 			t.Fatalf("Error on empty username is not a failure")
 		}
-		_, err = app.UserNew("username with space", "", "", "ODSjflaksjdfhiasfd323")
+		_, err = app.UserNew("username with space", "ODSjflaksjdfhiasfd323")
 		if err == nil {
 			t.Fatalf("No error adding username with a space")
 		}
 		if !app.IsFail(err) {
 			t.Fatalf("Error on username with a space is not a failure")
 		}
-		_, err = app.UserNew("username_with_underscores", "", "", "ODSjflaksjdfhiasfd323")
+		_, err = app.UserNew("username_with_underscores", "ODSjflaksjdfhiasfd323")
 		if err == nil {
 			t.Fatalf("No error adding username with underscores")
 		}
@@ -174,12 +166,12 @@ func TestUser(t *testing.T) {
 
 	t.Run("Duplicate Username", func(t *testing.T) {
 		reset()
-		existing, err := app.UserNew("existing", "", "", "ODSjflaksjdfhiasfd323")
+		existing, err := app.UserNew("existing", "ODSjflaksjdfhiasfd323")
 		if err != nil {
 			t.Fatalf("Error adding existing user: %s", err)
 		}
 
-		_, err = app.UserNew(existing.Username, "", "", "ODSjflaksjdfhiasfd323")
+		_, err = app.UserNew(existing.Username, "ODSjflaksjdfhiasfd323")
 		if err == nil {
 			t.Fatalf("No error when adding a duplicate user")
 		}
@@ -188,7 +180,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on duplicate user is not a failure")
 		}
 
-		_, err = app.UserNew(strings.ToUpper(existing.Username), "", "", "ODSjflaksjdfhiasfd323")
+		_, err = app.UserNew(strings.ToUpper(existing.Username), "ODSjflaksjdfhiasfd323")
 		if err == nil {
 			t.Fatalf("No error when adding a duplicate user with different case")
 		}
@@ -204,7 +196,7 @@ func TestUser(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
-		_, err = app.UserNew("testuser", "", "", "123456qwerty")
+		_, err = app.UserNew("testuser", "123456qwerty")
 		if err == nil {
 			t.Fatalf("No error when using a common password")
 		}
@@ -225,7 +217,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error updating setting")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "reallygoodlongpasswordwithoutaspecialchar")
+		_, err = app.UserNew("testuser", "reallygoodlongpasswordwithoutaspecialchar")
 		if err == nil {
 			t.Fatalf("No error when using a password without a special character")
 		}
@@ -234,7 +226,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on password without a special character is not a failure")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "reallygoodlongpasswordwithaspecialchar#")
+		_, err = app.UserNew("testuser", "reallygoodlongpasswordwithaspecialchar#")
 		if err != nil {
 			t.Fatalf("Error adding user: %s", err)
 		}
@@ -252,7 +244,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error updating setting")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "reallygoodlongpassword")
+		_, err = app.UserNew("testuser", "reallygoodlongpassword")
 		if err == nil {
 			t.Fatalf("No error when using a password without a number")
 		}
@@ -261,7 +253,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on password without a number is not a failure")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "reallygoodlongpasswordwithanumber3")
+		_, err = app.UserNew("testuser", "reallygoodlongpasswordwithanumber3")
 		if err != nil {
 			t.Fatalf("Error adding user: %s", err)
 		}
@@ -278,7 +270,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error updating setting")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "reallygoodlongpassword")
+		_, err = app.UserNew("testuser", "reallygoodlongpassword")
 		if err == nil {
 			t.Fatalf("No error when using a password without mixed case")
 		}
@@ -287,7 +279,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on password without mixed case is not a failure")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "REALLYGOODLONGPASSWORD")
+		_, err = app.UserNew("testuser", "REALLYGOODLONGPASSWORD")
 		if err == nil {
 			t.Fatalf("No error when using a password without mixed case")
 		}
@@ -296,7 +288,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on password without mixed case is not a failure")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "reallygoodlongpasswordwithMixedCase")
+		_, err = app.UserNew("testuser", "reallygoodlongpasswordwithMixedCase")
 		if err != nil {
 			t.Fatalf("Error adding user: %s", err)
 		}
@@ -313,7 +305,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error updating setting")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "short")
+		_, err = app.UserNew("testuser", "short")
 		if err == nil {
 			t.Fatalf("No error when using a short password")
 		}
@@ -322,7 +314,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on short password is not a failure")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "reallygoodlongpassword")
+		_, err = app.UserNew("testuser", "reallygoodlongpassword")
 		if err != nil {
 			t.Fatalf("Error adding user: %s", err)
 		}
@@ -332,7 +324,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error updating setting")
 		}
 
-		_, err = app.UserNew("testuser", "", "", "reallygoodlongpassword")
+		_, err = app.UserNew("testuser", "reallygoodlongpassword")
 		if err == nil {
 			t.Fatalf("No error when using a short password")
 		}
@@ -346,12 +338,12 @@ func TestUser(t *testing.T) {
 		username := "testuser"
 		password := "reallygoodlongpassword"
 
-		u, err := app.UserNew(username, "", "", password)
+		u, err := app.UserNew(username, password)
 		if err != nil {
 			t.Fatalf("Error adding user for SetActive testing")
 		}
 
-		other, err := app.UserNew("othertestuser", "", "", "reallygoodlongpassword")
+		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
 		if err != nil {
 			t.Fatalf("Error adding other user for SetActive testing")
 		}
@@ -373,6 +365,77 @@ func TestUser(t *testing.T) {
 		_, err = app.Login(username, password)
 		if err != app.ErrLogonFailure {
 			t.Fatalf("No logon failure error when logging in with an inactive user")
+		}
+
+	})
+	t.Run("SetName", func(t *testing.T) {
+		reset()
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user for SetName testing")
+		}
+
+		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
+		if err != nil {
+			t.Fatalf("Error adding other user for SetName testing")
+		}
+
+		fName := "firstname"
+		lName := "lastname"
+
+		err = u.SetName(fName, lName, other)
+		if err == nil {
+			t.Fatalf("Setting active from other user did not fail")
+		}
+
+		err = u.SetName(fName, lName, u)
+		if err != nil {
+			t.Fatalf("Error setting name: %s", err)
+		}
+
+		if u.FirstName != fName || u.LastName != lName {
+			t.Fatalf("User name was not updated")
+		}
+	})
+	t.Run("UserGet", func(t *testing.T) {
+		reset()
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user")
+		}
+
+		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
+		if err != nil {
+			t.Fatalf("Error adding other user")
+		}
+
+		got, err := app.UserGet(u.Username, other)
+		if err != nil {
+			t.Fatalf("Error getting user: %s", err)
+		}
+
+		if got.Password != nil || got.PasswordVersion != 0 || got.Version != 0 || got.AuthType != "" {
+			t.Fatalf("Getting user from other user returned private data")
+		}
+
+		got, err = app.UserGet(u.Username, u)
+		if err != nil {
+			t.Fatalf("Error getting user: %s", err)
+		}
+
+		if got.Password != nil || got.PasswordVersion != 0 {
+			t.Fatalf("Exported UserGet call returned password data")
+		}
+
+		if u.FirstName != got.FirstName || u.LastName != got.LastName || u.ID != got.ID ||
+			u.Username != got.Username {
+			t.Fatalf("Retrieved user does not match.  Wanted %v, got %v", u, got)
 		}
 
 	})

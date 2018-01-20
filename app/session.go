@@ -26,6 +26,10 @@ type Session struct {
 	user *User // cached user record
 }
 
+const (
+	sessionMaxDaysRemembered = 365
+)
+
 var (
 	// ErrSessionInvalid is returned when a sesssion is invalid or expired
 	ErrSessionInvalid = NewFailure("Invalid or expired session")

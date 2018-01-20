@@ -83,8 +83,5 @@ func parseInput(r *http.Request, result interface{}) error {
 	}
 
 	err = json.Unmarshal(buff, result)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

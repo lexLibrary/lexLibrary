@@ -6,7 +6,7 @@ import (
 	"unicode"
 )
 
-// for validating and making usernames, town names, or
+// for validating and making usernames or
 // anything that needs to be url safe, case insensitive and user readable
 type urlify string
 

@@ -27,7 +27,7 @@ func TestSession(t *testing.T) {
 			t.Fatalf("Error emptying users table before running tests: %s", err)
 		}
 
-		u, err = app.UserNew(username, "", "", password)
+		u, err = app.UserNew(username, password)
 		if err != nil {
 			t.Fatalf("Error adding user for session testing")
 		}

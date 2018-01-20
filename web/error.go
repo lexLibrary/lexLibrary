@@ -21,13 +21,6 @@ const (
 
 var (
 	notFoundHandler = templateHandler{
-		handler: func(w http.ResponseWriter, r *http.Request, c ctx) {
-			w.WriteHeader(http.StatusNotFound)
-			err := w.(*templateWriter).execute(nil)
-			if err != nil {
-				app.LogError(errors.Wrap(err, "Executing not_found template: %s"))
-			}
-		},
 		templateFiles: []string{"not_found.template.html"},
 	}
 	errorHandler = templateHandler{
@@ -37,6 +30,7 @@ var (
 
 func init() {
 	errorHandler.loadTemplates()
+	notFoundHandler.loadTemplates()
 }
 
 func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
@@ -70,13 +64,18 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 
 	accept := r.Header.Get("Accept")
 	if strings.Contains(accept, acceptHTML) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(status)
 		switch status {
 		case http.StatusNotFound:
-			notFoundHandler.ServeHTTP(w, r, nil)
+			terr := notFoundHandler.template.Execute(w, nil)
+			if terr != nil {
+				app.LogError(errors.Wrap(terr, "Writing not_found template"))
+			}
 		case http.StatusUnauthorized:
 			// TODO:unauthorized page
+			// redirect with url parm?
 		default:
-			w.WriteHeader(status)
 			terr := errorHandler.template.Execute(w, struct {
 				ErrorID xid.ID
 			}{

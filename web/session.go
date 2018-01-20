@@ -16,7 +16,17 @@ const (
 	cookieName      = "lexlibrary"
 )
 
-func loginTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+type sessionInput struct {
+	userInput
+	RememberMe bool `json:"rememberMe,omitempty"`
+}
+
+func loginSignupTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session != nil {
+		// already logged in, redirect to home
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
 	err := w.(*templateWriter).execute(struct {
 		Test string
 	}{
@@ -72,9 +82,10 @@ func handleCSRF(w http.ResponseWriter, r *http.Request, s *app.Session) error {
 		if reqToken != s.CSRFToken && s.Valid {
 			return app.NewFailure("Invalid CSRFToken.  Your session may be invalid.  Try logging in again.")
 		}
-		return nil
 		//TODO: Consider resetting CSRF token regularily?
 		// On each update? Once a day?
+
+		return nil
 	}
 
 	//Get requests, put CSRF token in header
@@ -87,7 +98,7 @@ func setSessionCookie(w http.ResponseWriter, r *http.Request, u *app.User, remem
 	expires := time.Time{}
 
 	if rememberMe {
-		expires = time.Now().AddDate(0, 0, 15)
+		expires = time.Now().AddDate(0, 0, app.SettingMust("RememberSessionDays").Int())
 	}
 
 	s, err := app.SessionNew(u, expires, ipAddress(r), r.UserAgent())

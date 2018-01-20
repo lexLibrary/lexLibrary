@@ -7,7 +7,7 @@ package app
 var settingDefaults = []Setting{
 	Setting{
 		ID:          "AllowPublic",
-		Description: "Whether or not to allow documents to be published that are accessible without logging in to Lex Library",
+		Description: "Whether or not to allow documents to be published that are accessible without logging in to Lex Library.",
 		Value:       true,
 	},
 	Setting{
@@ -20,7 +20,7 @@ var settingDefaults = []Setting{
 	},
 	Setting{
 		ID:          "PasswordMinLength",
-		Description: "Required minimum length for passwords",
+		Description: "Required minimum length for passwords.",
 		Value:       10,
 		validate: func(value interface{}) error {
 			if value.(int) < passwordMinLength {
@@ -31,27 +31,39 @@ var settingDefaults = []Setting{
 	},
 	Setting{
 		ID:          "BadPasswordCheck",
-		Description: "Don't allow passwords that exist in the top 10,000 most common passwords list",
+		Description: "Don't allow passwords that exist in the top 10,000 most common passwords list.",
 		Value:       true,
 	},
 	Setting{
 		ID:          "PasswordRequireSpecial",
-		Description: "Require that all new passwords have at least one special character",
+		Description: "Require that all new passwords have at least one special character.",
 		Value:       false,
 	},
 	Setting{
 		ID:          "PasswordRequireNumber",
-		Description: "Require that all new passwords have at least one number",
+		Description: "Require that all new passwords have at least one number.",
 		Value:       false,
 	},
 	Setting{
 		ID:          "PasswordRequireMixedCase",
-		Description: "Require that all new passwords have at least one upper and one lower case letter",
+		Description: "Require that all new passwords have at least one upper and one lower case letter.",
 		Value:       false,
 	},
 	Setting{
 		ID:          "RateLimit",
-		Description: "Number of requests per minute a unique user or ip address is allowed to make",
+		Description: "Number of requests per minute a unique user or ip address is allowed to make.",
 		Value:       2000,
+	},
+	Setting{
+		ID:          "RememberSessionDays",
+		Description: "How many days a session is valid for if Remember Me is checked when logging in.",
+		Value:       15,
+		validate: func(value interface{}) error {
+			if value.(int) > sessionMaxDaysRemembered {
+				return NewFailure("The maximium number of days a session can be remembered for is %d",
+					sessionMaxDaysRemembered)
+			}
+			return nil
+		},
 	},
 }

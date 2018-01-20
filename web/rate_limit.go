@@ -2,7 +2,6 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,7 +12,6 @@ import (
 func init() {
 	app.SettingTrigger("RateLimit", func(value interface{}) {
 		requestLimit.Limit = int32(value.(int))
-		fmt.Println("Rate limit set")
 	})
 }
 

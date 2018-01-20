@@ -24,18 +24,24 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/css/*file", serveStatic("css/", true))
 	rootHandler.GET("/js/*file", serveStatic("js/", true))
 
-	// pages
+	// root
 	rootHandler.GET("/", templateHandler{
 		handler:       rootTemplate,
 		templateFiles: []string{"index.template.html"},
 	}.ServeHTTP)
 
+	// login / signup
 	rootHandler.GET("/login", templateHandler{
-		handler:       loginTemplate,
+		handler:       loginSignupTemplate,
 		templateFiles: []string{"login.template.html"},
 	}.ServeHTTP)
+	rootHandler.GET("/signup", templateHandler{
+		handler:       loginSignupTemplate,
+		templateFiles: []string{"signup.template.html"},
+	}.ServeHTTP)
 
-	rootHandler.GET("/404", notFoundHandler.ServeHTTP)
+	rootHandler.POST("/signup", makeHandle(userPost))
+	rootHandler.GET("/user/:username", makeHandle(userGet))
 
 	return rootHandler
 }

@@ -171,3 +171,27 @@ func (t *templateHandler) loadTemplates() {
 	// change delims to work with Vuejs
 	t.template = template.Must(template.New("").Funcs(map[string]interface{}{}).Delims("[[", "]]").Parse(tmpl))
 }
+
+//emptyTemplate is a template handler for templates that don't need to write any data or do any processing,
+// just show a compiled template
+func emptyTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+	err := w.(*templateWriter).execute(nil)
+
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Executing template: %s"))
+	}
+}
+
+func makeHandle(llFunc llHandlerFunc) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		writer := responseWriter(w, r)
+		llPreHandle(writer, r, p, llFunc)
+		_ = writer.Close()
+	}
+}
+
+func makeNoZipHandle(llFunc llHandlerFunc) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		llPreHandle(w, r, p, llFunc)
+	}
+}
