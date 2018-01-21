@@ -21,6 +21,15 @@ type sessionInput struct {
 	RememberMe bool `json:"rememberMe,omitempty"`
 }
 
+// rate limit login attempts
+var logonDelay = app.RateDelay{
+	Type:   "login",
+	Limit:  10,
+	Delay:  5 * time.Second,
+	Period: 5 * time.Minute,
+	Max:    1 * time.Minute,
+}
+
 func loginSignupTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session != nil {
 		// already logged in, redirect to home
@@ -138,4 +147,64 @@ func expireSessionCookie(w http.ResponseWriter, r *http.Request, s *app.Session)
 			http.SetCookie(w, cookie)
 		}
 	}
+}
+
+func sessionPost(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session != nil {
+		//If previous session still exists, log out so it can't be used again
+		go func(session *app.Session) {
+			err := session.Logout()
+			if err != nil {
+				app.LogError(errors.Wrap(err, "Logging out session when trying to log into a new session"))
+			}
+		}(c.session)
+	}
+
+	input := &sessionInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if input.Username == nil {
+		errHandled(app.NewFailure("A username is required"), w, r)
+		return
+	}
+
+	if input.Password == nil {
+		errHandled(app.NewFailure("You must specify a password"), w, r)
+		return
+	}
+
+	// rate limit login requests
+	if errHandled(logonDelay.Attempt(ipAddress(r)), w, r) {
+		return
+	}
+
+	u, err := app.Login(*input.Username, *input.Password)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if errHandled(setSessionCookie(w, r, u, input.RememberMe), w, r) {
+		return
+	}
+
+	respond(w, created(nil))
+}
+
+// logout
+func sessionDelete(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		respond(w, success(nil))
+		return
+	}
+
+	expireSessionCookie(w, r, c.session)
+
+	if errHandled(c.session.Logout(), w, r) {
+		return
+	}
+
+	respond(w, success(nil))
 }

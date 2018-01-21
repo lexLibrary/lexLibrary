@@ -43,6 +43,8 @@ func setupRoutes() http.Handler {
 	rootHandler.POST("/user", makeHandle(userPost))
 	rootHandler.GET("/user/:username", makeHandle(userGet))
 	rootHandler.POST("/password", makeHandle(passwordTest))
+	rootHandler.POST("/session", makeHandle(sessionPost))
+	rootHandler.DELETE("/session", makeHandle(sessionDelete))
 
 	return rootHandler
 }
