@@ -1,18 +1,38 @@
 // Copyright (c) 2018 Townsourced Inc.
 import './lib/polyfill';
+import * as xhr from './lib/xhr';
 
 var vm = new Vue({
     el: '#login',
-    data: function() {
+    data: function () {
         return {
-            username: 'test',
+            username: '',
             password: '',
+            rememberMe: false,
+            error: null,
         };
     },
+    directives: {
+        focus: {
+            inserted: function (el) {
+                el.focus();
+            },
+        },
+    },
     methods: {
-        login: function(e) {
+        login: function (e) {
+            this.error = null;
             e.preventDefault();
-            console.log('here');
+            xhr.post("/session", {
+                username: this.username,
+                password: this.password,
+            })
+                .then((result) => {
+                    window.location = '/';
+                })
+                .catch((err) => {
+                    this.error = err.data;
+                });
         }
     },
 });

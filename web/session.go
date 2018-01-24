@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	sessionValDelim = "_"
+	sessionValDelim = "@"
 	cookieName      = "lexlibrary"
 )
 
@@ -103,7 +103,7 @@ func handleCSRF(w http.ResponseWriter, r *http.Request, s *app.Session) error {
 	return nil
 }
 
-func setSessionCookie(w http.ResponseWriter, r *http.Request, u *app.User, rememberMe bool) error {
+func setSession(w http.ResponseWriter, r *http.Request, u *app.User, rememberMe bool) error {
 	expires := time.Time{}
 
 	if rememberMe {
@@ -186,7 +186,7 @@ func sessionPost(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(setSessionCookie(w, r, u, input.RememberMe), w, r) {
+	if errHandled(setSession(w, r, u, input.RememberMe), w, r) {
 		return
 	}
 

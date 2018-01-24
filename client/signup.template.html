@@ -17,7 +17,7 @@
 						<form @submit="signup">
 							<div class="form-group">
 								<label for="inputUsername">Username</label>
-								<input v-model="username" @blur="validateUsername" @keyup="usernameErr=null" 
+								<input v-model="username" v-focus @blur="validateUsername" @keyup="usernameErr=null" 
 									v-bind:class="{'is-invalid': usernameErr}" type="text" class="form-control" 
 									id="inputUsername" placeholder="Enter username">
 								<div v-if="usernameErr" class="invalid-feedback">{{usernameErr}}</div>

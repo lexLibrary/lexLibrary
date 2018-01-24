@@ -50,7 +50,7 @@ func userPost(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(setSessionCookie(w, r, u, false), w, r) {
+	if errHandled(setSession(w, r, u, false), w, r) {
 		return
 	}
 

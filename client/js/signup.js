@@ -14,6 +14,13 @@ var vm = new Vue({
             password2Err: null,
         };
     },
+    directives: {
+        focus: {
+            inserted: function (el) {
+                el.focus();
+            },
+        },
+    },
     methods: {
         signup: function (e) {
             e.preventDefault();
