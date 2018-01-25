@@ -38,11 +38,6 @@ pipeline {
             steps {
                 sh '''
                     cd $REPO
-                    gometalinter ./... --vendor --concurrency 1 --deadline 15m --disable-all \
-                        --enable=megacheck
-                '''
-                sh '''
-                    cd $REPO
                     go test ./... -cover
                 '''
                 sh '''
