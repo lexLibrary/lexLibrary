@@ -1,10 +1,14 @@
 // Copyright (c) 2018 Townsourced Inc.
 import './lib/polyfill';
 import * as xhr from './lib/xhr';
+import {
+    query
+}
+from './lib/url';
 
 var vm = new Vue({
     el: '#login',
-    data: function () {
+    data: function() {
         return {
             username: '',
             password: '',
@@ -14,21 +18,26 @@ var vm = new Vue({
     },
     directives: {
         focus: {
-            inserted: function (el) {
+            inserted: function(el) {
                 el.focus();
             },
         },
     },
     methods: {
-        login: function (e) {
+        login: function(e) {
             this.error = null;
             e.preventDefault();
             xhr.post("/session", {
-                username: this.username,
-                password: this.password,
-            })
+                    username: this.username,
+                    password: this.password,
+                })
                 .then((result) => {
-                    window.location = '/';
+                    let q = query();
+                    if (q.return && q.return.indexOf('/') === 0) {
+                        window.location = q.return;
+                    } else {
+                        window.location = '/';
+                    }
                 })
                 .catch((err) => {
                     this.error = err.data;

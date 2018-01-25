@@ -4,7 +4,7 @@ import './lib/polyfill';
 
 var vm = new Vue({
     el: '#signup',
-    data: function () {
+    data: function() {
         return {
             username: '',
             password: '',
@@ -16,13 +16,13 @@ var vm = new Vue({
     },
     directives: {
         focus: {
-            inserted: function (el) {
+            inserted: function(el) {
                 el.focus();
             },
         },
     },
     methods: {
-        signup: function (e) {
+        signup: function(e) {
             e.preventDefault();
             if (this.usernameErr || this.passwordErr || this.password2Err) {
                 return;
@@ -41,12 +41,14 @@ var vm = new Vue({
                 return;
             }
 
-            xhr.post("/password", { password: this.password })
+            xhr.post("/password", {
+                    password: this.password
+                })
                 .then(() => {
                     xhr.post(`/user/`, {
-                        username: this.username,
-                        password: this.password,
-                    })
+                            username: this.username,
+                            password: this.password,
+                        })
                         .then((result) => {
                             //TODO: redirect to profile page?
                             window.location = '/';
@@ -59,7 +61,7 @@ var vm = new Vue({
                     this.passwordErr = err.data;
                 });
         },
-        validateUsername: function () {
+        validateUsername: function() {
             if (this.usernameErr) {
                 return;
             }
@@ -76,19 +78,21 @@ var vm = new Vue({
                     }
                 });
         },
-        validatePassword: function () {
+        validatePassword: function() {
             if (this.passwordErr) {
                 return;
             }
             if (!this.password) {
                 return;
             }
-            xhr.post("/password", { password: this.password })
+            xhr.post("/password", {
+                    password: this.password
+                })
                 .catch((err) => {
                     this.passwordErr = err.data;
                 });
         },
-        validatePassword2: function () {
+        validatePassword2: function() {
             if (this.password2Err) {
                 return;
             }
@@ -99,7 +103,7 @@ var vm = new Vue({
                 this.password2Err = 'Passwords do not match';
             }
         },
-        clear: function (e) {
+        clear: function(e) {
             console.log(e);
             console.log(this);
         },
