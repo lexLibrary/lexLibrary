@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package web
 
@@ -45,6 +45,12 @@ func setupRoutes() http.Handler {
 	rootHandler.POST("/password", makeHandle(passwordTest))
 	rootHandler.POST("/session", makeHandle(sessionPost))
 	rootHandler.DELETE("/session", makeHandle(sessionDelete))
+
+	// about
+	rootHandler.GET("/about", templateHandler{
+		handler:       aboutTemplate,
+		templateFiles: []string{"about.template.html"},
+	}.ServeHTTP)
 
 	return rootHandler
 }

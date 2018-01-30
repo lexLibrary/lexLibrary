@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 const gulp = require('gulp');
 const path = require('path');
@@ -18,7 +18,9 @@ var deployDir = './deploy';
 var jsFiles = [
     'login.js',
     'index.js',
-	'signup.js',
+    'signup.js',
+    'about.js',
+    'first_run.js',
 ];
 
 function rollupFiles(dev) {
@@ -119,7 +121,7 @@ gulp.task('images', function() {
 
 // watch for changes
 gulp.task('watch', function() {
-    gulp.watch('./**/*.html', ['html']);
+    gulp.watch(['./**/*.html', '!./deploy/**/*'], ['html']);
     gulp.watch('./images/**/*', ['images']);
     gulp.watch(['./scss/**/*.scss'], ['devCss']);
     gulp.watch(['./js/**/*.js'], ['devJs']);

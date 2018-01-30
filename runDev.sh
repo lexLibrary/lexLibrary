@@ -8,9 +8,11 @@ mkdir -p client/deploy
 rm -rf files/
 
 VERSION=$(git describe --tags --long)
+LASTMODIFIED=$(date)
 
 # set version and git sha in version file
-echo "$VERSION">version
+echo "$VERSION
+$LASTMODIFIED">version
 
 cd client 
 rm -rf deploy

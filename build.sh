@@ -10,9 +10,11 @@ gulp
 cd ..
 
 VERSION=$(git describe --tags --long)
+LASTMODIFIED=$(date)
 
 # set version and git sha in version file
-echo "$VERSION">version
+echo "$VERSION
+$LASTMODIFIED">version
 
 # embed client data and version info into executable
 go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go \

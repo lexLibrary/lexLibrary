@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package app
 
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -24,6 +25,7 @@ type User struct {
 	Version         int       `json:"version,omitempty"` // version of this record starting with 0
 	Updated         time.Time `json:"updated,omitempty"`
 	Created         time.Time `json:"created,omitempty"`
+	Admin           bool      `json:"admin,omitempty"`
 }
 
 // AuthType determines the authentication method for a given user
@@ -51,7 +53,8 @@ var (
 		active,
 		version,
 		updated, 
-		created
+		created,
+		admin
 	) values (
 		{{arg "id"}}, 
 		{{arg "username"}}, 
@@ -63,21 +66,44 @@ var (
 		{{arg "active"}},
 		{{arg "version"}},
 		{{arg "updated"}}, 
-		{{arg "created"}}
+		{{arg "created"}},
+		{{arg "admin"}}
 	)`)
 	sqlUserFromID = data.NewQuery(`
-		select id, username, first_name, last_name, auth_type, active, version, updated, created 
+		select id, username, first_name, last_name, auth_type, active, version, updated, created, admin 
 		from users where id = {{arg "id"}}`)
 	sqlUserFromUsername = data.NewQuery(`
-		select id, username, first_name, last_name, auth_type, password, password_version, active, version, updated, created 
+		select id, username, first_name, last_name, auth_type, password, password_version, active, version, updated, created, admin 
 		from users where username = {{arg "username"}}`)
 	sqlUserUpdateActive = data.NewQuery(`update users set active = {{arg "active"}} where id = {{arg "id"}}`)
+	sqlUserUpdateAdmin  = data.NewQuery(`update users set admin = {{arg "admin"}} where id = {{arg "id"}}`)
 	sqlUserUpdateName   = data.NewQuery(`update users set first_name = {{arg "first_name"}}, 
 		last_name = {{arg "last_name"}} where id = {{arg "id"}}`)
 )
 
-// UserNew creates a new user
+// UserNew creates a new user, from the sign up page
+// returns unauthorized if public signups are disabled
 func UserNew(username, password string) (*User, error) {
+	if !SettingMust("AllowPublicSignups").Bool() {
+		return nil, Unauthorized("Public signups are currently disabled")
+	}
+
+	return userNew(nil, username, password)
+}
+
+// UserNewFromURL creates a new user if the passed in token is valid
+func UserNewFromURL(username, password, token string) (*User, error) {
+	err := data.BeginTx(func(tx *sql.Tx) error {
+		//TODO:
+		return errors.New("TODO")
+	})
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func userNew(tx *sql.Tx, username, password string) (*User, error) {
 	u := &User{
 		ID:       xid.New(),
 		Username: strings.ToLower(username),
@@ -108,7 +134,7 @@ func UserNew(username, password string) (*User, error) {
 	u.PasswordVersion = passVer
 	u.Password = hash
 
-	_, err = userGet(u.Username)
+	_, err = userGet(tx, u.Username)
 
 	if err == nil {
 		return nil, NewFailure("A user with the username %s already exists", u.Username)
@@ -118,7 +144,7 @@ func UserNew(username, password string) (*User, error) {
 		return nil, err
 	}
 
-	err = u.insert()
+	err = u.insert(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +154,7 @@ func UserNew(username, password string) (*User, error) {
 
 // UserGet retrieves a user based on the passed in username
 func UserGet(username string, who *User) (*User, error) {
-	u, err := userGet(username)
+	u, err := userGet(nil, username)
 	if err != nil {
 		return nil, err
 	}
@@ -142,10 +168,10 @@ func UserGet(username string, who *User) (*User, error) {
 	return u, nil
 }
 
-func userGet(username string) (*User, error) {
+func userGet(tx *sql.Tx, username string) (*User, error) {
 	u := &User{}
 
-	err := sqlUserFromUsername.QueryRow(sql.Named("username", username)).
+	err := sqlUserFromUsername.Tx(tx).QueryRow(sql.Named("username", username)).
 		Scan(
 			&u.ID,
 			&u.Username,
@@ -158,6 +184,7 @@ func userGet(username string) (*User, error) {
 			&u.Version,
 			&u.Updated,
 			&u.Created,
+			&u.Admin,
 		)
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
@@ -170,8 +197,8 @@ func userGet(username string) (*User, error) {
 	return u, nil
 }
 
-func (u *User) insert() error {
-	_, err := sqlUserInsert.Exec(
+func (u *User) insert(tx *sql.Tx) error {
+	_, err := sqlUserInsert.Tx(tx).Exec(
 		sql.Named("id", u.ID),
 		sql.Named("username", u.Username),
 		sql.Named("first_name", u.FirstName),
@@ -183,6 +210,7 @@ func (u *User) insert() error {
 		sql.Named("version", u.Version),
 		sql.Named("updated", u.Updated),
 		sql.Named("created", u.Created),
+		sql.Named("admin", u.Admin),
 	)
 
 	return err
@@ -211,10 +239,13 @@ func (u *User) validate() error {
 	return nil
 }
 
+func (u *User) canUpdate(who *User) bool {
+	return who == nil || (who.ID != u.ID && !who.Admin)
+}
+
 // SetActive sets the active status of the given user
 func (u *User) SetActive(active bool, who *User) error {
-	//TODO: Admin Permissions
-	if who.ID != u.ID {
+	if u.canUpdate(who) {
 		return Unauthorized("You do not have permission to update this user")
 	}
 
@@ -225,7 +256,7 @@ func (u *User) SetActive(active bool, who *User) error {
 
 // SetName sets the user's name
 func (u *User) SetName(firstName, lastName string, who *User) error {
-	if who.ID != u.ID {
+	if u.canUpdate(who) {
 		return Unauthorized("You do not have permission to update this user")
 	}
 
@@ -252,4 +283,15 @@ func (u *User) clearPrivate() {
 func (u *User) clearPassword() {
 	u.Password = nil
 	u.PasswordVersion = 0
+}
+
+// SetAdmin sets if a user is an Administrator or not
+func (u *User) SetAdmin(admin bool, who *User) error {
+	if who == nil || !who.Admin {
+		return Unauthorized("You do not have permission to update this user")
+	}
+
+	u.Admin = admin
+	_, err := sqlUserUpdateAdmin.Exec(sql.Named("admin", u.Admin), sql.Named("id", u.ID))
+	return err
 }

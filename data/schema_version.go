@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package data
 
@@ -117,5 +117,9 @@ var schemaVersions = []schemaVer{
 	schemaVer{
 		update:   NewQuery("create index i_username on users (username)"),
 		rollback: NewQuery("drop index i_username"),
+	},
+	schemaVer{
+		update:   NewQuery(`alter table users add admin {{bool}}`),
+		rollback: NewQuery("alter table users drop column admin"),
 	},
 }

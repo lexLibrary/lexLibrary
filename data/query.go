@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package data
 
@@ -249,8 +249,12 @@ func (q *Query) copy() *Query {
 	}
 }
 
-// Tx returns a new copy of the query that runs in the passed in transaction
+// Tx returns a new copy of the query that runs in the passed in transaction if a transaction is passed in
+// if tx is nil then the normal query is returned
 func (q *Query) Tx(tx *sql.Tx) *Query {
+	if tx == nil {
+		return q
+	}
 	copy := q.copy()
 	copy.tx = tx
 	return copy

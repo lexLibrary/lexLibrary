@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 package web
 
 import (
@@ -22,6 +22,10 @@ type ctx struct {
 type llHandlerFunc func(http.ResponseWriter, *http.Request, ctx)
 
 func llPreHandle(w http.ResponseWriter, r *http.Request, p httprouter.Params, llFunc llHandlerFunc) {
+	standardHeaders(w)
+	if interrupted(w, r) {
+		return
+	}
 	s, err := session(r)
 	c := ctx{
 		params:  p,
@@ -50,8 +54,6 @@ func llPreHandle(w http.ResponseWriter, r *http.Request, p httprouter.Params, ll
 			return
 		}
 	}
-
-	standardHeaders(w)
 
 	llFunc(w, r, c)
 }

@@ -35,6 +35,14 @@ pipeline {
                 REPO = '/go/src/github.com/lexLibrary/lexLibrary'
                 HOME = '.'
             }
+	    steps {
+	        sh '''
+                     cd $REPO
+                     gometalinter ./data --vendor --concurrency 1 --deadline 30m --disable-all --enable=megacheck
+                     gometalinter ./app --vendor --concurrency 1 --deadline 30m --disable-all --enable=megacheck
+                     gometalinter ./web --vendor --concurrency 1 --deadline 30m --disable-all --enable=megacheck
+                 '''
+	    }
             steps {
                 sh '''
                     cd $REPO

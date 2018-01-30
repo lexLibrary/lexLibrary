@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package app_test
 
@@ -23,6 +23,11 @@ func TestUser(t *testing.T) {
 		_, err = data.NewQuery("delete from settings").Exec()
 		if err != nil {
 			t.Fatalf("Error emptying settings table before running tests: %s", err)
+		}
+
+		err = app.SettingSet("AllowPublicSignups", true)
+		if err != nil {
+			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
 
 	}
@@ -438,6 +443,62 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Retrieved user does not match.  Wanted %v, got %v", u, got)
 		}
 
+	})
+	t.Run("SetAdmin", func(t *testing.T) {
+		reset()
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user for SetAdmin testing")
+		}
+
+		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
+		if err != nil {
+			t.Fatalf("Error adding other user for SetAdmin testing")
+		}
+
+		err = u.SetAdmin(true, other)
+		if err == nil {
+			t.Fatalf("Setting admin from other user did not fail")
+		}
+
+		err = u.SetAdmin(true, u)
+		if err == nil {
+			t.Fatalf("Setting admin from non-admin self did not fail")
+		}
+
+		_, err = data.NewQuery(`update users set admin = {{arg "admin"}} where id = {{arg "id"}}`).
+			Exec(sql.Named("admin", true), sql.Named("id", other.ID))
+		if err != nil {
+			t.Fatalf("Updating user to admin manually failed: %s", err)
+		}
+
+		other, err = app.UserGet(other.Username, other)
+		if err != nil {
+			t.Fatalf("Error retrieving user: %s", err)
+		}
+
+		err = u.SetAdmin(true, other)
+		if err != nil {
+			t.Fatalf("Error setting admin by another admin: %s", err)
+		}
+	})
+
+	t.Run("Public Signups Disabled", func(t *testing.T) {
+		reset()
+		err := app.SettingSet("AllowPublicSignups", false)
+		if err != nil {
+			t.Fatalf("Error allowing public signups for testing: %s", err)
+		}
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		_, err = app.UserNew(username, password)
+		if err == nil {
+			t.Fatalf("No error was returned when AllowPublicSignups is false")
+		}
 	})
 
 	reset()

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package app_test
 
@@ -25,6 +25,10 @@ func TestSession(t *testing.T) {
 		_, err = data.NewQuery("delete from users").Exec()
 		if err != nil {
 			t.Fatalf("Error emptying users table before running tests: %s", err)
+		}
+		err = app.SettingSet("AllowPublicSignups", true)
+		if err != nil {
+			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
 
 		u, err = app.UserNew(username, password)

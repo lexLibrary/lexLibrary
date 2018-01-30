@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   sqlserver:
     image: microsoft/mssql-server-linux

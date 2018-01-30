@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "autoprefixer": "^7.2.5",
-    "bootstrap": "^4.0.0-beta.3",
+    "bootstrap": "^4.0.0",
     "del": "^3.0.0",
     "es6-promise": "^4.2.2",
     "gulp": "^3.9.1",
@@ -28,9 +28,5 @@
     "rollup-plugin-node-resolve": "^3.0.2",
     "rollup-plugin-uglify": "^2.0.1",
     "vue": "^2.5.13"
-  },
-  "jshintConfig": {
-	"esversion": 6,
-	"esnext": true
   }
 }

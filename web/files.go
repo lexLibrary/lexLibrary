@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package web
 
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/files"
 
 	"github.com/julienschmidt/httprouter"
@@ -20,8 +21,10 @@ import (
 //	file: rootHandler.GET("/images/image.png", serveStatic("/images/image.png", false))
 func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		modTime := time.Time{}
 		if !devMode {
-			w.Header().Set("ETag", version) // FIXME: Proper caching based on compiled version
+			w.Header().Set("ETag", app.Version())
+			modTime = app.BuildDate()
 		}
 		if r.Method != "GET" {
 			notFound(w, r)
@@ -58,6 +61,6 @@ func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 
 		standardHeaders(w)
 
-		http.ServeContent(w, r, file, time.Time{}, reader)
+		http.ServeContent(w, r, file, modTime, reader)
 	}
 }

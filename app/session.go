@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package app
 
@@ -72,7 +72,7 @@ func Login(username string, password string) (*User, error) {
 	}
 	//TODO: Rate limit login attempts
 
-	u, err := userGet(username)
+	u, err := userGet(nil, username)
 	if err == ErrUserNotFound {
 		return nil, ErrLogonFailure
 	}
@@ -190,7 +190,8 @@ func (s *Session) User() (*User, error) {
 		&u.Active,
 		&u.Version,
 		&u.Updated,
-		&u.Created)
+		&u.Created,
+		&u.Admin)
 	if err == sql.ErrNoRows {
 		return nil, ErrSessionInvalid
 	}

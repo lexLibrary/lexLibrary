@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	[[template "header"]]
+	<title>About - Lex Library</title>
+</head>
+
+<body>
+	<div class="container">
+		<h1>Lex Library
+		</h1>
+		<p class="text-muted">Version: [[.Version]] <small>([[.BuildDate]])</small></p>
+		<p>
+			[[.Runtime]]
+		</p>
+		<div id="attribution">
+			<h2>Credits and Attribution</h2>
+			<hr>
+				<p class="lead">Lex Library is built on open-source software and creative commons resources. These contributions 
+				are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
+				would not be possible.</p>
+				<p class="lead"><em>Thank you</em></p>
+				<div class="card-columns columns-5">
+					<div v-for="a in attribution" class="card">
+						<div class="card-body">
+							<h5 class="card-title"><a :href="a.url" target="_blank">{{a.name}}</a></h5>
+							<p class="card-subtitle text-muted">({{a.licenseType}})</p>
+							<p class="card-text">{{a.author}}</p>
+						</div>
+					</div>
+				</div>
+		</div>
+	</div>
+</body>
+
+<script src="/js/vue.js"></script>
+<script src="/js/about.js"></script>
+</html>

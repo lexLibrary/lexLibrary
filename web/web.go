@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 // Package web contains all the handling for the web server.  It should handle cookies and routing, but
 // all application logic and access rules should happen in the app layer.
@@ -11,11 +11,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
-
-	"github.com/lexLibrary/lexLibrary/files"
 
 	"github.com/lexLibrary/lexLibrary/app"
 )
@@ -50,7 +47,6 @@ var (
 	maxUploadMemory = int64(10 << 20)
 	isSSL           = false
 	devMode         = false
-	version         = ""
 )
 
 func init() {
@@ -68,10 +64,6 @@ var server *http.Server
 func StartServer(cfg Config, developMode bool) error {
 	devMode = developMode
 
-	err := setVersion()
-	if err != nil {
-		return err
-	}
 	if cfg.MaxUploadMemoryMB <= 0 {
 		cfg.MaxUploadMemoryMB = DefaultConfig().MaxUploadMemoryMB
 	}
@@ -79,6 +71,7 @@ func StartServer(cfg Config, developMode bool) error {
 
 	var readTimeout time.Duration
 	var writeTimeout time.Duration
+	var err error
 
 	if cfg.ReadTimeout != "" {
 		readTimeout, err = time.ParseDuration(cfg.ReadTimeout)
@@ -135,18 +128,6 @@ func Teardown() error {
 		server.SetKeepAlivesEnabled(false)
 		return server.Shutdown(ctx)
 	}
-	return nil
-}
-
-func setVersion() error {
-	b, err := files.Asset("version")
-	if err != nil {
-		version = "unset"
-		return nil
-	}
-
-	version = strings.TrimSpace(string(b))
-
 	return nil
 }
 

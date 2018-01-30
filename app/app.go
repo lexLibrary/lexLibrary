@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 // Package app handles the application logic for Lex Library
 // All rules and logic that apply to application structures should happen in this library
@@ -10,5 +10,16 @@ const maxRows = 10000
 
 func Init() error {
 	err := settingTriggerInit()
+	if err != nil {
+		return err
+	}
+
+	err = loadVersion()
+
+	if err != nil {
+		return err
+	}
+
+	err = firstRunCheck()
 	return err
 }

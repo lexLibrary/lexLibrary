@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Townsourced Inc.
+// Copyright (c) 2017-2018 Townsourced Inc.
 
 package app_test
 
@@ -21,18 +21,18 @@ func TestSetting(t *testing.T) {
 
 	t.Run("Default", func(t *testing.T) {
 		reset()
-		setting, err := app.SettingDefault("AllowPublic")
+		setting, err := app.SettingDefault("AllowPublicDocuments")
 		if err != nil {
 			t.Fatalf("Error getting setting default")
 		}
 
 		b, ok := setting.Value.(bool)
 		if !ok {
-			t.Fatalf("AllowPublic is not the correct type, expected bool, got %t", setting.Value)
+			t.Fatalf("AllowPublicDocuments is not the correct type, expected bool, got %t", setting.Value)
 		}
 
 		if !b {
-			t.Fatalf("AllowPublic setting isn't defaulted to true")
+			t.Fatalf("AllowPublicDocuments setting isn't defaulted to true")
 		}
 	})
 	t.Run("Default with invalid id", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		id := "AllowPublic"
+		id := "AllowPublicDocuments"
 		s, err := app.SettingGet(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
@@ -79,7 +79,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Set", func(t *testing.T) {
-		id := "AllowPublic"
+		id := "AllowPublicDocuments"
 		d, err := app.SettingDefault(id)
 		if err != nil {
 			t.Fatalf("Error getting setting default: %s", err)
@@ -125,7 +125,7 @@ func TestSetting(t *testing.T) {
 		}
 	})
 	t.Run("Set with Invalid Type", func(t *testing.T) {
-		err := app.SettingSet("AllowPublic", "badValue")
+		err := app.SettingSet("AllowPublicDocuments", "badValue")
 		if err == nil {
 			t.Fatalf("No error returned from a bad Set setting id")
 		}
@@ -136,12 +136,12 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Bad setting format in database", func(t *testing.T) {
-		_, err := data.NewQuery("update settings set value = 'garbage' where id = 'AllowPublic'").Exec()
+		_, err := data.NewQuery("update settings set value = 'garbage' where id = 'AllowPublicDocuments'").Exec()
 		if err != nil {
 			t.Fatalf("Error setting bad value in database: %s", err)
 		}
 
-		id := "AllowPublic"
+		id := "AllowPublicDocuments"
 
 		d, err := app.SettingDefault(id)
 		if err != nil {
@@ -178,7 +178,7 @@ func TestSetting(t *testing.T) {
 			}
 		}
 
-		id := "AllowPublic"
+		id := "AllowPublicDocuments"
 		d, err := app.SettingDefault(id)
 		if err != nil {
 			t.Fatalf("Error getting default setting for %s: %s", id, err)
@@ -204,7 +204,7 @@ func TestSetting(t *testing.T) {
 
 	t.Run("Must", func(t *testing.T) {
 		reset()
-		id := "AllowPublic"
+		id := "AllowPublicDocuments"
 		s := app.SettingMust(id)
 		if s.ID != id {
 			t.Fatalf("Invalid ID returned. Expected %s got %s", id, s.ID)
