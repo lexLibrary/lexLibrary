@@ -125,6 +125,9 @@ func TestUser(t *testing.T) {
 		lastname := fmt.Sprintf("%70s", "firstname")
 
 		u, err := app.UserNew("testusername", "ODSjflaksjdfhiasfd323")
+		if err != nil {
+			t.Fatalf("Error adding user")
+		}
 
 		err = u.SetName(firstname, "", u)
 		if err == nil {

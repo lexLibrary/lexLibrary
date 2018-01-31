@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
-	"github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -92,16 +91,16 @@ func UserNew(username, password string) (*User, error) {
 }
 
 // UserNewFromURL creates a new user if the passed in token is valid
-func UserNewFromURL(username, password, token string) (*User, error) {
-	err := data.BeginTx(func(tx *sql.Tx) error {
-		//TODO:
-		return errors.New("TODO")
-	})
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
-}
+// func UserNewFromURL(username, password, token string) (*User, error) {
+// 	err := data.BeginTx(func(tx *sql.Tx) error {
+// 		//TODO:
+// 		return errors.New("TODO")
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return nil, nil
+// }
 
 func userNew(tx *sql.Tx, username, password string) (*User, error) {
 	u := &User{
