@@ -6,11 +6,16 @@ import (
 	"sync"
 )
 
+type interrupt struct {
+	name string
+	fn   http.HandlerFunc
+}
+
 var interrupts = struct {
 	sync.Mutex
-	f []http.HandlerFunc
+	ir []*interrupt
 }{
-	f: make([]http.HandlerFunc),
+	ir: make([]*interrupt, 0, 5),
 }
 
 // interrupts block the normal web server flow to display a page or change behavior
@@ -18,28 +23,28 @@ var interrupts = struct {
 // being used until something is completed
 
 func interrupted(w http.ResponseWriter, r *http.Request) bool {
-	if len(interrupts.f) == 0 {
+	if len(interrupts.ir) == 0 {
 		return false
 	}
 
-	interrupts.f[0](w, r)
+	interrupts.ir[0].fn(w, r)
 	return true
 }
 
-func addInterrupt(fn http.HandlerFunc) {
+func addInterrupt(ir *interrupt) {
 	interrupts.Lock()
 	defer interrupts.Unlock()
 
-	interrupts.f = append(interrupts.f, fn)
+	interrupts.ir = append(interrupts.ir, ir)
 }
 
-func removeInterrupt(fn http.HandlerFunc) {
+func removeInterrupt(ir *interrupt) {
 	interrupts.Lock()
 	defer interrupts.Unlock()
 
-	for i := range interrupts.f {
-		if interrupts.f[i] == fn {
-			interrupts.f = append(interrupts.f[:i], interrupts.f[i+1:]...)
+	for i := range interrupts.ir {
+		if interrupts.ir[i].name == ir.name {
+			interrupts.ir = append(interrupts.ir[:i], interrupts.ir[i+1:]...)
 			return
 		}
 	}

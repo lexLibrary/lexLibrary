@@ -39,7 +39,14 @@ var (
 
 // Settings returns all of the settings in Lex Library.  If a setting is not set in the database
 // the default for that setting is returned
-func Settings() ([]Setting, error) {
+func Settings(who *User) ([]Setting, error) {
+	if who == nil || !who.Admin {
+		return nil, Unauthorized("You must be an administrator to view settings")
+	}
+	return settings()
+}
+func settings() ([]Setting, error) {
+
 	settings := make([]Setting, len(settingDefaults))
 
 	copy(settings, settingDefaults)
@@ -74,7 +81,14 @@ func Settings() ([]Setting, error) {
 }
 
 // SettingGet will look for a setting that has the passed in id
-func SettingGet(id string) (Setting, error) {
+func SettingGet(who *User, id string) (Setting, error) {
+	if who == nil || !who.Admin {
+		return Setting{}, Unauthorized("You must be an administrator to view settings")
+	}
+	return settingGet(id)
+}
+func settingGet(id string) (Setting, error) {
+
 	var strValue string
 	setting, err := SettingDefault(id)
 	if err != nil {
@@ -101,7 +115,7 @@ func SettingGet(id string) (Setting, error) {
 // Meant as a shortcut for setting lookups by the application
 // SettingVal("AllowPublic").Bool()
 func SettingMust(id string) Setting {
-	setting, err := SettingGet(id)
+	setting, err := settingGet(id)
 	if err != nil {
 		if err == ErrSettingNotFound {
 			panic(fmt.Sprintf("Setting %s does not exist", id))
@@ -114,7 +128,13 @@ func SettingMust(id string) Setting {
 }
 
 // SettingSet updates the value of the passed in setting to the passed in value
-func SettingSet(id string, value interface{}) error {
+func SettingSet(who *User, id string, value interface{}) error {
+	if who == nil || !who.Admin {
+		return Unauthorized("You must be an administrator to set a setting")
+	}
+	return settingSet(id, value)
+}
+func settingSet(id string, value interface{}) error {
 	setting, err := SettingDefault(id)
 	if err == ErrSettingNotFound {
 		return err
@@ -206,7 +226,7 @@ func (s *Setting) setValue(tableValue string) error {
 			"The value of setting %s in the database is in an invalid format (%s). Updating to default value", s.ID,
 			tableValue))
 
-		err = SettingSet(s.ID, s.Value)
+		err = settingSet(s.ID, s.Value)
 		if err != nil {
 			return errors.Wrapf(err, "Error setting default value for %s", s.ID)
 		}
@@ -230,7 +250,7 @@ func SettingTrigger(id string, triggerFunc func(value interface{})) {
 }
 
 func settingTriggerInit() error {
-	settings, err := Settings()
+	settings, err := settings()
 	if err != nil {
 		return err
 	}

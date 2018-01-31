@@ -26,12 +26,8 @@ func TestSession(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error emptying users table before running tests: %s", err)
 		}
-		err = app.SettingSet("AllowPublicSignups", true)
-		if err != nil {
-			t.Fatalf("Error allowing public signups for testing: %s", err)
-		}
 
-		u, err = app.UserNew(username, password)
+		u, err = app.FirstRunSetup(username, password)
 		if err != nil {
 			t.Fatalf("Error adding user for session testing")
 		}

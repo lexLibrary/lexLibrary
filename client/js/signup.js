@@ -103,9 +103,5 @@ var vm = new Vue({
                 this.password2Err = 'Passwords do not match';
             }
         },
-        clear: function(e) {
-            console.log(e);
-            console.log(this);
-        },
     },
 });
