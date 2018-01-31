@@ -9,6 +9,35 @@
 <body>
 <div class="container">
 	<div id="setup" class="pt-4">
+		<h1 class="text-center">Please setup an Admin user</h1>
+		<div class="row justify-content-center">
+			<div class="col-md-5">
+				<div class="card">
+					<div class="card-body">
+						<form @submit="signup">
+							<div class="form-group">
+								<label for="inputUsername">Username</label>
+								<input v-model="username" v-focus type="text" class="form-control" id="inputUsername"
+									placeholder="Enter username">
+							</div>
+							<div class="form-group">
+								<label for="inputPassword">Password</label>
+								<input v-model="password" type="password" class="form-control" id="inputPassword"
+									placeholder="Enter password">
+							</div>
+							<div class="form-group">
+								<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"
+									v-bind:class="{'is-invalid': password2Err}"	type="password" class="form-control" 
+									id="inputPassword2" placeholder="Enter password again">
+								<div v-if="password2Err" class="invalid-feedback">{{password2Err}}</div>
+							</div>
+							<button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	
 	</div>	
 </div>
 </body>

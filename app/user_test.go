@@ -14,6 +14,7 @@ import (
 )
 
 func TestUser(t *testing.T) {
+	var admin *app.User
 	reset := func() {
 		t.Helper()
 		_, err := data.NewQuery("delete from users").Exec()
@@ -24,12 +25,15 @@ func TestUser(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error emptying settings table before running tests: %s", err)
 		}
+		admin, err = app.FirstRunSetup("admin", "adminpassword")
+		if err != nil {
+			t.Fatalf("Error setting up admin user: %s", err)
+		}
 
-		err = app.SettingSet("AllowPublicSignups", true)
+		err = app.SettingSet(admin, "AllowPublicSignups", true)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
-
 	}
 
 	t.Run("New", func(t *testing.T) {
@@ -197,7 +201,7 @@ func TestUser(t *testing.T) {
 
 	t.Run("Common Password", func(t *testing.T) {
 		reset()
-		err := app.SettingSet("BadPasswordCheck", true)
+		err := app.SettingSet(admin, "BadPasswordCheck", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -212,12 +216,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Special", func(t *testing.T) {
 		reset()
-		err := app.SettingSet("PasswordRequireSpecial", true)
+		err := app.SettingSet(admin, "PasswordRequireSpecial", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = app.SettingSet("BadPasswordCheck", false)
+		err = app.SettingSet(admin, "BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -239,12 +243,12 @@ func TestUser(t *testing.T) {
 
 	t.Run("Password Number", func(t *testing.T) {
 		reset()
-		err := app.SettingSet("PasswordRequireNumber", true)
+		err := app.SettingSet(admin, "PasswordRequireNumber", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = app.SettingSet("BadPasswordCheck", false)
+		err = app.SettingSet(admin, "BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -265,12 +269,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Mixed Case", func(t *testing.T) {
 		reset()
-		err := app.SettingSet("PasswordRequireMixedCase", true)
+		err := app.SettingSet(admin, "PasswordRequireMixedCase", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = app.SettingSet("BadPasswordCheck", false)
+		err = app.SettingSet(admin, "BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -300,12 +304,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Length", func(t *testing.T) {
 		reset()
-		err := app.SettingSet("PasswordMinLength", 8)
+		err := app.SettingSet(admin, "PasswordMinLength", 8)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = app.SettingSet("BadPasswordCheck", false)
+		err = app.SettingSet(admin, "BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -324,7 +328,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user: %s", err)
 		}
 
-		err = app.SettingSet("PasswordMinLength", 50)
+		err = app.SettingSet(admin, "PasswordMinLength", 50)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -488,7 +492,7 @@ func TestUser(t *testing.T) {
 
 	t.Run("Public Signups Disabled", func(t *testing.T) {
 		reset()
-		err := app.SettingSet("AllowPublicSignups", false)
+		err := app.SettingSet(admin, "AllowPublicSignups", false)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}

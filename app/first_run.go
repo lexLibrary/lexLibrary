@@ -32,8 +32,8 @@ func FirstRunTrigger(fn func()) {
 	firstRunTrigger = fn
 }
 
-// FirstRunSetup creates the first admin and sets Lex Library's settings
-func FirstRunSetup(username, password string, settings map[string]interface{}) (*User, error) {
+// FirstRunSetup creates the first admin
+func FirstRunSetup(username, password string) (*User, error) {
 	var user *User
 
 	count := 0
@@ -52,12 +52,11 @@ func FirstRunSetup(username, password string, settings map[string]interface{}) (
 		if err != nil {
 			return err
 		}
+		u.Admin = true
 
-		for k, v := range settings {
-			err = SettingSet(k, v)
-			if err != nil {
-				return err
-			}
+		_, err = sqlUserUpdateAdmin.Tx(tx).Exec(sql.Named("admin", u.Admin), sql.Named("id", u.ID))
+		if err != nil {
+			return err
 		}
 
 		user = u

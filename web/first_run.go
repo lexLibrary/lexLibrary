@@ -5,31 +5,30 @@ package web
 import (
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
 )
 
 func init() {
+	firstRunInterrupt = &interrupt{
+		name: "firstRun",
+		fn:   firstRunHandler,
+	}
+
 	app.FirstRunTrigger(func() {
-		addInterrupt(firstRunHandler.ServeHTTP)
+		addInterrupt(firstRunInterrupt)
 	})
+
+	firstRunTemplate.loadTemplates()
 }
 
-var firstRunHandler = templateHandler{
-	handler:       firstRunTemplate,
+var firstRunInterrupt *interrupt
+var firstRunTemplate = templateHandler{
 	templateFiles: []string{"first_run.template.html"},
 }
 
-type firstRunInput struct {
-	Username *string `json:"username,omitempty"`
-	Password *string `json:"password,omitempty"`
-	Settings map[string]interface{}
-}
-
-func firstRunTemplate(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func firstRunHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		errHandled(w.(*templateWriter).execute(struct {
-		}{}), w, r)
+		errHandled(firstRunTemplate.template.Execute(w, nil), w, r)
 		return
 	}
 
@@ -38,7 +37,7 @@ func firstRunTemplate(w http.ResponseWriter, r *http.Request, p httprouter.Param
 		return
 	}
 
-	input := &firstRunInput{}
+	input := &userInput{}
 	err := parseInput(r, input)
 	if errHandled(err, w, r) {
 		return
@@ -54,11 +53,11 @@ func firstRunTemplate(w http.ResponseWriter, r *http.Request, p httprouter.Param
 		input.Password = &empty
 	}
 
-	u, err := app.FirstRunSetup(*input.Username, *input.Password, input.Settings)
+	u, err := app.FirstRunSetup(*input.Username, *input.Password)
 	if errHandled(err, w, r) {
 		return
 	}
+	removeInterrupt(firstRunInterrupt)
 
 	setSession(w, r, u, false)
-	removeInterrupt(firstRunHandler.ServeHTTP)
 }

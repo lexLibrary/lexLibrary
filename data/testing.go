@@ -33,6 +33,7 @@ func TestingSetup() error {
 	if err != nil {
 		if os.IsNotExist(err) && flagConfigFile == defaultConfigFile {
 			log.Printf("No config file found, using default values: \n %+v\n", cfg)
+			//FIXME: single connection in memory sqlite doesn't allow for transactions
 			// open sqlite db in memory for testing
 			cfg.Data = Config{
 				DatabaseType:       "sqlite",
