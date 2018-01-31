@@ -99,9 +99,10 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 func notFound(w http.ResponseWriter, r *http.Request) {
 	errHandled(app.NotFound("Resource not found"), w, r)
 }
-func unauthorized(w http.ResponseWriter, r *http.Request) {
-	errHandled(app.NotFound("Unauthorized.  Please re-authenticate and try again."), w, r)
-}
+
+// func unauthorized(w http.ResponseWriter, r *http.Request) {
+// 	errHandled(app.NotFound("Unauthorized.  Please re-authenticate and try again."), w, r)
+// }
 func panicHandler(w http.ResponseWriter, r *http.Request, rec interface{}) {
 	if rec != nil {
 		if devMode {

@@ -11,10 +11,14 @@ import (
 
 func aboutTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	var u *app.User
+	var err error
 	if c.session != nil {
-
+		u, err = c.session.User()
+		if errHandled(err, w, r) {
+			return
+		}
 	}
-	err := w.(*templateWriter).execute(struct {
+	err = w.(*templateWriter).execute(struct {
 		Version   string
 		BuildDate string
 		Runtime   *app.RuntimeInfo
