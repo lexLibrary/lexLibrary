@@ -44,10 +44,15 @@ func respond(w http.ResponseWriter, response response) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Content-Type", "application/json")
 
-	result, err := json.MarshalIndent(response.data, "", "    ")
+	var result []byte
+	var err error
+	if devMode {
+		result, err = json.MarshalIndent(response.data, "", "    ")
+	} else {
+		result, err = json.Marshal(response.data)
+	}
 	if err != nil {
 		app.LogError(errors.Errorf("Error marshalling response: %s", err))
-
 		result = []byte("An internal error occurred, and we'll look into it.")
 	}
 

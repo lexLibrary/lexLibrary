@@ -6,6 +6,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -33,13 +35,20 @@ func TestingSetup() error {
 	if err != nil {
 		if os.IsNotExist(err) && flagConfigFile == defaultConfigFile {
 			log.Printf("No config file found, using default values: \n %+v\n", cfg)
-			//FIXME: single connection in memory sqlite doesn't allow for transactions
-			// open sqlite db in memory for testing
+			// This is necessary, because we can't use file::memory with a single connection
+			// and transactions, otherwise we deadlock
+			var tempDir string
+			if runtime.GOOS == "linux" {
+				tempDir = "/dev/shm/"
+			} else {
+				tempDir = os.TempDir()
+			}
 			cfg.Data = Config{
-				DatabaseType:       "sqlite",
-				DatabaseURL:        "file::memory:?mode=memory&cache=shared",
-				MaxIdleConnections: 1,
-				MaxOpenConnections: 1,
+				DatabaseType: "sqlite",
+				// DatabaseURL:        "file::memory:?mode=memory&cache=shared",
+				DatabaseFile: filepath.Join(tempDir, "lexLibray.db"),
+				// MaxIdleConnections: 1,
+				// MaxOpenConnections: 1,
 			}
 		} else {
 			return err

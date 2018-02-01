@@ -20,7 +20,7 @@ type Setting struct {
 	Value       interface{}   `json:"value"`
 	Options     []interface{} `json:"options"`
 	validate    func(value interface{}) error
-	triggers    []func(value interface{})
+	triggers    []func(value interface{}) // function that gets called everytime this setting is set
 }
 
 // ErrSettingNotFound is returned when a setting can't be found for the given id
