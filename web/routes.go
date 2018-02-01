@@ -52,5 +52,9 @@ func setupRoutes() http.Handler {
 		templateFiles: []string{"about.template.html"},
 	}.ServeHTTP)
 
+	// settings
+	rootHandler.POST("/setting", makeHandle(settingPut))
+	rootHandler.DELETE("/setting", makeHandle(settingDelete))
+
 	return rootHandler
 }
