@@ -8,7 +8,7 @@ pipeline {
             agent {
                 dockerfile { 
                     dir 'ci/build' 
-                    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary --cpus=1.5 --memory=2g'
+                    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary --cpus=1 --memory=1g'
                 }
             }
             environment {
