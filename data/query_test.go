@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -352,6 +353,44 @@ func TestDataTypes(t *testing.T) {
 		if expected == got {
 			t.Fatalf("xid type matches wrong value")
 		}
+	})
+
+	t.Run("Transaction", func(t *testing.T) {
+		reset()
+		id1 := xid.New()
+		id2 := xid.New()
+		var otherId xid.ID
+		err := data.BeginTx(func(tx *sql.Tx) error {
+			_, err := data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).Tx(tx).
+				Exec(sql.Named("xid_type", id1))
+			if err != nil {
+				t.Fatalf("Error inserting xid within a transaction: %s", err)
+			}
+			err = data.NewQuery(`select xid_type from data_types where xid_type = {{arg "xid_type"}}`).Tx(tx).
+				QueryRow(sql.Named("xid_type", id1)).Scan(&otherId)
+			if err != nil {
+				t.Fatalf("Error retrieving xid within a transaction: %s", err)
+			}
+
+			_, err = data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).Tx(tx).
+				Exec(sql.Named("xid_type", id2))
+			if err != nil {
+				t.Fatalf("Error inserting xid within a transaction: %s", err)
+			}
+
+			return errors.New("Rollback transaction for test")
+		})
+
+		if err == nil {
+			t.Fatalf("Transaction rollback did not return an error")
+		}
+
+		err = data.NewQuery(`select xid_type from data_types where xid_type = {{arg "xid_type"}}`).
+			QueryRow(sql.Named("xid_type", id1)).Scan(&otherId)
+		if err != sql.ErrNoRows {
+			t.Fatalf("Rows were returned after transaction rollback.")
+		}
+
 	})
 
 	dropTable()

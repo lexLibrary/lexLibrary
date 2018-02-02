@@ -9,11 +9,18 @@
 <body>
 <div class="container">
 	<div id="setup" class="pt-4">
-		<h1 class="text-center">Please setup an Admin user</h1>
+		<h1 class="text-center">Lex Library First Run Setup</h1>
 		<div class="row justify-content-center">
 			<div class="col-md-5">
 				<div class="card">
-					<div class="card-body">
+					<!-- Admin Setup -->
+					<div v-if="!showSettings" class="card-body">
+						<p class="card-text text-muted">
+							Before you can start using Lex Library, you'll need to to setup an adminstrative user.
+						</p>
+						<div v-if="error" v-cloak class="alert alert-danger" role="alert">
+							{{error}}
+						</div>
 						<form @submit="signup">
 							<div class="form-group">
 								<label for="inputUsername">Username</label>
@@ -31,9 +38,27 @@
 									id="inputPassword2" placeholder="Enter password again">
 								<div v-if="password2Err" class="invalid-feedback">{{password2Err}}</div>
 							</div>
-							<button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+							<button type="submit" class="btn btn-primary btn-block">Create User</button>
 						</form>
 					</div>
+
+					<!-- Settings -->
+					<div v-if="showSettings" class="card-body">
+						<p class="card-text text-muted">Choose some initial settings.</p>
+						<div class="form-check">
+							<input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios1" value="option1" checked>
+							<label class="form-check-label" for="exampleRadios1">
+								Default radio
+							</label>
+						</div>
+						<div class="form-check">
+							<input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2">
+							<label class="form-check-label" for="exampleRadios2">
+								Second default radio
+							</label>
+						</div>
+					</div>
+
 				</div>
 			</div>
 		</div>

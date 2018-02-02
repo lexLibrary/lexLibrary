@@ -59,7 +59,10 @@ func TestingSetup() error {
 		if os.Getenv("LLTEST") != "true" {
 			return errors.New("LLTEST environment variable is not set to 'true'.  Make sure you are not running the tests in a real environment")
 		}
-		viper.Unmarshal(&cfg)
+		err = viper.Unmarshal(&cfg)
+		if err != nil {
+			return err
+		}
 	}
 
 	// All tests assume the database is empty

@@ -40,7 +40,7 @@ var vm = new Vue({
                     }
                 })
                 .catch((err) => {
-                    this.error = err.data;
+                    this.error = err.content;
                 });
         }
     },

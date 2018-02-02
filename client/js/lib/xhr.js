@@ -15,7 +15,7 @@ function send(method, url, data) {
             let result = {
                 request, //original xhr request
                 status: 0, // http status code
-                data: null, //data from the actual response, may just be a string in the case of failures
+                content: null, //content from the actual response, may just be a string in the case of failures
             };
 
             if (method.toLowerCase() == 'get') {
@@ -23,9 +23,9 @@ function send(method, url, data) {
             }
 
             try {
-                result.data = JSON.parse(request.responseText);
+                result.content = JSON.parse(request.responseText);
             } catch (e) {
-                result.data = request.responseText;
+                result.content = request.responseText;
             }
 
             result.status = request.status;

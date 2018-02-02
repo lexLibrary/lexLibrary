@@ -28,6 +28,9 @@ var firstRunTemplate = templateHandler{
 
 func firstRunHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
+		if devMode {
+			firstRunTemplate.loadTemplates()
+		}
 		errHandled(firstRunTemplate.template.Execute(w, nil), w, r)
 		return
 	}
@@ -60,4 +63,5 @@ func firstRunHandler(w http.ResponseWriter, r *http.Request) {
 	removeInterrupt(firstRunInterrupt)
 
 	setSession(w, r, u, false)
+	respond(w, created(u))
 }

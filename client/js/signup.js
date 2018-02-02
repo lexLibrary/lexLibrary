@@ -54,11 +54,11 @@ var vm = new Vue({
                             window.location = '/';
                         })
                         .catch((err) => {
-                            this.usernameErr = err.data;
+                            this.usernameErr = err.content;
                         });
                 })
                 .catch((err) => {
-                    this.passwordErr = err.data;
+                    this.passwordErr = err.content;
                 });
         },
         validateUsername: function() {
@@ -74,7 +74,7 @@ var vm = new Vue({
                 })
                 .catch((err) => {
                     if (err.status != 404) {
-                        this.usernameErr = err.data;
+                        this.usernameErr = err.content;
                     }
                 });
         },
@@ -89,7 +89,7 @@ var vm = new Vue({
                     password: this.password
                 })
                 .catch((err) => {
-                    this.passwordErr = err.data;
+                    this.passwordErr = err.content;
                 });
         },
         validatePassword2: function() {

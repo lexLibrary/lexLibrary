@@ -9,7 +9,9 @@ var vm = new Vue({
             username: '',
             password: '',
             password2: '',
+            error: null,
             password2Err: null,
+            showSettings: true,
         };
     },
     directives: {
@@ -22,32 +24,32 @@ var vm = new Vue({
     methods: {
         signup: function(e) {
             e.preventDefault();
-            if (this.usernameErr || this.passwordErr || this.password2Err) {
+            this.error = null;
+            if (this.password2Err) {
                 return;
             }
             if (!this.username) {
-                this.usernameErr = 'A username is required';
+                this.error = 'A username is required';
+                return;
             }
             if (!this.password) {
-                this.passwordErr = 'A password is required';
+                this.error = 'A password is required';
+                return;
             }
             if (this.password !== this.password2) {
                 this.password2Err = 'Passwords do not match';
-            }
-
-            if (this.usernameErr || this.passwordErr || this.password2Err) {
                 return;
             }
 
-            xhr.post('/', {
+            xhr.post('/user', {
                     username: this.username,
                     password: this.password,
                 })
                 .then((result) => {
-                    //TODO: Goto settings setup steps
+                    this.showSettings = true;
                 })
                 .catch((err) => {
-                    this.usernameErr = err.data;
+                    this.error = err.content;
                 });
         },
         validatePassword2: function() {
