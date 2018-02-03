@@ -18,8 +18,9 @@ function send(method, url, data) {
                 content: null, //content from the actual response, may just be a string in the case of failures
             };
 
-            if (method.toLowerCase() == 'get') {
-                currentCSRFToken = request.getResponseHeader(CSRFHeader);
+            let token = request.getResponseHeader(CSRFHeader);
+            if (token) {
+                currentCSRFToken = token;
             }
 
             try {

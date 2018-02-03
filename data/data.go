@@ -115,7 +115,7 @@ func Init(cfg Config) error {
 	db.SetMaxIdleConns(cfg.MaxIdleConnections)
 	db.SetMaxOpenConns(cfg.MaxOpenConnections)
 
-	err = ensureSchema(cfg.AllowSchemaRollback)
+	ensureSchema(cfg.AllowSchemaRollback)
 
 	return err
 }

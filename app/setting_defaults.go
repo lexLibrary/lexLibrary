@@ -57,7 +57,7 @@ var settingDefaults = []Setting{
 	Setting{
 		ID:          "RememberSessionDays",
 		Description: "How many days a session is valid for if Remember Me is checked when logging in.",
-		Value:       15,
+		Value:       30,
 		validate: func(value interface{}) error {
 			if value.(int) > sessionMaxDaysRemembered {
 				return NewFailure("The maximium number of days a session can be remembered for is %d",
@@ -67,7 +67,12 @@ var settingDefaults = []Setting{
 		},
 	},
 	Setting{
-		ID: "AllowRuntimeInfoInIssues",
+		ID:          "NonAdminIssueSubmission",
+		Description: "Allow non-admin users to submit issues from the about page",
+		Value:       true,
+	},
+	Setting{
+		ID: "RuntimeInfoInIssues",
 		Description: "Whether or not to allow runtime information (OS, CPU, architecture, etc) to be included " +
 			"when a user submits an issue via the 'about' page. If false, admins can still access this information.",
 		Value: true,

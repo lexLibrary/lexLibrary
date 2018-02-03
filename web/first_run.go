@@ -62,6 +62,11 @@ func firstRunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	removeInterrupt(firstRunInterrupt)
 
-	setSession(w, r, u, false)
+	s, err := setSession(w, r, u, false)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	w.Header().Add("X-CSRFToken", s.CSRFToken)
 	respond(w, created(u))
 }

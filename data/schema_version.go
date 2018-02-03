@@ -122,4 +122,8 @@ var schemaVersions = []schemaVer{
 		update:   NewQuery(`alter table users add admin {{bool}}`),
 		rollback: NewQuery("alter table users drop column admin"),
 	},
+	schemaVer{
+		update:   NewQuery(`alter table sessions add csrf_date {{datetime}}`),
+		rollback: NewQuery("alter table sessions drop column csrf_date"),
+	},
 }

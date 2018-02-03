@@ -72,9 +72,9 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 			if terr != nil {
 				app.LogError(errors.Wrap(terr, "Writing not_found template"))
 			}
-		case http.StatusUnauthorized:
-			// TODO:unauthorized page
-			// redirect with url parm?
+		// case http.StatusUnauthorized:
+		// TODO:unauthorized page
+		// redirect with url parm?
 		default:
 			terr := errorHandler.template.Execute(w, struct {
 				ErrorID xid.ID

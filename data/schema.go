@@ -12,17 +12,34 @@ import (
 var schemaVersionInsert = NewQuery(`insert into schema_versions (version, rollback_script) 
 	values ({{arg "version"}}, {{arg "rollback"}})`)
 
-func ensureSchema(allowRollback bool) error {
+var maintenanceMode = struct {
+	start func()
+	stop  func()
+}{
+	start: func() {},
+	stop:  func() {},
+}
+
+func ensureSchema(allowRollback bool) {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one
 
 	//TODO: Run this on a separate thread and startup the app and web layer in "Maintenance mode"
 
-	err := ensureSchemaTable()
-	if err != nil {
-		return err
-	}
+	go func() {
+		maintenanceMode.start()
+		err := ensureSchemaTable()
+		if err != nil {
+			log.Fatalf("Error ensuring schema table: %s", err)
+		}
 
-	return ensureSchemaVersion(allowRollback)
+		err = ensureSchemaVersion(allowRollback)
+		if err != nil {
+			log.Fatalf("Error ensuring schema versions: %s", err)
+		}
+
+		//FIXME: this doesn't seem to actually work
+		maintenanceMode.stop()
+	}()
 }
 
 func ensureSchemaTable() error {
@@ -117,4 +134,9 @@ func ensureSchemaVersion(allowRollback bool) error {
 	}
 	return errors.Errorf("Database schema version (%d) is newer than the code schema version (%d)", dbVer, currentVer)
 
+}
+
+func MaintenanceTrigger(start func(), end func()) {
+	maintenanceMode.start = start
+	maintenanceMode.stop = end
 }

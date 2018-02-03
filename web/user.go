@@ -49,8 +49,8 @@ func userPost(w http.ResponseWriter, r *http.Request, c ctx) {
 	if errHandled(err, w, r) {
 		return
 	}
-
-	if errHandled(setSession(w, r, u, false), w, r) {
+	_, err = setSession(w, r, u, false)
+	if errHandled(err, w, r) {
 		return
 	}
 

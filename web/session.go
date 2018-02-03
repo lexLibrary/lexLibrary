@@ -30,20 +30,38 @@ var logonDelay = app.RateDelay{
 	Max:    1 * time.Minute,
 }
 
-func loginSignupTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+func loginTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session != nil {
 		// already logged in, redirect to home
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 	err := w.(*templateWriter).execute(struct {
-		Test string
+		AllowSignup bool
 	}{
-		Test: "test string",
+		AllowSignup: app.SettingMust("AllowPublicSignups").Bool(),
 	})
 
 	if err != nil {
 		app.LogError(errors.Wrap(err, "Executing login template: %s"))
+	}
+}
+
+func signupTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session != nil {
+		// already logged in, redirect to home
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	if !app.SettingMust("AllowPublicSignups").Bool() {
+		notFound(w, r)
+		return
+	}
+	err := w.(*templateWriter).execute(nil)
+
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Executing signup template: %s"))
 	}
 }
 
@@ -91,8 +109,6 @@ func handleCSRF(w http.ResponseWriter, r *http.Request, s *app.Session) error {
 		if reqToken != s.CSRFToken && s.Valid {
 			return app.NewFailure("Invalid CSRFToken.  Your session may be invalid.  Try logging in again.")
 		}
-		//TODO: Consider resetting CSRF token regularily?
-		// On each update? Once a day?
 
 		return nil
 	}
@@ -103,7 +119,7 @@ func handleCSRF(w http.ResponseWriter, r *http.Request, s *app.Session) error {
 	return nil
 }
 
-func setSession(w http.ResponseWriter, r *http.Request, u *app.User, rememberMe bool) error {
+func setSession(w http.ResponseWriter, r *http.Request, u *app.User, rememberMe bool) (*app.Session, error) {
 	expires := time.Time{}
 
 	if rememberMe {
@@ -112,7 +128,7 @@ func setSession(w http.ResponseWriter, r *http.Request, u *app.User, rememberMe 
 
 	s, err := app.SessionNew(u, expires, ipAddress(r), r.UserAgent())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	key := s.UserID.String() + sessionValDelim + s.ID
@@ -126,7 +142,7 @@ func setSession(w http.ResponseWriter, r *http.Request, u *app.User, rememberMe 
 	}
 
 	http.SetCookie(w, cookie)
-	return nil
+	return s, nil
 }
 
 func expireSessionCookie(w http.ResponseWriter, r *http.Request, s *app.Session) {
@@ -186,7 +202,8 @@ func sessionPost(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(setSession(w, r, u, input.RememberMe), w, r) {
+	_, err = setSession(w, r, u, input.RememberMe)
+	if errHandled(err, w, r) {
 		return
 	}
 

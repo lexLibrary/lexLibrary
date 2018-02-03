@@ -20,6 +20,7 @@ type Session struct {
 	IPAddress string
 	UserAgent string
 	CSRFToken string
+	CSRFDate  time.Time
 	Created   time.Time
 	Updated   time.Time
 
@@ -28,6 +29,7 @@ type Session struct {
 
 const (
 	sessionMaxDaysRemembered = 365
+	csrfTokenMaxAge          = 15 * time.Minute // max age of a csrf token before it's reset
 )
 
 var (
@@ -46,6 +48,7 @@ var (
 		ip_address,
 		user_agent,
 		csrf_token,
+		csrf_date,
 		created,
 		updated
 	) values (
@@ -56,12 +59,14 @@ var (
 		{{arg "ip_address"}},
 		{{arg "user_agent"}},
 		{{arg "csrf_token"}},
+		{{arg "csrf_date"}},
 		{{arg "created"}},
 		{{arg "updated"}}
 	)`)
 	sqlSessionSetValid = data.NewQuery(`update sessions set valid = {{arg "valid"}} where id = {{arg "id"}}`)
-	sqlSessionSetCSRF  = data.NewQuery(`update sessions set csrf_token = {{arg "csrf_token"}} where id = {{arg "id"}}`)
-	sqlSessionGet      = data.NewQuery(`select id, user_id, valid, expires, csrf_token 
+	sqlSessionSetCSRF  = data.NewQuery(`update sessions 
+		set csrf_token = {{arg "csrf_token"}}, csrf_date = {{arg "csrf_date"}} where id = {{arg "id"}}`)
+	sqlSessionGet = data.NewQuery(`select id, user_id, valid, expires, csrf_token, csrf_date 
 		from sessions where id = {{arg "id"}} and user_id = {{arg "user_id"}}`)
 )
 
@@ -70,7 +75,6 @@ func Login(username string, password string) (*User, error) {
 	if username == "" || len(password) < passwordMinLength {
 		return nil, ErrLogonFailure
 	}
-	//TODO: Rate limit login attempts
 
 	u, err := userGet(nil, username)
 	if err == ErrUserNotFound {
@@ -109,6 +113,7 @@ func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Se
 		ID:        Random(128),
 		UserID:    user.ID,
 		CSRFToken: Random(256),
+		CSRFDate:  time.Now(),
 		Valid:     true,
 		Expires:   expires,
 		IPAddress: ipAddress,
@@ -137,6 +142,7 @@ func SessionGet(userID xid.ID, sessionID string) (*Session, error) {
 			&s.Valid,
 			&s.Expires,
 			&s.CSRFToken,
+			&s.CSRFDate,
 		)
 
 	if err == sql.ErrNoRows {
@@ -150,6 +156,14 @@ func SessionGet(userID xid.ID, sessionID string) (*Session, error) {
 	if !s.Valid || s.Expires.Before(time.Now()) {
 		return nil, ErrSessionInvalid
 	}
+
+	if s.CSRFDate.Add(csrfTokenMaxAge).Before(time.Now()) {
+		err = s.ResetCSRF()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return s, nil
 }
 
@@ -162,6 +176,7 @@ func (s *Session) insert() error {
 		sql.Named("ip_address", s.IPAddress),
 		sql.Named("user_agent", s.UserID),
 		sql.Named("csrf_token", s.CSRFToken),
+		sql.Named("csrf_date", s.CSRFDate),
 		sql.Named("created", s.Created),
 		sql.Named("updated", s.Updated),
 	)
@@ -212,6 +227,8 @@ func (s *Session) User() (*User, error) {
 // allows CSRF token to change more than once per session if need be
 func (s *Session) ResetCSRF() error {
 	s.CSRFToken = Random(256)
-	_, err := sqlSessionSetCSRF.Exec(sql.Named("csrf_token", s.CSRFToken), sql.Named("id", s.ID))
+	s.CSRFDate = time.Now()
+	_, err := sqlSessionSetCSRF.Exec(sql.Named("csrf_token", s.CSRFToken), sql.Named("csrf_date", s.CSRFDate),
+		sql.Named("id", s.ID))
 	return err
 }

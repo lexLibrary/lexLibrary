@@ -32,11 +32,11 @@ func setupRoutes() http.Handler {
 
 	// login / signup
 	rootHandler.GET("/login", templateHandler{
-		handler:       loginSignupTemplate,
+		handler:       loginTemplate,
 		templateFiles: []string{"login.template.html"},
 	}.ServeHTTP)
 	rootHandler.GET("/signup", templateHandler{
-		handler:       loginSignupTemplate,
+		handler:       signupTemplate,
 		templateFiles: []string{"signup.template.html"},
 	}.ServeHTTP)
 
@@ -53,7 +53,7 @@ func setupRoutes() http.Handler {
 	}.ServeHTTP)
 
 	// settings
-	rootHandler.POST("/setting", makeHandle(settingPut))
+	rootHandler.PUT("/setting", makeHandle(settingPut))
 	rootHandler.DELETE("/setting", makeHandle(settingDelete))
 
 	return rootHandler

@@ -109,7 +109,7 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Setting value was not set.  Expected %v, got %v", !d.Bool(), s.Bool())
 		}
 
-		app.SettingSet(admin, id, d.Bool())
+		err = app.SettingSet(admin, id, d.Bool())
 		if err != nil {
 			t.Fatalf("Error updating setting value: %s", err)
 		}
@@ -194,7 +194,10 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Error getting default setting for %s: %s", id, err)
 		}
 
-		app.SettingSet(admin, id, !d.Bool())
+		err = app.SettingSet(admin, id, !d.Bool())
+		if err != nil {
+			t.Fatalf("Error setting setting: %s", err)
+		}
 
 		settings, err = app.Settings(admin)
 		if err != nil {

@@ -11,7 +11,11 @@ var vm = new Vue({
             password2: '',
             error: null,
             password2Err: null,
-            showSettings: true,
+            showSettings: false,
+            showAdvanced: false,
+            publicDocs: false,
+            publicSignup: false,
+            public: false,
         };
     },
     directives: {
@@ -62,6 +66,22 @@ var vm = new Vue({
             if (this.password !== this.password2) {
                 this.password2Err = 'Passwords do not match';
             }
+        },
+        setSettings: function() {
+            this.error = null;
+            let settings = {
+                'AllowPublicSignups': (this.showAdvanced && this.publicSignup) || this.public,
+                'AllowPublicDocuments': (this.showAdvanced && this.publicDocs) || this.public,
+            };
+            xhr.put('/setting', {
+                    settings: settings
+                })
+                .then((result) => {
+                    location.reload();
+                })
+                .catch((err) => {
+                    this.error = err.content;
+                });
         },
     },
 });

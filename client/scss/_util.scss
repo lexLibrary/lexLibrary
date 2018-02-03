@@ -1,3 +1,14 @@
 [v-cloak] {
 	display: none;
 }
+
+.caret-right {
+	@include caret(right);
+	&::after {
+		vertical-align: 0;
+	}
+}
+
+.caret-down {
+	@include caret(down);
+}

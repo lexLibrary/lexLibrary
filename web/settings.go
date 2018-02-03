@@ -9,8 +9,9 @@ import (
 )
 
 type settingInput struct {
-	ID    *string
-	Value interface{}
+	ID       *string
+	Value    interface{}
+	Settings map[string]interface{}
 }
 
 func settingPut(w http.ResponseWriter, r *http.Request, c ctx) {
@@ -31,7 +32,16 @@ func settingPut(w http.ResponseWriter, r *http.Request, c ctx) {
 	}
 
 	if input.ID == nil {
-		errHandled(app.NewFailure("ID must be set"), w, r)
+		if input.Settings == nil {
+			errHandled(app.NewFailure("ID must be set"), w, r)
+			return
+		}
+
+		if errHandled(app.SettingSetMultiple(u, input.Settings), w, r) {
+			return
+		}
+
+		respond(w, success(nil))
 		return
 	}
 

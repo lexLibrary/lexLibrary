@@ -132,9 +132,26 @@ func SettingSet(who *User, id string, value interface{}) error {
 	if who == nil || !who.Admin {
 		return Unauthorized("You must be an administrator to set a setting")
 	}
-	return settingSet(id, value)
+	return settingSet(nil, id, value)
 }
-func settingSet(id string, value interface{}) error {
+
+// SettingSetMultiple sets multiple settings in the same transaction
+func SettingSetMultiple(who *User, settings map[string]interface{}) error {
+	if who == nil || !who.Admin {
+		return Unauthorized("You must be an administrator to set a setting")
+	}
+	return data.BeginTx(func(tx *sql.Tx) error {
+		for id, val := range settings {
+			err := settingSet(tx, id, val)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func settingSet(tx *sql.Tx, id string, value interface{}) error {
 	setting, err := SettingDefault(id)
 	if err == ErrSettingNotFound {
 		return err
@@ -167,9 +184,9 @@ func settingSet(id string, value interface{}) error {
 
 	setting.Value = value
 	var tmp = ""
-	err = sqlSettingGet.QueryRow(sql.Named("id", id)).Scan(&tmp)
+	err = sqlSettingGet.Tx(tx).QueryRow(sql.Named("id", id)).Scan(&tmp)
 	if err == sql.ErrNoRows {
-		_, err := sqlSettingInsert.Exec(
+		_, err := sqlSettingInsert.Tx(tx).Exec(
 			sql.Named("id", id),
 			sql.Named("description", setting.Description),
 			sql.Named("value", strValue))
@@ -183,7 +200,7 @@ func settingSet(id string, value interface{}) error {
 		return err
 	}
 
-	_, err = sqlSettingUpdate.Exec(sql.Named("id", id), sql.Named("value", value))
+	_, err = sqlSettingUpdate.Tx(tx).Exec(sql.Named("id", id), sql.Named("value", value))
 	if err != nil {
 		return errors.Wrapf(err, "Error updating setting %s", id)
 	}
@@ -226,7 +243,7 @@ func (s *Setting) setValue(tableValue string) error {
 			"The value of setting %s in the database is in an invalid format (%s). Updating to default value", s.ID,
 			tableValue))
 
-		err = settingSet(s.ID, s.Value)
+		err = settingSet(nil, s.ID, s.Value)
 		if err != nil {
 			return errors.Wrapf(err, "Error setting default value for %s", s.ID)
 		}
