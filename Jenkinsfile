@@ -5,7 +5,7 @@ pipeline {
             agent {
                 dockerfile { 
                     dir 'ci/build' 
-                    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary
+                    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
                 }
             }
             environment {
@@ -48,63 +48,63 @@ pipeline {
             }
         }
 	stage('test') {
-	    parallel {
-		stage('sqlite') {
-		    steps {
-			sh '''
-			    cd ci
-			    sh ./testDB.sh sqlite
-			'''
-		    }
-		}
-		stage('postgres') {
-		    steps {
-			sh '''
-			    cd ci
-			    sh ./testDB.sh postgres
-			'''
-		    }
-		}
-		stage('mysql') {
-		    steps {
-			sh '''
-			    cd ci
-			    sh ./testDB.sh mysql
-			'''
-		    }
-		}
-		stage('cockroachdb') {
-		    steps {
-			sh '''
-			    cd ci
-			    sh ./testDB.sh cockroachdb
-			'''
-		    }
-		}
-		stage('tidb') {
-		    steps {
-			sh '''
-			    cd ci
-			    sh ./testDB.sh tidb
-			'''
-		    }
-		}
-		stage('sqlserver') {
-		    steps {
-			sh '''
-			    cd ci
-			    sh ./testDB.sh sqlserver
-			'''
-		    }
-		}
-		stage('mariadb') {
-		    steps {
-			sh '''
-			    cd ci
-			    sh ./testDB.sh mariadb
-			'''
-		    }
-		}
-	  }
+        parallel {
+            stage('sqlite') {
+                steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh sqlite
+                '''
+                }
+            }
+            stage('postgres') {
+                steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh postgres
+                '''
+                }
+            }
+            stage('mysql') {
+                steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh mysql
+                '''
+                }
+            }
+            stage('cockroachdb') {
+                steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh cockroachdb
+                '''
+                }
+            }
+            stage('tidb') {
+                steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh tidb
+                '''
+                }
+            }
+            stage('sqlserver') {
+                steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh sqlserver
+                '''
+                }
+            }
+            stage('mariadb') {
+                steps {
+                sh '''
+                    cd ci
+                    sh ./testDB.sh mariadb
+                '''
+                }
+            }
+        }
     }
 }
