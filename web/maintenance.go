@@ -18,11 +18,12 @@ func init() {
 
 var maintenanceTemplate = templateHandler{
 	templateFiles: []string{"maintenance.template.html"},
+	handler:       emptyTemplate,
 }
 
 var maintenanceInterrupt = &interrupt{
 	name: "maintenance",
 	fn: func(w http.ResponseWriter, r *http.Request) {
-		emptyTemplate(w, r, ctx{})
+		maintenanceTemplate.ServeHTTP(w, r, nil)
 	},
 }
