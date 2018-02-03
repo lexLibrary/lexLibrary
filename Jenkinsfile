@@ -47,62 +47,63 @@ pipeline {
                 '''
             }
         }
-	stage('test') {
-        parallel {
-            stage('sqlite') {
-                steps {
-                sh '''
-                    cd ci
-                    sh ./testDB.sh sqlite
-                '''
+        stage('test') {
+            parallel {
+                stage('sqlite') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testDB.sh sqlite
+                    '''
+                    }
                 }
-            }
-            stage('postgres') {
-                steps {
-                sh '''
-                    cd ci
-                    sh ./testDB.sh postgres
-                '''
+                stage('postgres') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testDB.sh postgres
+                    '''
+                    }
                 }
-            }
-            stage('mysql') {
-                steps {
-                sh '''
-                    cd ci
-                    sh ./testDB.sh mysql
-                '''
+                stage('mysql') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testDB.sh mysql
+                    '''
+                    }
                 }
-            }
-            stage('cockroachdb') {
-                steps {
-                sh '''
-                    cd ci
-                    sh ./testDB.sh cockroachdb
-                '''
+                stage('cockroachdb') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testDB.sh cockroachdb
+                    '''
+                    }
                 }
-            }
-            stage('tidb') {
-                steps {
-                sh '''
-                    cd ci
-                    sh ./testDB.sh tidb
-                '''
+                stage('tidb') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testDB.sh tidb
+                    '''
+                    }
                 }
-            }
-            stage('sqlserver') {
-                steps {
-                sh '''
-                    cd ci
-                    sh ./testDB.sh sqlserver
-                '''
+                stage('sqlserver') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testDB.sh sqlserver
+                    '''
+                    }
                 }
-            }
-            stage('mariadb') {
-                steps {
-                sh '''
-                    cd ci
-                    sh ./testDB.sh mariadb
-                '''
+                stage('mariadb') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testDB.sh mariadb
+                    '''
+                    }
                 }
             }
         }
