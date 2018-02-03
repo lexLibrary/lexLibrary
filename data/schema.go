@@ -25,21 +25,21 @@ func ensureSchema(allowRollback bool) {
 
 	//TODO: Run this on a separate thread and startup the app and web layer in "Maintenance mode"
 
-	go func() {
-		maintenanceMode.start()
-		err := ensureSchemaTable()
-		if err != nil {
-			log.Fatalf("Error ensuring schema table: %s", err)
-		}
+	// go func() {
+	// 	maintenanceMode.start()
+	err := ensureSchemaTable()
+	if err != nil {
+		log.Fatalf("Error ensuring schema table: %s", err)
+	}
 
-		err = ensureSchemaVersion(allowRollback)
-		if err != nil {
-			log.Fatalf("Error ensuring schema versions: %s", err)
-		}
+	err = ensureSchemaVersion(allowRollback)
+	if err != nil {
+		log.Fatalf("Error ensuring schema versions: %s", err)
+	}
 
-		//FIXME: this doesn't seem to actually work
-		maintenanceMode.stop()
-	}()
+	// 	//FIXME: this doesn't seem to actually work
+	// 	maintenanceMode.stop()
+	// }()
 }
 
 func ensureSchemaTable() error {
