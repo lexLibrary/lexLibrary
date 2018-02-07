@@ -15,7 +15,7 @@ var vm = new Vue({
             showAdvanced: false,
             publicDocs: false,
             publicSignup: false,
-            public: false,
+            instanceType: 'private',
         };
     },
     directives: {
@@ -70,8 +70,8 @@ var vm = new Vue({
         setSettings: function() {
             this.error = null;
             let settings = {
-                'AllowPublicSignups': (this.showAdvanced && this.publicSignup) || this.public,
-                'AllowPublicDocuments': (this.showAdvanced && this.publicDocs) || this.public,
+                'AllowPublicSignups': (this.showAdvanced && this.publicSignup) || (this.instanceType == 'public'),
+                'AllowPublicDocuments': (this.showAdvanced && this.publicDocs) || (this.instanceType == 'public'),
             };
             xhr.put('/setting', {
                     settings: settings

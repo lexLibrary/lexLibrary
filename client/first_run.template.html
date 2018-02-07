@@ -53,14 +53,14 @@
 						</div>
 						<fieldset :disabled="showAdvanced">
 							<div class="form-check">
-								<input v-model="public" class="form-check-input" type="radio" name="public-private" value="false">
+								<input v-model="instanceType" class="form-check-input" type="radio" name="public-private" value="private">
 								<label class="form-check-label">
 									Private: <small class="text-muted">New logins are managed by admins. A login is required to view
 									all documents.</small>
 								</label>
 							</div>
 							<div class="form-check">
-								<input v-model="public" class="form-check-input" type="radio" name="public-private" value="true">
+								<input v-model="instanceType" class="form-check-input" type="radio" name="public-private" value="public">
 								<label class="form-check-label">
 									Public: <small class="text-muted">Anyone can create a login. Documents can be published publically.</small>
 								</label>

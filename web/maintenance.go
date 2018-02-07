@@ -14,16 +14,20 @@ func init() {
 		func() { removeInterrupt(maintenanceInterrupt) },
 	)
 
+	maintenanceTemplate.loadTemplates()
+
 }
 
 var maintenanceTemplate = templateHandler{
 	templateFiles: []string{"maintenance.template.html"},
-	handler:       emptyTemplate,
 }
 
 var maintenanceInterrupt = &interrupt{
 	name: "maintenance",
 	fn: func(w http.ResponseWriter, r *http.Request) {
-		maintenanceTemplate.ServeHTTP(w, r, nil)
+		if devMode {
+			maintenanceTemplate.loadTemplates()
+		}
+		maintenanceTemplate.template.Execute(w, r)
 	},
 }

@@ -1,5 +1,7 @@
 version: '3'
 services:
+  chrome:
+    image: selenium/standalone-chrome:latest
   tests:
     build: "../build"
     volumes:

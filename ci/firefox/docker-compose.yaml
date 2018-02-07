@@ -1,0 +1,14 @@
+version: '3'
+services:
+  tests:
+    build: "../build"
+    volumes:
+      - ../..:/go/src/github.com/lexLibrary/lexLibrary
+    environment:
+      LLTEST: 'true'
+      LLDATABASE: 'sqlite'
+      GOPATH: /go
+      BROWSER: 'firefox'
+    command: sh -c '
+        cd /go/src/github.com/lexLibrary/lexLibrary/ci/ && cd .. && ./build.sh && go test ./browser_tests -config ci/firefox/config.yaml
+      '

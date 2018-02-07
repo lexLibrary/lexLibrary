@@ -27,7 +27,7 @@ type Setting struct {
 var ErrSettingNotFound = NotFound("No setting can be found for the given id")
 
 // ErrSettingInvalidValue is returned when a setting is being set to a value that is invalid for the setting
-var ErrSettingInvalidValue = NotFound("The setting cannot be set to this value")
+var ErrSettingInvalidValue = NewFailure("The setting cannot be set to this value")
 
 var (
 	sqlSettingsGet   = data.NewQuery("select id, value from settings")

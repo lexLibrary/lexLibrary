@@ -23,10 +23,7 @@ var maintenanceMode = struct {
 func ensureSchema(allowRollback bool) {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one
 
-	//TODO: Run this on a separate thread and startup the app and web layer in "Maintenance mode"
-
-	// go func() {
-	// 	maintenanceMode.start()
+	maintenanceMode.start()
 	err := ensureSchemaTable()
 	if err != nil {
 		log.Fatalf("Error ensuring schema table: %s", err)
@@ -37,9 +34,7 @@ func ensureSchema(allowRollback bool) {
 		log.Fatalf("Error ensuring schema versions: %s", err)
 	}
 
-	// 	//FIXME: this doesn't seem to actually work
-	// 	maintenanceMode.stop()
-	// }()
+	maintenanceMode.stop()
 }
 
 func ensureSchemaTable() error {

@@ -53,6 +53,8 @@ type Config struct {
 	MaxConnectionLifetime string
 
 	AllowSchemaRollback bool
+
+	WaitForSchemaUpdate bool
 }
 
 // DefaultConfig returns the default configuration for the data layer
@@ -115,7 +117,11 @@ func Init(cfg Config) error {
 	db.SetMaxIdleConns(cfg.MaxIdleConnections)
 	db.SetMaxOpenConns(cfg.MaxOpenConnections)
 
-	ensureSchema(cfg.AllowSchemaRollback)
+	if cfg.WaitForSchemaUpdate {
+		ensureSchema(cfg.AllowSchemaRollback)
+	} else {
+		go ensureSchema(cfg.AllowSchemaRollback)
+	}
 
 	return err
 }

@@ -47,13 +47,13 @@ pipeline {
                 '''
             }
         }
-        stage('test') {
+        stage('test databases') {
             parallel {
                 stage('sqlite') {
                     steps {
                     sh '''
                         cd ci
-                        sh ./testDB.sh sqlite
+                        sh ./testInDocker.sh sqlite
                     '''
                     }
                 }
@@ -61,7 +61,7 @@ pipeline {
                     steps {
                     sh '''
                         cd ci
-                        sh ./testDB.sh postgres
+                        sh ./testInDocker.sh postgres
                     '''
                     }
                 }
@@ -69,7 +69,7 @@ pipeline {
                     steps {
                     sh '''
                         cd ci
-                        sh ./testDB.sh mysql
+                        sh ./testInDocker.sh mysql
                     '''
                     }
                 }
@@ -77,7 +77,7 @@ pipeline {
                     steps {
                     sh '''
                         cd ci
-                        sh ./testDB.sh cockroachdb
+                        sh ./testInDocker.sh cockroachdb
                     '''
                     }
                 }
@@ -85,7 +85,7 @@ pipeline {
                     steps {
                     sh '''
                         cd ci
-                        sh ./testDB.sh tidb
+                        sh ./testInDocker.sh tidb
                     '''
                     }
                 }
@@ -93,7 +93,7 @@ pipeline {
                     steps {
                     sh '''
                         cd ci
-                        sh ./testDB.sh sqlserver
+                        sh ./testInDocker.sh sqlserver
                     '''
                     }
                 }
@@ -101,11 +101,23 @@ pipeline {
                     steps {
                     sh '''
                         cd ci
-                        sh ./testDB.sh mariadb
+                        sh ./testInDocker.sh mariadb
                     '''
                     }
                 }
             }
         }
+	stage('test browsers') {
+            parallel {
+                stage('firefox') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testInDocker.sh firefox
+                    '''
+                    }
+                }
+	    }
+	}
     }
 }

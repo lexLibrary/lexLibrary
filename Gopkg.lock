@@ -87,6 +87,19 @@
   version = "v1.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/sclevine/agouti"
+  packages = [
+    ".",
+    "api",
+    "api/internal/bus",
+    "api/internal/service",
+    "internal/element",
+    "internal/target"
+  ]
+  revision = "8cf0313221cb2c26a4059f8e273c0856b4cb091d"
+
+[[projects]]
   name = "github.com/spf13/afero"
   packages = [
     ".",
@@ -163,6 +176,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "56e3817b4ce1c4707c0520bef53a3313d689b4df34e761efd7de1db6d5bfb916"
+  inputs-digest = "9934585ed486c07044c5d06adef7568dbcc3230a7bdd355e06758273c24092d5"
   solver-name = "gps-cdcl"
   solver-version = 1
