@@ -39,11 +39,13 @@ pipeline {
                 '''
                 sh '''
                     cd $REPO
-                    go test ./... -cover
+                    go test ./app -cover
+                    go test ./data -cover
                 '''
                 sh '''
                     cd $REPO
-                    go test ./... -race
+                    go test ./app -race
+                    go test ./data -race
                 '''
             }
         }
