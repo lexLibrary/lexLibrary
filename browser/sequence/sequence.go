@@ -498,47 +498,27 @@ func (e *Elements) CSSProperty(property string) *StringMatch {
 // Click sends a click to all of the elements
 func (e *Elements) Click() *Elements {
 	return e.Test("Click", func(we selenium.WebElement) error {
-		err := we.Click()
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return we.Click()
 	})
 }
 
 // SendKeys sends a string of key to the elements
 func (e *Elements) SendKeys(keys string) *Elements {
 	return e.Test("SendKeys", func(we selenium.WebElement) error {
-		err := we.SendKeys(keys)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return we.SendKeys(keys)
 	})
 }
 
 // Submit sends a submit event to the elements
 func (e *Elements) Submit() *Elements {
 	return e.Test("Submit", func(we selenium.WebElement) error {
-		err := we.Submit()
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return we.Submit()
 	})
 }
 
 // Clear clears the elements
 func (e *Elements) Clear() *Elements {
 	return e.Test("Clear", func(we selenium.WebElement) error {
-		err := we.Clear()
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return we.Clear()
 	})
 }
