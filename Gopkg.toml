@@ -64,5 +64,5 @@
 ## what source location any dependent projects specify.
 # source = "https://github.com/myfork/package.git"
 [[constraint]]
-name = "github.com/sclevine/agouti"
+name = "github.com/tebeka/selenium"
 branch = "master"

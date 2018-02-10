@@ -117,6 +117,14 @@ pipeline {
                     '''
                     }
                 }
+		stage('chrome') {
+                    steps {
+                    sh '''
+                        cd ci
+                        sh ./testInDocker.sh chrome
+                    '''
+                    }
+                }
 	    }
 	}
     }

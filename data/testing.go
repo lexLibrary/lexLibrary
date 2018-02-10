@@ -32,7 +32,6 @@ func TestingSetup() error {
 	viper.SetConfigFile(flagConfigFile)
 
 	err := viper.ReadInConfig()
-	cfg.Data.WaitForSchemaUpdate = true
 	if err != nil {
 		if os.IsNotExist(err) && flagConfigFile == defaultConfigFile {
 			log.Printf("No config file found, using default values: \n %+v\n", cfg)
@@ -50,7 +49,6 @@ func TestingSetup() error {
 				DatabaseFile: filepath.Join(tempDir, "lexLibray.db"),
 				// MaxIdleConnections: 1,
 				// MaxOpenConnections: 1,
-				WaitForSchemaUpdate: true,
 			}
 		} else {
 			return err

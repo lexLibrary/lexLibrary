@@ -26,14 +26,3 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
 RUN apt-get update && apt-get install -y yarn
 RUN npm install -g gulp
-
-# WebDrivers
-RUN apt-get update && apt-get install -y \
-	firefox 
-RUN export BASE_URL=https://github.com/mozilla/geckodriver/releases/download \
-  && export VERSION=$(curl -sL \
-    https://api.github.com/repos/mozilla/geckodriver/releases/latest | \
-    grep tag_name | cut -d '"' -f 4) \
-  && curl -sL \
-  $BASE_URL/$VERSION/geckodriver-$VERSION-linux64.tar.gz | tar -xz \
-  && mv geckodriver /usr/local/bin/geckodriver

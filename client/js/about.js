@@ -125,3 +125,8 @@ var vm = new Vue({
     directives: {},
     methods: {},
 });
+
+
+// TODO: build github url:
+// also gather browser information
+// https://github.com/lexLibrary/lexLibrary/issues/new?title=test&body=%0A%23%23%23%20Issue%20Type%0ABug%0A%0A%23%23%23%20Description%0A%0Atest%0A%0A%23%23%23%20VS%20Code%20Info%0A%0AVS%20Code%20version%3A%20Code%201.20.0%20(c63189deaa8e620f650cc28792b8f5f3363f2c5b%2C%202018-02-07T17%3A09%3A39.780Z)%0AOS%20version%3A%20Windows_NT%20x64%2010.0.16299%0A%0A%3Cdetails%3E%0A%3Csummary%3ESystem%20Info%3C%2Fsummary%3E%0A%0A%7CItem%7CValue%7C%0A%7C---%7C---%7C%0A%7CCPUs%7CIntel(R)%20Core(TM)%20i7-7500U%20CPU%20%40%202.70GHz%20(4%20x%202904)%7C%0A%7CMemory%20(System)%7C15.85GB%20(8.62GB%20free)%7C%0A%7CProcess%20Argv%7CC%3A%5CProgram%20Files%5CMicrosoft%20VS%20Code%5CCode.exe%7C%0A%7CScreen%20Reader%7Cno%7C%0A%7CVM%7C0%25%7C%0A%0A%3C%2Fdetails%3E%3Cdetails%3E%3Csummary%3EExtensions%20(3)%3C%2Fsummary%3E%0A%0AExtension%7CAuthor%20(truncated)%7CVersion%0A---%7C---%7C---%0Aftp-simple%7Chum%7C0.5.8%0Avscode-journal%7Cpaj%7C0.5.0%0Avim%7Cvsc%7C0.10.13%0A%0A%0A%3C%2Fdetails%3E%0AReproduces%20only%20with%20extensions

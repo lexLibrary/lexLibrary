@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/blang/semver"
+  packages = ["."]
+  revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
+  version = "v3.5.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/denisenkom/go-mssqldb"
   packages = ["."]
@@ -134,6 +140,18 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/tebeka/selenium"
+  packages = [
+    ".",
+    "chrome",
+    "firefox",
+    "internal/zip",
+    "log"
+  ]
+  revision = "3ab953b61942936b9c7cb9580986e609814be054"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = [
     "argon2",
@@ -176,6 +194,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9934585ed486c07044c5d06adef7568dbcc3230a7bdd355e06758273c24092d5"
+  inputs-digest = "d6caa41c3d37eabfb5ee27e7218a980217bd2e8774a52deec0414c93027c3d8e"
   solver-name = "gps-cdcl"
   solver-version = 1

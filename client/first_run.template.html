@@ -44,7 +44,7 @@
 				</div>
 			</div>
 			<!-- Settings -->
-			<div v-if="showSettings" class="col-md-6">
+			<div v-if="showSettings" id="settings" class="col-md-6">
 				<div class="card">
 					<div class="card-body">
 						<h6 class="card-title">What type of instance will this server be:</h6>
@@ -53,20 +53,22 @@
 						</div>
 						<fieldset :disabled="showAdvanced">
 							<div class="form-check">
-								<input v-model="instanceType" class="form-check-input" type="radio" name="public-private" value="private">
+								<input v-model="instanceType" class="form-check-input" type="radio" id="inputPrivate" name="public-private"
+								value="private">
 								<label class="form-check-label">
 									Private: <small class="text-muted">New logins are managed by admins. A login is required to view
 									all documents.</small>
 								</label>
 							</div>
 							<div class="form-check">
-								<input v-model="instanceType" class="form-check-input" type="radio" name="public-private" value="public">
+								<input v-model="instanceType" class="form-check-input" type="radio" name="public-private" id="inputPublic"
+									value="public">
 								<label class="form-check-label">
 									Public: <small class="text-muted">Anyone can create a login. Documents can be published publically.</small>
 								</label>
 							</div>
 						</fieldset>
-						<button @click="showAdvanced = !showAdvanced" class="btn btn-link card-link">
+						<button @click="showAdvanced = !showAdvanced" id="showAdvanced" class="btn btn-link card-link">
 							<small v-if="showAdvanced" class="caret-down">Advanced</small>
 							<small v-else class="caret-right">Advanced</small>
 						</button>
