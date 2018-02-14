@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/tebeka/selenium"
@@ -197,14 +198,48 @@ func (s *Sequence) Find(selector string) *Elements {
 	return e
 }
 
-// And allows you chain additional sequences
-func (e *Elements) And() *Sequence {
-	return e.s
+// Wait will wait for the given duration before continuing in the sequence
+func (s *Sequence) Wait(duration time.Duration) *Sequence {
+	if s.err != nil {
+		return s
+	}
+	time.Sleep(duration)
+	return s
+}
+
+// Debug will print the current page's title and source
+// For use with debugging issues mostly
+func (s *Sequence) Debug() *Sequence {
+	if s.err != nil {
+		return s
+	}
+	src, err := s.driver.PageSource()
+	if err != nil {
+		s.err = err
+		return s
+	}
+
+	title, err := s.driver.Title()
+	if err != nil {
+		s.err = err
+		return s
+	}
+
+	fmt.Println("----------------------")
+	fmt.Println(title)
+	fmt.Println("----------------------")
+	fmt.Println(src)
+	return s
 }
 
 // End Completes a sequence and returns any errors
 func (e *Elements) End() error {
 	return e.s.End()
+}
+
+func (e *Elements) Wait(duration time.Duration) *Elements {
+	time.Sleep(duration)
+	return e
 }
 
 // Count verifies that the number of elements in the selection matches the argument
@@ -223,6 +258,16 @@ func (e *Elements) Count(count int) *Elements {
 		return e
 	}
 	return e
+}
+
+// And allows you chain additional sequences
+func (e *Elements) And() *Sequence {
+	return e.s
+}
+
+// Find finds a new element
+func (e *Elements) Find(selector string) *Elements {
+	return e.s.Find(selector)
 }
 
 // FindChildren returns a new Elements object for all the elements that match the selector

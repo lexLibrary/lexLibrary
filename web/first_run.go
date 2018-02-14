@@ -14,9 +14,8 @@ func init() {
 		fn:   firstRunHandler,
 	}
 
-	app.FirstRunTrigger(func() {
-		addInterrupt(firstRunInterrupt)
-	})
+	app.FirstRunTrigger(func() { addInterrupt(firstRunInterrupt) },
+		func() { removeInterrupt(firstRunInterrupt) })
 
 	firstRunTemplate.loadTemplates()
 }
@@ -60,7 +59,6 @@ func firstRunHandler(w http.ResponseWriter, r *http.Request) {
 	if errHandled(err, w, r) {
 		return
 	}
-	removeInterrupt(firstRunInterrupt)
 
 	s, err := setSession(w, r, u, false)
 	if errHandled(err, w, r) {

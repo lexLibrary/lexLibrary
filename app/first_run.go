@@ -10,7 +10,13 @@ import (
 
 var sqlFirstRunCheck = data.NewQuery(`select count(*) from users`)
 
-var firstRunTrigger func()
+var firstRunTrigger = struct {
+	start func()
+	stop  func()
+}{
+	start: func() {},
+	stop:  func() {},
+}
 
 func firstRunCheck() error {
 	count := 0
@@ -21,15 +27,16 @@ func firstRunCheck() error {
 	}
 
 	if count == 0 {
-		firstRunTrigger()
+		firstRunTrigger.start()
 	}
 
 	return nil
 }
 
 // FirstRunTrigger gets triggered if this is the first time Lex Library has been run
-func FirstRunTrigger(fn func()) {
-	firstRunTrigger = fn
+func FirstRunTrigger(start, stop func()) {
+	firstRunTrigger.start = start
+	firstRunTrigger.stop = stop
 }
 
 // FirstRunSetup creates the first admin
@@ -66,6 +73,7 @@ func FirstRunSetup(username, password string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
+	firstRunTrigger.stop()
 
 	return user, nil
 }

@@ -7,7 +7,7 @@ services:
   tests:
     build: "../build"
     ports: 
-        - "8070:8070"
+        - "8090:8090"
     links:
       - webdriver
     volumes:
@@ -15,11 +15,11 @@ services:
     environment:
       LLTEST: 'true'
       LLDATABASE: 'sqlite'
-      LLPORT: 8070
+      LLPORT: 8090
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
       GOPATH: /go
       LLBROWSER: 'chrome'
     command: sh -c '
-        cd /go/src/github.com/lexLibrary/lexLibrary/ci/ && cd .. && ./build.sh && go test ./browser -v
+        cd /go/src/github.com/lexLibrary/lexLibrary/ci/ && cd .. && ./build.sh && go test ./browser
       '

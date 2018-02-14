@@ -83,6 +83,7 @@ func startWebDriver() (selenium.WebDriver, error) {
 	if os.Getenv("LLWEBDRIVERURL") != "" {
 		webDriverURL = os.Getenv("LLWEBDRIVERURL")
 	}
+
 	// Connect to the WebDriver instance running locally.
 	caps := selenium.Capabilities{"browserName": browser}
 	wd, err := selenium.NewRemote(caps, webDriverURL)

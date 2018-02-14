@@ -43,10 +43,18 @@ func TestingSetup() error {
 			} else {
 				tempDir = os.TempDir()
 			}
+			tempDBFile := filepath.Join(tempDir, "lexLibray.db")
+			if _, err := os.Stat(tempDBFile); err == nil {
+				//file already exists, delete file
+				err = os.Remove(tempDBFile)
+				if err != nil {
+					return errors.Wrap(err, "deleting old temp database file")
+				}
+			}
 			cfg.Data = Config{
 				DatabaseType: "sqlite",
 				// DatabaseURL:        "file::memory:?mode=memory&cache=shared",
-				DatabaseFile: filepath.Join(tempDir, "lexLibray.db"),
+				DatabaseFile: tempDBFile,
 				// MaxIdleConnections: 1,
 				// MaxOpenConnections: 1,
 			}

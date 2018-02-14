@@ -38,7 +38,7 @@
 									id="inputPassword2" placeholder="Enter password again">
 								<div v-if="password2Err" class="invalid-feedback">{{password2Err}}</div>
 							</div>
-							<button type="submit" class="btn btn-primary btn-block">Create User</button>
+							<button id="submit" type="submit" class="btn btn-primary btn-block">Create User</button>
 						</form>
 					</div>
 				</div>
@@ -88,7 +88,7 @@
 						</div>
 
 						<hr>
-						<button @click="setSettings" class="btn btn-primary float-right">Continue</button>
+						<button @click="setSettings" id="setSettings" class="btn btn-primary float-right">Continue</button>
 					</div>
 				</div>
 			</div>
