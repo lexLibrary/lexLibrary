@@ -7,7 +7,7 @@ services:
   tests:
     build: "../build"
     ports: 
-        - "8090:8090"
+        - "8070:8070"
     links:
       - webdriver
     volumes:
@@ -15,7 +15,7 @@ services:
     environment:
       LLTEST: 'true'
       LLDATABASE: 'sqlite'
-      LLPORT: 8090
+      LLPORT: 8070
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
       GOPATH: /go
