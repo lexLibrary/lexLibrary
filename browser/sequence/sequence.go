@@ -4,6 +4,7 @@ package sequence
 
 import (
 	"fmt"
+	"io/ioutil"
 	"regexp"
 	"strings"
 	"time"
@@ -215,20 +216,61 @@ func (s *Sequence) Debug() *Sequence {
 	}
 	src, err := s.driver.PageSource()
 	if err != nil {
-		s.err = err
+		s.err = &Error{
+			Stage: "Debug Source",
+			Err:   err,
+		}
 		return s
 	}
 
 	title, err := s.driver.Title()
 	if err != nil {
-		s.err = err
+		s.err = &Error{
+			Stage: "Debug Title",
+			Err:   err,
+		}
 		return s
 	}
 
-	fmt.Println("----------------------")
-	fmt.Println(title)
-	fmt.Println("----------------------")
+	uri, err := s.driver.CurrentURL()
+	if err != nil {
+		s.err = &Error{
+			Stage: "Debug URL",
+			Err:   err,
+		}
+		return s
+	}
+
+	fmt.Println("-----------------------------------------------")
+	fmt.Printf("%s - (%s)\n", title, uri)
+	fmt.Println("-----------------------------------------------")
 	fmt.Println(src)
+	return s
+}
+
+// Screenshot takes a screenshot
+func (s *Sequence) Screenshot(filename string) *Sequence {
+	if s.err != nil {
+		return s
+	}
+
+	buff, err := s.driver.Screenshot()
+	if err != nil {
+		s.err = &Error{
+			Stage: "Screenshot",
+			Err:   err,
+		}
+		return s
+	}
+
+	err = ioutil.WriteFile(filename, buff, 0622)
+	if err != nil {
+		s.err = &Error{
+			Stage: "Screenshot Writing File",
+			Err:   err,
+		}
+		return s
+	}
 	return s
 }
 

@@ -7,13 +7,11 @@
 </head>
 
 <body>
-	<div class="container">
+	<div id="main" class="container">
 		<h1>Lex Library
 		</h1>
 		<p class="text-muted">Version: [[.Version]] <small>([[.BuildDate]])</small></p>
-		<p>
-			[[.Runtime]]
-		</p>
+		<a v-if="issueURL" :href="issueURL">Submit an issue</a>
 		<div id="attribution">
 			<h2>Credits and Attribution</h2>
 			<hr>
@@ -34,6 +32,8 @@
 	</div>
 </body>
 
+<script type="application/json" id="payload">[[json .Runtime]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/about.js"></script>
+
 </html>

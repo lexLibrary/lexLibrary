@@ -67,12 +67,11 @@ func BuildDate() time.Time {
 
 // RuntimeInfo returns information about the currently running instance of Lex Library
 func Runtime(who *User) *RuntimeInfo {
-	if SettingMust("RuntimeInfoInIssues").Bool() {
-		return runtimeInfo
+	if who != nil {
+		if who.Admin || SettingMust("NonAdminIssueSubmission").Bool() {
+			return runtimeInfo
+		}
 	}
 
-	if who != nil && who.Admin {
-		return runtimeInfo
-	}
 	return nil
 }

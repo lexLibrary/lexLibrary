@@ -4,6 +4,7 @@ package browser
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strconv"
 	"testing"
@@ -20,7 +21,7 @@ const (
 )
 
 var driver selenium.WebDriver
-var uri = "http://localhost:8080"
+var llURL *url.URL
 
 func TestMain(m *testing.M) {
 	err := data.TestingSetup()
@@ -49,7 +50,10 @@ func TestMain(m *testing.M) {
 
 	webCFG := web.DefaultConfig()
 	webCFG.Port = port
-	uri = fmt.Sprintf("http://%s:%d", hostname, port)
+	llURL = &url.URL{
+		Scheme: "http",
+		Host:   fmt.Sprintf("%s:%d", hostname, port),
+	}
 
 	go func() {
 		err = web.StartServer(webCFG, false)

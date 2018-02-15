@@ -3,6 +3,7 @@ package web
 
 import (
 	"compress/gzip"
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -171,7 +172,17 @@ func (t *templateHandler) loadTemplates() {
 	}
 
 	// change delims to work with Vuejs
-	t.template = template.Must(template.New("").Funcs(map[string]interface{}{}).Delims("[[", "]]").Parse(tmpl))
+	t.template = template.Must(template.New("").Funcs(map[string]interface{}{
+		"json": func(v interface{}) (string, error) {
+			if v == nil {
+				return "", nil
+			}
+
+			bytes, err := json.Marshal(v)
+
+			return string(bytes), err
+		},
+	}).Delims("[[", "]]").Parse(tmpl))
 }
 
 //emptyTemplate is a template handler for templates that don't need to write any data or do any processing,

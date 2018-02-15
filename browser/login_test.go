@@ -2,15 +2,20 @@
 package browser
 
 import (
-	"path"
+	"net/url"
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/browser/sequence"
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/pkg/errors"
+	"github.com/tebeka/selenium"
 )
 
 func TestLogin(t *testing.T) {
+	uri := *llURL
+	uri.Path = "login"
+
 	username := "testusername"
 	password := "testWithAPrettyGoodP@ssword"
 	_, err := data.NewQuery("delete from users").Exec()
@@ -37,7 +42,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	err = sequence.Start(driver).
-		Get(path.Join(uri, "/login")).
+		Get(uri.String()).
 		Find("#login").Visible().
 		Find("#inputUsername").Visible().
 		Find(".invalid-feedback").Count(0).
@@ -63,6 +68,40 @@ func TestLogin(t *testing.T) {
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
 		Find(".btn.btn-primary.btn-block").Click().
+		End()
+
+	if err != nil {
+		t.Fatalf("Testing Login Page failed: %s", err)
+	}
+
+	err = driver.DeleteAllCookies()
+	if err != nil {
+		t.Fatalf("Error clearing all cookies for testing: %s", err)
+	}
+
+	testPath := "/testpath"
+	err = sequence.Start(driver).
+		Get(uri.String()+"?return="+testPath).
+		Find("#inputUsername").SendKeys(username).
+		Find("#inputPassword").SendKeys(password).
+		Find(".btn.btn-primary.btn-block").Click().
+		And().
+		Test("URL", func(d selenium.WebDriver) error {
+			current, err := d.CurrentURL()
+			if err != nil {
+				return err
+			}
+
+			currentURL, err := url.Parse(current)
+			if err != nil {
+				return err
+			}
+			if currentURL.Path != testPath {
+				return errors.Errorf("Invalid return URL redirect path. Expected '%s', got '%s'",
+					testPath, currentURL.Path)
+			}
+			return nil
+		}).
 		End()
 
 	if err != nil {

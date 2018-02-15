@@ -22,7 +22,7 @@ func TestFirstRun(t *testing.T) {
 	}
 
 	err = sequence.Start(driver).
-		Get(uri).
+		Get(llURL.String()).
 		Find("#submit").Click().
 		Find(".alert.alert-danger").Text().Contains("A username is required").
 		Find("#inputUsername").SendKeys("testusername").
