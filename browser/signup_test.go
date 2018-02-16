@@ -43,7 +43,7 @@ func TestSignup(t *testing.T) {
 
 	err = sequence.Start(driver).
 		Get(uri.String()).
-		Title("Page Not Found - Lex Library").
+		Title().Equals("Page Not Found - Lex Library").
 		End()
 
 	if err != nil {

@@ -10,8 +10,8 @@
 	<div id="main" class="container">
 		<h1>Lex Library
 		</h1>
+		<button v-if="runtime" class="btn btn-link float-right">Report an issue</button>
 		<p class="text-muted">Version: [[.Version]] <small>([[.BuildDate]])</small></p>
-		<a v-if="issueURL" :href="issueURL">Submit an issue</a>
 		<div id="attribution">
 			<h2>Credits and Attribution</h2>
 			<hr>
@@ -29,6 +29,16 @@
 					</div>
 				</div>
 		</div>
+		<modal title="Report an Issue">
+			<div class="modal-body">
+				<form>
+					<input type="text" class="form-control" placeholder="Enter an issue">
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary">Close</button>
+			</div>
+		</modal>
 	</div>
 </body>
 

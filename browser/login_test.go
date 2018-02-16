@@ -2,14 +2,11 @@
 package browser
 
 import (
-	"net/url"
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/browser/sequence"
 	"github.com/lexLibrary/lexLibrary/data"
-	"github.com/pkg/errors"
-	"github.com/tebeka/selenium"
 )
 
 func TestLogin(t *testing.T) {
@@ -81,27 +78,12 @@ func TestLogin(t *testing.T) {
 
 	testPath := "/testpath"
 	err = sequence.Start(driver).
-		Get(uri.String()+"?return="+testPath).
+		Get(uri.String() + "?return=" + testPath).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
 		Find(".btn.btn-primary.btn-block").Click().
 		And().
-		Test("URL", func(d selenium.WebDriver) error {
-			current, err := d.CurrentURL()
-			if err != nil {
-				return err
-			}
-
-			currentURL, err := url.Parse(current)
-			if err != nil {
-				return err
-			}
-			if currentURL.Path != testPath {
-				return errors.Errorf("Invalid return URL redirect path. Expected '%s', got '%s'",
-					testPath, currentURL.Path)
-			}
-			return nil
-		}).
+		URL().Path(testPath).Eventually().
 		End()
 
 	if err != nil {
