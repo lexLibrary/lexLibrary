@@ -8,10 +8,9 @@
 
 <body>
 	<div id="main" class="container">
-		<h1>Lex Library
-		</h1>
-		<button v-if="runtime" class="btn btn-link float-right">Report an issue</button>
-		<p class="text-muted">Version: [[.Version]] <small>([[.BuildDate]])</small></p>
+		<h1>Lex Library</h1>
+		<a v-if="runtime" class="is-pulled-right">Report an issue</a>
+		<p class="">Version: [[.Version]] <small>([[.BuildDate]])</small></p>
 		<div id="attribution">
 			<h2>Credits and Attribution</h2>
 			<hr>
@@ -19,26 +18,31 @@
 				are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
 				would not be possible.</p>
 				<p class="lead"><em>Thank you</em></p>
-				<div class="card-columns columns-5">
-					<div v-for="a in attribution" class="card">
-						<div class="card-body">
-							<h5 class="card-title"><a :href="a.url" target="_blank">{{a.name}}</a></h5>
-							<p class="card-subtitle text-muted">({{a.licenseType}})</p>
-							<p class="card-text">{{a.author}}</p>
+				<div class="columns is-multiline">
+					<div v-for="a in attribution" class="column is-3">
+						<div class="card">
+							<div class="card-content">
+								<h5 class="title"><a :href="a.url" target="_blank">{{a.name}}</a></h5>
+								<p class="subtitle">({{a.licenseType}})</p>
+								<p>{{a.author}}</p>
+							</div>
 						</div>
 					</div>
 				</div>
 		</div>
-		<modal title="Report an Issue">
-			<div class="modal-body">
+
+		<div class="modal">
+			<div class="modal-background"></div>
+			<div class="modal-content">
 				<form>
 					<input type="text" class="form-control" placeholder="Enter an issue">
 				</form>
+
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary">Close</button>
-			</div>
-		</modal>
+			<button class="modal-close is-large" aria-label="close"></button>
+			<button type="button" class="button">Close</button>
+		</div>
+
 	</div>
 </body>
 

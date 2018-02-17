@@ -24,17 +24,16 @@ func TestFirstRun(t *testing.T) {
 	err = sequence.Start(driver).
 		Get(llURL.String()).
 		Find("#submit").Click().
-		Find(".alert.alert-danger").Text().Contains("A username is required").
+		Find(".help.is-danger").Text().Contains("A username is required").
 		Find("#inputUsername").SendKeys("testusername").
 		Find("#submit").Click().
-		Find(".alert.alert-danger").Text().Contains("A password is required").
+		Find(".help.is-danger").Text().Contains("A password is required").
 		Find("#inputPassword").SendKeys("testWithAPrettyGoodP@ssword").
 		Find("#submit").Click().
-		Find(".alert.alert-danger").Count(0).
-		Find(".invalid-feedback").Count(1).Text().Contains("Passwords do not match").
+		Find(".help.is-danger").Count(1).Text().Contains("Passwords do not match").
 		Find("#inputPassword2").SendKeys("testWithAPrettyGoodP@ssword").
 		Find("#submit").Click().
-		Find(".alert.alert-danger").Count(0).
+		Find(".help.is-danger").Count(0).
 		Find("#inputUsername").Count(0).
 		Find("#settings").Count(1).And().
 		Test("LL Cookie", func(d selenium.WebDriver) error {
@@ -57,7 +56,7 @@ func TestFirstRun(t *testing.T) {
 		Find("#inputPrivate").Disabled().
 		Find("#inputPublic").Disabled().
 		Find("#setSettings").Click().
-		Find(".alert.alert-danger").Count(0).
+		Find(".notification.is-danger").Count(0).
 		End()
 	if err != nil {
 		t.Fatalf("Testing First run failed: %s", err)

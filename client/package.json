@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "autoprefixer": "^7.2.5",
-    "bootstrap": "^4.0.0",
+    "bulma": "^0.6.2",
     "del": "^3.0.0",
     "es6-promise": "^4.2.2",
     "gulp": "^3.9.1",

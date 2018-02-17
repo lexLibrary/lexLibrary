@@ -4,13 +4,8 @@ import {
     payload
 } from './lib/util';
 
-import * as modal from './components/modal';
-
 var vm = new Vue({
     el: '#main',
-    components: {
-        'modal': modal.default,
-    },
     data: function() {
         return {
             runtime: payload(),
@@ -28,11 +23,11 @@ var vm = new Vue({
                 'licenseType': 'MIT',
                 'licenseURL': 'https://github.com/vuejs/vue/blob/master/LICENSE'
             }, {
-                'name': 'bootstrap',
-                'url': 'http://getbootstrap.com',
-                'author': 'Twitter',
+                'name': 'bulma',
+                'url': 'https://bulma.io/',
+                'author': 'Jeremy Thomas',
                 'licenseType': 'MIT',
-                'licenseURL': 'https://github.com/twbs/bootstrap/blob/master/LICENSE'
+                'licenseURL': 'https://github.com/jgthms/bulma/blob/master/LICENSE'
             }, {
                 'name': 'PostgreSQL',
                 'url': 'https://www.postgresql.org/',

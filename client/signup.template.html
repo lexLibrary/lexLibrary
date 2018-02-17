@@ -8,40 +8,44 @@
 
 <body>
 <div class="container">
-	<div id="signup" class="auth-form pt-4">
-		<h1 class="text-center">Join Lex Library</h1>
-		<div class="row justify-content-center">
-			<div class="col-md-5">
-				<div class="card">
-					<div class="card-body">
-						<form @submit="signup">
-							<div class="form-group">
-								<label for="inputUsername">Username</label>
+	<div id="signup" class="columns is-centered">
+		<div class="column is-one-third">
+			<h1 class="title has-text-centered">Join Lex Library</h1>
+			<div class="card">
+				<div class="card-content">
+					<form @submit="signup">
+						<div class="field">
+							<label class="label" for="inputUsername">Username</label>
+							<div class="control">
 								<input v-model="username" v-focus @blur="validateUsername" @keydown="usernameErr=null" 
-									v-bind:class="{'is-invalid': usernameErr}" type="text" class="form-control" 
+									v-bind:class="{'is-danger': usernameErr}" type="text" class="input" 
 									id="inputUsername" placeholder="Enter username">
-								<div v-if="usernameErr" class="invalid-feedback">{{usernameErr}}</div>
 							</div>
-							<div class="form-group">
-								<label for="inputPassword">Password</label>
+							<p v-if="usernameErr" v-cloak class="help is-danger">{{usernameErr}}</p>
+						</div>
+						<div class="field">
+							<label class="label" for="inputPassword">Password</label>
+							<div class="control">
 								<input v-model="password" @blur="validatePassword" @keydown="passwordErr=null" 
-									v-bind:class="{'is-invalid': passwordErr}" type="password" class="form-control" 
+									v-bind:class="{'is-danger': passwordErr}" type="password" class="input" 
 									id="inputPassword"	placeholder="Enter password">
-								<div v-if="passwordErr" class="invalid-feedback">{{passwordErr}}</div>
 							</div>
-							<div class="form-group">
+							<p v-if="passwordErr" v-cloak class="help is-danger">{{passwordErr}}</p>
+						</div>
+						<div class="field">
+							<div class="control">
 								<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"
-									v-bind:class="{'is-invalid': password2Err}"	type="password" class="form-control" 
+									v-bind:class="{'is-danger': password2Err}"	type="password" class="input" 
 									id="inputPassword2" placeholder="Enter password again">
-								<div v-if="password2Err" class="invalid-feedback">{{password2Err}}</div>
 							</div>
-							<button type="submit" id="submit" class="btn btn-primary btn-block">Sign Up</button>
-						</form>
-					</div>
+							<p v-if="password2Err" v-cloak class="help is-danger">{{password2Err}}</p>
+						</div>
+						<button type="submit" id="submit" class="button is-primary is-block">Sign Up</button>
+					</form>
 				</div>
 			</div>
 		</div>
-	</div>	
+	</div>
 </div>
 </body>
 <script src="/js/vue.js"></script>

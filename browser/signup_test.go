@@ -58,16 +58,16 @@ func TestSignup(t *testing.T) {
 	err = sequence.Start(driver).
 		Get(uri.String()).
 		Find("#submit").Click().
-		Find("#inputUsername + .invalid-feedback").Text().Contains("A username is required").
+		Find(".help.is-danger").Count(2).Any().Text().Contains("A username is required").
 		Find("#inputUsername").SendKeys("testusername").
 		Find("#submit").Click().
-		Find("#inputPassword + .invalid-feedback").Text().Contains("A password is required").
+		Find(".help.is-danger").Text().Contains("A password is required").
 		Find("#inputPassword").SendKeys("testWithAPrettyGoodP@ssword").
 		Find("#submit").Click().
-		Find("#inputPassword2 + .invalid-feedback").Text().Contains("Passwords do not match").
+		Find(".help.is-danger").Text().Contains("Passwords do not match").
 		Find("#inputPassword2").SendKeys("testWithAPrettyGoodP@ssword").
 		Find("#submit").Click().
-		Find(".invalid-feedback").Count(0).
+		Find(".help.is-danger").Count(0).
 		And().
 		Test("LL Cookie", func(d selenium.WebDriver) error {
 			c, err := d.GetCookie("lexlibrary")

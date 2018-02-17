@@ -42,12 +42,12 @@ func TestLogin(t *testing.T) {
 		Get(uri.String()).
 		Find("#login").Visible().
 		Find("#inputUsername").Visible().
-		Find(".invalid-feedback").Count(0).
+		Find(".help.is-danger").Count(0).
 		Find(".card-footer").Visible().
 		Find("#inputUsername").SendKeys("badusername").
 		Find("#inputPassword").SendKeys("badpassword").
-		Find(".btn.btn-primary.btn-block").Click().
-		Find(".invalid-feedback").Visible().
+		Find(".button.is-primary.is-block").Click().
+		Find(".help.is-danger").Visible().
 		End()
 
 	if err != nil {
@@ -64,7 +64,8 @@ func TestLogin(t *testing.T) {
 		Find(".card-footer").Count(0).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
-		Find(".btn.btn-primary.btn-block").Click().
+		Find(".button.is-primary.is-block").Click().
+		Find(".help.is-danger").Count(0).
 		End()
 
 	if err != nil {
@@ -81,7 +82,7 @@ func TestLogin(t *testing.T) {
 		Get(uri.String() + "?return=" + testPath).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
-		Find(".btn.btn-primary.btn-block").Click().
+		Find(".button.is-primary.is-block").Click().
 		And().
 		URL().Path(testPath).Eventually().
 		End()

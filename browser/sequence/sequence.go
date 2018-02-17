@@ -41,6 +41,17 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("An error occurred during %s:  %s", e.Stage, e.Err)
 }
 
+// Errors is multiple sequence errors
+type Errors []error
+
+func (e Errors) Error() string {
+	str := "Multiple errors occurred: \n"
+	for i := range e {
+		str += "\t" + e[i].Error() + "\n"
+	}
+	return str
+}
+
 func elementString(element selenium.WebElement) string {
 	if element == nil {
 		return ""
@@ -72,6 +83,8 @@ type Elements struct {
 	selector   string
 	selectFunc func(selector string) ([]selenium.WebElement, error)
 	last       func() *Elements
+	all        bool
+	any        bool
 }
 
 // NewSequence starts a new sequence of tests
@@ -191,7 +204,7 @@ func (t *TitleMatch) test(testName string, fn func() error) *Sequence {
 func (t *TitleMatch) Equals(match string) *Sequence {
 	return t.test("Equals", func() error {
 		if t.title != match {
-			return errors.Errorf("The page's title does not equal %s. Got %s", match, t.title)
+			return errors.Errorf("The page's title does not equal '%s'. Got '%s'", match, t.title)
 		}
 		return nil
 	})
@@ -201,7 +214,7 @@ func (t *TitleMatch) Equals(match string) *Sequence {
 func (t *TitleMatch) Contains(match string) *Sequence {
 	return t.test("Contains", func() error {
 		if !strings.Contains(t.title, match) {
-			return errors.Errorf("The pages's title does not contain %s. Got %s", match, t.title)
+			return errors.Errorf("The pages's title does not contain '%s'. Got '%s'", match, t.title)
 		}
 		return nil
 	})
@@ -211,7 +224,7 @@ func (t *TitleMatch) Contains(match string) *Sequence {
 func (t *TitleMatch) StartsWith(match string) *Sequence {
 	return t.test("Starts With", func() error {
 		if !strings.HasPrefix(t.title, match) {
-			return errors.Errorf("The pages's title does not start with %s. Got %s", match, t.title)
+			return errors.Errorf("The pages's title does not start with '%s'. Got '%s'", match, t.title)
 		}
 		return nil
 	})
@@ -221,7 +234,7 @@ func (t *TitleMatch) StartsWith(match string) *Sequence {
 func (t *TitleMatch) EndsWith(match string) *Sequence {
 	return t.test("Ends With", func() error {
 		if !strings.HasSuffix(t.title, match) {
-			return errors.Errorf("The pages's title does not end with %s. Got %s", match, t.title)
+			return errors.Errorf("The pages's title does not end with '%s'. Got '%s'", match, t.title)
 		}
 		return nil
 	})
@@ -231,7 +244,7 @@ func (t *TitleMatch) EndsWith(match string) *Sequence {
 func (t *TitleMatch) Regexp(exp *regexp.Regexp) *Sequence {
 	return t.test("Matches RegExp", func() error {
 		if !exp.MatchString(t.title) {
-			return errors.Errorf("The pages's title does not match the regular expression %s. Title: %s",
+			return errors.Errorf("The pages's title does not match the regular expression '%s'. Title: '%s'",
 				exp, t.title)
 		}
 		return nil
@@ -328,13 +341,13 @@ func (u *URLMatch) QueryValue(key, value string) *Sequence {
 
 			}
 			if !found {
-				return errors.Errorf("URL does not contain the value %s for the key %s. Values: %s",
+				return errors.Errorf("URL does not contain the value '%s' for the key '%s'. Values: %s",
 					value, key, v)
 			}
 			return nil
 		}
 
-		return errors.Errorf("URL does not contain the query key %s. URL: %s", key, u.url)
+		return errors.Errorf("URL does not contain the query key '%s'. URL: %s", key, u.url)
 	})
 }
 
@@ -412,6 +425,8 @@ func (s *Sequence) Refresh() *Sequence {
 }
 
 // Find returns a selection of one or more elements to apply a set of actions against
+// If .Any or.All are not specified, then it is assumed that the selection will contain a single element
+// and the tests will fail if more than one element is found
 func (s *Sequence) Find(selector string) *Elements {
 	e := &Elements{
 		s:        s,
@@ -520,6 +535,20 @@ func (e *Elements) Wait(duration time.Duration) *Elements {
 	return e
 }
 
+// Any means the following tests will pass if they pass for ANY of the selected elements
+func (e *Elements) Any() *Elements {
+	e.all = false
+	e.any = true
+	return e
+}
+
+// All means the following tests will pass if they pass only if pass for ALL of the selected elements
+func (e *Elements) All() *Elements {
+	e.any = false
+	e.all = true
+	return e
+}
+
 // Count verifies that the number of elements in the selection matches the argument
 func (e *Elements) Count(count int) *Elements {
 	e.last = func() *Elements {
@@ -595,6 +624,7 @@ func (e *Elements) FindChildren(selector string) *Elements {
 // Test tests an arbitrary function against all the elements in this sequence
 // if the function returns an error then the test fails
 func (e *Elements) Test(testName string, fn func(e selenium.WebElement) error) *Elements {
+	stage := testName + " Test"
 	e.last = func() *Elements {
 		if e.s.err != nil {
 			return e
@@ -602,21 +632,55 @@ func (e *Elements) Test(testName string, fn func(e selenium.WebElement) error) *
 
 		if len(e.e) == 0 {
 			e.s.err = &Error{
-				Stage: testName,
+				Stage: stage,
 				Err:   errors.Errorf("No elements exist for the selector '%s'", e.selector),
 			}
 		}
+		if len(e.e) == 1 {
+			err := fn(e.e[0])
+			if err != nil {
+				e.s.err = &Error{
+					Stage:   stage,
+					Element: e.e[0],
+					Err:     err,
+				}
+			}
+			return e
+		}
+
+		if !e.any && !e.all {
+			e.s.err = &Error{
+				Stage: stage,
+				Err: errors.Errorf("Selector '%s' returned multiple elements but .Any() or .All() weren't specified",
+					e.selector),
+			}
+			return e
+		}
+
+		var errs Errors
 
 		for i := range e.e {
 			err := fn(e.e[i])
 			if err != nil {
-				e.s.err = &Error{
-					Stage:   testName,
+				if e.all {
+					e.s.err = &Error{
+						Stage:   stage,
+						Element: e.e[i],
+						Err:     errors.Wrap(err, "Not All elements passed"),
+					}
+					return e
+				}
+				errs = append(errs, &Error{
+					Stage:   stage,
 					Element: e.e[i],
 					Err:     err,
-				}
+				})
+			} else if e.any {
 				return e
 			}
+		}
+		if len(errs) != 0 {
+			e.s.err = errors.Wrap(errs, "None of the elements passed")
 		}
 		return e
 	}
@@ -722,7 +786,7 @@ func (s *StringMatch) Equals(match string) *Elements {
 			return err
 		}
 		if val != match {
-			return errors.Errorf("The element's %s does not equal %s. Got %s", s.testName, match, val)
+			return errors.Errorf("The element's %s does not equal '%s'. Got '%s'", s.testName, match, val)
 		}
 		return nil
 	})
@@ -736,7 +800,7 @@ func (s *StringMatch) Contains(match string) *Elements {
 			return err
 		}
 		if !strings.Contains(val, match) {
-			return errors.Errorf("The Element's %s does not contain %s. Got %s", s.testName, match, val)
+			return errors.Errorf("The Element's %s does not contain '%s'. Got '%s'", s.testName, match, val)
 		}
 		return nil
 	})
@@ -750,7 +814,7 @@ func (s *StringMatch) StartsWith(match string) *Elements {
 			return err
 		}
 		if !strings.HasPrefix(val, match) {
-			return errors.Errorf("The Element's %s does not start with %s. Got %s", s.testName, match, val)
+			return errors.Errorf("The Element's %s does not start with '%s'. Got '%s'", s.testName, match, val)
 		}
 		return nil
 	})
@@ -758,13 +822,13 @@ func (s *StringMatch) StartsWith(match string) *Elements {
 
 // EndsWith tests if the string value end with the passed in value
 func (s *StringMatch) EndsWith(match string) *Elements {
-	return s.e.Test(fmt.Sprintf("%s Starts With", s.testName), func(we selenium.WebElement) error {
+	return s.e.Test(fmt.Sprintf("%s Ends With", s.testName), func(we selenium.WebElement) error {
 		val, err := s.value(we)
 		if err != nil {
 			return err
 		}
 		if !strings.HasSuffix(val, match) {
-			return errors.Errorf("The Element's %s does not end with %s. Got %s", s.testName, match, val)
+			return errors.Errorf("The Element's %s does not end with '%s'. Got '%s'", s.testName, match, val)
 		}
 		return nil
 	})
@@ -778,7 +842,7 @@ func (s *StringMatch) Regexp(exp *regexp.Regexp) *Elements {
 			return err
 		}
 		if !exp.MatchString(val) {
-			return errors.Errorf("The Element's %s does not match the regex %s.", s.testName, exp)
+			return errors.Errorf("The Element's %s does not match the regex '%s'.", s.testName, exp)
 		}
 		return nil
 	})

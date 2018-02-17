@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
     git \
     wget
 
-ENV VERSION=1.9.2
+ENV VERSION=1.10
 ENV OS=linux
 ENV ARCH=amd64
 RUN wget https://storage.googleapis.com/golang/go$VERSION.$OS-$ARCH.tar.gz
