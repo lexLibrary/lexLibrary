@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
-	"github.com/lexLibrary/lexLibrary/browser/sequence"
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/lexLibrary/sequence"
 )
 
 func TestLogin(t *testing.T) {

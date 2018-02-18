@@ -49,6 +49,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/lexLibrary/sequence"
+  packages = ["."]
+  revision = "971c541d222cac2da60a44c6989cd68fc3cbf714"
+
+[[projects]]
+  branch = "master"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -91,19 +97,6 @@
   packages = ["."]
   revision = "02dd45c33376f85d1064355dc790dcc4850596b1"
   version = "v1.1"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/sclevine/agouti"
-  packages = [
-    ".",
-    "api",
-    "api/internal/bus",
-    "api/internal/service",
-    "internal/element",
-    "internal/target"
-  ]
-  revision = "8cf0313221cb2c26a4059f8e273c0856b4cb091d"
 
 [[projects]]
   name = "github.com/spf13/afero"
@@ -194,6 +187,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d6caa41c3d37eabfb5ee27e7218a980217bd2e8774a52deec0414c93027c3d8e"
+  inputs-digest = "e31635485598212d7d8397b4f701c642e06f605519811a21572bd6e6c6e24f05"
   solver-name = "gps-cdcl"
   solver-version = 1
