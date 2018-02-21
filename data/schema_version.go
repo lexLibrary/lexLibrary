@@ -101,7 +101,7 @@ var schemaVersions = []schemaVer{
 		update: NewQuery(`
 			create table sessions (
 				id {{varchar 32}} NOT NULL,
-				user_id {{varchar 20}} NOT NULL,
+				user_id {{varchar 20}} NOT NULL REFERENCES users(id),
 				valid {{bool}},
 				expires {{datetime}} NOT NULL,
 				ip_address {{text}},
