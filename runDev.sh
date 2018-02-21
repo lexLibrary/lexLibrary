@@ -112,23 +112,6 @@ then
     ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
 
     trap "docker stop ${DOCKERNAME};" SIGINT
-elif [ $DBTYPE == 'tidb' ]
-then
-    mkdir -p "db_data/tidb"
-
-    DB_PORT=4000
-
-    export LL_DATA_DATABASETYPE="tidb"
-    export LL_DATA_DATABASEURL="root:@tcp(localhost:$DB_PORT)/"
-
-    docker run --name=$DOCKERNAME --rm \
-        -p 4000:$DB_PORT \
-        -v $PWD/db_data/tidb:/tidb_data \
-        pingcap/tidb:latest -path=/tidb_data |& sed -e "s/^/${LIGHTBLUE}[TiDB]${NC} /" &
-
-    ./lexLibrary -dev |& sed -e "s/^/${YELLOW}[LexLibrary]${NC} /" &
-
-    trap "docker stop ${DOCKERNAME};" SIGINT
 elif [ $DBTYPE == 'sqlserver' ]
 then
     mkdir -p "db_data/sqlserver"

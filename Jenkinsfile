@@ -83,14 +83,6 @@ pipeline {
                     '''
                     }
                 }
-                stage('tidb') {
-                    steps {
-                    sh '''
-                        cd ci
-                        sh ./testInDocker.sh tidb
-                    '''
-                    }
-                }
                 stage('sqlserver') {
                     steps {
                     sh '''

@@ -89,7 +89,7 @@ func (q *Query) buildTemplate() {
 				return "BYTEA"
 			case cockroachdb:
 				return "BYTES"
-			case mysql, tidb:
+			case mysql:
 				return "BLOB"
 			case sqlserver:
 				return "VARBINARY(max)"
@@ -100,7 +100,7 @@ func (q *Query) buildTemplate() {
 		"datetime": func() string {
 			// date + time with precision to milliseconds
 			switch dbType {
-			case mysql, tidb:
+			case mysql:
 				return "DATETIME(5)"
 			case sqlite:
 				return "DATETIME"
@@ -115,7 +115,7 @@ func (q *Query) buildTemplate() {
 		"text": func() string {
 			// case sensitive unicode with no limit on size
 			switch dbType {
-			case sqlite, postgres, cockroachdb, mysql, tidb:
+			case sqlite, postgres, cockroachdb, mysql:
 				return "TEXT"
 			case sqlserver:
 				return "nvarchar(max)"
@@ -126,7 +126,7 @@ func (q *Query) buildTemplate() {
 		"varchar": func(size int) string {
 			// case sensitive unicode with size limits
 			switch dbType {
-			case postgres, cockroachdb, mysql, tidb:
+			case postgres, cockroachdb, mysql:
 				return fmt.Sprintf("varchar(%d)", size)
 			case sqlite:
 				return "TEXT"
@@ -141,7 +141,7 @@ func (q *Query) buildTemplate() {
 			switch dbType {
 			case sqlite:
 				return "int"
-			case postgres, mysql, cockroachdb, tidb, sqlserver:
+			case postgres, mysql, cockroachdb, sqlserver:
 				return "bigint"
 			default:
 				panic("Unsupported database type")
@@ -149,7 +149,7 @@ func (q *Query) buildTemplate() {
 		},
 		"bool": func() string {
 			switch dbType {
-			case postgres, cockroachdb, mysql, tidb:
+			case postgres, cockroachdb, mysql:
 				return "boolean"
 			case sqlserver:
 				return "bit"
@@ -169,8 +169,6 @@ func (q *Query) buildTemplate() {
 				return "mysql"
 			case cockroachdb:
 				return "cockroachdb"
-			case tidb:
-				return "tidb"
 			case sqlserver:
 				return "sqlserver"
 			default:
@@ -188,9 +186,6 @@ func (q *Query) buildTemplate() {
 		},
 		"cockroachdb": func() bool {
 			return dbType == cockroachdb
-		},
-		"tidb": func() bool {
-			return dbType == tidb
 		},
 		"sqlserver": func() bool {
 			return dbType == sqlserver

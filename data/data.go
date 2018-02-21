@@ -26,7 +26,6 @@ const (
 	mysql              // github.com/go-sql-driver/mysql/
 	sqlserver          // github.com/denisenkom/go-mssqldb
 	cockroachdb        // github.com/lib/pq
-	tidb               // github.com/go-sql-driver/mysql/
 )
 
 const databaseName = "lex_library"
@@ -86,9 +85,6 @@ func Init(cfg Config) error {
 	case "cockroachdb":
 		dbType = cockroachdb
 		err = initPostgresAndCDB(cfg)
-	case "tidb":
-		dbType = tidb
-		err = initMySQL(cfg)
 	case "sqlserver":
 		dbType = sqlserver
 		err = initSQLServer(cfg)
