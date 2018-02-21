@@ -8,7 +8,7 @@
 
 <body>
 <div id="login" class="container">
-	<div class="columns is-centered">
+	<div class="columns is-centered pt-5">
 		<div class="column is-one-third">
 			<h1 class="title is-size-3 has-text-centered">Log In to Lex Library</h1>
 			<div class="card">
@@ -17,7 +17,7 @@
 						<div class="field">
 							<label class="label" for="inputUsername">Username</label>
 							<div class="control">
-								<input v-model="username" v-focus v-bind:class="{'is-danger': error}" type="text"
+								<input v-model="username" v-focus :class="{'is-danger': error}" type="text"
 								 class="input" id="inputUsername" placeholder="Enter username">
 							</div>
 							<p v-if="error" v-cloak class="help is-danger">{{error}}</p>
@@ -37,7 +37,7 @@
 								</label>
 							</div>
 						</div>
-						<button type="submit" class="button is-primary is-block">Log In</button>
+						<button type="submit" :class="{'is-loading': loading}" class="button is-primary is-block">Log In</button>
 					</form>
 				</div>
 				

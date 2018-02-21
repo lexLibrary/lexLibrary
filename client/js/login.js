@@ -14,6 +14,7 @@ var vm = new Vue({
             password: '',
             rememberMe: false,
             error: null,
+            loading: false,
         };
     },
     directives: {
@@ -25,6 +26,7 @@ var vm = new Vue({
     },
     methods: {
         login: function(e) {
+			this.loading = true;
             this.error = null;
             e.preventDefault();
             xhr.post("/session", {
@@ -32,6 +34,7 @@ var vm = new Vue({
                     password: this.password,
                 })
                 .then((result) => {
+					this.loading = false;
                     let q = query();
                     if (q.return && q.return.indexOf('/') === 0) {
                         window.location = q.return;
@@ -40,6 +43,7 @@ var vm = new Vue({
                     }
                 })
                 .catch((err) => {
+					this.loading = false;
                     this.error = err.content;
                 });
         }

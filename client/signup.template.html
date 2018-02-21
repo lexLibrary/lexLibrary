@@ -8,7 +8,7 @@
 
 <body>
 <div class="container">
-	<div id="signup" class="columns is-centered">
+	<div id="signup" class="columns is-centered pt-5">
 		<div class="column is-one-third">
 			<h1 class="title has-text-centered">Join Lex Library</h1>
 			<div class="card">
@@ -18,7 +18,7 @@
 							<label class="label" for="inputUsername">Username</label>
 							<div class="control">
 								<input v-model="username" v-focus @blur="validateUsername" @keydown="usernameErr=null" 
-									v-bind:class="{'is-danger': usernameErr}" type="text" class="input" 
+									:class="{'is-danger': usernameErr}" type="text" class="input" 
 									id="inputUsername" placeholder="Enter username">
 							</div>
 							<p v-if="usernameErr" v-cloak class="help is-danger">{{usernameErr}}</p>
@@ -27,7 +27,7 @@
 							<label class="label" for="inputPassword">Password</label>
 							<div class="control">
 								<input v-model="password" @blur="validatePassword" @keydown="passwordErr=null" 
-									v-bind:class="{'is-danger': passwordErr}" type="password" class="input" 
+									:class="{'is-danger': passwordErr}" type="password" class="input" 
 									id="inputPassword"	placeholder="Enter password">
 							</div>
 							<p v-if="passwordErr" v-cloak class="help is-danger">{{passwordErr}}</p>
@@ -35,12 +35,14 @@
 						<div class="field">
 							<div class="control">
 								<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"
-									v-bind:class="{'is-danger': password2Err}"	type="password" class="input" 
+									:class="{'is-danger': password2Err}"	type="password" class="input" 
 									id="inputPassword2" placeholder="Enter password again">
 							</div>
 							<p v-if="password2Err" v-cloak class="help is-danger">{{password2Err}}</p>
 						</div>
-						<button type="submit" id="submit" class="button is-primary is-block">Sign Up</button>
+						<button type="submit" id="submit" :class="{'is-loading': loading}" class="button is-primary is-block">
+							Sign Up
+						</button>
 					</form>
 				</div>
 			</div>

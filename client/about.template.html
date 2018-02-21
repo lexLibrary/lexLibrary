@@ -8,39 +8,97 @@
 
 <body>
 	<div id="main" class="container">
-		<h1>Lex Library</h1>
-		<a v-if="runtime" class="is-pulled-right">Report an issue</a>
+		<h1 class="title">Lex Library</h1>
+		<a v-if="runtime" @click="showModal=true" class="is-pulled-right">Report an issue</a>
 		<p class="">Version: [[.Version]] <small>([[.BuildDate]])</small></p>
 		<div id="attribution">
 			<h2>Credits and Attribution</h2>
 			<hr>
-				<p class="lead">Lex Library is built on open-source software and creative commons resources. These contributions 
+				<p>Lex Library is built on open-source software and creative commons resources. These contributions 
 				are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
 				would not be possible.</p>
-				<p class="lead"><em>Thank you</em></p>
-				<div class="columns is-multiline">
-					<div v-for="a in attribution" class="column is-3">
-						<div class="card">
-							<div class="card-content">
-								<h5 class="title"><a :href="a.url" target="_blank">{{a.name}}</a></h5>
-								<p class="subtitle">({{a.licenseType}})</p>
-								<p>{{a.author}}</p>
-							</div>
+				<p><em>Thank you</em></p>
+				<div class="card-columns pt-4">
+					[[range .Attribution]]
+					<div class="card">
+						<div class="card-content">
+							<h5 class="title"><a href="[[.URL]]" target="_blank">[[.Name]]</a></h5>
+							<p class="subtitle">([[.LicenseType]])</p>
+							<p>[[.Author]]</p>
 						</div>
 					</div>
+					[[end]]
 				</div>
 		</div>
 
-		<div class="modal">
-			<div class="modal-background"></div>
-			<div class="modal-content">
-				<form>
-					<input type="text" class="form-control" placeholder="Enter an issue">
-				</form>
+		<div :class="{'is-active': showModal}" class="modal">
+			<div @click="showModal=false" class="modal-background"></div>
+			<div class="modal-card">
+				<header class="modal-card-head">
+					<p class="modal-card-title">Submit an Issue</p>
+					<button @click="showModal=false" class="delete" aria-label="close"></button>
+				</header>
+				<section class="modal-card-body">
+					<div class="field is-horizontal">
+						<div class="field-label is-normal">
+							<label class="label">Issue Type</label>
+						</div>
+						<div class="field-body">
+							<div class="field">
+								<div class="control">
+									<div class="select">
+										<select v-model="label">
+											<option value="bug">Bug Report</option>
+											<option value="performance">Performance Issue</option>
+											<option value="enhancement">Feature Request</option>
+										</select>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div> <!-- Type -->
+					<div class="field is-horizontal">
+						<div class="field-label is-normal">
+							<label class="label">Subject</label>
+						</div>
+						<div class="field-body">
+							<div class="field">
+								<div class="control">
+									<input v-model="subject" class="input" type="text" placeholder="Write a few words describing the issue">
+								</div>
+							</div>
+						</div>
+					</div> <!-- Subject -->
+					<div class="field is-horizontal">
+						<div class="field-label"></div>
+						<div class="field-body">
+							<p v-if="label==='bug'" class="help">Describe in detail the steps needed to replicate the issue, including
+							what result was expected and what result occurred.</p>
+							<p v-if="label==='enhancement'" class="help">Describe in detail a single feature that you think will 
+							improve Lex Library.</p>
+							<p v-if="label==='performance'" class="help">Describe in detail what actions where taken that resulted in
+							poor performance.</p>
+						</div>
+					</div>
+					<div class="field is-horizontal">
+						<div class="field-label is-normal">
+							<label class="label">Description</label>
+						</div>
+						<div class="field-body">
+							<div class="field">
+								<div class="control">
+									<textarea v-model="description" class="textarea" rows="10" placeholder="Describe the issue in detail">
+									</textarea>
+								</div>
+							</div>
+						</div>
+					</div> <!-- Body -->
 
+				</section>
+				<footer class="modal-card-foot">
+					<a :href="issueURL" target="_blank" class="button is-primary">Preview on Github</a>
+				</footer>
 			</div>
-			<button class="modal-close is-large" aria-label="close"></button>
-			<button type="button" class="button">Close</button>
 		</div>
 
 	</div>
@@ -49,5 +107,4 @@
 <script type="application/json" id="payload">[[json .Runtime]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/about.js"></script>
-
 </html>

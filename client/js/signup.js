@@ -12,6 +12,7 @@ var vm = new Vue({
             usernameErr: null,
             passwordErr: null,
             password2Err: null,
+            loading: false,
         };
     },
     directives: {
@@ -40,6 +41,7 @@ var vm = new Vue({
             if (this.usernameErr || this.passwordErr || this.password2Err) {
                 return;
             }
+            this.loading = true;
 
             xhr.post("/password", {
                     password: this.password
@@ -54,10 +56,12 @@ var vm = new Vue({
                             window.location = '/';
                         })
                         .catch((err) => {
+						this.loading = false;
                             this.usernameErr = err.content;
                         });
                 })
                 .catch((err) => {
+                    this.loading = false;
                     this.passwordErr = err.content;
                 });
         },

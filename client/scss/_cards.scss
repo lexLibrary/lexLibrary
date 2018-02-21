@@ -1,0 +1,38 @@
+.card {
+	border-radius: $radius;
+}
+
+.card-columns {
+	.card {
+    margin-bottom: $column-gap;
+		margin-top: 1px; // fixes issue with drop shadow
+  } 
+
+	@media (min-width: $tablet) {
+    column-count: 3;
+    column-gap: $column-gap;
+  }
+
+	@media (min-width: $desktop) {
+    column-count: 4;
+    column-gap: $column-gap*2;
+		.card {
+			margin-bottom: $column-gap*2;
+		margin-top: 1px; // fixes issue with drop shadow
+		}
+  }
+
+	@media (min-width: $widescreen) {
+    column-count: 5;
+    column-gap: $column-gap*2;
+		.card {
+			margin-bottom: $column-gap*2;
+			margin-top: 1px; // fixes issue with drop shadow
+		}
+  }
+
+	.card {
+		display: inline-block; // Don't let them vertically span multiple columns
+		width: 100%; // Don't let their width change
+	}
+}
