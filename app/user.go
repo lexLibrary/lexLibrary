@@ -88,13 +88,13 @@ var (
 		where id = {{arg "id"}} and version = {{arg "version"}}`)
 	sqlUserUpdateAdmin = data.NewQuery(`update users set admin = {{arg "admin"}}, version = version + 1
 		where id = {{arg "id"}} and version = {{arg "version"}}`)
-	sqlUserUpdatePassword = data.NewQuery(`update users 
-		set 	password = {{arg "password"}}, 
-			password_version = {{arg "password_version"}},
-			password_expiration = {{arg "password_expiration"}},
-			version = version + 1 
-		where id = {{arg "id"}} 
-		and version = {{arg "version"}}`)
+	// sqlUserUpdatePassword = data.NewQuery(`update users
+	// 	set 	password = {{arg "password"}},
+	// 		password_version = {{arg "password_version"}},
+	// 		password_expiration = {{arg "password_expiration"}},
+	// 		version = version + 1
+	// 	where id = {{arg "id"}}
+	// 	and version = {{arg "version"}}`)
 	sqlUserUpdateName = data.NewQuery(`update users set first_name = {{arg "first_name"}}, 
 		last_name = {{arg "last_name"}}, version = version + 1 where id = {{arg "id"}} 
 		and version = {{arg "version"}}`)
