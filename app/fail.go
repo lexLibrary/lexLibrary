@@ -21,7 +21,7 @@ func (f *Fail) Error() string {
 }
 
 // NewFailure creates a new failure with a default status of 400
-func NewFailure(message string, args ...interface{}) error {
+func NewFailure(message string, args ...interface{}) *Fail {
 	return &Fail{
 		Message:    fmt.Sprintf(message, args...),
 		HTTPStatus: http.StatusBadRequest,
@@ -29,7 +29,7 @@ func NewFailure(message string, args ...interface{}) error {
 }
 
 // NewFailureWithStatus creates a new failure with the passed in http status code
-func NewFailureWithStatus(message string, httpStatus int) error {
+func NewFailureWithStatus(message string, httpStatus int) *Fail {
 	return &Fail{
 		Message:    message,
 		HTTPStatus: httpStatus,
@@ -38,7 +38,7 @@ func NewFailureWithStatus(message string, httpStatus int) error {
 
 // FailureFromErr returns a new failure based on the passed in error
 // if passed in error is nil, then nil is returned
-func FailureFromErr(err error, httpStatus int) error {
+func FailureFromErr(err error, httpStatus int) *Fail {
 	if err == nil {
 		return nil
 	}
@@ -60,11 +60,17 @@ func IsFail(err error) bool {
 }
 
 // NotFound creates a NotFound failure that returns to the user as a 404
-func NotFound(message string, args ...interface{}) error {
+func NotFound(message string, args ...interface{}) *Fail {
 	return NewFailureWithStatus(fmt.Sprintf(message, args...), http.StatusNotFound)
 }
 
 // Unauthorized returns an Unauthorized error for when a user doesn't have access to a resource
-func Unauthorized(message string, args ...interface{}) error {
+func Unauthorized(message string, args ...interface{}) *Fail {
 	return NewFailureWithStatus(fmt.Sprintf(message, args...), http.StatusUnauthorized)
+}
+
+// Conflict is the error retured when a record is being updated, but it's not the most current version
+// of the record (409)
+func Conflict(message string, args ...interface{}) *Fail {
+	return NewFailureWithStatus(fmt.Sprintf(message, args...), http.StatusConflict)
 }

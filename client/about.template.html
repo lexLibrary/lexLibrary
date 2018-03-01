@@ -8,12 +8,12 @@
 
 <body>
 	<div id="main" class="container">
-		<h1 class="title">Lex Library</h1>
-		<a v-if="runtime" @click="showModal=true" class="is-pulled-right">Report an issue</a>
-		<p class="">Version: [[.Version]] <small>([[.BuildDate]])</small></p>
+		<h1 class="title is-2 pt-4">Lex Library</h1>
+		<a v-if="runtime" v-cloak @click="showModal=true" class="is-pulled-right">Report an issue</a>
+		<h2 class="subtitle">Version: [[.Version]] <small>([[.BuildDate]])</small></h2>
+		<hr>
 		<div id="attribution">
-			<h2>Credits and Attribution</h2>
-			<hr>
+			<h2 class="title is-4">Credits and Attribution</h2>
 				<p>Lex Library is built on open-source software and creative commons resources. These contributions 
 				are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
 				would not be possible.</p>
@@ -22,8 +22,8 @@
 					[[range .Attribution]]
 					<div class="card">
 						<div class="card-content">
-							<h5 class="title"><a href="[[.URL]]" target="_blank">[[.Name]]</a></h5>
-							<p class="subtitle">([[.LicenseType]])</p>
+							<h1 class="title is-4"><a href="[[.URL]]" target="_blank">[[.Name]]</a></h1>
+							<h2 class="subtitle is-6">([[.LicenseType]])</h2>
 							<p>[[.Author]]</p>
 						</div>
 					</div>
@@ -104,7 +104,10 @@
 	</div>
 </body>
 
-<script type="application/json" id="payload">[[json .Runtime]]</script>
+<script type="application/json" id="runtime">[[json .Runtime]]</script>
+<script type="application/json" id="browser">[[json .Browser]]</script>
+<script type="application/json" id="version">[[.Version]]</script>
+<script type="application/json" id="buildDate">[[.BuildDate]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/about.js"></script>
 </html>

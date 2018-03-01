@@ -11,7 +11,7 @@ import (
 
 func TestFail(t *testing.T) {
 	t.Run("New Failure", func(t *testing.T) {
-		err := app.NewFailure("New Failure")
+		err := error(app.NewFailure("New Failure"))
 
 		if !app.IsFail(err) {
 			t.Fatalf("Error is not a failure")
@@ -24,7 +24,7 @@ func TestFail(t *testing.T) {
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
-		err := app.NotFound("Not Found Test")
+		err := error(app.NotFound("Not Found Test"))
 		fail, ok := err.(*app.Fail)
 		if !ok {
 			t.Fatalf("Error is not a failure")
@@ -35,7 +35,7 @@ func TestFail(t *testing.T) {
 		}
 	})
 	t.Run("Unauthorized", func(t *testing.T) {
-		err := app.Unauthorized("Unauthorized Test")
+		err := error(app.Unauthorized("Unauthorized Test"))
 		fail, ok := err.(*app.Fail)
 		if !ok {
 			t.Fatalf("Error is not a failure")

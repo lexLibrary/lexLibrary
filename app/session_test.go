@@ -16,8 +16,7 @@ func TestSession(t *testing.T) {
 	password := "ODSjflaksjd$hiasfd323"
 	var u *app.User
 
-	reset := func() {
-		t.Helper()
+	reset := func(t *testing.T) {
 		_, err := data.NewQuery("delete from sessions").Exec()
 		if err != nil {
 			t.Fatalf("Error emptying sessions table before running tests: %s", err)
@@ -34,7 +33,7 @@ func TestSession(t *testing.T) {
 	}
 
 	t.Run("New", func(t *testing.T) {
-		reset()
+		reset(t)
 		expires := time.Time{}
 		ipAddress := "127.0.0.1"
 		userAgent := "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:57.0) Gecko/20100101 Firefox/57.0"
@@ -59,7 +58,7 @@ func TestSession(t *testing.T) {
 	})
 
 	t.Run("Logout", func(t *testing.T) {
-		reset()
+		reset(t)
 		s, err := app.SessionNew(u, time.Time{}, "127.0.0.1", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
@@ -84,7 +83,7 @@ func TestSession(t *testing.T) {
 	})
 
 	t.Run("User", func(t *testing.T) {
-		reset()
+		reset(t)
 		s, err := app.SessionNew(u, time.Time{}, "127.0.0.1", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
@@ -101,7 +100,7 @@ func TestSession(t *testing.T) {
 
 	})
 	t.Run("Reset CSRF", func(t *testing.T) {
-		reset()
+		reset(t)
 		s, err := app.SessionNew(u, time.Time{}, "127.0.0.1", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
@@ -127,8 +126,9 @@ func TestSession(t *testing.T) {
 	})
 
 	t.Run("Login", func(t *testing.T) {
-		reset()
-		_, err := app.Login(username, password)
+		reset(t)
+		var err error
+		u, err = app.Login(username, password)
 		if err != nil {
 			t.Fatalf("Error logging in: %s", err)
 		}
@@ -160,13 +160,13 @@ func TestSession(t *testing.T) {
 
 		_, err = app.Login(username, password)
 		if err != app.ErrLogonFailure {
-			t.Fatalf("Logging in with inactive user was not a login failure: %s", err)
+			t.Fatalf("Logging in with inactive user was not a login failure: %v", err)
 		}
 
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		reset()
+		reset(t)
 		s, err := app.SessionNew(u, time.Now().AddDate(0, 0, 1), "", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
@@ -193,6 +193,23 @@ func TestSession(t *testing.T) {
 
 		if err != app.ErrSessionInvalid {
 			t.Fatalf("Session is not invalid when logged out")
+		}
+
+	})
+
+	t.Run("Login with Expired Password", func(t *testing.T) {
+		reset(t)
+
+		_, err := data.NewQuery(`update users set password_expiration = {{arg "expire"}} where id = {{arg "id"}}`).
+			Exec(sql.Named("expire", time.Now().AddDate(0, 0, -1)), sql.Named("id", u.ID))
+		if err != nil {
+			t.Fatalf("Error expiring user's password: %s", err)
+		}
+
+		_, err = app.Login(username, password)
+		if err != app.ErrPasswordExpired {
+			t.Fatalf("Logging in with an expired password did not result in correct error. Wanted %s, got %s",
+				app.ErrPasswordExpired, err)
 		}
 
 	})

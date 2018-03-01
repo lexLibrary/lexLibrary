@@ -9,10 +9,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var schemaVersionInsert = NewQuery(`insert into schema_versions (version, rollback_script) 
-	values ({{arg "version"}}, {{arg "rollback"}})`)
+var schemaVersionInsert = NewQuery(`insert into schema_versions (version) values ({{arg "version"}})`)
 
-func ensureSchema(allowRollback bool) {
+func ensureSchema() {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one
 
 	err := ensureSchemaTable()
@@ -20,7 +19,7 @@ func ensureSchema(allowRollback bool) {
 		log.Fatalf("Error ensuring schema table: %s", err)
 	}
 
-	err = ensureSchemaVersion(allowRollback)
+	err = ensureSchemaVersion()
 	if err != nil {
 		log.Fatalf("Error ensuring schema versions: %s", err)
 	}
@@ -41,14 +40,12 @@ func ensureSchemaTable() error {
 		if err != sql.ErrNoRows {
 			return errors.Wrap(err, "Looking for schema_versions table")
 		}
-		_, err = schemaVersions[0].update.Exec()
+		err = schemaVersions[0].exec()
 		if err != nil {
 			return errors.Wrap(err, "Creating schema_versions table")
 		}
 
-		_, err := schemaVersionInsert.Exec(
-			sql.Named("version", 0),
-			sql.Named("rollback", schemaVersions[0].rollback.Statement()))
+		_, err := schemaVersionInsert.Exec(sql.Named("version", 0))
 		if err != nil {
 			return errors.Wrap(err, "Inserting first schema version")
 		}
@@ -56,15 +53,13 @@ func ensureSchemaTable() error {
 	return nil
 }
 
-func ensureSchemaVersion(allowRollback bool) error {
+func ensureSchemaVersion() error {
 	currentVer := len(schemaVersions) - 1
 
 	dbVer := 0
 	err := db.QueryRow(`select max(version) from schema_versions`).Scan(&dbVer)
 	if err == sql.ErrNoRows {
-		_, err := schemaVersionInsert.Exec(
-			sql.Named("version", 0),
-			sql.Named("rollback", schemaVersions[0].rollback.Statement()))
+		_, err := schemaVersionInsert.Exec(sql.Named("version", 0))
 		if err != nil {
 			return errors.Wrap(err, "Inserting first schema version")
 		}
@@ -80,42 +75,18 @@ func ensureSchemaVersion(allowRollback bool) error {
 	if dbVer < currentVer {
 		dbVer++
 		log.Printf("Updating database schema to version %d", dbVer)
-		_, err = schemaVersions[dbVer].update.Exec()
+		err = schemaVersions[dbVer].exec()
 		if err != nil {
 			return errors.Wrapf(err, "Updating schema to version %d", dbVer)
 		}
 
-		_, err = schemaVersionInsert.Exec(
-			sql.Named("version", dbVer),
-			sql.Named("rollback", schemaVersions[dbVer].rollback.Statement()))
+		_, err = schemaVersionInsert.Exec(sql.Named("version", dbVer))
 		if err != nil {
 			return errors.Wrapf(err, "Inserting schema version %d", dbVer)
 		}
 
-		return ensureSchemaVersion(allowRollback)
+		return ensureSchemaVersion()
 	}
-	// check for forced rollback
-	if allowRollback {
-		log.Printf("Rolling back database schema to version %d", dbVer)
-		rollback := ""
-		err = NewQuery(`select rollback_script from schema_versions where version = {{arg "version"}}`).QueryRow(
-			sql.Named("version", dbVer)).Scan(&rollback)
-		if err != nil {
-			return errors.Wrapf(err, "Looking for rollback script for version %d", dbVer)
-		}
 
-		_, err = db.Exec(rollback)
-		if err != nil {
-			return errors.Wrapf(err, "Executing rollback script for version %d", dbVer)
-		}
-
-		_, err = NewQuery(`delete from schema_versions where version = {{arg "version"}}`).Exec(
-			sql.Named("version", dbVer))
-		if err != nil {
-			return errors.Wrapf(err, "Removing schema version from database for version %d", dbVer)
-		}
-		return ensureSchemaVersion(allowRollback)
-	}
 	return errors.Errorf("Database schema version (%d) is newer than the code schema version (%d)", dbVer, currentVer)
-
 }

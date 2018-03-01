@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
+	"github.com/mattn/go-sqlite3" // register sqlite3
 	"github.com/pkg/errors"
 )
 
@@ -97,6 +99,21 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
+		"defaultDateTime": func() string {
+			t := time.Time{}
+			switch dbType {
+			case mysql:
+				return t.Format("2006-01-02 15:04:05.000")
+			case sqlite:
+				return t.Format(sqlite3.SQLiteTimestampFormats[0])
+			case postgres, cockroachdb:
+				return t.Format(time.RFC3339)
+			case sqlserver:
+				return t.Format(time.RFC3339)
+			default:
+				panic("Unsupported database type")
+			}
+		},
 		"datetime": func() string {
 			// date + time with precision to milliseconds
 			switch dbType {
@@ -159,6 +176,16 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
+		"defaultBool": func() string {
+			switch dbType {
+			case mysql, postgres, cockroachdb:
+				return "false"
+			case sqlite, sqlserver:
+				return "0"
+			default:
+				panic("Unsupported database type")
+			}
+		},
 		"db": func() string {
 			switch dbType {
 			case sqlite:
@@ -193,9 +220,13 @@ func (q *Query) buildTemplate() {
 	}
 
 	buff := bytes.NewBuffer([]byte{})
-	err := template.Must(template.New("").Funcs(funcs).Parse(q.statement)).Execute(buff, nil)
+	tmpl, err := template.New("").Funcs(funcs).Parse(q.statement)
 	if err != nil {
-		panic(fmt.Errorf("Error building query template: %s", err))
+		panic(fmt.Errorf("Error parsing query template '%s': %s", q.statement, err))
+	}
+	err = tmpl.Execute(buff, nil)
+	if err != nil {
+		panic(fmt.Errorf("Error building query template'%s': %s", q.statement, err))
 	}
 
 	q.statement = strings.TrimSpace(buff.String())

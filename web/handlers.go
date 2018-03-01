@@ -173,14 +173,14 @@ func (t *templateHandler) loadTemplates() {
 
 	// change delims to work with Vuejs
 	t.template = template.Must(template.New("").Funcs(map[string]interface{}{
-		"json": func(v interface{}) (string, error) {
+		"json": func(v interface{}) (template.JS, error) {
 			if v == nil {
 				return "", nil
 			}
 
 			bytes, err := json.Marshal(v)
 
-			return string(bytes), err
+			return template.JS(bytes), err
 		},
 	}).Delims("[[", "]]").Parse(tmpl))
 }

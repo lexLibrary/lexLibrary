@@ -2,10 +2,12 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/mssola/user_agent"
 	"github.com/pkg/errors"
 )
 
@@ -17,6 +19,15 @@ type attribute struct {
 	LicenseURL  string
 }
 
+type browserInfo struct {
+	Browser      string
+	Engine       string
+	Localization string
+	IsMobile     bool
+	OS           string
+	Platform     string
+}
+
 func aboutTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	var u *app.User
 	var err error
@@ -26,16 +37,30 @@ func aboutTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 			return
 		}
 	}
+
+	ua := user_agent.New(r.UserAgent())
+	browserName, browserVersion := ua.Browser()
+	engineName, engineVersion := ua.Engine()
+
 	err = w.(*templateWriter).execute(struct {
 		Version     string
 		BuildDate   string
 		Runtime     *app.RuntimeInfo
 		Attribution []attribute
+		Browser     browserInfo
 	}{
 		Version:     app.Version(),
-		BuildDate:   app.BuildDate().Format(time.Stamp),
+		BuildDate:   app.BuildDate().Format(time.RFC1123),
 		Runtime:     app.Runtime(u),
 		Attribution: attribution,
+		Browser: browserInfo{
+			Browser:      fmt.Sprintf("%s (%s)", browserName, browserVersion),
+			Engine:       fmt.Sprintf("%s (%s)", engineName, engineVersion),
+			Localization: ua.Localization(),
+			IsMobile:     ua.Mobile(),
+			OS:           ua.OS(),
+			Platform:     ua.Platform(),
+		},
 	})
 
 	if err != nil {
@@ -86,12 +111,6 @@ var attribution = []attribute{
 		Author:      "hwaci and contributors",
 		LicenseType: "Public Domain",
 		LicenseURL:  "https://www.sqlite.org/copyright.html",
-	}, attribute{
-		Name:        "TiDB",
-		URL:         "https://pingcap.com/en/",
-		Author:      "PingCAP, Inc.",
-		LicenseType: "Apache License, Version 2.0",
-		LicenseURL:  "https://github.com/pingcap/tidb/blob/master/LICENSE",
 	}, attribute{
 		Name:        "go-mssqldb",
 		URL:         "https://github.com/denisenkom/go-mssqldb",
@@ -158,5 +177,12 @@ var attribution = []attribute{
 		Author:      "Rich Harris and contributors",
 		LicenseType: "MIT",
 		LicenseURL:  "https://github.com/Rich-Harris/buble/blob/master/LICENSE.md",
+	},
+	attribute{
+		Name:        "user_agent",
+		URL:         "https://github.com/mssola/user_agent",
+		Author:      "Miquel Sabaté Solà",
+		LicenseType: "MIT",
+		LicenseURL:  "https://github.com/mssola/user_agent/blob/master/LICENSE",
 	},
 }

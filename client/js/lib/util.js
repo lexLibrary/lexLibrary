@@ -12,8 +12,19 @@ function payload(id = 'payload') {
         return null;
     }
 
-    if (el.innerHTML.trim() === "") {
+    if (el.innerHTML.trim() === '') {
         return null;
     }
-    return JSON.parse(el.innerHTML);
+
+    let result = null;
+    try {
+        result = JSON.parse(el.innerHTML);
+    } catch (err) {
+        result = null;
+    }
+    return result;
+}
+
+export function browserInfo() {
+
 }

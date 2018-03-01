@@ -198,6 +198,12 @@ func sessionPost(w http.ResponseWriter, r *http.Request, c ctx) {
 	}
 
 	u, err := app.Login(*input.Username, *input.Password)
+	if err == app.ErrPasswordExpired {
+		respond(w, success(map[string]bool{
+			"expired": true,
+		}))
+		return
+	}
 	if errHandled(err, w, r) {
 		return
 	}

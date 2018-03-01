@@ -36,7 +36,8 @@ var (
 	// ErrSessionInvalid is returned when a sesssion is invalid or expired
 	ErrSessionInvalid = NewFailure("Invalid or expired session")
 	// ErrLogonFailure is when a user fails a login attempt
-	ErrLogonFailure = NewFailure("Invalid user and / or password")
+	ErrLogonFailure    = NewFailure("Invalid user and / or password")
+	ErrPasswordExpired = NewFailure("Your password has expired.  Please set a new one.")
 )
 
 var (
@@ -92,6 +93,9 @@ func Login(username string, password string) (*User, error) {
 		err = passwordVersions[u.PasswordVersion].compare(password, u.Password)
 		if err != nil {
 			return nil, err
+		}
+		if u.PasswordExpiration.Valid && u.PasswordExpiration.Time.Before(time.Now()) {
+			return nil, ErrPasswordExpired
 		}
 	} else {
 		return nil, errors.Errorf("The user %s is stored in the database with an invalid authentication type."+
@@ -202,6 +206,7 @@ func (s *Session) User() (*User, error) {
 		&u.FirstName,
 		&u.LastName,
 		&u.AuthType,
+		&u.PasswordExpiration,
 		&u.Active,
 		&u.Version,
 		&u.Updated,

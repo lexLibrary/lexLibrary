@@ -15,7 +15,7 @@ import (
 
 func TestUser(t *testing.T) {
 	var admin *app.User
-	reset := func() {
+	reset := func(t *testing.T) {
 		t.Helper()
 		_, err := data.NewQuery("delete from users").Exec()
 		if err != nil {
@@ -37,7 +37,7 @@ func TestUser(t *testing.T) {
 	}
 
 	t.Run("New", func(t *testing.T) {
-		reset()
+		reset(t)
 		username := "newusęr"
 
 		u, err := app.UserNew(username, "ODSjflaksjdfhiasfd323")
@@ -124,7 +124,7 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("Invalid Name", func(t *testing.T) {
-		reset()
+		reset(t)
 		firstname := fmt.Sprintf("%70s", "firstname")
 		lastname := fmt.Sprintf("%70s", "firstname")
 
@@ -151,7 +151,7 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("Invalid Username", func(t *testing.T) {
-		reset()
+		reset(t)
 		_, err := app.UserNew("", "ODSjflaksjdfhiasfd323")
 		if err == nil {
 			t.Fatalf("No error adding user without a username")
@@ -177,7 +177,7 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("Duplicate Username", func(t *testing.T) {
-		reset()
+		reset(t)
 		existing, err := app.UserNew("existing", "ODSjflaksjdfhiasfd323")
 		if err != nil {
 			t.Fatalf("Error adding existing user: %s", err)
@@ -203,7 +203,7 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("Common Password", func(t *testing.T) {
-		reset()
+		reset(t)
 		err := app.SettingSet(admin, "BadPasswordCheck", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
@@ -218,7 +218,7 @@ func TestUser(t *testing.T) {
 		}
 	})
 	t.Run("Password Special", func(t *testing.T) {
-		reset()
+		reset(t)
 		err := app.SettingSet(admin, "PasswordRequireSpecial", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
@@ -245,7 +245,7 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("Password Number", func(t *testing.T) {
-		reset()
+		reset(t)
 		err := app.SettingSet(admin, "PasswordRequireNumber", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
@@ -271,7 +271,7 @@ func TestUser(t *testing.T) {
 		}
 	})
 	t.Run("Password Mixed Case", func(t *testing.T) {
-		reset()
+		reset(t)
 		err := app.SettingSet(admin, "PasswordRequireMixedCase", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
@@ -306,7 +306,7 @@ func TestUser(t *testing.T) {
 		}
 	})
 	t.Run("Password Length", func(t *testing.T) {
-		reset()
+		reset(t)
 		err := app.SettingSet(admin, "PasswordMinLength", 8)
 		if err != nil {
 			t.Fatalf("Error updating setting")
@@ -346,7 +346,7 @@ func TestUser(t *testing.T) {
 		}
 	})
 	t.Run("SetActive", func(t *testing.T) {
-		reset()
+		reset(t)
 		username := "testuser"
 		password := "reallygoodlongpassword"
 
@@ -381,7 +381,7 @@ func TestUser(t *testing.T) {
 
 	})
 	t.Run("SetName", func(t *testing.T) {
-		reset()
+		reset(t)
 		username := "testuser"
 		password := "reallygoodlongpassword"
 
@@ -413,7 +413,7 @@ func TestUser(t *testing.T) {
 		}
 	})
 	t.Run("UserGet", func(t *testing.T) {
-		reset()
+		reset(t)
 		username := "testuser"
 		password := "reallygoodlongpassword"
 
@@ -452,7 +452,7 @@ func TestUser(t *testing.T) {
 
 	})
 	t.Run("SetAdmin", func(t *testing.T) {
-		reset()
+		reset(t)
 		username := "testuser"
 		password := "reallygoodlongpassword"
 
@@ -494,7 +494,7 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("Public Signups Disabled", func(t *testing.T) {
-		reset()
+		reset(t)
 		err := app.SettingSet(admin, "AllowPublicSignups", false)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
@@ -508,5 +508,40 @@ func TestUser(t *testing.T) {
 		}
 	})
 
-	reset()
+	t.Run("Versions", func(t *testing.T) {
+		reset(t)
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user for SetName testing")
+		}
+
+		if u.Version != 0 {
+			t.Fatalf("Incorrect first version of the user record. Got %d, wanted %d", u.Version, 0)
+		}
+
+		old, err := app.UserGet(u.Username, u)
+		if err != nil {
+			t.Fatalf("Error getting user: %s", err)
+		}
+
+		err = u.SetName("version", "one", u)
+		if err != nil {
+			t.Fatalf("Error setting name: %s", err)
+		}
+
+		if u.Version != 1 {
+			t.Fatalf("Incorrect first version of the user record. Got %d, wanted %d", u.Version, 1)
+		}
+
+		err = old.SetName("version", "old", u)
+		if err != app.ErrUserConflict {
+			t.Fatalf("Updating an older version of a user did not return a Conflict")
+		}
+
+	})
+
+	reset(t)
 }

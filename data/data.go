@@ -5,6 +5,7 @@ package data
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"log"
 	"net/url"
@@ -16,6 +17,7 @@ import (
 	mysqlDriver "github.com/go-sql-driver/mysql" // register mysql
 	_ "github.com/lib/pq"                        // register postgres
 	_ "github.com/mattn/go-sqlite3"              // register sqlite3
+
 	"github.com/pkg/errors"
 )
 
@@ -50,8 +52,6 @@ type Config struct {
 	MaxIdleConnections    int
 	MaxOpenConnections    int
 	MaxConnectionLifetime string
-
-	AllowSchemaRollback bool
 }
 
 // DefaultConfig returns the default configuration for the data layer
@@ -111,7 +111,7 @@ func Init(cfg Config) error {
 	db.SetMaxIdleConns(cfg.MaxIdleConnections)
 	db.SetMaxOpenConns(cfg.MaxOpenConnections)
 
-	ensureSchema(cfg.AllowSchemaRollback)
+	ensureSchema()
 
 	return err
 }
@@ -320,4 +320,42 @@ func initSQLServer(cfg Config) error {
 	// db connection is pointing at a specific database, use as lexLibrary DB
 
 	return nil
+}
+
+// NullTime represents a time.Time that may be null. NullTime implements the
+// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.NullString.
+type NullTime struct {
+	Time  time.Time
+	Valid bool // Valid is true if Time is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (nt *NullTime) Scan(value interface{}) error {
+	nt.Time, nt.Valid = value.(time.Time)
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (nt NullTime) Value() (driver.Value, error) {
+	if !nt.Valid {
+		return nil, nil
+	}
+	return nt.Time, nil
+}
+
+// MarshalJSON implements the JSON interface for NullTime
+func (nt NullTime) MarshalJSON() ([]byte, error) {
+	if !nt.Valid {
+		return []byte("null"), nil
+	}
+	return nt.Time.MarshalJSON()
+}
+
+// UnmarshalJSON implements the JSON interface for NullTime
+func (nt *NullTime) UnmarshalJSON(data []byte) error {
+	if data == nil {
+		nt.Valid = false
+	}
+	return nt.Time.UnmarshalJSON(data)
 }

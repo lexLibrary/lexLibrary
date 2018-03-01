@@ -24,8 +24,7 @@ func TestSetting(t *testing.T) {
 		t.Fatalf("Error setting up admin user: %s", err)
 	}
 
-	reset := func() {
-		t.Helper()
+	reset := func(t *testing.T) {
 		_, err := data.NewQuery("delete from settings").Exec()
 		if err != nil {
 			t.Fatalf("Error emptying settings table before running tests: %s", err)
@@ -34,7 +33,7 @@ func TestSetting(t *testing.T) {
 	}
 
 	t.Run("Default", func(t *testing.T) {
-		reset()
+		reset(t)
 		setting, err := app.SettingDefault("AllowPublicDocuments")
 		if err != nil {
 			t.Fatalf("Error getting setting default")
@@ -174,7 +173,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Settings List", func(t *testing.T) {
-		reset()
+		reset(t)
 
 		settings, err := app.Settings(admin)
 		if err != nil {
@@ -220,7 +219,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Must", func(t *testing.T) {
-		reset()
+		reset(t)
 		id := "AllowPublicDocuments"
 		s := app.SettingMust(id)
 		if s.ID != id {
@@ -249,7 +248,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Settings with options", func(t *testing.T) {
-		reset()
+		reset(t)
 
 		err := app.SettingSet(admin, "AuthenticationType", "bad value")
 		if err == nil {
@@ -263,7 +262,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Setting with validate func", func(t *testing.T) {
-		reset()
+		reset(t)
 
 		err := app.SettingSet(admin, "PasswordMinLength", 3)
 		if err == nil {
@@ -272,7 +271,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Setting Triggers", func(t *testing.T) {
-		reset()
+		reset(t)
 		got := 0
 		app.SettingTrigger("PasswordMinLength", func(value interface{}) {
 			got = value.(int)

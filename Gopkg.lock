@@ -81,6 +81,12 @@
   revision = "06020f85339e21b2478f756a78e295255ffa4d6a"
 
 [[projects]]
+  name = "github.com/mssola/user_agent"
+  packages = ["."]
+  revision = "85b2f5798558a46fc23443c596e781712f4b7792"
+  version = "v0.4.1"
+
+[[projects]]
   name = "github.com/pelletier/go-toml"
   packages = ["."]
   revision = "16398bac157da96aa88f98a2df640c7f32af1da2"
@@ -187,6 +193,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e31635485598212d7d8397b4f701c642e06f605519811a21572bd6e6c6e24f05"
+  inputs-digest = "ea1438ce44903a837a64b37810605e096be7fee65ec6989b6ec2ca77ca493e2d"
   solver-name = "gps-cdcl"
   solver-version = 1

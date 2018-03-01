@@ -42,8 +42,3 @@ Data:
   # MaxIdleConnections: 10
   # MaxOpenConnections: 10
   # MaxConnectionLifetime: 60s
-
-  ## AllowSchemaRollback will rollback the database schema to the version matching the currently running
-  ## Lex Library Code.  Setting this to true WILL LOSE DATA to get the database version to match the 
-  ## software version.  Backup your data before setting to true
-  # AllowSchemaRollback: false
