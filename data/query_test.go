@@ -537,7 +537,5 @@ func TestDataTypes(t *testing.T) {
 		testDefaultNull(t)
 	})
 
-	//TODO: NullTime testing
-
 	dropTable(t)
 }

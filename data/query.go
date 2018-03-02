@@ -176,6 +176,26 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
+		"dbTrue": func() string {
+			switch dbType {
+			case mysql, postgres, cockroachdb:
+				return "true"
+			case sqlite, sqlserver:
+				return "1"
+			default:
+				panic("Unsupported database type")
+			}
+		},
+		"dbFalse": func() string {
+			switch dbType {
+			case mysql, postgres, cockroachdb:
+				return "false"
+			case sqlite, sqlserver:
+				return "0"
+			default:
+				panic("Unsupported database type")
+			}
+		},
 		"defaultBool": func() string {
 			switch dbType {
 			case mysql, postgres, cockroachdb:

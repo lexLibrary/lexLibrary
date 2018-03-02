@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/lexLibrary/lexLibrary/files"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -19,6 +20,9 @@ type passworder interface {
 	hash(password string) ([]byte, error)
 	compare(password string, hash []byte) error // nil on success, err on failure
 }
+
+// ErrPasswordMismatch is the error returned when password hashes don't match
+var ErrPasswordMismatch = errors.New("Incorrect password")
 
 // index of the passwordVersions array is the version of the password set in users.password_version
 var passwordVersions = []passworder{

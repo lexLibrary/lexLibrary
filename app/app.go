@@ -8,6 +8,7 @@ package app
 
 const maxRows = 10000
 
+// Init initializes the application layer
 func Init() error {
 	err := settingTriggerInit()
 	if err != nil {

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
-	"github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -40,10 +39,10 @@ const (
 	UserMaxNameLength = 64 // This is pretty arbitrary but there should probably be some limit
 )
 
-// ErrNotFound is when a user could not be found
+// ErrUserNotFound is when a user could not be found
 var ErrUserNotFound = NotFound("User Not found")
 
-// ErrUserWrongVersion is when a user is updating an older version of a user record
+// ErrUserConflict is when a user is updating an older version of a user record
 var ErrUserConflict = Conflict("You are not editing the most current version of this user. Please refresh and try again")
 
 var (
@@ -88,13 +87,13 @@ var (
 		where id = {{arg "id"}} and version = {{arg "version"}}`)
 	sqlUserUpdateAdmin = data.NewQuery(`update users set admin = {{arg "admin"}}, version = version + 1
 		where id = {{arg "id"}} and version = {{arg "version"}}`)
-	// sqlUserUpdatePassword = data.NewQuery(`update users
-	// 	set 	password = {{arg "password"}},
-	// 		password_version = {{arg "password_version"}},
-	// 		password_expiration = {{arg "password_expiration"}},
-	// 		version = version + 1
-	// 	where id = {{arg "id"}}
-	// 	and version = {{arg "version"}}`)
+	sqlUserUpdatePassword = data.NewQuery(`update users
+		set 	password = {{arg "password"}},
+			password_version = {{arg "password_version"}},
+			password_expiration = {{arg "password_expiration"}},
+			version = version + 1
+		where id = {{arg "id"}}
+		and version = {{arg "version"}}`)
 	sqlUserUpdateName = data.NewQuery(`update users set first_name = {{arg "first_name"}}, 
 		last_name = {{arg "last_name"}}, version = version + 1 where id = {{arg "id"}} 
 		and version = {{arg "version"}}`)
@@ -194,7 +193,7 @@ func UserGet(username string, who *User) (*User, error) {
 func userGet(tx *sql.Tx, username string) (*User, error) {
 	u := &User{}
 
-	err := sqlUserFromUsername.Tx(tx).QueryRow(sql.Named("username", username)).
+	err := sqlUserFromUsername.Tx(tx).QueryRow(sql.Named("username", strings.ToLower(username))).
 		Scan(
 			&u.ID,
 			&u.Username,
@@ -290,16 +289,21 @@ func (u *User) update(who *User, update func() (sql.Result, error)) error {
 }
 
 // SetActive sets the active status of the given user
-func (u *User) SetActive(active bool, who *User) error {
-	return u.update(who, func() (sql.Result, error) {
-		u.Active = active
-		return sqlUserUpdateActive.Exec(sql.Named("active", u.Active), sql.Named("id", u.ID),
-			sql.Named("version", u.Version))
+func (u *User) SetActive(active bool, version int, who *User) error {
+	err := u.update(who, func() (sql.Result, error) {
+		return sqlUserUpdateActive.Exec(sql.Named("active", active), sql.Named("id", u.ID),
+			sql.Named("version", version))
 	})
+	if err != nil {
+		return err
+	}
+
+	u.Active = active
+	return nil
 }
 
 // SetName sets the user's name
-func (u *User) SetName(firstName, lastName string, who *User) error {
+func (u *User) SetName(firstName, lastName string, version int, who *User) error {
 	return u.update(who, func() (sql.Result, error) {
 		u.FirstName = firstName
 		u.LastName = lastName
@@ -309,7 +313,7 @@ func (u *User) SetName(firstName, lastName string, who *User) error {
 		}
 
 		return sqlUserUpdateName.Exec(sql.Named("first_name", u.FirstName), sql.Named("last_name", u.LastName),
-			sql.Named("id", u.ID), sql.Named("version", u.Version))
+			sql.Named("id", u.ID), sql.Named("version", version))
 	})
 }
 
@@ -327,54 +331,97 @@ func (u *User) clearPassword() {
 }
 
 // SetAdmin sets if a user is an Administrator or not
-func (u *User) SetAdmin(admin bool, who *User) error {
+func (u *User) SetAdmin(admin bool, version int, who *User) error {
 	if who == nil || !who.Admin {
 		return Unauthorized("You do not have permission to update this user to Admin")
 	}
-	return u.update(who, func() (sql.Result, error) {
-		u.Admin = admin
-		return sqlUserUpdateAdmin.Exec(sql.Named("admin", u.Admin), sql.Named("id", u.ID), sql.Named("version", u.Version))
+	err := u.update(who, func() (sql.Result, error) {
+		return sqlUserUpdateAdmin.Exec(
+			sql.Named("admin", admin),
+			sql.Named("id", u.ID),
+			sql.Named("version", version),
+		)
 	})
+	if err != nil {
+		return err
+	}
+	u.Admin = admin
+	return nil
+}
+
+// UserSetExpiredPassword sets a user's password when it has expired and they can't login to change their password
+func UserSetExpiredPassword(username, oldPassword, newPassword string) (*User, error) {
+	u, err := userGet(nil, username)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.SetPassword(oldPassword, newPassword, u.Version, u)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }
 
 // SetPassword updates a users password, and invalidates any existing sessions opened with the old password
-func (u *User) SetPassword(oldPassword, newPassword string, who *User) (*Session, error) {
-	// test old password
-	// err := passwordVersions[u.PasswordVersion].compare(oldPassword, u.Password)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// // hash new password
-	// err = ValidatePassword(newPassword)
-	// if err != nil {
-	// 	return nil, err
-	// }
+func (u *User) SetPassword(oldPassword, newPassword string, version int, who *User) error {
+	if who == nil || who.ID != u.ID {
+		return Unauthorized("You do not have permission to update this user")
+	}
+	err := passwordVersions[u.PasswordVersion].compare(oldPassword, u.Password)
+	if err != nil {
+		if err == ErrPasswordMismatch {
+			return NewFailureFromErr(err)
+		}
+		return err
+	}
+	if oldPassword == newPassword {
+		return NewFailure("The new password cannot match the previous password")
+	}
+	// hash new password
+	err = ValidatePassword(newPassword)
+	if err != nil {
+		return err
+	}
 
-	// passVer := len(passwordVersions) - 1
+	passVer := len(passwordVersions) - 1
 
-	// hash, err := passwordVersions[passVer].hash(newPassword)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	hash, err := passwordVersions[passVer].hash(newPassword)
+	if err != nil {
+		return err
+	}
 
-	// var s *Session
+	return data.BeginTx(func(tx *sql.Tx) error {
+		var expires data.NullTime
+		if SettingMust("PasswordExpirationDays").Int() >= 0 {
+			expires.Time = time.Now().AddDate(0, 0, SettingMust("PasswordExpirationDays").Int())
+		}
 
-	// err = data.BeginTx(func(tx *sql.Tx) error {
-	// 	u.PasswordVersion = passVer
-	// 	u.Password = hash
-
-	// 	// update password, version and expiration
-	// 	err = u.update(who, func() (sql.Result, error) {
-	// 	})
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	// invalidate all sessions for user
-	// 	// return new session
-
-	// })
-	// if err != nil {
-	// 	return nil, err
-	// }
-	return nil, errors.New("TODO")
+		// update password, version and expiration
+		err = u.update(who, func() (sql.Result, error) {
+			return sqlUserUpdatePassword.Exec(
+				sql.Named("password", hash),
+				sql.Named("password_version", passVer),
+				sql.Named("password_expiration", expires),
+				sql.Named("id", u.ID),
+				sql.Named("version", version),
+			)
+		})
+		if err != nil {
+			return err
+		}
+		// invalidate all sessions for user
+		_, err := sqlSessionInvalidateAll.Exec(
+			sql.Named("user_id", u.ID),
+			sql.Named("now", time.Now()),
+		)
+		if err != nil {
+			return err
+		}
+		u.PasswordVersion = passVer
+		u.Password = hash
+		u.PasswordExpiration = expires
+		return nil
+	})
 }

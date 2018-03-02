@@ -56,5 +56,8 @@ func setupRoutes() http.Handler {
 	rootHandler.PUT("/setting", makeHandle(settingPut))
 	rootHandler.DELETE("/setting", makeHandle(settingDelete))
 
+	// user profile
+	rootHandler.PUT("/user/:username/password", makeHandle(userPutPassword))
+
 	return rootHandler
 }

@@ -113,5 +113,5 @@ func (a *argon) compare(password string, hash []byte) error {
 		return nil
 	}
 
-	return ErrLogonFailure
+	return ErrPasswordMismatch
 }

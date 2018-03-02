@@ -23,7 +23,7 @@
 							<p v-if="error" v-cloak class="help is-danger">{{error}}</p>
 						</div>
 						<div class="field">
-							<label for="inputPassword">Password</label>
+							<label class="label" for="inputPassword">Password</label>
 							<div class="control">
 								<input v-model="password" type="password" class="input" id="inputPassword"
 									placeholder="Enter password">
@@ -53,6 +53,40 @@
 			</div>
 		</div>
 	</div>
+
+	<div :class="{'is-active': showModal}" class="modal">
+		<div class="modal-background"></div>
+		<div class="modal-card">
+			<header class="modal-card-head">
+				<p class="modal-card-title">Your password has expired!</p>
+			</header>
+			<section class="modal-card-body">
+				<form @submit="changePassword">
+					<div class="field">
+						<label class="label" for="inputNewPassword">Choose a New Password</label>
+						<div class="control">
+							<input v-model="newPassword" @blur="validatePassword" @keydown="passwordErr=null" autofocus
+								:class="{'is-danger': passwordErr}" type="password" class="input" id="inputNewPassword"	
+								placeholder="Enter a new password">
+						</div>
+						<p v-if="passwordErr" v-cloak class="help is-danger">{{passwordErr}}</p>
+					</div>
+					<div class="field">
+						<div class="control">
+							<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"
+								:class="{'is-danger': password2Err}"	type="password" class="input" 
+								id="inputPassword2" placeholder="Enter password again">
+						</div>
+						<p v-if="password2Err" v-cloak class="help is-danger">{{password2Err}}</p>
+					</div>
+				</form>
+			</section>
+			<footer class="modal-card-foot">
+				<button @click="changePassword" type="button" :class="{'is-loading': loading}" class="button is-primary">Submit</button>
+			</footer>
+		</div>
+	</div> <!-- modal -->
+
 </div>
 </body>
 <script src="/js/vue.js"></script>

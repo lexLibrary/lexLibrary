@@ -15,6 +15,7 @@ var (
 	buildDate = time.Time{}
 )
 
+// RuntimeInfo is information on the current verison and architecture running Lex Library
 type RuntimeInfo struct {
 	OS       string
 	GoVer    string
@@ -61,11 +62,12 @@ func Version() string {
 	return version
 }
 
+// BuildDate is the date Lex Library was built
 func BuildDate() time.Time {
 	return buildDate
 }
 
-// RuntimeInfo returns information about the currently running instance of Lex Library
+// Runtime returns information about the currently running instance of Lex Library
 func Runtime(who *User) *RuntimeInfo {
 	if who != nil {
 		if who.Admin || SettingMust("NonAdminIssueSubmission").Bool() {

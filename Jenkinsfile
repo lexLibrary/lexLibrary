@@ -21,32 +21,32 @@ pipeline {
             }
         }
         stage('static analysis') {
-            agent {
-                dockerfile { 
-                    dir 'ci/build' 
-                    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
-                }
-            }
-            environment {
-                GOPATH = '/go'
-                REPO = '/go/src/github.com/lexLibrary/lexLibrary'
-                HOME = '.'
-            }
-            steps {
-                sh '''
-                     cd $REPO
-                     gometalinter ./... --vendor --concurrency 1 --deadline 30m --disable-all --enable=megacheck
-                '''
-                sh '''
-                    cd $REPO
-                    go test ./app -cover
-                    go test ./data -cover
-                '''
-                sh '''
-                    cd $REPO
-                    go test ./app -race
-                    go test ./data -race
-                '''
+	    stage('megacheck') {
+		    agent {
+			dockerfile { 
+			    dir 'ci/build' 
+			    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
+			}
+		    }
+		    environment {
+			GOPATH = '/go'
+			REPO = '/go/src/github.com/lexLibrary/lexLibrary'
+			HOME = '.'
+		    }
+		    steps {
+			sh '''
+			     cd $REPO
+			     gometalinter ./... --vendor --concurrency 1 --deadline 30m --disable-all --enable=megacheck
+			'''
+		    }
+	    }
+	    stage('cover and race') {
+                    steps {
+			    sh '''
+				cd ci
+				sh ./testInDocker.sh static
+			    '''
+                    }
             }
         }
         stage('test databases') {

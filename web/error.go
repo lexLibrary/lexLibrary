@@ -58,7 +58,7 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 		if !devMode {
 			errMsg = fmt.Sprintf("An internal server error has occurred. Error ID: %s", errID)
 		} else {
-			errMsg = err.Error()
+			errMsg = fmt.Sprintf("Dev Mode: %s", err.Error())
 		}
 	}
 
@@ -106,10 +106,9 @@ func unauthorized(w http.ResponseWriter, r *http.Request) {
 func panicHandler(w http.ResponseWriter, r *http.Request, rec interface{}) {
 	if rec != nil {
 		if devMode {
-			//halt the instance if runtime error, or is running in devmode
-			// otherwise log error and try to recover
 			buf := make([]byte, 1<<20)
 			stack := buf[:runtime.Stack(buf, true)]
+			errHandled(errors.Errorf("PANIC: %s \n STACK: %s", rec, stack), w, r)
 			log.Fatalf("PANIC: %s \n STACK: %s", rec, stack)
 		}
 		errHandled(errors.Errorf("Lex Library has panicked on %v and has recovered", rec), w, r)

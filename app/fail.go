@@ -36,14 +36,14 @@ func NewFailureWithStatus(message string, httpStatus int) *Fail {
 	}
 }
 
-// FailureFromErr returns a new failure based on the passed in error
+// NewFailureFromErr returns a new failure based on the passed in error
 // if passed in error is nil, then nil is returned
-func FailureFromErr(err error, httpStatus int) *Fail {
+func NewFailureFromErr(err error) *Fail {
 	if err == nil {
 		return nil
 	}
 
-	return NewFailure(err.Error(), httpStatus)
+	return NewFailure(err.Error(), http.StatusBadRequest)
 }
 
 // IsFail tests whether the passed in error is a failure

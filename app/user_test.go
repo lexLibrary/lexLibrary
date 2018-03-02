@@ -133,7 +133,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user")
 		}
 
-		err = u.SetName(firstname, "", u)
+		err = u.SetName(firstname, "", u.Version, u)
 		if err == nil {
 			t.Fatalf("No error adding too long first name")
 		}
@@ -141,7 +141,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on too long first name is not a failure")
 		}
 
-		err = u.SetName("", lastname, u)
+		err = u.SetName("", lastname, u.Version, u)
 		if err == nil {
 			t.Fatalf("No error adding too long last name")
 		}
@@ -360,12 +360,12 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding other user for SetActive testing")
 		}
 
-		err = u.SetActive(false, other)
+		err = u.SetActive(false, u.Version, other)
 		if err == nil {
 			t.Fatalf("Setting active from other user did not fail")
 		}
 
-		err = u.SetActive(false, u)
+		err = u.SetActive(false, u.Version, u)
 		if err != nil {
 			t.Fatalf("Error setting active to false: %s", err)
 		}
@@ -398,12 +398,12 @@ func TestUser(t *testing.T) {
 		fName := "firstname"
 		lName := "lastname"
 
-		err = u.SetName(fName, lName, other)
+		err = u.SetName(fName, lName, u.Version, other)
 		if err == nil {
 			t.Fatalf("Setting active from other user did not fail")
 		}
 
-		err = u.SetName(fName, lName, u)
+		err = u.SetName(fName, lName, u.Version, u)
 		if err != nil {
 			t.Fatalf("Error setting name: %s", err)
 		}
@@ -466,12 +466,12 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding other user for SetAdmin testing")
 		}
 
-		err = u.SetAdmin(true, other)
+		err = u.SetAdmin(true, u.Version, other)
 		if err == nil {
 			t.Fatalf("Setting admin from other user did not fail")
 		}
 
-		err = u.SetAdmin(true, u)
+		err = u.SetAdmin(true, u.Version, u)
 		if err == nil {
 			t.Fatalf("Setting admin from non-admin self did not fail")
 		}
@@ -487,7 +487,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error retrieving user: %s", err)
 		}
 
-		err = u.SetAdmin(true, other)
+		err = u.SetAdmin(true, u.Version, other)
 		if err != nil {
 			t.Fatalf("Error setting admin by another admin: %s", err)
 		}
@@ -527,7 +527,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error getting user: %s", err)
 		}
 
-		err = u.SetName("version", "one", u)
+		err = u.SetName("version", "one", u.Version, u)
 		if err != nil {
 			t.Fatalf("Error setting name: %s", err)
 		}
@@ -536,11 +536,87 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Incorrect first version of the user record. Got %d, wanted %d", u.Version, 1)
 		}
 
-		err = old.SetName("version", "old", u)
+		err = old.SetName("version", "old", old.Version, u)
 		if err != app.ErrUserConflict {
 			t.Fatalf("Updating an older version of a user did not return a Conflict")
 		}
 
+	})
+
+	t.Run("SetPassword", func(t *testing.T) {
+		reset(t)
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user")
+		}
+
+		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
+		if err != nil {
+			t.Fatalf("Error adding other user")
+		}
+
+		err = u.SetPassword(password, "newreallygoodlongpassword", u.Version, other)
+		if err == nil {
+			t.Fatalf("Setting password from other user did not fail")
+		}
+
+		oldSession, err := app.SessionNew(u, time.Now().AddDate(0, 0, 10), "", "")
+		if err != nil {
+			t.Fatalf("Error creating new session: %s", err)
+		}
+
+		err = u.SetPassword(password, password, u.Version, u)
+		if err == nil {
+			t.Fatalf("Setting password to the same password did not return an error")
+		}
+
+		err = u.SetPassword(password, "newreallygoodlongpassword", u.Version, u)
+		if err != nil {
+			t.Fatalf("Error setting password: %s", err)
+		}
+
+		_, err = app.SessionGet(oldSession.UserID, oldSession.ID)
+		if err != app.ErrSessionInvalid {
+			t.Fatalf("Old session was not exired when changing passwords")
+		}
+
+	})
+	t.Run("UserSetExpiredPassword", func(t *testing.T) {
+		reset(t)
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user")
+		}
+
+		oldSession, err := app.SessionNew(u, time.Now().AddDate(0, 0, 10), "", "")
+		if err != nil {
+			t.Fatalf("Error creating new session: %s", err)
+		}
+
+		_, err = app.UserSetExpiredPassword(u.Username, password, password)
+		if err == nil {
+			t.Fatalf("Setting password to the same password did not return an error")
+		}
+
+		newu, err := app.UserSetExpiredPassword(u.Username, password, "newreallygoodlongpassword")
+		if err != nil {
+			t.Fatalf("Error setting password: %s", err)
+		}
+
+		if newu.ID != u.ID {
+			t.Fatalf("Invalid user returned from SetExpiredPassword. Wanted %s, got %s", u.ID, newu.ID)
+		}
+
+		_, err = app.SessionGet(oldSession.UserID, oldSession.ID)
+		if err != app.ErrSessionInvalid {
+			t.Fatalf("Old session was not exired when changing passwords")
+		}
 	})
 
 	reset(t)

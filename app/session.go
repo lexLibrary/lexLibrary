@@ -36,7 +36,8 @@ var (
 	// ErrSessionInvalid is returned when a sesssion is invalid or expired
 	ErrSessionInvalid = NewFailure("Invalid or expired session")
 	// ErrLogonFailure is when a user fails a login attempt
-	ErrLogonFailure    = NewFailure("Invalid user and / or password")
+	ErrLogonFailure = NewFailure("Invalid user and / or password")
+	// ErrPasswordExpired is when a user's password has expired
 	ErrPasswordExpired = NewFailure("Your password has expired.  Please set a new one.")
 )
 
@@ -69,6 +70,12 @@ var (
 		set csrf_token = {{arg "csrf_token"}}, csrf_date = {{arg "csrf_date"}} where id = {{arg "id"}}`)
 	sqlSessionGet = data.NewQuery(`select id, user_id, valid, expires, csrf_token, csrf_date 
 		from sessions where id = {{arg "id"}} and user_id = {{arg "user_id"}}`)
+	sqlSessionInvalidateAll = data.NewQuery(`
+		update sessions set valid = {{dbFalse}} 
+		where user_id = {{arg "user_id"}} 
+		and valid <> {{dbFalse}}
+		and expires >= {{arg "now"}}
+	`)
 )
 
 // Login logs a new user into Lex Library.
@@ -92,7 +99,10 @@ func Login(username string, password string) (*User, error) {
 	if u.AuthType == AuthTypePassword {
 		err = passwordVersions[u.PasswordVersion].compare(password, u.Password)
 		if err != nil {
-			return nil, err
+			if err != ErrPasswordMismatch {
+				LogError(err)
+			}
+			return nil, ErrLogonFailure
 		}
 		if u.PasswordExpiration.Valid && u.PasswordExpiration.Time.Before(time.Now()) {
 			return nil, ErrPasswordExpired

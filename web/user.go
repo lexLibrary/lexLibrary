@@ -3,6 +3,7 @@ package web
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
@@ -19,6 +20,12 @@ var publicUserNewRateDelay = app.RateDelay{
 type userInput struct {
 	Username *string `json:"username,omitempty"`
 	Password *string `json:"password,omitempty"`
+}
+
+type passwordInput struct {
+	OldPassword *string `json:"oldPassword,omitempty"`
+	NewPassword *string `json:"newPassword,omitempty"`
+	Version     *int    `json:"version,omitempty"`
 }
 
 func userPost(w http.ResponseWriter, r *http.Request, c ctx) {
@@ -91,6 +98,61 @@ func passwordTest(w http.ResponseWriter, r *http.Request, c ctx) {
 	}
 
 	err = app.ValidatePassword(password)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	respond(w, success(nil))
+}
+
+func userPutPassword(w http.ResponseWriter, r *http.Request, c ctx) {
+	input := &passwordInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if input.OldPassword == nil {
+		errHandled(app.NewFailure("oldPassword is required"), w, r)
+		return
+	}
+	if input.NewPassword == nil {
+		errHandled(app.NewFailure("newPassword is required"), w, r)
+		return
+	}
+
+	if c.session != nil {
+		// user changing password while logged in
+		if input.Version == nil {
+			errHandled(app.NewFailure("version is required"), w, r)
+			return
+		}
+		u, err := c.session.User()
+		if errHandled(err, w, r) {
+			return
+		}
+
+		if u.Username != strings.ToLower(c.params.ByName("username")) {
+			unauthorized(w, r)
+			return
+		}
+
+		err = u.SetPassword(*input.OldPassword, *input.NewPassword, *input.Version, u)
+		if errHandled(err, w, r) {
+			return
+		}
+
+		respond(w, success(nil))
+		return
+	}
+
+	// user's password has expired and being set from login prompt
+	u, err := app.UserSetExpiredPassword(c.params.ByName("username"), *input.OldPassword, *input.NewPassword)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	_, err = setSession(w, r, u, false)
 	if errHandled(err, w, r) {
 		return
 	}
