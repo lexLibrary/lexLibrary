@@ -21,6 +21,7 @@ pipeline {
             }
         }
         stage('static analysis') {
+		parallel {
 	    stage('megacheck') {
 		    agent {
 			dockerfile { 
@@ -48,6 +49,7 @@ pipeline {
 			    '''
                     }
             }
+	    }
         }
         stage('test databases') {
             parallel {
