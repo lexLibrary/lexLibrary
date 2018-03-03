@@ -60,11 +60,10 @@ func firstRunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := setSession(w, r, u, false)
+	_, err = setSession(w, r, u, false)
 	if errHandled(err, w, r) {
 		return
 	}
 
-	w.Header().Add("X-CSRFToken", s.CSRFToken)
 	respond(w, created(u))
 }

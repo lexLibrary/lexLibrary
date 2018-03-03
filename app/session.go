@@ -112,8 +112,7 @@ func Login(username string, password string) (*User, error) {
 			" This could mean that an older version of Lex Library is running on a newer version of the database.",
 			u.Username)
 	}
-	u.Password = nil
-	u.PasswordVersion = 0
+	u.clearPassword()
 	return u, nil
 }
 
@@ -216,6 +215,8 @@ func (s *Session) User() (*User, error) {
 		&u.FirstName,
 		&u.LastName,
 		&u.AuthType,
+		&u.Password,
+		&u.PasswordVersion,
 		&u.PasswordExpiration,
 		&u.Active,
 		&u.Version,

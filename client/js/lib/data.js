@@ -24,7 +24,3 @@ function payload(id = 'payload') {
     }
     return result;
 }
-
-export function browserInfo() {
-
-}

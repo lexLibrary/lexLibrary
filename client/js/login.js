@@ -16,6 +16,7 @@ var vm = new Vue({
             error: null,
             loading: false,
             showModal: false,
+            modalTitle: "",
             newPassword: null,
             password2: null,
             passwordErr: null,
@@ -41,19 +42,31 @@ var vm = new Vue({
                 })
                 .then((result) => {
                     this.loading = false;
-                    if (result.content.expired) {
-                        this.showModal = true;
-                        return;
+                    if (result.content) {
+                        if (result.content.expired) {
+                            this.modalTitle = "Your password has expired";
+                            this.showModal = true;
+                            return;
+                        } else if (result.content.passwordExpiration) {
+                            this.user = result.content;
+                            let range = new Date();
+                            let expires = new Date(result.content.passwordExpiration);
+                            range.setDate(range.getDate() - 7);
+                            if (range <= expires) {
+                                this.modalTitle = `Your password will expire soon`;
+                                this.showModal = true;
+                                return;
+                            }
+                        }
                     }
-                    //TODO: Pop up notice if password is about to expire
-                    this.continue();
+                    this.navigate();
                 })
                 .catch((err) => {
                     this.loading = false;
                     this.error = err.content;
                 });
         },
-        continue: function() {
+        navigate: function() {
             let q = query();
             if (q.return && q.return.indexOf('/') === 0) {
                 window.location = q.return;
@@ -76,14 +89,22 @@ var vm = new Vue({
                 this.password2Err = 'Passwords do not match';
                 return;
             }
+            this.loading = true;
+			let version = 0;
+			if(this.user) {
+				version = this.user.version;
+			}
             xhr.put(`/user/${this.username}/password`, {
                     oldPassword: this.password,
                     newPassword: this.newPassword,
+					version,
                 })
                 .then((result) => {
-                    this.continue();
+                    this.loading = false;
+                    this.navigate();
                 })
                 .catch((err) => {
+                    this.loading = false;
                     this.passwordErr = err.content;
                 });
         },

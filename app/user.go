@@ -76,8 +76,8 @@ var (
 		{{arg "admin"}}
 	)`)
 	sqlUserFromID = data.NewQuery(`
-		select id, username, first_name, last_name, auth_type, password_expiration, active, version, updated, 
-			created, admin 
+		select id, username, first_name, last_name, auth_type, password, password_version, password_expiration, 
+			active, version, updated, created, admin 
 		from users where id = {{arg "id"}}`)
 	sqlUserFromUsername = data.NewQuery(`
 		select id, username, first_name, last_name, auth_type, password, password_version, password_expiration, 

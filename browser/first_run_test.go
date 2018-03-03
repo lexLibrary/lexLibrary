@@ -56,6 +56,7 @@ func TestFirstRun(t *testing.T) {
 		Find("#inputPrivate").Disabled().
 		Find("#inputPublic").Disabled().
 		Find("#setSettings").Click().
+		And().Screenshot("test.png").
 		Find(".notification.is-danger").Count(0).
 		End()
 	if err != nil {

@@ -41,11 +41,19 @@ pipeline {
 			'''
 		    }
 	    }
-	    stage('cover and race') {
+	    stage('race') {
                     steps {
 			    sh '''
 				cd ci
-				sh ./testInDocker.sh static
+				sh ./testInDocker.sh race
+			    '''
+                    }
+            }
+	    stage('cover') {
+                    steps {
+			    sh '''
+				cd ci
+				sh ./testInDocker.sh cover
 			    '''
                     }
             }

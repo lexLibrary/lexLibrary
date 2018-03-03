@@ -58,10 +58,10 @@
 		<div class="modal-background"></div>
 		<div class="modal-card">
 			<header class="modal-card-head">
-				<p class="modal-card-title">Your password has expired!</p>
+				<p class="modal-card-title">{{modalTitle}}</p>
 			</header>
-			<section class="modal-card-body">
-				<form @submit="changePassword">
+			<form @submit="changePassword">
+				<section class="modal-card-body">
 					<div class="field">
 						<label class="label" for="inputNewPassword">Choose a New Password</label>
 						<div class="control">
@@ -79,11 +79,12 @@
 						</div>
 						<p v-if="password2Err" v-cloak class="help is-danger">{{password2Err}}</p>
 					</div>
-				</form>
-			</section>
-			<footer class="modal-card-foot">
-				<button @click="changePassword" type="button" :class="{'is-loading': loading}" class="button is-primary">Submit</button>
-			</footer>
+				</section>
+				<footer class="modal-card-foot">
+					<button v-if="user" @click="navigate" type="button" class="button">Skip</button>
+					<button @click="changePassword" type="submit" :class="{'is-loading': loading}" class="button is-primary">Submit</button>
+				</footer>
+			</form>
 		</div>
 	</div> <!-- modal -->
 

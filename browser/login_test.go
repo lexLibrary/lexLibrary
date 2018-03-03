@@ -2,7 +2,9 @@
 package browser
 
 import (
+	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
@@ -38,57 +40,129 @@ func TestLogin(t *testing.T) {
 		t.Fatalf("Error clearing all cookies for testing: %s", err)
 	}
 
-	err = sequence.Start(driver).
-		Get(uri.String()).
-		Find("#login").Visible().
-		Find("#inputUsername").Visible().
-		Find(".help.is-danger").Count(0).
-		Find(".card-footer").Visible().
-		Find("#inputUsername").SendKeys("badusername").
-		Find("#inputPassword").SendKeys("badpassword").
-		Find(".button.is-primary.is-block").Click().
-		Find(".help.is-danger").Visible().
-		End()
+	t.Run("Invalid username and password", func(t *testing.T) {
+		err = sequence.Start(driver).
+			Get(uri.String()).
+			Find("#login").Visible().
+			Find("#inputUsername").Visible().
+			Find(".help.is-danger").Count(0).
+			Find(".card-footer").Visible().
+			Find("#inputUsername").SendKeys("badusername").
+			Find("#inputPassword").SendKeys("badpassword").
+			Find(".button.is-primary.is-block").Click().
+			Find(".help.is-danger").Visible().
+			End()
 
-	if err != nil {
-		t.Fatalf("Testing Login Page failed: %s", err)
-	}
+		if err != nil {
+			t.Fatalf("Testing Login Page failed: %s", err)
+		}
+	})
 
-	err = app.SettingSet(admin, "AllowPublicSignups", false)
-	if err != nil {
-		t.Fatalf("Error blocking public signups for testing: %s", err)
-	}
+	t.Run("Disabled Public Signups", func(t *testing.T) {
 
-	err = sequence.Start(driver).
-		Refresh().
-		Find(".card-footer").Count(0).
-		Find("#inputUsername").SendKeys(username).
-		Find("#inputPassword").SendKeys(password).
-		Find(".button.is-primary.is-block").Click().
-		Find(".help.is-danger").Count(0).
-		End()
+		err = app.SettingSet(admin, "AllowPublicSignups", false)
+		if err != nil {
+			t.Fatalf("Error blocking public signups for testing: %s", err)
+		}
 
-	if err != nil {
-		t.Fatalf("Testing Login Page failed: %s", err)
-	}
+		err = sequence.Start(driver).
+			Refresh().
+			Find(".card-footer").Count(0).
+			Find("#inputUsername").SendKeys(username).
+			Find("#inputPassword").SendKeys(password).
+			Find(".button.is-primary.is-block").Click().
+			Find(".help.is-danger").Count(0).
+			End()
 
-	err = driver.DeleteAllCookies()
-	if err != nil {
-		t.Fatalf("Error clearing all cookies for testing: %s", err)
-	}
+		if err != nil {
+			t.Fatalf("Testing Login Page failed: %s", err)
+		}
+	})
 
-	testPath := "/testpath"
-	err = sequence.Start(driver).
-		Get(uri.String() + "?return=" + testPath).
-		Find("#inputUsername").SendKeys(username).
-		Find("#inputPassword").SendKeys(password).
-		Find(".button.is-primary.is-block").Click().
-		And().
-		URL().Path(testPath).Eventually().
-		End()
+	t.Run("Page redirect on login", func(t *testing.T) {
+		err = driver.DeleteAllCookies()
+		if err != nil {
+			t.Fatalf("Error clearing all cookies for testing: %s", err)
+		}
 
-	if err != nil {
-		t.Fatalf("Testing Login Page failed: %s", err)
-	}
+		testPath := "/testpath"
+		err = sequence.Start(driver).
+			Get(uri.String() + "?return=" + testPath).
+			Find("#inputUsername").SendKeys(username).
+			Find("#inputPassword").SendKeys(password).
+			Find(".button.is-primary.is-block").Click().
+			And().
+			URL().Path(testPath).Eventually().
+			End()
+
+		if err != nil {
+			t.Fatalf("Testing Login Page failed: %s", err)
+		}
+	})
+
+	t.Run("Expire Password", func(t *testing.T) {
+		err = driver.DeleteAllCookies()
+		if err != nil {
+			t.Fatalf("Error clearing all cookies for testing: %s", err)
+		}
+
+		// expire password soon
+		_, err = data.NewQuery(`update users set password_expiration = {{arg "expires"}}
+			where username = {{arg "username"}}`).
+			Exec(sql.Named("expires", time.Now().AddDate(0, 0, 6)), sql.Named("username", username))
+		if err != nil {
+			t.Fatalf("Error expiring password: %s", err)
+		}
+
+		err = sequence.Start(driver).
+			Get(uri.String()).
+			Find("#inputUsername").SendKeys(username).
+			Find("#inputPassword").SendKeys(password).
+			Find(".button.is-primary.is-block").Click().
+			Find(".help.is-danger").Count(0).
+			Find(".modal").Count(1).
+			Find(".modal-background").Count(1).
+			Find(".modal-card").Count(1).
+			Find(".modal-card-foot > button").Any().Text().Contains("Skip").
+			Find(".modal-card-foot > button").Any().Text().Contains("Submit").
+			End()
+		if err != nil {
+			t.Fatalf("Testing expiring password failed: %s", err)
+		}
+
+		// expire password completely
+		_, err = data.NewQuery(`update users set password_expiration = {{arg "expires"}}
+			where username = {{arg "username"}}`).
+			Exec(sql.Named("expires", time.Now()), sql.Named("username", username))
+		if err != nil {
+			t.Fatalf("Error expiring password: %s", err)
+		}
+		err = driver.DeleteAllCookies()
+		if err != nil {
+			t.Fatalf("Error clearing all cookies for testing: %s", err)
+		}
+
+		err = sequence.Start(driver).
+			Get(uri.String()).
+			Find("#inputUsername").SendKeys(username).
+			Find("#inputPassword").SendKeys(password).
+			Find(".button.is-primary.is-block").Click().
+			Find(".help.is-danger").Count(0).
+			Find(".modal").Count(1).
+			Find(".modal-background").Count(1).
+			Find(".modal-card").Count(1).
+			Find(".modal-card-foot > button").Count(1).Text().Contains("Submit").Click().
+			Find(".help.is-danger").Text().Contains("You must provide a new password").
+			Find("#inputNewPassword").SendKeys(password + "new").
+			Find(".modal-card-foot > button").Click().
+			Find(".help.is-danger").Text().Contains("Passwords do not match").
+			Find("#inputPassword2").SendKeys(password + "new").
+			Find(".modal-card-foot > button").Click().
+			And().URL().Path("/").Eventually().
+			End()
+		if err != nil {
+			t.Fatalf("Testing expiring password failed: %s", err)
+		}
+	})
 
 }

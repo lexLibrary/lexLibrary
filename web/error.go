@@ -58,7 +58,7 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 		if !devMode {
 			errMsg = fmt.Sprintf("An internal server error has occurred. Error ID: %s", errID)
 		} else {
-			errMsg = fmt.Sprintf("Dev Mode: %s", err.Error())
+			errMsg = fmt.Sprintf("(Dev Mode) %s", err.Error())
 		}
 	}
 

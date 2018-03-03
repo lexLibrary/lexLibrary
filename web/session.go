@@ -142,6 +142,7 @@ func setSession(w http.ResponseWriter, r *http.Request, u *app.User, rememberMe 
 	}
 
 	http.SetCookie(w, cookie)
+	w.Header().Add("X-CSRFToken", s.CSRFToken)
 	return s, nil
 }
 
@@ -213,7 +214,7 @@ func sessionPost(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	respond(w, created(nil))
+	respond(w, created(u))
 }
 
 // logout

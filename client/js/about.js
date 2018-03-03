@@ -2,7 +2,7 @@
 import './lib/polyfill';
 import {
     payload
-} from './lib/util';
+} from './lib/data';
 
 var vm = new Vue({
     el: '#main',
