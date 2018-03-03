@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -19,7 +21,7 @@ import (
 // built to make writing tests easier
 type Sequence struct {
 	driver          selenium.WebDriver
-	err             error
+	err             *Error
 	EventualPoll    time.Duration
 	EventualTimeout time.Duration
 	last            func() *Sequence
@@ -30,15 +32,33 @@ type Error struct {
 	Stage   string
 	Element selenium.WebElement
 	Err     error
+	Caller  string
+}
+
+// caller returns the caller (file and line number) of the function from the perspective of where this caller function
+// is called.  I.E caller(0) returns the immediate function call before the function calling caller(0)
+// If you wrap caller in a function, add one, etc
+func caller(skip int) string {
+	skip += 2 // increment for this function call and the calling function
+
+	// get the file and line where the function was called from
+	_, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		return ""
+	}
+
+	file = filepath.Base(file)
+
+	return fmt.Sprintf("%s:%d", file, line)
 }
 
 // Error fulfills the error interface
 func (e *Error) Error() string {
 	if e.Element != nil {
-		return fmt.Sprintf("An error occurred during %s on element %s: %s", e.Stage, elementString(e.Element),
-			e.Err)
+		return fmt.Sprintf("An error occurred at %s during %s on element %s: %s", e.Caller, e.Stage,
+			elementString(e.Element), e.Err)
 	}
-	return fmt.Sprintf("An error occurred during %s:  %s", e.Stage, e.Err)
+	return fmt.Sprintf("An error occurred at %s during %s:  %s", e.Caller, e.Stage, e.Err)
 }
 
 // Errors is multiple sequence errors
@@ -78,8 +98,8 @@ func elementString(element selenium.WebElement) string {
 
 // Elements is a collections of web elements
 type Elements struct {
-	s          *Sequence
-	e          []selenium.WebElement
+	seq        *Sequence
+	elems      []selenium.WebElement
 	selector   string
 	selectFunc func(selector string) ([]selenium.WebElement, error)
 	last       func() *Elements
@@ -87,7 +107,7 @@ type Elements struct {
 	any        bool
 }
 
-// NewSequence starts a new sequence of tests
+// Start starts a new sequence of tests
 func Start(driver selenium.WebDriver) *Sequence {
 	return &Sequence{
 		driver:          driver,
@@ -98,7 +118,10 @@ func Start(driver selenium.WebDriver) *Sequence {
 
 // End ends a sequence and returns any errors
 func (s *Sequence) End() error {
-	return s.err
+	if s.err != nil {
+		return s.err
+	}
+	return nil
 }
 
 // Driver returns the underlying WebDriver
@@ -122,7 +145,8 @@ func (s *Sequence) Eventually() *Sequence {
 		return true, nil
 	}, s.EventualTimeout, s.EventualPoll)
 	if err != nil {
-		s.err = errors.Wrap(s.err, "Eventually timed out")
+		s.err.Caller = caller(0)
+		s.err.Err = errors.Wrap(s.err, "Eventually timed out")
 	}
 	return s
 }
@@ -130,26 +154,38 @@ func (s *Sequence) Eventually() *Sequence {
 // Eventually will retry the previous test if it returns an error every EventuallyPoll duration until EventualTimeout
 // is reached
 func (e *Elements) Eventually() *Elements {
-	if e.s.err == nil {
+	if e.seq.err == nil {
 		return e
 	}
 
-	err := e.s.driver.WaitWithTimeoutAndInterval(func(d selenium.WebDriver) (bool, error) {
-		e.s.err = nil
+	err := e.seq.driver.WaitWithTimeoutAndInterval(func(d selenium.WebDriver) (bool, error) {
+		e.seq.err = nil
 		e = e.last()
-		if e.s.err != nil {
+		if e.seq.err != nil {
 			return false, nil
 		}
 		return true, nil
-	}, e.s.EventualTimeout, e.s.EventualPoll)
+	}, e.seq.EventualTimeout, e.seq.EventualPoll)
 	if err != nil {
-		e.s.err = errors.Wrap(e.s.err, "Eventually timed out")
+		e.seq.err.Caller = caller(0)
+		e.seq.err.Err = errors.Wrap(e.seq.err, "Eventually timed out")
 	}
 	return e
 }
 
 // Test runs an arbitrary test against the entire page
 func (s *Sequence) Test(testName string, fn func(d selenium.WebDriver) error) *Sequence {
+	if s.err != nil {
+		return s
+	}
+	s = s.test(testName, fn)
+	if s.err != nil {
+		s.err.Caller = caller(0)
+	}
+	return s
+}
+
+func (s *Sequence) test(testName string, fn func(d selenium.WebDriver) error) *Sequence {
 	s.last = func() *Sequence {
 		if s.err != nil {
 			return s
@@ -159,8 +195,9 @@ func (s *Sequence) Test(testName string, fn func(d selenium.WebDriver) error) *S
 
 		if err != nil {
 			s.err = &Error{
-				Stage: testName,
-				Err:   err,
+				Stage:  testName,
+				Err:    err,
+				Caller: caller(2),
 			}
 		}
 		return s
@@ -182,8 +219,9 @@ func (t *TitleMatch) test(testName string, fn func() error) *Sequence {
 		title, err := t.s.driver.Title()
 		if err != nil {
 			t.s.err = &Error{
-				Stage: "Title " + testName,
-				Err:   err,
+				Stage:  "Title " + testName,
+				Err:    err,
+				Caller: caller(2),
 			}
 			return t.s
 		}
@@ -191,8 +229,9 @@ func (t *TitleMatch) test(testName string, fn func() error) *Sequence {
 		err = fn()
 		if err != nil {
 			t.s.err = &Error{
-				Stage: "Title " + testName,
-				Err:   err,
+				Stage:  "Title " + testName,
+				Err:    err,
+				Caller: caller(2),
 			}
 		}
 		return t.s
@@ -264,12 +303,12 @@ func (s *Sequence) Get(uri string) *Sequence {
 		if s.err != nil {
 			return s
 		}
-
 		err := s.driver.Get(uri)
 		if err != nil {
 			s.err = &Error{
-				Stage: "Get",
-				Err:   err,
+				Stage:  "Get",
+				Err:    err,
+				Caller: caller(1),
 			}
 		}
 		return s
@@ -291,8 +330,9 @@ func (u *URLMatch) test(testName string, fn func() error) *Sequence {
 		uri, err := u.s.driver.CurrentURL()
 		if err != nil {
 			u.s.err = &Error{
-				Stage: "URL " + testName,
-				Err:   err,
+				Stage:  "URL " + testName,
+				Err:    err,
+				Caller: caller(2),
 			}
 			return u.s
 		}
@@ -300,16 +340,18 @@ func (u *URLMatch) test(testName string, fn func() error) *Sequence {
 		u.url, err = url.Parse(uri)
 		if err != nil {
 			u.s.err = &Error{
-				Stage: "URL " + testName,
-				Err:   err,
+				Stage:  "URL " + testName,
+				Err:    err,
+				Caller: caller(2),
 			}
 			return u.s
 		}
 		err = fn()
 		if err != nil {
 			u.s.err = &Error{
-				Stage: "URL " + testName,
-				Err:   err,
+				Stage:  "URL " + testName,
+				Err:    err,
+				Caller: caller(2),
 			}
 		}
 		return u.s
@@ -361,6 +403,7 @@ func (u *URLMatch) Fragment(match string) *Sequence {
 	})
 }
 
+// URL tests against the current page URL
 func (s *Sequence) URL() *URLMatch {
 	return &URLMatch{
 		s: s,
@@ -377,8 +420,9 @@ func (s *Sequence) Forward() *Sequence {
 		err := s.driver.Forward()
 		if err != nil {
 			s.err = &Error{
-				Stage: "Forward",
-				Err:   err,
+				Stage:  "Forward",
+				Err:    err,
+				Caller: caller(1),
 			}
 		}
 		return s
@@ -396,8 +440,9 @@ func (s *Sequence) Back() *Sequence {
 		err := s.driver.Back()
 		if err != nil {
 			s.err = &Error{
-				Stage: "Back",
-				Err:   err,
+				Stage:  "Back",
+				Err:    err,
+				Caller: caller(1),
 			}
 		}
 		return s
@@ -415,8 +460,9 @@ func (s *Sequence) Refresh() *Sequence {
 		err := s.driver.Refresh()
 		if err != nil {
 			s.err = &Error{
-				Stage: "Refresh",
-				Err:   err,
+				Stage:  "Refresh",
+				Err:    err,
+				Caller: caller(1),
 			}
 		}
 		return s
@@ -429,7 +475,7 @@ func (s *Sequence) Refresh() *Sequence {
 // and the tests will fail if more than one element is found
 func (s *Sequence) Find(selector string) *Elements {
 	e := &Elements{
-		s:        s,
+		seq:      s,
 		selector: selector,
 		selectFunc: func(selector string) ([]selenium.WebElement, error) {
 			return s.driver.FindElements(selenium.ByCSSSelector, selector)
@@ -438,12 +484,14 @@ func (s *Sequence) Find(selector string) *Elements {
 	if s.err != nil {
 		return e
 	}
-	e.e, s.err = e.selectFunc(selector)
+	var err error
+	e.elems, err = e.selectFunc(selector)
 
-	if s.err != nil {
+	if err != nil {
 		s.err = &Error{
-			Stage: "Elements",
-			Err:   s.err,
+			Stage:  "Elements",
+			Err:    err,
+			Caller: caller(1),
 		}
 		return e
 	}
@@ -468,8 +516,9 @@ func (s *Sequence) Debug() *Sequence {
 	src, err := s.driver.PageSource()
 	if err != nil {
 		s.err = &Error{
-			Stage: "Debug Source",
-			Err:   err,
+			Stage:  "Debug Source",
+			Err:    err,
+			Caller: caller(1),
 		}
 		return s
 	}
@@ -477,8 +526,9 @@ func (s *Sequence) Debug() *Sequence {
 	title, err := s.driver.Title()
 	if err != nil {
 		s.err = &Error{
-			Stage: "Debug Title",
-			Err:   err,
+			Stage:  "Debug Title",
+			Err:    err,
+			Caller: caller(1),
 		}
 		return s
 	}
@@ -486,8 +536,9 @@ func (s *Sequence) Debug() *Sequence {
 	uri, err := s.driver.CurrentURL()
 	if err != nil {
 		s.err = &Error{
-			Stage: "Debug URL",
-			Err:   err,
+			Stage:  "Debug URL",
+			Err:    err,
+			Caller: caller(1),
 		}
 		return s
 	}
@@ -508,8 +559,9 @@ func (s *Sequence) Screenshot(filename string) *Sequence {
 	buff, err := s.driver.Screenshot()
 	if err != nil {
 		s.err = &Error{
-			Stage: "Screenshot",
-			Err:   err,
+			Stage:  "Screenshot",
+			Err:    err,
+			Caller: caller(1),
 		}
 		return s
 	}
@@ -527,10 +579,14 @@ func (s *Sequence) Screenshot(filename string) *Sequence {
 
 // End Completes a sequence and returns any errors
 func (e *Elements) End() error {
-	return e.s.End()
+	return e.seq.End()
 }
 
+// Wait sleeps for the given duration
 func (e *Elements) Wait(duration time.Duration) *Elements {
+	if e.seq.err != nil {
+		return e
+	}
 	time.Sleep(duration)
 	return e
 }
@@ -552,15 +608,16 @@ func (e *Elements) All() *Elements {
 // Count verifies that the number of elements in the selection matches the argument
 func (e *Elements) Count(count int) *Elements {
 	e.last = func() *Elements {
-		if e.s.err != nil {
+		if e.seq.err != nil {
 			return e
 		}
 
-		if count != len(e.e) {
-			e.s.err = &Error{
+		if count != len(e.elems) {
+			e.seq.err = &Error{
 				Stage: "Count",
 				Err: errors.Errorf("Invalid count for selector %s wanted %d got %d", e.selector, count,
-					len(e.e)),
+					len(e.elems)),
+				Caller: caller(1),
 			}
 
 			return e
@@ -572,18 +629,18 @@ func (e *Elements) Count(count int) *Elements {
 
 // And allows you chain additional sequences
 func (e *Elements) And() *Sequence {
-	return e.s
+	return e.seq
 }
 
 // Find finds a new element
 func (e *Elements) Find(selector string) *Elements {
-	return e.s.Find(selector)
+	return e.seq.Find(selector)
 }
 
 // FindChildren returns a new Elements object for all the elements that match the selector
 func (e *Elements) FindChildren(selector string) *Elements {
 	newE := &Elements{
-		s:        e.s,
+		seq:      e.seq,
 		selector: selector,
 		selectFunc: func(selector string) ([]selenium.WebElement, error) {
 			var found []selenium.WebElement
@@ -591,10 +648,10 @@ func (e *Elements) FindChildren(selector string) *Elements {
 			var lastErr error
 			var lastElement selenium.WebElement
 
-			for i := range e.e {
-				elements, err := e.e[i].FindElements(selenium.ByCSSSelector, selector)
+			for i := range e.elems {
+				elements, err := e.elems[i].FindElements(selenium.ByCSSSelector, selector)
 				if err != nil {
-					lastElement = e.e[i]
+					lastElement = e.elems[i]
 					lastErr = err
 					continue
 				}
@@ -607,16 +664,22 @@ func (e *Elements) FindChildren(selector string) *Elements {
 					Stage:   "Find Children",
 					Element: lastElement,
 					Err:     lastErr,
+					Caller:  caller(1),
 				}
 			}
 			return found, nil
 		},
 	}
-	if e.s.err != nil {
+	if e.seq.err != nil {
 		return e
 	}
 
-	newE.e, newE.s.err = newE.selectFunc(selector)
+	var err error
+
+	newE.elems, err = newE.selectFunc(selector)
+	if err != nil {
+		newE.seq.err = err.(*Error)
+	}
 
 	return newE
 }
@@ -624,63 +687,84 @@ func (e *Elements) FindChildren(selector string) *Elements {
 // Test tests an arbitrary function against all the elements in this sequence
 // if the function returns an error then the test fails
 func (e *Elements) Test(testName string, fn func(e selenium.WebElement) error) *Elements {
+	if e.seq.err != nil {
+		return e
+	}
+	e = e.test(testName, fn)
+	if e.seq.err != nil {
+		e.seq.err.Caller = caller(0)
+	}
+	return e
+}
+
+func (e *Elements) test(testName string, fn func(e selenium.WebElement) error) *Elements {
 	stage := testName + " Test"
 	e.last = func() *Elements {
-		if e.s.err != nil {
+		if e.seq.err != nil {
 			return e
 		}
 
-		if len(e.e) == 0 {
-			e.s.err = &Error{
-				Stage: stage,
-				Err:   errors.Errorf("No elements exist for the selector '%s'", e.selector),
+		if len(e.elems) == 0 {
+			e.seq.err = &Error{
+				Stage:  stage,
+				Err:    errors.Errorf("No elements exist for the selector '%s'", e.selector),
+				Caller: caller(2),
 			}
 		}
-		if len(e.e) == 1 {
-			err := fn(e.e[0])
+		if len(e.elems) == 1 {
+			err := fn(e.elems[0])
 			if err != nil {
-				e.s.err = &Error{
+				e.seq.err = &Error{
 					Stage:   stage,
-					Element: e.e[0],
+					Element: e.elems[0],
 					Err:     err,
+					Caller:  caller(2),
 				}
 			}
 			return e
 		}
 
 		if !e.any && !e.all {
-			e.s.err = &Error{
+			e.seq.err = &Error{
 				Stage: stage,
 				Err: errors.Errorf("Selector '%s' returned multiple elements but .Any() or .All() weren't specified",
 					e.selector),
+				Caller: caller(2),
 			}
 			return e
 		}
 
 		var errs Errors
 
-		for i := range e.e {
-			err := fn(e.e[i])
+		for i := range e.elems {
+			err := fn(e.elems[i])
 			if err != nil {
 				if e.all {
-					e.s.err = &Error{
+					e.seq.err = &Error{
 						Stage:   stage,
-						Element: e.e[i],
+						Element: e.elems[i],
 						Err:     errors.Wrap(err, "Not All elements passed"),
+						Caller:  caller(2),
 					}
 					return e
 				}
 				errs = append(errs, &Error{
 					Stage:   stage,
-					Element: e.e[i],
+					Element: e.elems[i],
 					Err:     err,
+					Caller:  caller(2),
 				})
 			} else if e.any {
 				return e
 			}
 		}
 		if len(errs) != 0 {
-			e.s.err = errors.Wrap(errs, "None of the elements passed")
+			e.seq.err = &Error{
+				Stage:  stage,
+				Err:    errors.Wrap(errs, "None of the elements passed"),
+				Caller: caller(2),
+			}
+
 		}
 		return e
 	}
@@ -689,7 +773,7 @@ func (e *Elements) Test(testName string, fn func(e selenium.WebElement) error) *
 
 // Visible tests if the elements are visible
 func (e *Elements) Visible() *Elements {
-	return e.Test("Visible", func(we selenium.WebElement) error {
+	return e.test("Visible", func(we selenium.WebElement) error {
 		ok, err := we.IsDisplayed()
 		if err != nil {
 			return err
@@ -703,7 +787,7 @@ func (e *Elements) Visible() *Elements {
 
 // Hidden tests if the elements are hidden
 func (e *Elements) Hidden() *Elements {
-	return e.Test("Hidden", func(we selenium.WebElement) error {
+	return e.test("Hidden", func(we selenium.WebElement) error {
 		ok, err := we.IsDisplayed()
 		if err != nil {
 			return err
@@ -717,7 +801,7 @@ func (e *Elements) Hidden() *Elements {
 
 // Enabled tests if the elements are hidden
 func (e *Elements) Enabled() *Elements {
-	return e.Test("Enabled", func(we selenium.WebElement) error {
+	return e.test("Enabled", func(we selenium.WebElement) error {
 		ok, err := we.IsEnabled()
 		if err != nil {
 			return err
@@ -731,7 +815,7 @@ func (e *Elements) Enabled() *Elements {
 
 // Disabled tests if the elements are hidden
 func (e *Elements) Disabled() *Elements {
-	return e.Test("Disabled", func(we selenium.WebElement) error {
+	return e.test("Disabled", func(we selenium.WebElement) error {
 		ok, err := we.IsEnabled()
 		if err != nil {
 			return err
@@ -745,7 +829,7 @@ func (e *Elements) Disabled() *Elements {
 
 // Selected tests if the elements are selected
 func (e *Elements) Selected() *Elements {
-	return e.Test("Selected", func(we selenium.WebElement) error {
+	return e.test("Selected", func(we selenium.WebElement) error {
 		ok, err := we.IsSelected()
 		if err != nil {
 			return err
@@ -759,7 +843,7 @@ func (e *Elements) Selected() *Elements {
 
 // Unselected tests if the elements aren't selected
 func (e *Elements) Unselected() *Elements {
-	return e.Test("Selected", func(we selenium.WebElement) error {
+	return e.test("Selected", func(we selenium.WebElement) error {
 		ok, err := we.IsSelected()
 		if err != nil {
 			return err
@@ -780,7 +864,7 @@ type StringMatch struct {
 
 // Equals tests if the string value matches the passed in value exactly
 func (s *StringMatch) Equals(match string) *Elements {
-	return s.e.Test(fmt.Sprintf("%s Equals", s.testName), func(we selenium.WebElement) error {
+	return s.e.test(fmt.Sprintf("%s Equals", s.testName), func(we selenium.WebElement) error {
 		val, err := s.value(we)
 		if err != nil {
 			return err
@@ -794,7 +878,7 @@ func (s *StringMatch) Equals(match string) *Elements {
 
 // Contains tests if the string value contains the passed in value
 func (s *StringMatch) Contains(match string) *Elements {
-	return s.e.Test(fmt.Sprintf("%s Contains", s.testName), func(we selenium.WebElement) error {
+	return s.e.test(fmt.Sprintf("%s Contains", s.testName), func(we selenium.WebElement) error {
 		val, err := s.value(we)
 		if err != nil {
 			return err
@@ -808,7 +892,7 @@ func (s *StringMatch) Contains(match string) *Elements {
 
 // StartsWith tests if the string value starts with the passed in value
 func (s *StringMatch) StartsWith(match string) *Elements {
-	return s.e.Test(fmt.Sprintf("%s Starts With", s.testName), func(we selenium.WebElement) error {
+	return s.e.test(fmt.Sprintf("%s Starts With", s.testName), func(we selenium.WebElement) error {
 		val, err := s.value(we)
 		if err != nil {
 			return err
@@ -822,7 +906,7 @@ func (s *StringMatch) StartsWith(match string) *Elements {
 
 // EndsWith tests if the string value end with the passed in value
 func (s *StringMatch) EndsWith(match string) *Elements {
-	return s.e.Test(fmt.Sprintf("%s Ends With", s.testName), func(we selenium.WebElement) error {
+	return s.e.test(fmt.Sprintf("%s Ends With", s.testName), func(we selenium.WebElement) error {
 		val, err := s.value(we)
 		if err != nil {
 			return err
@@ -836,7 +920,7 @@ func (s *StringMatch) EndsWith(match string) *Elements {
 
 // Regexp tests if the string value matches the regular expression
 func (s *StringMatch) Regexp(exp *regexp.Regexp) *Elements {
-	return s.e.Test(fmt.Sprintf("%s Matches RegExp", s.testName), func(we selenium.WebElement) error {
+	return s.e.test(fmt.Sprintf("%s Matches RegExp", s.testName), func(we selenium.WebElement) error {
 		val, err := s.value(we)
 		if err != nil {
 			return err
@@ -894,28 +978,28 @@ func (e *Elements) CSSProperty(property string) *StringMatch {
 
 // Click sends a click to all of the elements
 func (e *Elements) Click() *Elements {
-	return e.Test("Click", func(we selenium.WebElement) error {
+	return e.test("Click", func(we selenium.WebElement) error {
 		return we.Click()
 	})
 }
 
 // SendKeys sends a string of key to the elements
 func (e *Elements) SendKeys(keys string) *Elements {
-	return e.Test("SendKeys", func(we selenium.WebElement) error {
+	return e.test("SendKeys", func(we selenium.WebElement) error {
 		return we.SendKeys(keys)
 	})
 }
 
 // Submit sends a submit event to the elements
 func (e *Elements) Submit() *Elements {
-	return e.Test("Submit", func(we selenium.WebElement) error {
+	return e.test("Submit", func(we selenium.WebElement) error {
 		return we.Submit()
 	})
 }
 
 // Clear clears the elements
 func (e *Elements) Clear() *Elements {
-	return e.Test("Clear", func(we selenium.WebElement) error {
+	return e.test("Clear", func(we selenium.WebElement) error {
 		return we.Clear()
 	})
 }
