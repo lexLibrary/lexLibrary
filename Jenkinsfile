@@ -10,6 +10,7 @@ pipeline {
             }
             environment {
                 GOPATH = '/go'
+                GOCACHE = 'off'
                 REPO = '/go/src/github.com/lexLibrary/lexLibrary'
                 HOME = '.'
             }
@@ -21,43 +22,43 @@ pipeline {
             }
         }
         stage('static analysis') {
-		parallel {
-	    stage('megacheck') {
-		    agent {
-			dockerfile { 
-			    dir 'ci/build' 
-			    args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
-			}
-		    }
-		    environment {
-			GOPATH = '/go'
-			REPO = '/go/src/github.com/lexLibrary/lexLibrary'
-			HOME = '.'
-		    }
-		    steps {
-			sh '''
-			     cd $REPO
-			     gometalinter ./... --vendor --concurrency 1 --deadline 30m --disable-all --enable=megacheck
-			'''
-		    }
-	    }
-	    stage('race') {
-                    steps {
-			    sh '''
-				cd ci
-				sh ./testInDocker.sh race
-			    '''
+            parallel {
+                stage('megacheck') {
+                    agent {
+                        dockerfile { 
+                            dir 'ci/build' 
+                            args '-v $WORKSPACE:/go/src/github.com/lexLibrary/lexLibrary'
+                        }
                     }
-            }
-	    stage('cover') {
-                    steps {
-			    sh '''
-				cd ci
-				sh ./testInDocker.sh cover
-			    '''
+                    environment {
+                        GOPATH = '/go'
+                        REPO = '/go/src/github.com/lexLibrary/lexLibrary'
+                        HOME = '.'
                     }
+                    steps {
+                        sh '''
+                            cd $REPO
+                            gometalinter ./... --vendor --concurrency 1 --deadline 30m --disable-all --enable=megacheck
+                        '''
+                    }
+                }
+                stage('race') {
+                    steps {
+                        sh '''
+                        cd ci
+                        sh ./testInDocker.sh race
+                        '''
+                    }
+                }
+                stage('cover') {
+                    steps {
+                        sh '''
+                        cd ci
+                        sh ./testInDocker.sh cover
+                        '''
+                    }
+                }
             }
-	    }
         }
         stage('test databases') {
             parallel {
