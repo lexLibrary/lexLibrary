@@ -17,7 +17,13 @@ func TestUser(t *testing.T) {
 	var admin *app.User
 	reset := func(t *testing.T) {
 		t.Helper()
-		_, err := data.NewQuery("delete from users").Exec()
+
+		_, err := data.NewQuery("delete from sessions").Exec()
+		if err != nil {
+			t.Fatalf("Error emptying sessions table before running tests: %s", err)
+		}
+
+		_, err = data.NewQuery("delete from users").Exec()
 		if err != nil {
 			t.Fatalf("Error emptying users table before running tests: %s", err)
 		}
