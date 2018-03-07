@@ -2,12 +2,12 @@ version: '3'
 services:
   webdriver:
     image: selenium/standalone-chrome
+    logging:
+        driver: "none"
     volumes:
       - /dev/shm:/dev/shm
   tests:
     build: "../build"
-    ports: 
-        - "8070:8070"
     links:
       - webdriver
     volumes:
@@ -15,11 +15,17 @@ services:
     environment:
       LLTEST: 'true'
       LLDATABASE: 'sqlite'
-      LLPORT: 8070
+      LLPORT: 8080
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
       GOPATH: /go
       LLBROWSER: 'chrome'
-    command: sh -c '
-        cd /go/src/github.com/lexLibrary/lexLibrary/ && ./build.sh && go test ./... -cover
-      '
+    command: 
+      - /bin/sh
+      - -c
+      - |
+            cd /go/src/github.com/lexLibrary/lexLibrary/ 
+            ./build.sh 
+            go test ./data -cover
+            go test ./app -cover
+            go test ./web -cover

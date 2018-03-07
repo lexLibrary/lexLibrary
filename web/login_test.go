@@ -1,5 +1,5 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
-package browser
+package web_test
 
 import (
 	"database/sql"

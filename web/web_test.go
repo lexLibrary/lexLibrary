@@ -1,5 +1,5 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
-package browser
+package web_test
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	defaultTimeout = 2 * time.Second
+	defaultTimeout = 5 * time.Second
 )
 
 var driver selenium.WebDriver

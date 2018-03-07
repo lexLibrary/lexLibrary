@@ -2,12 +2,12 @@ version: '3'
 services:
   webdriver:
     image: selenium/standalone-firefox
+    logging:
+        driver: "none"
     volumes:
       - /dev/shm:/dev/shm
   tests:
     build: "../build"
-    ports: 
-        - "8090:8090"
     links:
       - webdriver
     volumes:
@@ -15,11 +15,11 @@ services:
     environment:
       LLTEST: 'true'
       LLDATABASE: 'sqlite'
-      LLPORT: 8090
+      LLPORT: 8080
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
       GOPATH: /go
       LLBROWSER: 'firefox'
     command: sh -c '
-        cd /go/src/github.com/lexLibrary/lexLibrary/ && ./build.sh && go test ./browser
+        cd /go/src/github.com/lexLibrary/lexLibrary/ && ./build.sh && go test ./web
       '

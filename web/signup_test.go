@@ -1,17 +1,23 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
-package browser
+package web_test
 
 import (
 	"errors"
 	"strings"
 	"testing"
 
+	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/sequence"
 	"github.com/tebeka/selenium"
 )
 
-func TestFirstRun(t *testing.T) {
+func TestSignup(t *testing.T) {
+	uri := *llURL
+	uri.Path = "signup"
+
+	adminUsername := "admin"
+	password := "testWithAPrettyGoodP@ssword"
 	_, err := data.NewQuery("delete from users").Exec()
 	if err != nil {
 		t.Fatalf("Error emptying users table before running tests: %s", err)
@@ -20,22 +26,49 @@ func TestFirstRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error emptying settings table before running tests: %s", err)
 	}
+	admin, err := app.FirstRunSetup(adminUsername, password)
+	if err != nil {
+		t.Fatalf("Error setting up admin user: %s", err)
+	}
+
+	err = app.SettingSet(admin, "AllowPublicSignups", false)
+	if err != nil {
+		t.Fatalf("Error allowing public signups for testing: %s", err)
+	}
+
+	err = driver.DeleteAllCookies()
+	if err != nil {
+		t.Fatalf("Error clearing all cookies for testing: %s", err)
+	}
 
 	err = sequence.Start(driver).
-		Get(llURL.String()).
+		Get(uri.String()).
+		Title().Equals("Page Not Found - Lex Library").
+		End()
+
+	if err != nil {
+		t.Fatalf("Testing Signup Page failed: %s", err)
+	}
+
+	err = app.SettingSet(admin, "AllowPublicSignups", true)
+	if err != nil {
+		t.Fatalf("Error allowing public signups for testing: %s", err)
+	}
+
+	err = sequence.Start(driver).
+		Get(uri.String()).
 		Find("#submit").Click().
-		Find(".help.is-danger").Text().Contains("A username is required").
+		Find(".help.is-danger").Count(2).Any().Text().Contains("A username is required").
 		Find("#inputUsername").SendKeys("testusername").
 		Find("#submit").Click().
 		Find(".help.is-danger").Text().Contains("A password is required").
 		Find("#inputPassword").SendKeys("testWithAPrettyGoodP@ssword").
 		Find("#submit").Click().
-		Find(".help.is-danger").Count(1).Text().Contains("Passwords do not match").
+		Find(".help.is-danger").Text().Contains("Passwords do not match").
 		Find("#inputPassword2").SendKeys("testWithAPrettyGoodP@ssword").
 		Find("#submit").Click().
 		Find(".help.is-danger").Count(0).
-		Find("#inputUsername").Count(0).
-		Find("#settings").Count(1).And().
+		And().
 		Test("LL Cookie", func(d selenium.WebDriver) error {
 			c, err := d.GetCookie("lexlibrary")
 			if err != nil {
@@ -46,21 +79,10 @@ func TestFirstRun(t *testing.T) {
 			}
 			return nil
 		}).
-		Find("#inputPrivate").Enabled().
-		Find("#inputPublic").Enabled().
-		Find("#allowPublicDocs").Count(0).
-		Find("#allowPublicSignup").Count(0).
-		Find("#showAdvanced").Click().
-		Find("#allowPublicDocs").Count(1).
-		Find("#allowPublicSignup").Count(1).
-		Find("#inputPrivate").Disabled().
-		Find("#inputPublic").Disabled().
-		Find("#setSettings").Click().
-		And().Screenshot("test.png").
-		Find(".notification.is-danger").Count(0).
 		End()
+
 	if err != nil {
-		t.Fatalf("Testing First run failed: %s", err)
+		t.Fatalf("Testing Signup Page failed: %s", err)
 	}
 
 }
