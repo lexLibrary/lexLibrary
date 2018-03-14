@@ -36,7 +36,6 @@ var (
 	errImageTooLarge = NewFailureWithStatus(fmt.Sprintf("The uploaded image is too large.  The max size is %d MB",
 		imageMaxSize>>20), http.StatusRequestEntityTooLarge)
 	errImageInvalidType = NewFailure("Unsupported image type, please use a jpeg, png, or gif")
-	errImageDecodeError = NewFailure("The uploaded image cannot be decoded properly based on the content type")
 )
 
 var imageValidContentTypes = []string{"image/gif", "image/jpeg", "image/png"}
