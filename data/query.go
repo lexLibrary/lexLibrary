@@ -114,6 +114,21 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
+		"now": func() string {
+			t := time.Now()
+			switch dbType {
+			case mysql:
+				return fmt.Sprintf("'%s'", t.Format("2006-01-02 15:04:05.000"))
+			case sqlite:
+				return fmt.Sprintf("'%s'", t.Format(sqlite3.SQLiteTimestampFormats[0]))
+			case postgres, cockroachdb:
+				return fmt.Sprintf("'%s'", t.Format(time.RFC3339))
+			case sqlserver:
+				return fmt.Sprintf("'%s'", t.Format(time.RFC3339))
+			default:
+				panic("Unsupported database type")
+			}
+		},
 		"datetime": func() string {
 			// date + time with precision to milliseconds
 			switch dbType {
@@ -149,6 +164,19 @@ func (q *Query) buildTemplate() {
 				return "TEXT"
 			case sqlserver:
 				return fmt.Sprintf("nvarchar(%d)", size)
+			default:
+				panic("Unsupported database type")
+			}
+		},
+		"id": func() string {
+			// case sensitive unicode with size limits
+			switch dbType {
+			case postgres, cockroachdb, mysql:
+				return "varchar(20)"
+			case sqlite:
+				return "TEXT"
+			case sqlserver:
+				return fmt.Sprintf("nvarchar(20)")
 			default:
 				panic("Unsupported database type")
 			}

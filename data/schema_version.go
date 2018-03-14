@@ -2,34 +2,6 @@
 
 package data
 
-import "github.com/pkg/errors"
-
-type schemaVer struct {
-	updates []*Query
-}
-
-func (s schemaVer) exec() error {
-	for i := range s.updates {
-		_, err := s.updates[i].Exec()
-		if err != nil {
-			return errors.Wrapf(err, "Executing update #%d", i)
-		}
-	}
-	return nil
-}
-
-func newSchemaVer(templates ...string) schemaVer {
-	updates := make([]*Query, len(templates))
-
-	for i := range templates {
-		updates[i] = NewQuery(templates[i])
-	}
-
-	return schemaVer{
-		updates: updates,
-	}
-}
-
 /*
 	Array index determines the schema version
 	Add new schema versions to the bottom of the array
@@ -72,30 +44,33 @@ func newSchemaVer(templates ...string) schemaVer {
 	is it's Zero value which should be the column default.
 */
 
-var schemaVersions = []schemaVer{
-	newSchemaVer(`
+var schemaVersions = []*Query{
+	NewQuery(`
 		create table schema_versions (
-			version INTEGER PRIMARY KEY NOT NULL
+			version INTEGER PRIMARY KEY NOT NULL,
+			script {{text}} NOT NULL
 		)
 	`),
-	newSchemaVer(`
+	NewQuery(`
 		create table logs (
-			id {{varchar 20}} PRIMARY KEY NOT NULL,
+			id {{id}} PRIMARY KEY NOT NULL,
 			occurred {{datetime}} NOT NULL, 
 			message {{text}} NOT NULL
 		)
-	`, `
+	`),
+	NewQuery(`
 		create index i_occurred on logs (occurred)
-	`, `
+	`),
+	NewQuery(`
 		create table settings (
 			id {{varchar 64}} PRIMARY KEY NOT NULL,
 			description {{text}} NOT NULL,
 			value {{text}}  NOT NULL
 		)
 	`),
-	newSchemaVer(`
+	NewQuery(`
 		create table users (
-			id {{varchar 20}} PRIMARY KEY NOT NULL,
+			id {{id}} PRIMARY KEY NOT NULL,
 			username {{varchar 64}} NOT NULL,
 			first_name {{text}},
 			last_name {{text}},
@@ -109,10 +84,11 @@ var schemaVersions = []schemaVer{
 			updated {{datetime}} NOT NULL,
 			created {{datetime}} NOT NULL
 		)
-	`, `
+	`),
+	NewQuery(`
 		create table sessions (
 			id {{varchar 32}} NOT NULL,
-			user_id {{varchar 20}} NOT NULL REFERENCES users(id),
+			user_id {{id}} NOT NULL REFERENCES users(id),
 			valid {{bool}} NOT NULL,
 			expires {{datetime}} NOT NULL,
 			ip_address {{text}} NOT NULL,
@@ -123,7 +99,24 @@ var schemaVersions = []schemaVer{
 			created {{datetime}} NOT NULL,
 			PRIMARY KEY(id, user_id)
 		)
-	`, `
+	`),
+	NewQuery(`
 		create index i_username on users (username)
+	`),
+	NewQuery(`
+		create table images (
+			id {{id}} PRIMARY KEY NOT NULL,
+			name {{text}} NOT NULL,
+			version {{int}} NOT NULL,
+			content_type {{text}} NOT NULL,
+			data {{bytes}} NOT NULL,
+			thumb {{bytes}} NOT NULL,
+			placeholder {{bytes}} NOT NULL,
+			updated {{datetime}} NOT NULL,
+			created {{datetime}} NOT NULL
+		)	
+	`),
+	NewQuery(`
+		alter table users add column profile_image {{id}} REFERENCES images(id)
 	`),
 }

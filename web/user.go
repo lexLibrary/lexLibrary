@@ -67,17 +67,18 @@ func userPost(w http.ResponseWriter, r *http.Request, c ctx) {
 func userGet(w http.ResponseWriter, r *http.Request, c ctx) {
 	username := c.params.ByName("username")
 
-	var who *app.User
-	var err error
-
 	if c.session != nil {
-		who, err = c.session.User()
+		who, err := c.session.User()
 		if errHandled(err, w, r) {
+			return
+		}
+		if strings.ToLower(username) == who.Username {
+			respond(w, success(who))
 			return
 		}
 	}
 
-	u, err := app.UserGet(username, who)
+	u, err := app.UserGet(username)
 	if errHandled(err, w, r) {
 		return
 	}
@@ -137,7 +138,7 @@ func userPutPassword(w http.ResponseWriter, r *http.Request, c ctx) {
 			return
 		}
 
-		err = u.SetPassword(*input.OldPassword, *input.NewPassword, *input.Version, u)
+		err = u.SetPassword(*input.OldPassword, *input.NewPassword, *input.Version)
 		if errHandled(err, w, r) {
 			return
 		}

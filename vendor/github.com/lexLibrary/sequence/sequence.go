@@ -146,6 +146,7 @@ func (s *Sequence) Eventually() *Sequence {
 	}, s.EventualTimeout, s.EventualPoll)
 	if err != nil {
 		s.err.Caller = caller(0)
+		s.err.Err = errors.Wrap(s.err, "Eventually timed out")
 	}
 	return s
 }
@@ -167,6 +168,7 @@ func (e *Elements) Eventually() *Elements {
 	}, e.seq.EventualTimeout, e.seq.EventualPoll)
 	if err != nil {
 		e.seq.err.Caller = caller(0)
+		e.seq.err.Err = errors.Wrap(e.seq.err, "Eventually timed out")
 	}
 	return e
 }

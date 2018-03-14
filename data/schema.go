@@ -9,20 +9,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-var schemaVersionInsert = NewQuery(`insert into schema_versions (version) values ({{arg "version"}})`)
+var schemaVersionInsert = NewQuery(`insert into schema_versions (version, script) values ({{arg "version"}}, {{arg "script"}})`)
 
-func ensureSchema() {
+func ensureSchema() error {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one
 
 	err := ensureSchemaTable()
 	if err != nil {
-		log.Fatalf("Error ensuring schema table: %s", err)
+		return errors.Wrap(err, "Ensuring schema table")
 	}
 
 	err = ensureSchemaVersion()
 	if err != nil {
-		log.Fatalf("Error ensuring schema versions: %s", err)
+		return errors.Wrap(err, "Ensuring schema version")
 	}
+	return nil
 }
 
 func ensureSchemaTable() error {
@@ -40,12 +41,12 @@ func ensureSchemaTable() error {
 		if err != sql.ErrNoRows {
 			return errors.Wrap(err, "Looking for schema_versions table")
 		}
-		err = schemaVersions[0].exec()
+		_, err = schemaVersions[0].Exec()
 		if err != nil {
 			return errors.Wrap(err, "Creating schema_versions table")
 		}
 
-		_, err := schemaVersionInsert.Exec(sql.Named("version", 0))
+		_, err := schemaVersionInsert.Exec(sql.Named("version", 0), sql.Named("script", schemaVersions[0].Statement()))
 		if err != nil {
 			return errors.Wrap(err, "Inserting first schema version")
 		}
@@ -59,7 +60,7 @@ func ensureSchemaVersion() error {
 	dbVer := 0
 	err := db.QueryRow(`select max(version) from schema_versions`).Scan(&dbVer)
 	if err == sql.ErrNoRows {
-		_, err := schemaVersionInsert.Exec(sql.Named("version", 0))
+		_, err := schemaVersionInsert.Exec(sql.Named("version", 0), sql.Named("script", schemaVersions[0].Statement()))
 		if err != nil {
 			return errors.Wrap(err, "Inserting first schema version")
 		}
@@ -75,12 +76,12 @@ func ensureSchemaVersion() error {
 	if dbVer < currentVer {
 		dbVer++
 		log.Printf("Updating database schema to version %d", dbVer)
-		err = schemaVersions[dbVer].exec()
+		_, err = schemaVersions[dbVer].Exec()
 		if err != nil {
 			return errors.Wrapf(err, "Updating schema to version %d", dbVer)
 		}
 
-		_, err = schemaVersionInsert.Exec(sql.Named("version", dbVer))
+		_, err = schemaVersionInsert.Exec(sql.Named("version", dbVer), sql.Named("script", schemaVersions[dbVer].Statement()))
 		if err != nil {
 			return errors.Wrapf(err, "Inserting schema version %d", dbVer)
 		}

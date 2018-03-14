@@ -26,12 +26,13 @@ func TestSignup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error emptying settings table before running tests: %s", err)
 	}
-	admin, err := app.FirstRunSetup(adminUsername, password)
+	user, err := app.FirstRunSetup(adminUsername, password)
 	if err != nil {
 		t.Fatalf("Error setting up admin user: %s", err)
 	}
+	admin := user.AsAdmin()
 
-	err = app.SettingSet(admin, "AllowPublicSignups", false)
+	err = admin.SetSetting("AllowPublicSignups", false)
 	if err != nil {
 		t.Fatalf("Error allowing public signups for testing: %s", err)
 	}
@@ -50,7 +51,7 @@ func TestSignup(t *testing.T) {
 		t.Fatalf("Testing Signup Page failed: %s", err)
 	}
 
-	err = app.SettingSet(admin, "AllowPublicSignups", true)
+	err = admin.SetSetting("AllowPublicSignups", true)
 	if err != nil {
 		t.Fatalf("Error allowing public signups for testing: %s", err)
 	}

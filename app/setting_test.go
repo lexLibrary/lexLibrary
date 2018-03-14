@@ -61,7 +61,7 @@ func TestSetting(t *testing.T) {
 
 	t.Run("Get", func(t *testing.T) {
 		id := "AllowPublicDocuments"
-		s, err := app.SettingGet(admin, id)
+		s, err := admin.AsAdmin().Setting(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
 		}
@@ -81,7 +81,7 @@ func TestSetting(t *testing.T) {
 	})
 
 	t.Run("Get with Invalid id", func(t *testing.T) {
-		_, err := app.SettingGet(admin, "badKey")
+		_, err := admin.AsAdmin().Setting("badKey")
 		if err == nil {
 			t.Fatalf("No error returned from a bad get setting id")
 		}
@@ -98,12 +98,12 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Error getting setting default: %s", err)
 		}
 
-		err = app.SettingSet(admin, id, !d.Bool())
+		err = admin.AsAdmin().SetSetting(id, !d.Bool())
 		if err != nil {
 			t.Fatalf("Error setting value: %s", err)
 		}
 
-		s, err := app.SettingGet(admin, id)
+		s, err := admin.AsAdmin().Setting(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
 		}
@@ -112,12 +112,12 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Setting value was not set.  Expected %v, got %v", !d.Bool(), s.Bool())
 		}
 
-		err = app.SettingSet(admin, id, d.Bool())
+		err = admin.AsAdmin().SetSetting(id, d.Bool())
 		if err != nil {
 			t.Fatalf("Error updating setting value: %s", err)
 		}
 
-		s, err = app.SettingGet(admin, id)
+		s, err = admin.AsAdmin().Setting(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
 		}
@@ -128,7 +128,7 @@ func TestSetting(t *testing.T) {
 
 	})
 	t.Run("Set with Invalid id", func(t *testing.T) {
-		err := app.SettingSet(admin, "badKey", "badValue")
+		err := admin.AsAdmin().SetSetting("badKey", "badValue")
 		if err == nil {
 			t.Fatalf("No error returned from a bad Set setting id")
 		}
@@ -138,7 +138,7 @@ func TestSetting(t *testing.T) {
 		}
 	})
 	t.Run("Set with Invalid Type", func(t *testing.T) {
-		err := app.SettingSet(admin, "AllowPublicDocuments", "badValue")
+		err := admin.AsAdmin().SetSetting("AllowPublicDocuments", "badValue")
 		if err == nil {
 			t.Fatalf("No error returned from a bad Set setting id")
 		}
@@ -161,7 +161,7 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Error getting default: %s", err)
 		}
 
-		s, err := app.SettingGet(admin, id)
+		s, err := admin.AsAdmin().Setting(id)
 		if err != nil {
 			t.Fatalf("Error getting setting: %s", err)
 		}
@@ -197,7 +197,7 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Error getting default setting for %s: %s", id, err)
 		}
 
-		err = app.SettingSet(admin, id, !d.Bool())
+		err = admin.AsAdmin().SetSetting(id, !d.Bool())
 		if err != nil {
 			t.Fatalf("Error setting setting: %s", err)
 		}
@@ -250,7 +250,7 @@ func TestSetting(t *testing.T) {
 	t.Run("Settings with options", func(t *testing.T) {
 		reset(t)
 
-		err := app.SettingSet(admin, "AuthenticationType", "bad value")
+		err := admin.AsAdmin().SetSetting("AuthenticationType", "bad value")
 		if err == nil {
 			t.Fatalf("Setting an an invalid value on a setting with options did not fail")
 		}
@@ -264,7 +264,7 @@ func TestSetting(t *testing.T) {
 	t.Run("Setting with validate func", func(t *testing.T) {
 		reset(t)
 
-		err := app.SettingSet(admin, "PasswordMinLength", 3)
+		err := admin.AsAdmin().SetSetting("PasswordMinLength", 3)
 		if err == nil {
 			t.Fatalf("Setting an an invalid value on a setting with a validate func did not fail")
 		}
@@ -278,7 +278,7 @@ func TestSetting(t *testing.T) {
 		})
 
 		expected := 20
-		err := app.SettingSet(admin, "PasswordMinLength", expected)
+		err := admin.AsAdmin().SetSetting("PasswordMinLength", expected)
 		if err != nil {
 			t.Fatalf("Error setting setting value: %s", err)
 		}

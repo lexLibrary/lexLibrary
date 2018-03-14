@@ -42,15 +42,15 @@ var vm = new Vue({
                 })
                 .then((result) => {
                     this.loading = false;
-                    if (result.content) {
-                        if (result.content.expired) {
+                    if (result.response) {
+                        if (result.response.expired) {
                             this.modalTitle = "Your password has expired";
                             this.showModal = true;
                             return;
-                        } else if (result.content.passwordExpiration) {
-                            this.user = result.content;
+                        } else if (result.response.passwordExpiration) {
+                            this.user = result.response;
                             let range = new Date();
-                            let expires = new Date(result.content.passwordExpiration);
+                            let expires = new Date(result.response.passwordExpiration);
                             range.setDate(range.getDate() - 7);
                             if (range <= expires) {
                                 this.modalTitle = `Your password will expire soon`;
@@ -63,7 +63,7 @@ var vm = new Vue({
                 })
                 .catch((err) => {
                     this.loading = false;
-                    this.error = err.content;
+                    this.error = err.response;
                 });
         },
         navigate: function() {
@@ -105,7 +105,7 @@ var vm = new Vue({
                 })
                 .catch((err) => {
                     this.loading = false;
-                    this.passwordErr = err.content;
+                    this.passwordErr = err.response;
                 });
         },
         validatePassword: function() {
@@ -119,7 +119,7 @@ var vm = new Vue({
                     password: this.newPassword
                 })
                 .catch((err) => {
-                    this.passwordErr = err.content;
+                    this.passwordErr = err.response;
                 });
         },
         validatePassword2: function() {

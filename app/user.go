@@ -4,28 +4,41 @@ package app
 
 import (
 	"database/sql"
+	"io"
+	"math"
 	"strings"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
-	"github.com/rs/xid"
 )
 
 // User is a user login to Lex Library
 type User struct {
-	ID                 xid.ID        `json:"id"`
+	ID                 data.ID       `json:"id"`
 	Username           string        `json:"username"`
 	FirstName          string        `json:"firstName"`
 	LastName           string        `json:"lastName"`
 	AuthType           string        `json:"authType,omitempty"`
-	Password           []byte        `json:"-"`
-	PasswordVersion    int           `json:"-"`
 	PasswordExpiration data.NullTime `json:"passwordExpiration"`
 	Active             bool          `json:"active"`            // whether or not the user is active and can log in
 	Version            int           `json:"version,omitempty"` // version of this record starting with 0
 	Updated            time.Time     `json:"updated,omitempty"`
 	Created            time.Time     `json:"created,omitempty"`
-	Admin              bool          `json:"admin,omitempty"`
+	Admin              bool          `json:"admin"`
+
+	password        []byte
+	passwordVersion int
+	profileImage    data.ID
+}
+
+// PublicProfile is the publically viewable user information copied from a private user record
+type PublicProfile struct {
+	ID        data.ID `json:"id"`
+	Username  string  `json:"username"`
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	Admin     bool    `json:"admin"`
+	Active    bool    `json:"active"` // whether or not the user is active and can log in
 }
 
 // AuthType determines the authentication method for a given user
@@ -37,6 +50,12 @@ const (
 // user constants
 const (
 	UserMaxNameLength = 64 // This is pretty arbitrary but there should probably be some limit
+
+	// images
+	userImageWidth  = 300
+	userImageHeight = 300
+	userIconWidth   = 32
+	userIconHeight  = 32
 )
 
 // ErrUserNotFound is when a user could not be found
@@ -75,28 +94,62 @@ var (
 		{{arg "created"}},
 		{{arg "admin"}}
 	)`)
-	sqlUserFromID = data.NewQuery(`
-		select id, username, first_name, last_name, auth_type, password, password_version, password_expiration, 
-			active, version, updated, created, admin 
-		from users where id = {{arg "id"}}`)
 	sqlUserFromUsername = data.NewQuery(`
-		select id, username, first_name, last_name, auth_type, password, password_version, password_expiration, 
-			active, version, updated, created, admin 
+		select 	id, 
+			username, 
+			first_name, 
+			last_name, 
+			auth_type, 
+			password, 
+			password_version, 
+			password_expiration, 
+			active, 
+			version, 
+			updated, 
+			created, 
+			admin, 
+			profile_image 
+		from users where username = {{arg "username"}}
+	`)
+	sqlUserFromID = data.NewQuery(`
+		select 	id, 
+			username, 
+			first_name, 
+			last_name, 
+			auth_type, 
+			password, 
+			password_version, 
+			password_expiration, 
+			active, 
+			version, 
+			updated, 
+			created, 
+			admin, 
+			profile_image 
+		from users where id = {{arg "id"}}
+	`)
+	sqlUserPublicProfile = data.NewQuery(`
+		select id, username, first_name, last_name, active, admin 
 		from users where username = {{arg "username"}}`)
-	sqlUserUpdateActive = data.NewQuery(`update users set active = {{arg "active"}}, version = version + 1 
+
+	sqlUserUpdateActive = data.NewQuery(`update users set active = {{arg "active"}}, updated = {{now}}, version = version + 1 
 		where id = {{arg "id"}} and version = {{arg "version"}}`)
-	sqlUserUpdateAdmin = data.NewQuery(`update users set admin = {{arg "admin"}}, version = version + 1
+	sqlUserUpdateAdmin = data.NewQuery(`update users set admin = {{arg "admin"}}, updated = {{now}}, version = version + 1
 		where id = {{arg "id"}} and version = {{arg "version"}}`)
 	sqlUserUpdatePassword = data.NewQuery(`update users
 		set 	password = {{arg "password"}},
 			password_version = {{arg "password_version"}},
 			password_expiration = {{arg "password_expiration"}},
+			updated = {{now}},
 			version = version + 1
 		where id = {{arg "id"}}
 		and version = {{arg "version"}}`)
 	sqlUserUpdateName = data.NewQuery(`update users set first_name = {{arg "first_name"}}, 
-		last_name = {{arg "last_name"}}, version = version + 1 where id = {{arg "id"}} 
+		last_name = {{arg "last_name"}}, updated = {{now}}, version = version + 1 where id = {{arg "id"}} 
 		and version = {{arg "version"}}`)
+	sqlUserUpdateProfileImage = data.NewQuery(`update users set profile_image = {{arg "profile_image"}}, updated = {{now}},
+		version = version + 1
+		where id = {{arg "id"}} and version = {{arg "version"}}`)
 )
 
 // UserNew creates a new user, from the sign up page
@@ -123,7 +176,7 @@ func UserNew(username, password string) (*User, error) {
 
 func userNew(tx *sql.Tx, username, password string) (*User, error) {
 	u := &User{
-		ID:       xid.New(),
+		ID:       data.NewID(),
 		Username: strings.ToLower(username),
 		AuthType: AuthTypePassword,
 		Active:   true,
@@ -149,10 +202,10 @@ func userNew(tx *sql.Tx, username, password string) (*User, error) {
 		return nil, err
 	}
 
-	u.PasswordVersion = passVer
-	u.Password = hash
+	u.passwordVersion = passVer
+	u.password = hash
 
-	_, err = userGet(tx, u.Username)
+	_, err = userFromUsername(tx, u.Username)
 
 	if err == nil {
 		return nil, NewFailure("A user with the username %s already exists", u.Username)
@@ -174,45 +227,83 @@ func userNew(tx *sql.Tx, username, password string) (*User, error) {
 	return u, nil
 }
 
-// UserGet retrieves a user based on the passed in username
-func UserGet(username string, who *User) (*User, error) {
-	u, err := userGet(nil, username)
-	if err != nil {
-		return nil, err
-	}
+// UserGet retrieves the publically viewable user profile information based from the passed in username
+// app internal code should use un-exported funcs that contain the full User record
+func UserGet(username string) (*PublicProfile, error) {
+	u := &PublicProfile{}
 
-	if who == nil || who.ID != u.ID {
-		u.clearPrivate()
-	} else {
-		u.clearPassword()
-	}
-
-	return u, nil
-}
-
-func userGet(tx *sql.Tx, username string) (*User, error) {
-	u := &User{}
-
-	err := sqlUserFromUsername.Tx(tx).QueryRow(sql.Named("username", strings.ToLower(username))).
+	err := sqlUserPublicProfile.QueryRow(sql.Named("username", strings.ToLower(username))).
 		Scan(
 			&u.ID,
 			&u.Username,
 			&u.FirstName,
 			&u.LastName,
-			&u.AuthType,
-			&u.Password,
-			&u.PasswordVersion,
-			&u.PasswordExpiration,
 			&u.Active,
-			&u.Version,
-			&u.Updated,
-			&u.Created,
 			&u.Admin,
 		)
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
 	}
 
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func userFromUsername(tx *sql.Tx, username string) (*User, error) {
+	u := &User{}
+
+	err := sqlUserFromUsername.Tx(tx).QueryRow(sql.Named("username", strings.ToLower(username))).Scan(
+		&u.ID,
+		&u.Username,
+		&u.FirstName,
+		&u.LastName,
+		&u.AuthType,
+		&u.password,
+		&u.passwordVersion,
+		&u.PasswordExpiration,
+		&u.Active,
+		&u.Version,
+		&u.Updated,
+		&u.Created,
+		&u.Admin,
+		&u.profileImage,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
+	u := &User{}
+	err := sqlUserFromID.Tx(tx).QueryRow(sql.Named("id", id)).Scan(
+		&u.ID,
+		&u.Username,
+		&u.FirstName,
+		&u.LastName,
+		&u.AuthType,
+		&u.password,
+		&u.passwordVersion,
+		&u.PasswordExpiration,
+		&u.Active,
+		&u.Version,
+		&u.Updated,
+		&u.Created,
+		&u.Admin,
+		&u.profileImage,
+	)
+	if err == sql.ErrNoRows {
+		return nil, ErrUserNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +318,8 @@ func (u *User) insert(tx *sql.Tx) error {
 		sql.Named("first_name", u.FirstName),
 		sql.Named("last_name", u.LastName),
 		sql.Named("auth_type", u.AuthType),
-		sql.Named("password", u.Password),
-		sql.Named("password_version", u.PasswordVersion),
+		sql.Named("password", u.password),
+		sql.Named("password_version", u.passwordVersion),
 		sql.Named("password_expiration", u.PasswordExpiration),
 		sql.Named("active", u.Active),
 		sql.Named("version", u.Version),
@@ -263,15 +354,7 @@ func (u *User) validate() error {
 	return nil
 }
 
-func (u *User) canBeUpdated(who *User) bool {
-	return who != nil && (who.ID == u.ID || who.Admin)
-}
-
-func (u *User) update(who *User, update func() (sql.Result, error)) error {
-	if !u.canBeUpdated(who) {
-		return Unauthorized("You do not have permission to update this user")
-	}
-
+func (u *User) update(update func() (sql.Result, error)) error {
 	r, err := update()
 
 	if err != nil {
@@ -288,9 +371,9 @@ func (u *User) update(who *User, update func() (sql.Result, error)) error {
 	return nil
 }
 
-// SetActive sets the active status of the given user
-func (u *User) SetActive(active bool, version int, who *User) error {
-	err := u.update(who, func() (sql.Result, error) {
+// setActive sets the active status of the given user
+func (u *User) setActive(active bool, version int) error {
+	err := u.update(func() (sql.Result, error) {
 		return sqlUserUpdateActive.Exec(sql.Named("active", active), sql.Named("id", u.ID),
 			sql.Named("version", version))
 	})
@@ -303,8 +386,8 @@ func (u *User) SetActive(active bool, version int, who *User) error {
 }
 
 // SetName sets the user's name
-func (u *User) SetName(firstName, lastName string, version int, who *User) error {
-	return u.update(who, func() (sql.Result, error) {
+func (u *User) SetName(firstName, lastName string, version int) error {
+	return u.update(func() (sql.Result, error) {
 		u.FirstName = firstName
 		u.LastName = lastName
 		err := u.validate()
@@ -317,25 +400,9 @@ func (u *User) SetName(firstName, lastName string, version int, who *User) error
 	})
 }
 
-func (u *User) clearPrivate() {
-	u.clearPassword()
-	u.AuthType = ""
-	u.Version = 0
-	u.Updated = time.Time{}
-	u.Created = time.Time{}
-}
-
-func (u *User) clearPassword() {
-	u.Password = nil
-	u.PasswordVersion = 0
-}
-
-// SetAdmin sets if a user is an Administrator or not
-func (u *User) SetAdmin(admin bool, version int, who *User) error {
-	if who == nil || !who.Admin {
-		return Unauthorized("You do not have permission to update this user to Admin")
-	}
-	err := u.update(who, func() (sql.Result, error) {
+// setAdmin sets if a user is an Administrator or not
+func (u *User) setAdmin(admin bool, version int) error {
+	err := u.update(func() (sql.Result, error) {
 		return sqlUserUpdateAdmin.Exec(
 			sql.Named("admin", admin),
 			sql.Named("id", u.ID),
@@ -351,12 +418,12 @@ func (u *User) SetAdmin(admin bool, version int, who *User) error {
 
 // UserSetExpiredPassword sets a user's password when it has expired and they can't login to change their password
 func UserSetExpiredPassword(username, oldPassword, newPassword string) (*User, error) {
-	u, err := userGet(nil, username)
+	u, err := userFromUsername(nil, username)
 	if err != nil {
 		return nil, err
 	}
 
-	err = u.SetPassword(oldPassword, newPassword, u.Version, u)
+	err = u.SetPassword(oldPassword, newPassword, u.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -365,11 +432,8 @@ func UserSetExpiredPassword(username, oldPassword, newPassword string) (*User, e
 }
 
 // SetPassword updates a users password, and invalidates any existing sessions opened with the old password
-func (u *User) SetPassword(oldPassword, newPassword string, version int, who *User) error {
-	if who == nil || who.ID != u.ID {
-		return Unauthorized("You do not have permission to update this user")
-	}
-	err := passwordVersions[u.PasswordVersion].compare(oldPassword, u.Password)
+func (u *User) SetPassword(oldPassword, newPassword string, version int) error {
+	err := passwordVersions[u.passwordVersion].compare(oldPassword, u.password)
 	if err != nil {
 		if err == ErrPasswordMismatch {
 			return NewFailureFromErr(err)
@@ -399,7 +463,7 @@ func (u *User) SetPassword(oldPassword, newPassword string, version int, who *Us
 		}
 
 		// update password, version and expiration
-		err = u.update(who, func() (sql.Result, error) {
+		err = u.update(func() (sql.Result, error) {
 			return sqlUserUpdatePassword.Exec(
 				sql.Named("password", hash),
 				sql.Named("password_version", passVer),
@@ -419,9 +483,110 @@ func (u *User) SetPassword(oldPassword, newPassword string, version int, who *Us
 		if err != nil {
 			return err
 		}
-		u.PasswordVersion = passVer
-		u.Password = hash
+		u.passwordVersion = passVer
+		u.password = hash
 		u.PasswordExpiration = expires
 		return nil
 	})
+}
+
+// AsAdmin returns the Admin context for this user
+func (u *User) AsAdmin() *Admin {
+	return &Admin{u}
+}
+
+// ProfileImage returns the user's profile image
+func (u *User) ProfileImage() *Image {
+	return imageGet(u.profileImage)
+}
+
+// SetProfileImage sets the current user's profile image
+func (u *User) SetProfileImage(rc io.ReadCloser, name, contentType string, version int) error {
+	i, err := imageNew(name, contentType, rc)
+	if err != nil {
+		return err
+	}
+
+	i.thumbMinDimension = userIconWidth
+
+	return data.BeginTx(func(tx *sql.Tx) error {
+		if u.profileImage.Valid {
+			// a previous user image exists, delete it
+			err = imageDelete(tx, u.profileImage)
+			if err != nil {
+				return err
+			}
+
+		}
+
+		err = i.insert(tx)
+		if err != nil {
+			return err
+		}
+
+		err = u.update(func() (sql.Result, error) {
+			return sqlUserUpdateProfileImage.Tx(tx).Exec(
+				sql.Named("profile_image", i.id),
+				sql.Named("id", u.ID),
+				sql.Named("version", version),
+			)
+		})
+		if err != nil {
+			return err
+		}
+
+		u.profileImage = i.id
+		return nil
+	})
+}
+
+// CropProfileImage crops the exising user's profile image
+func (u *User) CropProfileImage(x0, y0, x1, y1 float64) error {
+	i, err := imageGet(u.profileImage).raw()
+	if err != nil {
+		return err
+	}
+
+	// validate inputs, instead of failing set them to predefined values
+	if x0 < 0 || y0 < 0 || x1 < 0 || y1 < 0 {
+		x0 = 0
+		x1 = float64(i.decoded.Bounds().Dx())
+		y0 = 0
+		y1 = float64(i.decoded.Bounds().Dy())
+	}
+
+	if (x1 - x0) < userIconWidth {
+		x0 = 0
+		x1 = float64(i.decoded.Bounds().Dx())
+	}
+
+	if (y1 - y0) < userIconHeight {
+		y0 = 0
+		y1 = float64(i.decoded.Bounds().Dy())
+	}
+
+	ratio := (x1 - x0) / (y1 - y0)
+	//give a little wiggle room for rounding
+	if ratio < 0.95 || ratio > 1.05 {
+		min := math.Min(float64(i.decoded.Bounds().Dx()), float64(i.decoded.Bounds().Dy()))
+
+		err = i.cropCenter(int(min), int(min))
+		if err != nil {
+			return err
+		}
+	} else {
+		err = i.crop(int(math.Round(x0)), int(math.Round(y0)), int(math.Round(x1)), int(math.Round(y1)))
+		if err != nil {
+			return err
+		}
+	}
+
+	err = i.resize(userImageWidth, userImageHeight)
+	if err != nil {
+		return err
+	}
+
+	i.thumbMinDimension = userIconWidth
+
+	return i.update(nil, i.version)
 }

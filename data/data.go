@@ -111,9 +111,7 @@ func Init(cfg Config) error {
 	db.SetMaxIdleConns(cfg.MaxIdleConnections)
 	db.SetMaxOpenConns(cfg.MaxOpenConnections)
 
-	ensureSchema()
-
-	return err
+	return ensureSchema()
 }
 
 func testDB(attempt int) {

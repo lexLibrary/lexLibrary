@@ -28,7 +28,7 @@ func TestSession(t *testing.T) {
 
 		u, err = app.FirstRunSetup(username, password)
 		if err != nil {
-			t.Fatalf("Error adding user for session testing")
+			t.Fatalf("Error adding user for session testing: %s", err)
 		}
 	}
 
@@ -153,7 +153,7 @@ func TestSession(t *testing.T) {
 			t.Fatalf("Logging in with short password was not a login failure: %s", err)
 		}
 
-		err = u.SetActive(false, u.Version, u)
+		err = u.AsAdmin().SetUserActive(u, false, u.Version)
 		if err != nil {
 			t.Fatalf("Error inactivating user: %s", err)
 		}

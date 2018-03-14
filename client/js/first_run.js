@@ -53,7 +53,7 @@ var vm = new Vue({
                     this.showSettings = true;
                 })
                 .catch((err) => {
-                    this.error = err.content;
+                    this.error = err.response;
                 });
         },
         validatePassword2: function() {
@@ -80,7 +80,7 @@ var vm = new Vue({
                     location.reload();
                 })
                 .catch((err) => {
-                    this.error = err.content;
+                    this.error = err.response;
                 });
         },
     },

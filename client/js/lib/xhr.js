@@ -14,8 +14,7 @@ function send(method, url, data) {
         request.onload = () => {
             let result = {
                 request, //original xhr request
-                status: 0, // http status code
-                content: null, //content from the actual response, may just be a string in the case of failures
+				response: null,
             };
 
             let token = request.getResponseHeader(CSRFHeader);
@@ -24,12 +23,11 @@ function send(method, url, data) {
             }
 
             try {
-                result.content = JSON.parse(request.responseText);
+                result.response = JSON.parse(request.responseText);
             } catch (e) {
-                result.content = request.responseText;
+                result.response = request.responseText;
             }
 
-            result.status = request.status;
 
             if (request.status >= 200 && request.status < 400) {
                 return resolve(result);

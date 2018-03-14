@@ -8,13 +8,12 @@ import (
 
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/pkg/errors"
-	"github.com/rs/xid"
 )
 
 // Session is a user login session to Lex Library
 type Session struct {
 	ID        string
-	UserID    xid.ID
+	UserID    data.ID
 	Valid     bool
 	Expires   time.Time
 	IPAddress string
@@ -84,7 +83,8 @@ func Login(username string, password string) (*User, error) {
 		return nil, ErrLogonFailure
 	}
 
-	u, err := userGet(nil, username)
+	u, err := userFromUsername(nil, username)
+
 	if err == ErrUserNotFound {
 		return nil, ErrLogonFailure
 	}
@@ -97,7 +97,7 @@ func Login(username string, password string) (*User, error) {
 	}
 
 	if u.AuthType == AuthTypePassword {
-		err = passwordVersions[u.PasswordVersion].compare(password, u.Password)
+		err = passwordVersions[u.passwordVersion].compare(password, u.password)
 		if err != nil {
 			if err != ErrPasswordMismatch {
 				LogError(err)
@@ -112,7 +112,6 @@ func Login(username string, password string) (*User, error) {
 			" This could mean that an older version of Lex Library is running on a newer version of the database.",
 			u.Username)
 	}
-	u.clearPassword()
 	return u, nil
 }
 
@@ -146,7 +145,7 @@ func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Se
 }
 
 // SessionGet retrieves a session
-func SessionGet(userID xid.ID, sessionID string) (*Session, error) {
+func SessionGet(userID data.ID, sessionID string) (*Session, error) {
 	s := &Session{}
 	err := sqlSessionGet.QueryRow(sql.Named("id", sessionID), sql.Named("user_id", userID)).
 		Scan(
@@ -208,22 +207,8 @@ func (s *Session) User() (*User, error) {
 	if s.user != nil {
 		return s.user, nil
 	}
-	u := &User{}
-	err := sqlUserFromID.QueryRow(sql.Named("id", s.UserID)).Scan(
-		&u.ID,
-		&u.Username,
-		&u.FirstName,
-		&u.LastName,
-		&u.AuthType,
-		&u.Password,
-		&u.PasswordVersion,
-		&u.PasswordExpiration,
-		&u.Active,
-		&u.Version,
-		&u.Updated,
-		&u.Created,
-		&u.Admin)
-	if err == sql.ErrNoRows {
+	u, err := userFromID(nil, s.UserID)
+	if err == ErrUserNotFound {
 		return nil, ErrSessionInvalid
 	}
 	if err != nil {

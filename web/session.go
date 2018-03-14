@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/pkg/errors"
-	"github.com/rs/xid"
 )
 
 const (
@@ -87,7 +87,7 @@ func session(r *http.Request) (*app.Session, error) {
 
 	ids := strings.Split(cValue, sessionValDelim)
 
-	userID, err := xid.FromString(ids[0])
+	userID, err := data.IDFromString(ids[0])
 	if err != nil {
 		return nil, nil
 	}

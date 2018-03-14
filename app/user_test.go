@@ -11,6 +11,7 @@ import (
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/rs/xid"
 )
 
 func TestUser(t *testing.T) {
@@ -36,7 +37,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error setting up admin user: %s", err)
 		}
 
-		err = app.SettingSet(admin, "AllowPublicSignups", true)
+		err = admin.AsAdmin().SetSetting("AllowPublicSignups", true)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
@@ -58,7 +59,18 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Returned user doesn't match passed in values")
 		}
 
-		other := &app.User{}
+		var oID xid.ID
+		var oUsername string
+
+		var oFirstName string
+		var oLastName string
+		var oPassword []byte
+		var oPasswordVersion int
+		var oAuthType string
+		var oActive bool
+		var oVersion int
+		var oUpdated time.Time
+		var oCreated time.Time
 
 		err = data.NewQuery(`
 			select 	id, 
@@ -74,58 +86,58 @@ func TestUser(t *testing.T) {
 					created
 			from users
 			where id = {{arg "id"}}`).QueryRow(sql.Named("id", u.ID)).Scan(
-			&other.ID,
-			&other.Username,
-			&other.FirstName,
-			&other.LastName,
-			&other.Password,
-			&other.PasswordVersion,
-			&other.AuthType,
-			&other.Active,
-			&other.Version,
-			&other.Updated,
-			&other.Created,
+			&oID,
+			&oUsername,
+			&oFirstName,
+			&oLastName,
+			&oPassword,
+			&oPasswordVersion,
+			&oAuthType,
+			&oActive,
+			&oVersion,
+			&oUpdated,
+			&oCreated,
 		)
 		if err != nil {
 			t.Fatalf("Error retrieving inserted user: %s", err)
 		}
 
-		if len(other.ID) != 12 {
-			t.Fatalf("User ID incorrect length. Expected %d got %d", 12, len(other.ID))
+		if len(oID) != 12 {
+			t.Fatalf("User ID incorrect length. Expected %d got %d", 12, len(oID))
 		}
 
-		if other.Username != username {
-			t.Fatalf("Username not set properly expected %s, got %s", username, other.Username)
+		if oUsername != username {
+			t.Fatalf("Username not set properly expected %s, got %s", username, oUsername)
 		}
-		if other.Password == nil {
+		if oPassword == nil {
 			t.Fatalf("Password not set properly")
 		}
 
-		if other.PasswordVersion < 0 {
+		if oPasswordVersion < 0 {
 			t.Fatalf("Invalid password version")
 		}
 
-		if other.AuthType != app.AuthTypePassword {
-			t.Fatalf("Invalid Auth Type.  Expected %s, got %s", app.AuthTypePassword, other.AuthType)
+		if oAuthType != app.AuthTypePassword {
+			t.Fatalf("Invalid Auth Type.  Expected %s, got %s", app.AuthTypePassword, oAuthType)
 		}
 
-		if !other.Active {
+		if !oActive {
 			t.Fatalf("Newly created user was not marked as active")
 		}
 
-		if other.Version != 0 {
-			t.Fatalf("Incorrect new user version. Expected %d, got %d", 0, other.Version)
+		if oVersion != 0 {
+			t.Fatalf("Incorrect new user version. Expected %d, got %d", 0, oVersion)
 		}
 
-		if !other.Updated.Before(time.Now()) {
-			t.Fatalf("Incorrect Updated date: %v", other.Updated)
+		if !oUpdated.Before(time.Now()) {
+			t.Fatalf("Incorrect Updated date: %v", oUpdated)
 		}
-		if !other.Created.Before(time.Now()) {
-			t.Fatalf("Incorrect Created date: %v", other.Created)
+		if !oCreated.Before(time.Now()) {
+			t.Fatalf("Incorrect Created date: %v", oCreated)
 		}
-		if other.Created.After(other.Updated) {
-			t.Fatalf("User created data was after user updated date. Created %v Updated %v", other.Created,
-				other.Updated)
+		if oCreated.After(oUpdated) {
+			t.Fatalf("User created data was after user updated date. Created %v Updated %v", oCreated,
+				oUpdated)
 		}
 	})
 
@@ -139,7 +151,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user")
 		}
 
-		err = u.SetName(firstname, "", u.Version, u)
+		err = u.SetName(firstname, "", u.Version)
 		if err == nil {
 			t.Fatalf("No error adding too long first name")
 		}
@@ -147,7 +159,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error on too long first name is not a failure")
 		}
 
-		err = u.SetName("", lastname, u.Version, u)
+		err = u.SetName("", lastname, u.Version)
 		if err == nil {
 			t.Fatalf("No error adding too long last name")
 		}
@@ -210,7 +222,7 @@ func TestUser(t *testing.T) {
 
 	t.Run("Common Password", func(t *testing.T) {
 		reset(t)
-		err := app.SettingSet(admin, "BadPasswordCheck", true)
+		err := admin.AsAdmin().SetSetting("BadPasswordCheck", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -225,12 +237,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Special", func(t *testing.T) {
 		reset(t)
-		err := app.SettingSet(admin, "PasswordRequireSpecial", true)
+		err := admin.AsAdmin().SetSetting("PasswordRequireSpecial", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = app.SettingSet(admin, "BadPasswordCheck", false)
+		err = admin.AsAdmin().SetSetting("BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -252,12 +264,12 @@ func TestUser(t *testing.T) {
 
 	t.Run("Password Number", func(t *testing.T) {
 		reset(t)
-		err := app.SettingSet(admin, "PasswordRequireNumber", true)
+		err := admin.AsAdmin().SetSetting("PasswordRequireNumber", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = app.SettingSet(admin, "BadPasswordCheck", false)
+		err = admin.AsAdmin().SetSetting("BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -278,12 +290,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Mixed Case", func(t *testing.T) {
 		reset(t)
-		err := app.SettingSet(admin, "PasswordRequireMixedCase", true)
+		err := admin.AsAdmin().SetSetting("PasswordRequireMixedCase", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = app.SettingSet(admin, "BadPasswordCheck", false)
+		err = admin.AsAdmin().SetSetting("BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -313,12 +325,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Length", func(t *testing.T) {
 		reset(t)
-		err := app.SettingSet(admin, "PasswordMinLength", 8)
+		err := admin.AsAdmin().SetSetting("PasswordMinLength", 8)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = app.SettingSet(admin, "BadPasswordCheck", false)
+		err = admin.AsAdmin().SetSetting("BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -337,7 +349,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user: %s", err)
 		}
 
-		err = app.SettingSet(admin, "PasswordMinLength", 50)
+		err = admin.AsAdmin().SetSetting("PasswordMinLength", 50)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -366,12 +378,12 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding other user for SetActive testing")
 		}
 
-		err = u.SetActive(false, u.Version, other)
+		err = other.AsAdmin().SetUserActive(u, false, u.Version)
 		if err == nil {
 			t.Fatalf("Setting active from other user did not fail")
 		}
 
-		err = u.SetActive(false, u.Version, u)
+		err = admin.AsAdmin().SetUserActive(u, false, u.Version)
 		if err != nil {
 			t.Fatalf("Error setting active to false: %s", err)
 		}
@@ -396,20 +408,10 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user for SetName testing")
 		}
 
-		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
-		if err != nil {
-			t.Fatalf("Error adding other user for SetName testing")
-		}
-
 		fName := "firstname"
 		lName := "lastname"
 
-		err = u.SetName(fName, lName, u.Version, other)
-		if err == nil {
-			t.Fatalf("Setting active from other user did not fail")
-		}
-
-		err = u.SetName(fName, lName, u.Version, u)
+		err = u.SetName(fName, lName, u.Version)
 		if err != nil {
 			t.Fatalf("Error setting name: %s", err)
 		}
@@ -428,27 +430,9 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user")
 		}
 
-		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
-		if err != nil {
-			t.Fatalf("Error adding other user")
-		}
-
-		got, err := app.UserGet(u.Username, other)
+		got, err := app.UserGet(u.Username)
 		if err != nil {
 			t.Fatalf("Error getting user: %s", err)
-		}
-
-		if got.Password != nil || got.PasswordVersion != 0 || got.Version != 0 || got.AuthType != "" {
-			t.Fatalf("Getting user from other user returned private data")
-		}
-
-		got, err = app.UserGet(u.Username, u)
-		if err != nil {
-			t.Fatalf("Error getting user: %s", err)
-		}
-
-		if got.Password != nil || got.PasswordVersion != 0 {
-			t.Fatalf("Exported UserGet call returned password data")
 		}
 
 		if u.FirstName != got.FirstName || u.LastName != got.LastName || u.ID != got.ID ||
@@ -472,28 +456,19 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding other user for SetAdmin testing")
 		}
 
-		err = u.SetAdmin(true, u.Version, other)
+		err = other.AsAdmin().SetUserAdmin(u, true, u.Version)
 		if err == nil {
 			t.Fatalf("Setting admin from other user did not fail")
 		}
 
-		err = u.SetAdmin(true, u.Version, u)
+		err = u.AsAdmin().SetUserAdmin(u, true, u.Version)
 		if err == nil {
 			t.Fatalf("Setting admin from non-admin self did not fail")
 		}
 
-		_, err = data.NewQuery(`update users set admin = {{arg "admin"}} where id = {{arg "id"}}`).
-			Exec(sql.Named("admin", true), sql.Named("id", other.ID))
-		if err != nil {
-			t.Fatalf("Updating user to admin manually failed: %s", err)
-		}
+		other.Admin = true // this seems like cheating
 
-		other, err = app.UserGet(other.Username, other)
-		if err != nil {
-			t.Fatalf("Error retrieving user: %s", err)
-		}
-
-		err = u.SetAdmin(true, u.Version, other)
+		err = other.AsAdmin().SetUserAdmin(u, true, u.Version)
 		if err != nil {
 			t.Fatalf("Error setting admin by another admin: %s", err)
 		}
@@ -501,7 +476,7 @@ func TestUser(t *testing.T) {
 
 	t.Run("Public Signups Disabled", func(t *testing.T) {
 		reset(t)
-		err := app.SettingSet(admin, "AllowPublicSignups", false)
+		err := admin.AsAdmin().SetSetting("AllowPublicSignups", false)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
@@ -528,12 +503,10 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Incorrect first version of the user record. Got %d, wanted %d", u.Version, 0)
 		}
 
-		old, err := app.UserGet(u.Username, u)
-		if err != nil {
-			t.Fatalf("Error getting user: %s", err)
-		}
+		// get copy of current user version
+		old := *u
 
-		err = u.SetName("version", "one", u.Version, u)
+		err = u.SetName("version", "one", u.Version)
 		if err != nil {
 			t.Fatalf("Error setting name: %s", err)
 		}
@@ -542,7 +515,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Incorrect first version of the user record. Got %d, wanted %d", u.Version, 1)
 		}
 
-		err = old.SetName("version", "old", old.Version, u)
+		err = old.SetName("version", "old", old.Version)
 		if err != app.ErrUserConflict {
 			t.Fatalf("Updating an older version of a user did not return a Conflict")
 		}
@@ -559,27 +532,17 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user")
 		}
 
-		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
-		if err != nil {
-			t.Fatalf("Error adding other user")
-		}
-
-		err = u.SetPassword(password, "newreallygoodlongpassword", u.Version, other)
-		if err == nil {
-			t.Fatalf("Setting password from other user did not fail")
-		}
-
 		oldSession, err := app.SessionNew(u, time.Now().AddDate(0, 0, 10), "", "")
 		if err != nil {
 			t.Fatalf("Error creating new session: %s", err)
 		}
 
-		err = u.SetPassword(password, password, u.Version, u)
+		err = u.SetPassword(password, password, u.Version)
 		if err == nil {
 			t.Fatalf("Setting password to the same password did not return an error")
 		}
 
-		err = u.SetPassword(password, "newreallygoodlongpassword", u.Version, u)
+		err = u.SetPassword(password, "newreallygoodlongpassword", u.Version)
 		if err != nil {
 			t.Fatalf("Error setting password: %s", err)
 		}
@@ -624,6 +587,8 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Old session was not exired when changing passwords")
 		}
 	})
+
+	//TODO: Profile Image tests, use testdata dir
 
 	reset(t)
 }

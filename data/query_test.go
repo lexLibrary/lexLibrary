@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"database/sql"
-	"fmt"
 	"io"
 	"math"
 	"strings"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/pkg/errors"
-	"github.com/rs/xid"
 )
 
 func TestDataTypes(t *testing.T) {
@@ -27,7 +25,7 @@ func TestDataTypes(t *testing.T) {
 				varchar_type {{varchar 30}},
 				int_type {{int}},
 				bool_type {{bool}},
-				xid_type {{varchar 20}}
+				id_type {{id}}
 			)
 		`).Exec()
 		if err != nil {
@@ -316,64 +314,64 @@ func TestDataTypes(t *testing.T) {
 		}
 	})
 
-	t.Run("xid", func(t *testing.T) {
+	t.Run("id", func(t *testing.T) {
 		reset(t)
-		expected := xid.New()
+		expected := data.NewID()
 
-		_, err := data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).
-			Exec(sql.Named("xid_type", expected))
+		_, err := data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).
+			Exec(sql.Named("id_type", expected))
 		if err != nil {
-			t.Fatalf("Error inserting xid type: %s", err)
+			t.Fatalf("Error inserting id type: %s", err)
 		}
-		_, err = data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).
-			Exec(sql.Named("xid_type", xid.New()))
+		_, err = data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).
+			Exec(sql.Named("id_type", data.NewID()))
 		if err != nil {
-			t.Fatalf("Error inserting xid type: %s", err)
+			t.Fatalf("Error inserting id type: %s", err)
 		}
 
-		var got xid.ID
-		err = data.NewQuery(`Select xid_type from data_types where xid_type = {{arg "xid_type"}}`).QueryRow(
-			sql.Named("xid_type", expected)).Scan(&got)
+		var got data.ID
+		err = data.NewQuery(`Select id_type from data_types where id_type = {{arg "id_type"}}`).QueryRow(
+			sql.Named("id_type", expected)).Scan(&got)
 		if err != nil {
-			t.Fatalf("Error retrieving xid type: %s", err)
+			t.Fatalf("Error retrieving id type: %s", err)
 		}
 
 		if expected != got {
-			t.Fatalf("xid type does not match expected %v, got %v", expected, got)
+			t.Fatalf("id type does not match expected %v, got %v", expected, got)
 		}
 
-		err = data.NewQuery(`Select xid_type from data_types where xid_type <> {{arg "xid_type"}}`).QueryRow(
-			sql.Named("xid_type", expected)).Scan(&got)
+		err = data.NewQuery(`Select id_type from data_types where id_type <> {{arg "id_type"}}`).QueryRow(
+			sql.Named("id_type", expected)).Scan(&got)
 		if err != nil {
-			t.Fatalf("Error retrieving xid type: %s", err)
+			t.Fatalf("Error retrieving id type: %s", err)
 		}
 
 		if expected == got {
-			t.Fatalf("xid type matches wrong value")
+			t.Fatalf("id type matches wrong value")
 		}
 	})
 
 	t.Run("Transaction", func(t *testing.T) {
 		reset(t)
-		id1 := xid.New()
-		id2 := xid.New()
-		var otherId xid.ID
+		id1 := data.NewID()
+		id2 := data.NewID()
+		var otherId data.ID
 		var errTest = errors.New("Rollback transaction for test")
 		err := data.BeginTx(func(tx *sql.Tx) error {
-			_, err := data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).Tx(tx).
-				Exec(sql.Named("xid_type", id1))
+			_, err := data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).Tx(tx).
+				Exec(sql.Named("id_type", id1))
 
 			if err != nil {
 				return err
 			}
-			err = data.NewQuery(`select xid_type from data_types where xid_type = {{arg "xid_type"}}`).Tx(tx).
-				QueryRow(sql.Named("xid_type", id1)).Scan(&otherId)
+			err = data.NewQuery(`select id_type from data_types where id_type = {{arg "id_type"}}`).Tx(tx).
+				QueryRow(sql.Named("id_type", id1)).Scan(&otherId)
 			if err != nil {
 				return err
 			}
 
-			_, err = data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).Tx(tx).
-				Exec(sql.Named("xid_type", id2))
+			_, err = data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).Tx(tx).
+				Exec(sql.Named("id_type", id2))
 			if err != nil {
 				return err
 			}
@@ -389,8 +387,8 @@ func TestDataTypes(t *testing.T) {
 			t.Fatalf("An unexpected error occurred during transaction rollback: %s", err)
 		}
 
-		err = data.NewQuery(`select xid_type from data_types where xid_type = {{arg "xid_type"}}`).
-			QueryRow(sql.Named("xid_type", id1)).Scan(&otherId)
+		err = data.NewQuery(`select id_type from data_types where id_type = {{arg "id_type"}}`).
+			QueryRow(sql.Named("id_type", id1)).Scan(&otherId)
 		if err != sql.ErrNoRows {
 			t.Fatalf("Rows were returned after transaction rollback.")
 		}
@@ -398,25 +396,27 @@ func TestDataTypes(t *testing.T) {
 	})
 
 	testDefaultNull := func(t *testing.T) {
-		id := xid.New()
-		var datetime_type = data.NullTime{}
-		var text_type = sql.NullString{}
-		var varchar_type = sql.NullString{}
-		var int_type = sql.NullInt64{}
-		var bool_type = sql.NullBool{}
-		_, err := data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).
-			Exec(sql.Named("xid_type", id))
+		id := data.NewID()
+		var datetime_type data.NullTime
+		var text_type sql.NullString
+		var varchar_type sql.NullString
+		var int_type sql.NullInt64
+		var bool_type sql.NullBool
+		var id_type data.ID
+		_, err := data.NewQuery(`insert into data_types (id) values ({{arg "id"}})`).
+			Exec(sql.Named("id", id))
 		if err != nil {
 			t.Fatalf("Error inserting data for null /default testing: %s", err)
 		}
 		sel := func(t *testing.T) {
-			err = data.NewQuery(`select datetime_type, text_type, varchar_type, int_type, bool_type
-				from data_types where xid_type = {{arg "id"}}`).QueryRow(sql.Named("id", id)).Scan(
+			err = data.NewQuery(`select datetime_type, text_type, varchar_type, int_type, bool_type, id_type
+				from data_types where id = {{arg "id"}}`).QueryRow(sql.Named("id", id)).Scan(
 				&datetime_type,
 				&text_type,
 				&varchar_type,
 				&int_type,
 				&bool_type,
+				&id_type,
 			)
 			if err != nil {
 				t.Fatalf("Error selecting empty entries for default / null testing: %s", err)
@@ -439,19 +439,23 @@ func TestDataTypes(t *testing.T) {
 				t.Fatalf("Incorrect empty type for boolean. Expected %v got %v", false, bool_type.Bool)
 			}
 
+			if id_type.Valid {
+				t.Fatalf("Incorrect empty type for id. Expected %v got %v", data.ID{}, id_type)
+			}
+
 		}
 		sel(t)
 		dropTable(t)
 		_, err = data.NewQuery(`
 			create table data_types (
-				xid_type {{varchar 20}}
+				id {{id}}
 			)
 		`).Exec()
 		if err != nil {
 			t.Fatalf("Error dropping data columns: %s", err)
 		}
-		_, err = data.NewQuery(`insert into data_types (xid_type) values ({{arg "xid_type"}})`).
-			Exec(sql.Named("xid_type", id))
+		_, err = data.NewQuery(`insert into data_types (id) values ({{arg "id"}})`).
+			Exec(sql.Named("id", id))
 		if err != nil {
 			t.Fatalf("Error inserting data for null /default testing: %s", err)
 		}
@@ -481,9 +485,11 @@ func TestDataTypes(t *testing.T) {
 			t.Fatalf("Error adding data_types columns: %s", err)
 		}
 
+		_, err = data.NewQuery(`alter table data_types add id_type {{id}}`).Exec()
 		if err != nil {
 			t.Fatalf("Error adding data_types columns: %s", err)
 		}
+
 		sel(t)
 
 	}
@@ -492,24 +498,15 @@ func TestDataTypes(t *testing.T) {
 		dropTable(t)
 		// create table with defaults
 		// note mysql doesn't support defaults on text
-		fmt.Println(data.NewQuery(`
-			create table data_types (
-				datetime_type {{datetime}} NOT NULL DEFAULT '{{defaultDateTime}}',
-				text_type {{text}},
-				varchar_type {{varchar 30}} NOT NULL DEFAULT '',
-				int_type {{int}} NOT NULL DEFAULT 0,
-				bool_type {{bool}} NOT NULL DEFAULT {{defaultBool}},
-				xid_type {{varchar 20}}
-			)
-		`).Statement())
 		_, err := data.NewQuery(`
 			create table data_types (
+				id {{id}},
 				datetime_type {{datetime}} NOT NULL DEFAULT '{{defaultDateTime}}',
 				text_type {{text}},
 				varchar_type {{varchar 30}} NOT NULL DEFAULT '',
 				int_type {{int}} NOT NULL DEFAULT 0,
 				bool_type {{bool}} NOT NULL DEFAULT {{defaultBool}},
-				xid_type {{varchar 20}}
+				id_type {{id}}
 			)
 		`).Exec()
 		if err != nil {
@@ -523,18 +520,37 @@ func TestDataTypes(t *testing.T) {
 		// create table with nulls
 		_, err := data.NewQuery(`
 			create table data_types (
+				id {{id}},
 				datetime_type {{datetime}},
 				text_type {{text}},
 				varchar_type {{varchar 30}},
 				int_type {{int}},
 				bool_type {{bool}},
-				xid_type {{varchar 20}}
+				id_type {{id}}
 			)
 		`).Exec()
 		if err != nil {
 			t.Fatalf("Error creating data_types table: %s", err)
 		}
 		testDefaultNull(t)
+	})
+
+	t.Run("Now", func(t *testing.T) {
+		reset(t)
+		other := time.Now().Round(time.Second)
+		_, err := data.NewQuery(`insert into data_types (datetime_type) values ({{now}})`).Exec()
+		if err != nil {
+			t.Fatalf("Error inserting now record: %s", err)
+		}
+		var now time.Time
+		err = data.NewQuery(`select datetime_type from data_types`).QueryRow().Scan(&now)
+		if err != nil {
+			t.Fatalf("Error retrieving now record: %s", err)
+		}
+
+		if !now.Round(time.Second).Equal(other) {
+			t.Fatalf("Now func did not return an accurate now value.  Expected %s, got %s", other, now)
+		}
 	})
 
 	dropTable(t)

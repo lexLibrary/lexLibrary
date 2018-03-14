@@ -80,13 +80,6 @@ func settings() ([]Setting, error) {
 	return settings, nil
 }
 
-// SettingGet will look for a setting that has the passed in id
-func SettingGet(who *User, id string) (Setting, error) {
-	if who == nil || !who.Admin {
-		return Setting{}, Unauthorized("You must be an administrator to view settings")
-	}
-	return settingGet(id)
-}
 func settingGet(id string) (Setting, error) {
 
 	var strValue string
@@ -127,19 +120,8 @@ func SettingMust(id string) Setting {
 	return setting
 }
 
-// SettingSet updates the value of the passed in setting to the passed in value
-func SettingSet(who *User, id string, value interface{}) error {
-	if who == nil || !who.Admin {
-		return Unauthorized("You must be an administrator to set a setting")
-	}
-	return settingSet(nil, id, value)
-}
-
-// SettingSetMultiple sets multiple settings in the same transaction
-func SettingSetMultiple(who *User, settings map[string]interface{}) error {
-	if who == nil || !who.Admin {
-		return Unauthorized("You must be an administrator to set a setting")
-	}
+// settingSetMultiple sets multiple settings in the same transaction
+func settingSetMultiple(settings map[string]interface{}) error {
 	return data.BeginTx(func(tx *sql.Tx) error {
 		for id, val := range settings {
 			err := settingSet(tx, id, val)

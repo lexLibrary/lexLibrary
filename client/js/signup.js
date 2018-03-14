@@ -56,13 +56,13 @@ var vm = new Vue({
                             window.location = '/';
                         })
                         .catch((err) => {
-						this.loading = false;
-                            this.usernameErr = err.content;
+                            this.loading = false;
+                            this.usernameErr = err.response;
                         });
                 })
                 .catch((err) => {
                     this.loading = false;
-                    this.passwordErr = err.content;
+                    this.passwordErr = err.response;
                 });
         },
         validateUsername: function() {
@@ -77,8 +77,8 @@ var vm = new Vue({
                     this.usernameErr = `This username is already taken`;
                 })
                 .catch((err) => {
-                    if (err.status != 404) {
-                        this.usernameErr = err.content;
+                    if (err.request.status != 404) {
+                        this.usernameErr = err.response;
                     }
                 });
         },
@@ -93,7 +93,7 @@ var vm = new Vue({
                     password: this.password
                 })
                 .catch((err) => {
-                    this.passwordErr = err.content;
+                    this.passwordErr = err.response;
                 });
         },
         validatePassword2: function() {

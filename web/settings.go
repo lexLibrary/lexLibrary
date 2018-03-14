@@ -37,7 +37,7 @@ func settingPut(w http.ResponseWriter, r *http.Request, c ctx) {
 			return
 		}
 
-		if errHandled(app.SettingSetMultiple(u, input.Settings), w, r) {
+		if errHandled(u.AsAdmin().SetMultipleSettings(input.Settings), w, r) {
 			return
 		}
 
@@ -45,7 +45,7 @@ func settingPut(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(app.SettingSet(u, *input.ID, input.Value), w, r) {
+	if errHandled(u.AsAdmin().SetSetting(*input.ID, input.Value), w, r) {
 		return
 	}
 
@@ -78,7 +78,7 @@ func settingDelete(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(app.SettingSet(u, *input.ID, setting.Value), w, r) {
+	if errHandled(u.AsAdmin().SetSetting(*input.ID, setting.Value), w, r) {
 		return
 	}
 
