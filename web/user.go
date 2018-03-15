@@ -20,9 +20,12 @@ var publicUserNewRateDelay = app.RateDelay{
 type userInput struct {
 	Username *string `json:"username,omitempty"`
 	Password *string `json:"password,omitempty"`
+	FullName *string `json:"fullName,omitempty"`
+	Version  *int    `json:"version,omitempty"`
 }
 
 type passwordInput struct {
+	Username    *string `json:"username,omitempty"`
 	OldPassword *string `json:"oldPassword,omitempty"`
 	NewPassword *string `json:"newPassword,omitempty"`
 	Version     *int    `json:"version,omitempty"`
@@ -64,26 +67,15 @@ func userPost(w http.ResponseWriter, r *http.Request, c ctx) {
 	respond(w, created(u))
 }
 
-func userGet(w http.ResponseWriter, r *http.Request, c ctx) {
+func usernameGet(w http.ResponseWriter, r *http.Request, c ctx) {
 	username := c.params.ByName("username")
 
-	if c.session != nil {
-		who, err := c.session.User()
-		if errHandled(err, w, r) {
-			return
-		}
-		if strings.ToLower(username) == who.Username {
-			respond(w, success(who))
-			return
-		}
-	}
-
-	u, err := app.UserGet(username)
+	_, err := app.UserGet(username)
 	if errHandled(err, w, r) {
 		return
 	}
 
-	respond(w, success(u))
+	respond(w, success(nil))
 }
 
 func passwordTest(w http.ResponseWriter, r *http.Request, c ctx) {
@@ -147,8 +139,13 @@ func userPutPassword(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
+	if input.Username == nil {
+		notFound(w, r)
+		return
+	}
+
 	// user's password has expired and being set from login prompt
-	u, err := app.UserSetExpiredPassword(c.params.ByName("username"), *input.OldPassword, *input.NewPassword)
+	u, err := app.UserSetExpiredPassword(*input.Username, *input.OldPassword, *input.NewPassword)
 	if errHandled(err, w, r) {
 		return
 	}
@@ -159,4 +156,38 @@ func userPutPassword(w http.ResponseWriter, r *http.Request, c ctx) {
 	}
 
 	respond(w, success(nil))
+}
+
+func userPutName(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	input := &userInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if input.FullName == nil {
+		errHandled(app.NewFailure("fullName is required"), w, r)
+		return
+	}
+
+	if input.Version == nil {
+		errHandled(app.NewFailure("version is required"), w, r)
+		return
+	}
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if errHandled(u.SetFullName(*input.FullName, *input.Version), w, r) {
+		return
+	}
+
+	respond(w, success(nil))
+
 }

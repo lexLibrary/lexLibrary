@@ -43,7 +43,7 @@ var vm = new Vue({
             }
             this.loading = true;
 
-            xhr.post("/password", {
+            xhr.put("/signup/password", {
                     password: this.password
                 })
                 .then(() => {
@@ -72,7 +72,7 @@ var vm = new Vue({
             if (!this.username) {
                 return;
             }
-            xhr.get(`/user/${this.username}`)
+            xhr.get(`/signup/username/${this.username}`)
                 .then((result) => {
                     this.usernameErr = `This username is already taken`;
                 })
@@ -89,7 +89,7 @@ var vm = new Vue({
             if (!this.password) {
                 return;
             }
-            xhr.post("/password", {
+            xhr.put("/signup/password", {
                     password: this.password
                 })
                 .catch((err) => {

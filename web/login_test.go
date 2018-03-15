@@ -159,6 +159,7 @@ func TestLogin(t *testing.T) {
 			Find(".help.is-danger").Text().Contains("Passwords do not match").
 			Find("#inputPassword2").SendKeys(password + "new").
 			Find(".modal-card-foot > button").Click().
+			Find(".help.is-danger").Count(0).
 			And().URL().Path("/").Eventually().
 			End()
 		if err != nil {

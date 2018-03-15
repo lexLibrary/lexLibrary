@@ -60,9 +60,15 @@ func TestSignup(t *testing.T) {
 		Get(uri.String()).
 		Find("#submit").Click().
 		Find(".help.is-danger").Count(2).Any().Text().Contains("A username is required").
+		Find("#inputUsername").SendKeys(admin.User.Username).
+		Find("#submit").Click().
+		Find(".help.is-danger").Any().Text().Contains("This username is already taken").
 		Find("#inputUsername").SendKeys("testusername").
 		Find("#submit").Click().
 		Find(".help.is-danger").Text().Contains("A password is required").
+		Find("#inputPassword").SendKeys("bad").
+		Find("#submit").Click().
+		Find(".help.is-danger").Text().Contains("The password must be at least").
 		Find("#inputPassword").SendKeys("testWithAPrettyGoodP@ssword").
 		Find("#submit").Click().
 		Find(".help.is-danger").Text().Contains("Passwords do not match").

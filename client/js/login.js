@@ -90,14 +90,15 @@ var vm = new Vue({
                 return;
             }
             this.loading = true;
-			let version = 0;
-			if(this.user) {
-				version = this.user.version;
-			}
-            xhr.put(`/user/${this.username}/password`, {
+            let version = 0;
+            if (this.user) {
+                version = this.user.version;
+            }
+            xhr.put(`/expiredpassword`, {
+                    username: this.username,
                     oldPassword: this.password,
                     newPassword: this.newPassword,
-					version,
+                    version,
                 })
                 .then((result) => {
                     this.loading = false;

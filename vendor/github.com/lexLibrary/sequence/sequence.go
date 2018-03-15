@@ -3,6 +3,7 @@
 package sequence
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/tebeka/selenium"
 )
 
@@ -25,6 +25,7 @@ type Sequence struct {
 	EventualPoll    time.Duration
 	EventualTimeout time.Duration
 	last            func() *Sequence
+	onErr           func(*Sequence)
 }
 
 // Error describes an error that occured during the sequence processing.
@@ -119,9 +120,20 @@ func Start(driver selenium.WebDriver) *Sequence {
 // End ends a sequence and returns any errors
 func (s *Sequence) End() error {
 	if s.err != nil {
+		if s.onErr != nil {
+			s.onErr(s)
+		}
 		return s.err
 	}
 	return nil
+}
+
+// OnError registers a function to call when an error occurs in the sequence.
+// Handy for calling things like .Debug() and .Screenshot("err.png") in error scenarios to output to
+// a CI server
+func (s *Sequence) OnError(fn func(s *Sequence)) *Sequence {
+	s.onErr = fn
+	return s
 }
 
 // Driver returns the underlying WebDriver
@@ -146,7 +158,6 @@ func (s *Sequence) Eventually() *Sequence {
 	}, s.EventualTimeout, s.EventualPoll)
 	if err != nil {
 		s.err.Caller = caller(0)
-		s.err.Err = errors.Wrap(s.err, "Eventually timed out")
 	}
 	return s
 }
@@ -168,7 +179,6 @@ func (e *Elements) Eventually() *Elements {
 	}, e.seq.EventualTimeout, e.seq.EventualPoll)
 	if err != nil {
 		e.seq.err.Caller = caller(0)
-		e.seq.err.Err = errors.Wrap(e.seq.err, "Eventually timed out")
 	}
 	return e
 }
@@ -243,7 +253,7 @@ func (t *TitleMatch) test(testName string, fn func() error) *Sequence {
 func (t *TitleMatch) Equals(match string) *Sequence {
 	return t.test("Equals", func() error {
 		if t.title != match {
-			return errors.Errorf("The page's title does not equal '%s'. Got '%s'", match, t.title)
+			return fmt.Errorf("The page's title does not equal '%s'. Got '%s'", match, t.title)
 		}
 		return nil
 	})
@@ -253,7 +263,7 @@ func (t *TitleMatch) Equals(match string) *Sequence {
 func (t *TitleMatch) Contains(match string) *Sequence {
 	return t.test("Contains", func() error {
 		if !strings.Contains(t.title, match) {
-			return errors.Errorf("The pages's title does not contain '%s'. Got '%s'", match, t.title)
+			return fmt.Errorf("The pages's title does not contain '%s'. Got '%s'", match, t.title)
 		}
 		return nil
 	})
@@ -263,7 +273,7 @@ func (t *TitleMatch) Contains(match string) *Sequence {
 func (t *TitleMatch) StartsWith(match string) *Sequence {
 	return t.test("Starts With", func() error {
 		if !strings.HasPrefix(t.title, match) {
-			return errors.Errorf("The pages's title does not start with '%s'. Got '%s'", match, t.title)
+			return fmt.Errorf("The pages's title does not start with '%s'. Got '%s'", match, t.title)
 		}
 		return nil
 	})
@@ -273,7 +283,7 @@ func (t *TitleMatch) StartsWith(match string) *Sequence {
 func (t *TitleMatch) EndsWith(match string) *Sequence {
 	return t.test("Ends With", func() error {
 		if !strings.HasSuffix(t.title, match) {
-			return errors.Errorf("The pages's title does not end with '%s'. Got '%s'", match, t.title)
+			return fmt.Errorf("The pages's title does not end with '%s'. Got '%s'", match, t.title)
 		}
 		return nil
 	})
@@ -283,7 +293,7 @@ func (t *TitleMatch) EndsWith(match string) *Sequence {
 func (t *TitleMatch) Regexp(exp *regexp.Regexp) *Sequence {
 	return t.test("Matches RegExp", func() error {
 		if !exp.MatchString(t.title) {
-			return errors.Errorf("The pages's title does not match the regular expression '%s'. Title: '%s'",
+			return fmt.Errorf("The pages's title does not match the regular expression '%s'. Title: '%s'",
 				exp, t.title)
 		}
 		return nil
@@ -363,7 +373,7 @@ func (u *URLMatch) test(testName string, fn func() error) *Sequence {
 func (u *URLMatch) Path(match string) *Sequence {
 	return u.test("Path Matches", func() error {
 		if u.url.Path != match {
-			return errors.Errorf("URL's path does not match %s, got %s", match, u.url.Path)
+			return fmt.Errorf("URL's path does not match %s, got %s", match, u.url.Path)
 		}
 		return nil
 	})
@@ -383,13 +393,13 @@ func (u *URLMatch) QueryValue(key, value string) *Sequence {
 
 			}
 			if !found {
-				return errors.Errorf("URL does not contain the value '%s' for the key '%s'. Values: %s",
+				return fmt.Errorf("URL does not contain the value '%s' for the key '%s'. Values: %s",
 					value, key, v)
 			}
 			return nil
 		}
 
-		return errors.Errorf("URL does not contain the query key '%s'. URL: %s", key, u.url)
+		return fmt.Errorf("URL does not contain the query key '%s'. URL: %s", key, u.url)
 	})
 }
 
@@ -397,7 +407,7 @@ func (u *URLMatch) QueryValue(key, value string) *Sequence {
 func (u *URLMatch) Fragment(match string) *Sequence {
 	return u.test("Fragment Matches", func() error {
 		if u.url.Fragment != match {
-			return errors.Errorf("URL's fragment does not match %s, got %s", match, u.url.Fragment)
+			return fmt.Errorf("URL's fragment does not match %s, got %s", match, u.url.Fragment)
 		}
 		return nil
 	})
@@ -615,7 +625,7 @@ func (e *Elements) Count(count int) *Elements {
 		if count != len(e.elems) {
 			e.seq.err = &Error{
 				Stage: "Count",
-				Err: errors.Errorf("Invalid count for selector %s wanted %d got %d", e.selector, count,
+				Err: fmt.Errorf("Invalid count for selector %s wanted %d got %d", e.selector, count,
 					len(e.elems)),
 				Caller: caller(1),
 			}
@@ -707,7 +717,7 @@ func (e *Elements) test(testName string, fn func(e selenium.WebElement) error) *
 		if len(e.elems) == 0 {
 			e.seq.err = &Error{
 				Stage:  stage,
-				Err:    errors.Errorf("No elements exist for the selector '%s'", e.selector),
+				Err:    fmt.Errorf("No elements exist for the selector '%s'", e.selector),
 				Caller: caller(2),
 			}
 		}
@@ -727,7 +737,7 @@ func (e *Elements) test(testName string, fn func(e selenium.WebElement) error) *
 		if !e.any && !e.all {
 			e.seq.err = &Error{
 				Stage: stage,
-				Err: errors.Errorf("Selector '%s' returned multiple elements but .Any() or .All() weren't specified",
+				Err: fmt.Errorf("Selector '%s' returned multiple elements but .Any() or .All() weren't specified",
 					e.selector),
 				Caller: caller(2),
 			}
@@ -743,7 +753,7 @@ func (e *Elements) test(testName string, fn func(e selenium.WebElement) error) *
 					e.seq.err = &Error{
 						Stage:   stage,
 						Element: e.elems[i],
-						Err:     errors.Wrap(err, "Not All elements passed"),
+						Err:     fmt.Errorf("Not All elements passed: %s", err),
 						Caller:  caller(2),
 					}
 					return e
@@ -761,7 +771,7 @@ func (e *Elements) test(testName string, fn func(e selenium.WebElement) error) *
 		if len(errs) != 0 {
 			e.seq.err = &Error{
 				Stage:  stage,
-				Err:    errors.Wrap(errs, "None of the elements passed"),
+				Err:    fmt.Errorf("None of the elements passed: %s", errs),
 				Caller: caller(2),
 			}
 
@@ -870,7 +880,7 @@ func (s *StringMatch) Equals(match string) *Elements {
 			return err
 		}
 		if val != match {
-			return errors.Errorf("The element's %s does not equal '%s'. Got '%s'", s.testName, match, val)
+			return fmt.Errorf("The element's %s does not equal '%s'. Got '%s'", s.testName, match, val)
 		}
 		return nil
 	})
@@ -884,7 +894,7 @@ func (s *StringMatch) Contains(match string) *Elements {
 			return err
 		}
 		if !strings.Contains(val, match) {
-			return errors.Errorf("The Element's %s does not contain '%s'. Got '%s'", s.testName, match, val)
+			return fmt.Errorf("The Element's %s does not contain '%s'. Got '%s'", s.testName, match, val)
 		}
 		return nil
 	})
@@ -898,7 +908,7 @@ func (s *StringMatch) StartsWith(match string) *Elements {
 			return err
 		}
 		if !strings.HasPrefix(val, match) {
-			return errors.Errorf("The Element's %s does not start with '%s'. Got '%s'", s.testName, match, val)
+			return fmt.Errorf("The Element's %s does not start with '%s'. Got '%s'", s.testName, match, val)
 		}
 		return nil
 	})
@@ -912,7 +922,7 @@ func (s *StringMatch) EndsWith(match string) *Elements {
 			return err
 		}
 		if !strings.HasSuffix(val, match) {
-			return errors.Errorf("The Element's %s does not end with '%s'. Got '%s'", s.testName, match, val)
+			return fmt.Errorf("The Element's %s does not end with '%s'. Got '%s'", s.testName, match, val)
 		}
 		return nil
 	})
@@ -926,7 +936,7 @@ func (s *StringMatch) Regexp(exp *regexp.Regexp) *Elements {
 			return err
 		}
 		if !exp.MatchString(val) {
-			return errors.Errorf("The Element's %s does not match the regex '%s'.", s.testName, exp)
+			return fmt.Errorf("The Element's %s does not match the regex '%s'.", s.testName, exp)
 		}
 		return nil
 	})

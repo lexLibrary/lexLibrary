@@ -35,14 +35,16 @@ func setupRoutes() http.Handler {
 		handler:       loginTemplate,
 		templateFiles: []string{"login.template.html"},
 	}.ServeHTTP)
+
+	rootHandler.PUT("/expiredpassword", makeHandle(userPutPassword))
 	rootHandler.GET("/signup", templateHandler{
 		handler:       signupTemplate,
 		templateFiles: []string{"signup.template.html"},
 	}.ServeHTTP)
 
-	rootHandler.POST("/user", makeHandle(userPost))
-	rootHandler.GET("/user/:username", makeHandle(userGet))
-	rootHandler.POST("/password", makeHandle(passwordTest))
+	rootHandler.PUT("/signup/password", makeHandle(passwordTest))
+	rootHandler.GET("/signup/username/:username", makeHandle(usernameGet))
+
 	rootHandler.POST("/session", makeHandle(sessionPost))
 	rootHandler.DELETE("/session", makeHandle(sessionDelete))
 
@@ -56,8 +58,10 @@ func setupRoutes() http.Handler {
 	rootHandler.PUT("/setting", makeHandle(settingPut))
 	rootHandler.DELETE("/setting", makeHandle(settingDelete))
 
-	// user profile
-	rootHandler.PUT("/user/:username/password", makeHandle(userPutPassword))
+	// user
+	rootHandler.POST("/user", makeHandle(userPost))
+	rootHandler.PUT("/user/password", makeHandle(userPutPassword))
+	rootHandler.PUT("/user", makeHandle(userPutName))
 
 	return rootHandler
 }

@@ -61,9 +61,6 @@ func TestUser(t *testing.T) {
 
 		var oID xid.ID
 		var oUsername string
-
-		var oFirstName string
-		var oLastName string
 		var oPassword []byte
 		var oPasswordVersion int
 		var oAuthType string
@@ -75,8 +72,6 @@ func TestUser(t *testing.T) {
 		err = data.NewQuery(`
 			select 	id, 
 					username, 
-					first_name, 
-					last_name, 
 					password, 
 					password_version,
 					auth_type,
@@ -88,8 +83,6 @@ func TestUser(t *testing.T) {
 			where id = {{arg "id"}}`).QueryRow(sql.Named("id", u.ID)).Scan(
 			&oID,
 			&oUsername,
-			&oFirstName,
-			&oLastName,
 			&oPassword,
 			&oPasswordVersion,
 			&oAuthType,
@@ -143,28 +136,19 @@ func TestUser(t *testing.T) {
 
 	t.Run("Invalid Name", func(t *testing.T) {
 		reset(t)
-		firstname := fmt.Sprintf("%70s", "firstname")
-		lastname := fmt.Sprintf("%70s", "firstname")
+		fullName := fmt.Sprintf("%70s", "full name")
 
 		u, err := app.UserNew("testusername", "ODSjflaksjdfhiasfd323")
 		if err != nil {
 			t.Fatalf("Error adding user")
 		}
 
-		err = u.SetName(firstname, "", u.Version)
+		err = u.SetFullName(fullName, u.Version)
 		if err == nil {
-			t.Fatalf("No error adding too long first name")
+			t.Fatalf("No error adding too long full name")
 		}
 		if !app.IsFail(err) {
-			t.Fatalf("Error on too long first name is not a failure")
-		}
-
-		err = u.SetName("", lastname, u.Version)
-		if err == nil {
-			t.Fatalf("No error adding too long last name")
-		}
-		if !app.IsFail(err) {
-			t.Fatalf("Error on too long last name is not a failure")
+			t.Fatalf("Error on too long full name is not a failure")
 		}
 	})
 
@@ -408,15 +392,14 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user for SetName testing")
 		}
 
-		fName := "firstname"
-		lName := "lastname"
+		fName := "firstname lastname"
 
-		err = u.SetName(fName, lName, u.Version)
+		err = u.SetFullName(fName, u.Version)
 		if err != nil {
 			t.Fatalf("Error setting name: %s", err)
 		}
 
-		if u.FirstName != fName || u.LastName != lName {
+		if u.FullName != fName {
 			t.Fatalf("User name was not updated")
 		}
 	})
@@ -435,7 +418,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error getting user: %s", err)
 		}
 
-		if u.FirstName != got.FirstName || u.LastName != got.LastName || u.ID != got.ID ||
+		if u.FullName != got.FullName || u.ID != got.ID ||
 			u.Username != got.Username {
 			t.Fatalf("Retrieved user does not match.  Wanted %v, got %v", u, got)
 		}
@@ -506,7 +489,7 @@ func TestUser(t *testing.T) {
 		// get copy of current user version
 		old := *u
 
-		err = u.SetName("version", "one", u.Version)
+		err = u.SetFullName("version one", u.Version)
 		if err != nil {
 			t.Fatalf("Error setting name: %s", err)
 		}
@@ -515,7 +498,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Incorrect first version of the user record. Got %d, wanted %d", u.Version, 1)
 		}
 
-		err = old.SetName("version", "old", old.Version)
+		err = old.SetFullName("version old", old.Version)
 		if err != app.ErrUserConflict {
 			t.Fatalf("Updating an older version of a user did not return a Conflict")
 		}

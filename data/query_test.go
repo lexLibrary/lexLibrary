@@ -537,7 +537,8 @@ func TestDataTypes(t *testing.T) {
 
 	t.Run("Now", func(t *testing.T) {
 		reset(t)
-		other := time.Now().Round(time.Second)
+		round := 2 * time.Second
+		other := time.Now().Round(round)
 		_, err := data.NewQuery(`insert into data_types (datetime_type) values ({{now}})`).Exec()
 		if err != nil {
 			t.Fatalf("Error inserting now record: %s", err)
@@ -548,7 +549,7 @@ func TestDataTypes(t *testing.T) {
 			t.Fatalf("Error retrieving now record: %s", err)
 		}
 
-		if !now.Round(time.Second).Equal(other) {
+		if !now.Round(round).Equal(other) {
 			t.Fatalf("Now func did not return an accurate now value.  Expected %s, got %s", other, now)
 		}
 	})

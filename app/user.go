@@ -14,17 +14,13 @@ import (
 
 // User is a user login to Lex Library
 type User struct {
-	ID                 data.ID       `json:"id"`
-	Username           string        `json:"username"`
-	FirstName          string        `json:"firstName"`
-	LastName           string        `json:"lastName"`
+	PublicProfile
+
 	AuthType           string        `json:"authType,omitempty"`
 	PasswordExpiration data.NullTime `json:"passwordExpiration"`
-	Active             bool          `json:"active"`            // whether or not the user is active and can log in
 	Version            int           `json:"version,omitempty"` // version of this record starting with 0
 	Updated            time.Time     `json:"updated,omitempty"`
 	Created            time.Time     `json:"created,omitempty"`
-	Admin              bool          `json:"admin"`
 
 	password        []byte
 	passwordVersion int
@@ -33,12 +29,11 @@ type User struct {
 
 // PublicProfile is the publically viewable user information copied from a private user record
 type PublicProfile struct {
-	ID        data.ID `json:"id"`
-	Username  string  `json:"username"`
-	FirstName string  `json:"firstName"`
-	LastName  string  `json:"lastName"`
-	Admin     bool    `json:"admin"`
-	Active    bool    `json:"active"` // whether or not the user is active and can log in
+	ID       data.ID `json:"id"`
+	Username string  `json:"username"`
+	FullName string  `json:"fullName"`
+	Admin    bool    `json:"admin"`
+	Active   bool    `json:"active"` // whether or not the user is active and can log in
 }
 
 // AuthType determines the authentication method for a given user
@@ -68,8 +63,7 @@ var (
 	sqlUserInsert = data.NewQuery(`insert into users (
 		id,
 		username, 
-		first_name, 
-		last_name, 
+		full_name, 
 		auth_type,
 		password,
 		password_version,
@@ -82,8 +76,7 @@ var (
 	) values (
 		{{arg "id"}}, 
 		{{arg "username"}}, 
-		{{arg "first_name"}}, 
-		{{arg "last_name"}}, 
+		{{arg "full_name"}}, 
 		{{arg "auth_type"}},
 		{{arg "password"}},
 		{{arg "password_version"}},
@@ -97,8 +90,7 @@ var (
 	sqlUserFromUsername = data.NewQuery(`
 		select 	id, 
 			username, 
-			first_name, 
-			last_name, 
+			full_name, 
 			auth_type, 
 			password, 
 			password_version, 
@@ -108,14 +100,13 @@ var (
 			updated, 
 			created, 
 			admin, 
-			profile_image 
+			profile_image_id
 		from users where username = {{arg "username"}}
 	`)
 	sqlUserFromID = data.NewQuery(`
 		select 	id, 
 			username, 
-			first_name, 
-			last_name, 
+			full_name, 
 			auth_type, 
 			password, 
 			password_version, 
@@ -125,11 +116,11 @@ var (
 			updated, 
 			created, 
 			admin, 
-			profile_image 
+			profile_image_id
 		from users where id = {{arg "id"}}
 	`)
 	sqlUserPublicProfile = data.NewQuery(`
-		select id, username, first_name, last_name, active, admin 
+		select id, username, full_name, active, admin 
 		from users where username = {{arg "username"}}`)
 
 	sqlUserUpdateActive = data.NewQuery(`update users set active = {{arg "active"}}, updated = {{now}}, version = version + 1 
@@ -144,10 +135,10 @@ var (
 			version = version + 1
 		where id = {{arg "id"}}
 		and version = {{arg "version"}}`)
-	sqlUserUpdateName = data.NewQuery(`update users set first_name = {{arg "first_name"}}, 
-		last_name = {{arg "last_name"}}, updated = {{now}}, version = version + 1 where id = {{arg "id"}} 
+	sqlUserUpdateName = data.NewQuery(`update users set full_name = {{arg "full_name"}}, 
+		updated = {{now}}, version = version + 1 where id = {{arg "id"}} 
 		and version = {{arg "version"}}`)
-	sqlUserUpdateProfileImage = data.NewQuery(`update users set profile_image = {{arg "profile_image"}}, updated = {{now}},
+	sqlUserUpdateProfileImage = data.NewQuery(`update users set profile_image_id= {{arg "profile_image_id"}}, updated = {{now}},
 		version = version + 1
 		where id = {{arg "id"}} and version = {{arg "version"}}`)
 )
@@ -176,10 +167,12 @@ func UserNew(username, password string) (*User, error) {
 
 func userNew(tx *sql.Tx, username, password string) (*User, error) {
 	u := &User{
-		ID:       data.NewID(),
-		Username: strings.ToLower(username),
+		PublicProfile: PublicProfile{
+			ID:       data.NewID(),
+			Username: strings.ToLower(username),
+			Active:   true,
+		},
 		AuthType: AuthTypePassword,
-		Active:   true,
 		Version:  0,
 		Created:  time.Now(),
 		Updated:  time.Now(),
@@ -236,8 +229,7 @@ func UserGet(username string) (*PublicProfile, error) {
 		Scan(
 			&u.ID,
 			&u.Username,
-			&u.FirstName,
-			&u.LastName,
+			&u.FullName,
 			&u.Active,
 			&u.Admin,
 		)
@@ -258,8 +250,7 @@ func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 	err := sqlUserFromUsername.Tx(tx).QueryRow(sql.Named("username", strings.ToLower(username))).Scan(
 		&u.ID,
 		&u.Username,
-		&u.FirstName,
-		&u.LastName,
+		&u.FullName,
 		&u.AuthType,
 		&u.password,
 		&u.passwordVersion,
@@ -288,8 +279,7 @@ func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
 	err := sqlUserFromID.Tx(tx).QueryRow(sql.Named("id", id)).Scan(
 		&u.ID,
 		&u.Username,
-		&u.FirstName,
-		&u.LastName,
+		&u.FullName,
 		&u.AuthType,
 		&u.password,
 		&u.passwordVersion,
@@ -315,8 +305,7 @@ func (u *User) insert(tx *sql.Tx) error {
 	_, err := sqlUserInsert.Tx(tx).Exec(
 		sql.Named("id", u.ID),
 		sql.Named("username", u.Username),
-		sql.Named("first_name", u.FirstName),
-		sql.Named("last_name", u.LastName),
+		sql.Named("full_name", u.FullName),
 		sql.Named("auth_type", u.AuthType),
 		sql.Named("password", u.password),
 		sql.Named("password_version", u.passwordVersion),
@@ -340,11 +329,8 @@ func (u *User) validate() error {
 		return NewFailure("A username can only contain letters, numbers and dashes")
 	}
 
-	if len(u.FirstName) > UserMaxNameLength {
-		return NewFailure("First name must be less than %d characters", UserMaxNameLength)
-	}
-	if len(u.LastName) > UserMaxNameLength {
-		return NewFailure("Last name must be less than %d characters", UserMaxNameLength)
+	if len(u.FullName) > UserMaxNameLength {
+		return NewFailure("Full name must be less than %d characters", UserMaxNameLength)
 	}
 
 	if u.AuthType != AuthTypePassword {
@@ -385,18 +371,20 @@ func (u *User) setActive(active bool, version int) error {
 	return nil
 }
 
-// SetName sets the user's name
-func (u *User) SetName(firstName, lastName string, version int) error {
+// SetFullName sets the user's name
+func (u *User) SetFullName(fullName string, version int) error {
 	return u.update(func() (sql.Result, error) {
-		u.FirstName = firstName
-		u.LastName = lastName
+		u.FullName = fullName
 		err := u.validate()
 		if err != nil {
 			return nil, err
 		}
 
-		return sqlUserUpdateName.Exec(sql.Named("first_name", u.FirstName), sql.Named("last_name", u.LastName),
-			sql.Named("id", u.ID), sql.Named("version", version))
+		return sqlUserUpdateName.Exec(
+			sql.Named("full_name", u.FullName),
+			sql.Named("id", u.ID),
+			sql.Named("version", version),
+		)
 	})
 }
 
@@ -526,7 +514,7 @@ func (u *User) SetProfileImage(rc io.ReadCloser, name, contentType string, versi
 
 		err = u.update(func() (sql.Result, error) {
 			return sqlUserUpdateProfileImage.Tx(tx).Exec(
-				sql.Named("profile_image", i.id),
+				sql.Named("profile_image_id", i.id),
 				sql.Named("id", u.ID),
 				sql.Named("version", version),
 			)

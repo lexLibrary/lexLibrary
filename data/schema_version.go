@@ -72,8 +72,7 @@ var schemaVersions = []*Query{
 		create table users (
 			id {{id}} PRIMARY KEY NOT NULL,
 			username {{varchar 64}} NOT NULL,
-			first_name {{text}},
-			last_name {{text}},
+			full_name {{text}},
 			auth_type {{text}} NOT NULL,
 			password {{bytes}},
 			password_version {{int}},
@@ -117,6 +116,12 @@ var schemaVersions = []*Query{
 		)	
 	`),
 	NewQuery(`
-		alter table users add column profile_image {{id}} REFERENCES images(id)
+		{{if cockroachdb}}
+			alter table users add column profile_image_id {{id}};
+			CREATE INDEX ON users (profile_image_id);
+			alter table users add foreign key (profile_image_id) references images(id);
+		{{else}}
+			alter table users add profile_image_id {{id}} REFERENCES images(id)
+		{{end}}
 	`),
 }
