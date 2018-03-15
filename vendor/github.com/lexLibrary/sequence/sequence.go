@@ -720,6 +720,7 @@ func (e *Elements) test(testName string, fn func(e selenium.WebElement) error) *
 				Err:    fmt.Errorf("No elements exist for the selector '%s'", e.selector),
 				Caller: caller(2),
 			}
+			return e
 		}
 		if len(e.elems) == 1 {
 			err := fn(e.elems[0])

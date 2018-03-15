@@ -56,8 +56,8 @@
 [[projects]]
   name = "github.com/lexLibrary/sequence"
   packages = ["."]
-  revision = "6e9fca910065a71706745ef52789a0ff638b602a"
-  version = "v0.0.2"
+  revision = "6e4672eb1a31718e4fffec56ce662f4ce6acc0db"
+  version = "v0.0.3"
 
 [[projects]]
   branch = "master"

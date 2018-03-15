@@ -8,12 +8,6 @@
   version = "v3.5.1"
 
 [[projects]]
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
-  version = "v0.8.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/tebeka/selenium"
   packages = [
@@ -28,6 +22,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "67f919de8638a3dc49b733a7b318cc6ff5068557d6c82f4eaaa59d2a2781eb86"
+  inputs-digest = "b3531d1a2f463bb7288681c780daecf5b7377388ac1af8eca6102e0d68be30ab"
   solver-name = "gps-cdcl"
   solver-version = 1
