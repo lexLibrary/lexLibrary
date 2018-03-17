@@ -116,7 +116,7 @@ var vm = new Vue({
             if (!this.newPassword) {
                 return;
             }
-            xhr.post("/password", {
+            xhr.put("/signup/password", {
                     password: this.newPassword
                 })
                 .catch((err) => {

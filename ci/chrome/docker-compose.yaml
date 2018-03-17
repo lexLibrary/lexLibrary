@@ -8,6 +8,8 @@ services:
       - /dev/shm:/dev/shm
   tests:
     build: "../build"
+    ports:
+        - "8080"
     links:
       - webdriver
     volumes:

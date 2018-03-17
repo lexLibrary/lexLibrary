@@ -149,6 +149,10 @@ func initSQLite(cfg Config) error {
 		url = cfg.DatabaseFile
 	}
 
+	if cfg.MaxOpenConnections == 1 {
+		return errors.New("MaxOpenConnections must be more than 1 for sqlite")
+	}
+
 	var err error
 	db, err = sql.Open("sqlite3", url)
 	if err != nil {

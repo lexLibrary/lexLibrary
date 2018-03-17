@@ -68,8 +68,8 @@ func TestSignup(t *testing.T) {
 		Find(".help.is-danger").Text().Contains("A password is required").
 		Find("#inputPassword").SendKeys("bad").
 		Find("#submit").Click().
-		Find(".help.is-danger").Text().Contains("The password must be at least").
-		Find("#inputPassword").SendKeys("testWithAPrettyGoodP@ssword").
+		Find(".help.is-danger").Any().Text().Contains("The password must be at least").
+		Find("#inputPassword").Clear().SendKeys("testWithAPrettyGoodP@ssword").
 		Find("#submit").Click().
 		Find(".help.is-danger").Text().Contains("Passwords do not match").
 		Find("#inputPassword2").SendKeys("testWithAPrettyGoodP@ssword").

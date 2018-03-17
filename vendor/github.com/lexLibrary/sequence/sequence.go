@@ -520,15 +520,12 @@ func (s *Sequence) Wait(duration time.Duration) *Sequence {
 // Debug will print the current page's title and source
 // For use with debugging issues mostly
 func (s *Sequence) Debug() *Sequence {
-	if s.err != nil {
-		return s
-	}
 	src, err := s.driver.PageSource()
 	if err != nil {
 		s.err = &Error{
 			Stage:  "Debug Source",
 			Err:    err,
-			Caller: caller(1),
+			Caller: caller(0),
 		}
 		return s
 	}
@@ -538,7 +535,7 @@ func (s *Sequence) Debug() *Sequence {
 		s.err = &Error{
 			Stage:  "Debug Title",
 			Err:    err,
-			Caller: caller(1),
+			Caller: caller(0),
 		}
 		return s
 	}
@@ -548,24 +545,37 @@ func (s *Sequence) Debug() *Sequence {
 		s.err = &Error{
 			Stage:  "Debug URL",
 			Err:    err,
-			Caller: caller(1),
+			Caller: caller(0),
 		}
 		return s
 	}
+
+	// logs, err := s.driver.Log(log.Browser)
+	// if err != nil {
+	// 	s.err = &Error{
+	// 		Stage:  "Debug Log",
+	// 		Err:    err,
+	// 		Caller: caller(0),
+	// 	}
+	// 	return s
+	// }
+	// log := ""
+	// for i := range logs {
+	// 	log += fmt.Sprintf("%s - (%s): %s\n", logs[i].Level, logs[i].Timestamp.Format(time.Stamp), logs[i].Message)
+	// }
 
 	fmt.Println("-----------------------------------------------")
 	fmt.Printf("%s - (%s)\n", title, uri)
 	fmt.Println("-----------------------------------------------")
 	fmt.Println(src)
+	fmt.Println("-----------------------------------------------")
+	// fmt.Println("LOG")
+	// fmt.Println(log)
 	return s
 }
 
 // Screenshot takes a screenshot
 func (s *Sequence) Screenshot(filename string) *Sequence {
-	if s.err != nil {
-		return s
-	}
-
 	buff, err := s.driver.Screenshot()
 	if err != nil {
 		s.err = &Error{
