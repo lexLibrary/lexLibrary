@@ -73,11 +73,11 @@ func setupRoutes() http.Handler {
 	}
 
 	rootHandler.GET("/profile/", profile.ServeHTTP)
-	//FIXME
-	rootHandler.GET("/profile/readLater", profile.ServeHTTP)
-	rootHandler.GET("/profile/history", profile.ServeHTTP)
-	rootHandler.GET("/profile/documents", profile.ServeHTTP)
-	rootHandler.GET("/profile/comments", profile.ServeHTTP)
+	//TODO: one profile template object that contains from templateHandler
+	// rootHandler.GET("/profile/readLater", profile.readLater)
+	// rootHandler.GET("/profile/history", profile.history)
+	// rootHandler.GET("/profile/documents", profile.documents)
+	// rootHandler.GET("/profile/comments", profile.comments)
 
 	rootHandler.GET("/profile/edit", templateHandler{
 		handler:       profileEditTemplate,

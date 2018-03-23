@@ -289,65 +289,65 @@ func profileTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	}
 }
 
-func profileTemplateDocuments(w http.ResponseWriter, r *http.Request, c ctx) {
-	data, ok := profileView(w, r, c)
-	if !ok {
-		return
-	}
+// func profileTemplateDocuments(w http.ResponseWriter, r *http.Request, c ctx) {
+// 	data, ok := profileView(w, r, c)
+// 	if !ok {
+// 		return
+// 	}
 
-	data.Tab = "documents"
+// 	data.Tab = "documents"
 
-	err := w.(*templateWriter).execute(data)
+// 	err := w.(*templateWriter).execute(data)
 
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-	}
-}
+// 	if err != nil {
+// 		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+// 	}
+// }
 
-func profileTemplateReadLater(w http.ResponseWriter, r *http.Request, c ctx) {
-	data, ok := profileView(w, r, c)
-	if !ok {
-		return
-	}
+// func profileTemplateReadLater(w http.ResponseWriter, r *http.Request, c ctx) {
+// 	data, ok := profileView(w, r, c)
+// 	if !ok {
+// 		return
+// 	}
 
-	data.Tab = "readLater"
+// 	data.Tab = "readLater"
 
-	err := w.(*templateWriter).execute(data)
+// 	err := w.(*templateWriter).execute(data)
 
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-	}
-}
+// 	if err != nil {
+// 		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+// 	}
+// }
 
-func profileTemplateComments(w http.ResponseWriter, r *http.Request, c ctx) {
-	data, ok := profileView(w, r, c)
-	if !ok {
-		return
-	}
+// func profileTemplateComments(w http.ResponseWriter, r *http.Request, c ctx) {
+// 	data, ok := profileView(w, r, c)
+// 	if !ok {
+// 		return
+// 	}
 
-	data.Tab = "comments"
+// 	data.Tab = "comments"
 
-	err := w.(*templateWriter).execute(data)
+// 	err := w.(*templateWriter).execute(data)
 
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-	}
-}
+// 	if err != nil {
+// 		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+// 	}
+// }
 
-func profileTemplateHistory(w http.ResponseWriter, r *http.Request, c ctx) {
-	data, ok := profileView(w, r, c)
-	if !ok {
-		return
-	}
+// func profileTemplateHistory(w http.ResponseWriter, r *http.Request, c ctx) {
+// 	data, ok := profileView(w, r, c)
+// 	if !ok {
+// 		return
+// 	}
 
-	data.Tab = "history"
+// 	data.Tab = "history"
 
-	err := w.(*templateWriter).execute(data)
+// 	err := w.(*templateWriter).execute(data)
 
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-	}
-}
+// 	if err != nil {
+// 		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+// 	}
+// }
 
 func profileView(w http.ResponseWriter, r *http.Request, c ctx) (*profileTemplateData, bool) {
 	if c.session == nil {
