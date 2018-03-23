@@ -41,8 +41,8 @@ var vm = new Vue({
                     password: this.password,
                 })
                 .then((result) => {
-                    this.loading = false;
                     if (result.response) {
+                        this.loading = false;
                         if (result.response.expired) {
                             this.modalTitle = "Your password has expired";
                             this.showModal = true;
@@ -100,8 +100,7 @@ var vm = new Vue({
                     newPassword: this.newPassword,
                     version,
                 })
-                .then((result) => {
-                    this.loading = false;
+                .then(() => {
                     this.navigate();
                 })
                 .catch((err) => {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/pkg/errors"
 )
 
 var publicUserNewRateDelay = app.RateDelay{
@@ -20,7 +21,7 @@ var publicUserNewRateDelay = app.RateDelay{
 type userInput struct {
 	Username *string `json:"username,omitempty"`
 	Password *string `json:"password,omitempty"`
-	FullName *string `json:"fullName,omitempty"`
+	Name     *string `json:"name,omitempty"`
 	Version  *int    `json:"version,omitempty"`
 }
 
@@ -31,7 +32,14 @@ type passwordInput struct {
 	Version     *int    `json:"version,omitempty"`
 }
 
-func userPost(w http.ResponseWriter, r *http.Request, c ctx) {
+type userImageInput struct {
+	X0 float64 `json:"x0"`
+	Y0 float64 `json:"y0"`
+	X1 float64 `json:"x1"`
+	Y1 float64 `json:"y1"`
+}
+
+func userCreate(w http.ResponseWriter, r *http.Request, c ctx) {
 	input := &userInput{}
 	err := parseInput(r, input)
 	if errHandled(err, w, r) {
@@ -67,7 +75,7 @@ func userPost(w http.ResponseWriter, r *http.Request, c ctx) {
 	respond(w, created(u))
 }
 
-func usernameGet(w http.ResponseWriter, r *http.Request, c ctx) {
+func usernameTest(w http.ResponseWriter, r *http.Request, c ctx) {
 	username := c.params.ByName("username")
 
 	_, err := app.UserGet(username)
@@ -98,7 +106,7 @@ func passwordTest(w http.ResponseWriter, r *http.Request, c ctx) {
 	respond(w, success(nil))
 }
 
-func userPutPassword(w http.ResponseWriter, r *http.Request, c ctx) {
+func userUpdatePassword(w http.ResponseWriter, r *http.Request, c ctx) {
 	input := &passwordInput{}
 	err := parseInput(r, input)
 	if errHandled(err, w, r) {
@@ -158,7 +166,7 @@ func userPutPassword(w http.ResponseWriter, r *http.Request, c ctx) {
 	respond(w, success(nil))
 }
 
-func userPutName(w http.ResponseWriter, r *http.Request, c ctx) {
+func userUpdateName(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session == nil {
 		unauthorized(w, r)
 		return
@@ -170,8 +178,8 @@ func userPutName(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if input.FullName == nil {
-		errHandled(app.NewFailure("fullName is required"), w, r)
+	if input.Name == nil {
+		errHandled(app.NewFailure("name is required"), w, r)
 		return
 	}
 
@@ -184,10 +192,185 @@ func userPutName(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(u.SetFullName(*input.FullName, *input.Version), w, r) {
+	if errHandled(u.SetName(*input.Name, *input.Version), w, r) {
 		return
 	}
 
 	respond(w, success(nil))
 
+}
+
+func userUploadImage(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	input := &userInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if input.Version == nil {
+		errHandled(app.NewFailure("version is required"), w, r)
+		return
+	}
+
+	uploads, err := filesFromForm(r)
+	if errHandled(err, w, r) {
+		return
+	}
+	if len(uploads) == 0 {
+		errHandled(app.NewFailure("No image uploaded"), w, r)
+		return
+	}
+
+	if len(uploads) > 1 {
+		errHandled(app.NewFailure("More than one image was uploaded.  Please upload one image at a time"), w, r)
+		return
+	}
+
+	if errHandled(u.SetProfileImage(uploads[0], *input.Version), w, r) {
+		return
+	}
+
+	respond(w, created(nil))
+
+}
+
+func userCropImage(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	input := &userImageInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if errHandled(u.CropProfileImage(input.X0, input.Y0, input.X1, input.Y1), w, r) {
+		return
+	}
+
+	respond(w, success(nil))
+}
+
+type profileTemplateData struct {
+	User  *app.User
+	Stats app.UserStats
+	Tab   string
+}
+
+func profileTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+	data, ok := profileView(w, r, c)
+	if !ok {
+		return
+	}
+
+	data.Tab = "documents"
+
+	err := w.(*templateWriter).execute(data)
+
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+	}
+}
+
+func profileTemplateDocuments(w http.ResponseWriter, r *http.Request, c ctx) {
+	data, ok := profileView(w, r, c)
+	if !ok {
+		return
+	}
+
+	data.Tab = "documents"
+
+	err := w.(*templateWriter).execute(data)
+
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+	}
+}
+
+func profileTemplateReadLater(w http.ResponseWriter, r *http.Request, c ctx) {
+	data, ok := profileView(w, r, c)
+	if !ok {
+		return
+	}
+
+	data.Tab = "readLater"
+
+	err := w.(*templateWriter).execute(data)
+
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+	}
+}
+
+func profileTemplateComments(w http.ResponseWriter, r *http.Request, c ctx) {
+	data, ok := profileView(w, r, c)
+	if !ok {
+		return
+	}
+
+	data.Tab = "comments"
+
+	err := w.(*templateWriter).execute(data)
+
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+	}
+}
+
+func profileTemplateHistory(w http.ResponseWriter, r *http.Request, c ctx) {
+	data, ok := profileView(w, r, c)
+	if !ok {
+		return
+	}
+
+	data.Tab = "history"
+
+	err := w.(*templateWriter).execute(data)
+
+	if err != nil {
+		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+	}
+}
+
+func profileView(w http.ResponseWriter, r *http.Request, c ctx) (*profileTemplateData, bool) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return nil, false
+	}
+
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return nil, false
+	}
+
+	stats, err := u.Stats()
+	if errHandled(err, w, r) {
+		return nil, false
+	}
+
+	return &profileTemplateData{
+		User:  u,
+		Stats: stats,
+	}, true
+}
+
+func profileEditTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+	unauthorized(w, r)
 }

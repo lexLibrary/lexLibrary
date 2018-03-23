@@ -133,6 +133,9 @@ func (i *Image) Etag() string {
 }
 
 func imageGet(id data.ID) *Image {
+	if !id.Valid {
+		return nil
+	}
 	return &Image{ID: id}
 }
 
@@ -179,11 +182,11 @@ type imageRaw struct {
 
 // imageNew creates a new imageRaw object for manipulating an image before inserting it into the database
 // you must call insert separately to actually insert the data
-func imageNew(name, contentType string, reader io.ReadCloser) (*imageRaw, error) {
-	lr := &io.LimitedReader{R: reader, N: (imageMaxSize + 1)}
+func imageNew(upload Upload) (*imageRaw, error) {
+	lr := &io.LimitedReader{R: upload, N: (imageMaxSize + 1)}
 	buff, err := ioutil.ReadAll(lr)
 	defer func() {
-		if cerr := reader.Close(); cerr != nil && err == nil {
+		if cerr := upload.Close(); cerr != nil && err == nil {
 			err = cerr
 		}
 	}()
@@ -197,9 +200,9 @@ func imageNew(name, contentType string, reader io.ReadCloser) (*imageRaw, error)
 
 	i := &imageRaw{
 		id:                      data.NewID(),
-		name:                    name,
+		name:                    upload.Name,
 		version:                 0,
-		contentType:             contentType,
+		contentType:             upload.ContentType,
 		data:                    buff,
 		created:                 time.Now(),
 		thumbMinDimension:       imageDefaultThumbDimension,

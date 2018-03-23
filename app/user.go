@@ -4,7 +4,6 @@ package app
 
 import (
 	"database/sql"
-	"io"
 	"math"
 	"strings"
 	"time"
@@ -31,7 +30,7 @@ type User struct {
 type PublicProfile struct {
 	ID       data.ID `json:"id"`
 	Username string  `json:"username"`
-	FullName string  `json:"fullName"`
+	Name     string  `json:"name"`
 	Admin    bool    `json:"admin"`
 	Active   bool    `json:"active"` // whether or not the user is active and can log in
 }
@@ -45,6 +44,7 @@ const (
 // user constants
 const (
 	UserMaxNameLength = 64 // This is pretty arbitrary but there should probably be some limit
+	usernameMinLength = 3
 
 	// images
 	userImageWidth  = 300
@@ -63,7 +63,7 @@ var (
 	sqlUserInsert = data.NewQuery(`insert into users (
 		id,
 		username, 
-		full_name, 
+		name, 
 		auth_type,
 		password,
 		password_version,
@@ -76,7 +76,7 @@ var (
 	) values (
 		{{arg "id"}}, 
 		{{arg "username"}}, 
-		{{arg "full_name"}}, 
+		{{arg "name"}}, 
 		{{arg "auth_type"}},
 		{{arg "password"}},
 		{{arg "password_version"}},
@@ -90,7 +90,7 @@ var (
 	sqlUserFromUsername = data.NewQuery(`
 		select 	id, 
 			username, 
-			full_name, 
+			name, 
 			auth_type, 
 			password, 
 			password_version, 
@@ -106,7 +106,7 @@ var (
 	sqlUserFromID = data.NewQuery(`
 		select 	id, 
 			username, 
-			full_name, 
+			name, 
 			auth_type, 
 			password, 
 			password_version, 
@@ -120,7 +120,7 @@ var (
 		from users where id = {{arg "id"}}
 	`)
 	sqlUserPublicProfile = data.NewQuery(`
-		select id, username, full_name, active, admin 
+		select id, username, name, active, admin 
 		from users where username = {{arg "username"}}`)
 
 	sqlUserUpdateActive = data.NewQuery(`update users set active = {{arg "active"}}, updated = {{now}}, version = version + 1 
@@ -135,7 +135,7 @@ var (
 			version = version + 1
 		where id = {{arg "id"}}
 		and version = {{arg "version"}}`)
-	sqlUserUpdateName = data.NewQuery(`update users set full_name = {{arg "full_name"}}, 
+	sqlUserUpdateName = data.NewQuery(`update users set name = {{arg "name"}}, 
 		updated = {{now}}, version = version + 1 where id = {{arg "id"}} 
 		and version = {{arg "version"}}`)
 	sqlUserUpdateProfileImage = data.NewQuery(`update users set profile_image_id= {{arg "profile_image_id"}}, updated = {{now}},
@@ -229,7 +229,7 @@ func UserGet(username string) (*PublicProfile, error) {
 		Scan(
 			&u.ID,
 			&u.Username,
-			&u.FullName,
+			&u.Name,
 			&u.Active,
 			&u.Admin,
 		)
@@ -250,7 +250,7 @@ func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 	err := sqlUserFromUsername.Tx(tx).QueryRow(sql.Named("username", strings.ToLower(username))).Scan(
 		&u.ID,
 		&u.Username,
-		&u.FullName,
+		&u.Name,
 		&u.AuthType,
 		&u.password,
 		&u.passwordVersion,
@@ -279,7 +279,7 @@ func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
 	err := sqlUserFromID.Tx(tx).QueryRow(sql.Named("id", id)).Scan(
 		&u.ID,
 		&u.Username,
-		&u.FullName,
+		&u.Name,
 		&u.AuthType,
 		&u.password,
 		&u.passwordVersion,
@@ -305,7 +305,7 @@ func (u *User) insert(tx *sql.Tx) error {
 	_, err := sqlUserInsert.Tx(tx).Exec(
 		sql.Named("id", u.ID),
 		sql.Named("username", u.Username),
-		sql.Named("full_name", u.FullName),
+		sql.Named("name", u.Name),
 		sql.Named("auth_type", u.AuthType),
 		sql.Named("password", u.password),
 		sql.Named("password_version", u.passwordVersion),
@@ -325,12 +325,16 @@ func (u *User) validate() error {
 		return NewFailure("A username is required")
 	}
 
+	if len(u.Username) < usernameMinLength {
+		return NewFailure("A username must be more then %d characters.", usernameMinLength)
+	}
+
 	if !urlify(u.Username).is() {
 		return NewFailure("A username can only contain letters, numbers and dashes")
 	}
 
-	if len(u.FullName) > UserMaxNameLength {
-		return NewFailure("Full name must be less than %d characters", UserMaxNameLength)
+	if len(u.Name) > UserMaxNameLength {
+		return NewFailure("Name must be less than %d characters", UserMaxNameLength)
 	}
 
 	if u.AuthType != AuthTypePassword {
@@ -371,17 +375,17 @@ func (u *User) setActive(active bool, version int) error {
 	return nil
 }
 
-// SetFullName sets the user's name
-func (u *User) SetFullName(fullName string, version int) error {
+// SetName sets the user's name
+func (u *User) SetName(name string, version int) error {
 	return u.update(func() (sql.Result, error) {
-		u.FullName = fullName
+		u.Name = name
 		err := u.validate()
 		if err != nil {
 			return nil, err
 		}
 
 		return sqlUserUpdateName.Exec(
-			sql.Named("full_name", u.FullName),
+			sql.Named("name", u.Name),
 			sql.Named("id", u.ID),
 			sql.Named("version", version),
 		)
@@ -489,8 +493,8 @@ func (u *User) ProfileImage() *Image {
 }
 
 // SetProfileImage sets the current user's profile image
-func (u *User) SetProfileImage(rc io.ReadCloser, name, contentType string, version int) error {
-	i, err := imageNew(name, contentType, rc)
+func (u *User) SetProfileImage(upload Upload, version int) error {
+	i, err := imageNew(upload)
 	if err != nil {
 		return err
 	}
@@ -577,4 +581,24 @@ func (u *User) CropProfileImage(x0, y0, x1, y1 float64) error {
 	i.thumbMinDimension = userIconWidth
 
 	return i.update(nil, i.version)
+}
+
+// DisplayName is the name displayed.  If no name is set then the username is displayed
+func (u *User) DisplayName() string {
+	if u.Name != "" {
+		return u.Name
+	}
+	return u.Username
+}
+
+// DisplayInitials is two characters that display if no profile image is set
+func (u *User) DisplayInitials() string {
+	initials := strings.SplitN(u.DisplayName(), " ", 2)
+	if len(initials) == 1 {
+		if len(initials[0]) == 1 {
+			return initials[0]
+		}
+		return strings.ToUpper(string([]rune(initials[0])[:2]))
+	}
+	return strings.ToUpper(string([]rune(initials[0])[0]) + string([]rune(initials[1])[0]))
 }

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	[[template "header"]]
+	<title>[[.User.DisplayName]]'s Profile - Lex Library</title>
+</head>
+
+<body>
+<section class="section">
+
+<div class="container">
+	<div class="columns is-centered">
+			<div class="profile column is-half has-text-centered">
+				<div class="card">
+					<div class="card-content">
+						<a class="is-size-6 profile-edit" href="/profile/edit">Edit <span class="is-hidden-mobile">Profile</span></a>
+						<div class="profile-avatar">
+							<figure class="avatar avatar-full" data-initial="[[.User.DisplayInitials]]">
+								[[if .User.ProfileImage]]
+									<img src="/profile/image" alt="[[.User.DisplayName]]">
+								[[end]]
+							</figure>
+							<p class="is-size-3">[[.User.DisplayName]]</p>
+						</div>
+						<section class="section">
+							<nav class="level">
+								<div class="level-item has-text-centered">
+									<div>
+										<p class="heading">Written</p>
+										<p class="title">[[.Stats.DocumentsWritten]]</p>
+									</div>
+								</div>
+								<div class="level-item has-text-centered">
+									<div>
+										<p class="heading">Read</p>
+										<p class="title">[[.Stats.DocumentsRead]]</p>
+									</div>
+								</div>
+								<div class="level-item has-text-centered">
+									<div>
+										<p class="heading">Comments</p>
+										<p class="title">[[.Stats.Comments]]</p>
+									</div>
+								</div>
+							</nav>
+						</section>
+						<section>
+							<div class="tabs is-centered">
+								<ul>
+									<li class="[[if .Tab=='documents']]is-active[[end]]"><a>Documents</a></li>
+									<li class="[[if .Tab=='readLater']]is-active[[end]]"><a>Read Later</a></li>
+									<li class="[[if .Tab=='comments']]is-active[[end]]"><a>Comments</a></li>
+									<li class="[[if .Tab=='history']]is-active[[end]]"><a>History</a></li>
+								</ul>
+							</div>
+						</section>
+					</div>
+				</div>
+			</div>
+	</div>
+</div>
+</section>
+</body>
+</html>

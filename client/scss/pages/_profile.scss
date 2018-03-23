@@ -1,0 +1,19 @@
+// Copyright (c) 2017-2018 Townsourced Inc.
+// Profile page specific CSS
+
+$profile-offset: ($size-3 + ($avatar-full-size / 2));
+
+.profile {
+	padding-top: $profile-offset;
+}
+
+.profile-avatar {
+	// to cut the full-size avatar in half, we'll need half the avatar size +  the size of the name underneath
+	margin-top: $profile-offset*-1;
+}
+
+.profile-edit {
+	position: absolute;
+	top: $spacer;
+	right: $spacer;
+}

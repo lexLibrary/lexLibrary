@@ -136,19 +136,19 @@ func TestUser(t *testing.T) {
 
 	t.Run("Invalid Name", func(t *testing.T) {
 		reset(t)
-		fullName := fmt.Sprintf("%70s", "full name")
+		name := fmt.Sprintf("%70s", "full name")
 
 		u, err := app.UserNew("testusername", "ODSjflaksjdfhiasfd323")
 		if err != nil {
 			t.Fatalf("Error adding user")
 		}
 
-		err = u.SetFullName(fullName, u.Version)
+		err = u.SetName(name, u.Version)
 		if err == nil {
-			t.Fatalf("No error adding too long full name")
+			t.Fatalf("No error adding too long name")
 		}
 		if !app.IsFail(err) {
-			t.Fatalf("Error on too long full name is not a failure")
+			t.Fatalf("Error on too long name is not a failure")
 		}
 	})
 
@@ -394,12 +394,12 @@ func TestUser(t *testing.T) {
 
 		fName := "firstname lastname"
 
-		err = u.SetFullName(fName, u.Version)
+		err = u.SetName(fName, u.Version)
 		if err != nil {
 			t.Fatalf("Error setting name: %s", err)
 		}
 
-		if u.FullName != fName {
+		if u.Name != fName {
 			t.Fatalf("User name was not updated")
 		}
 	})
@@ -418,7 +418,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error getting user: %s", err)
 		}
 
-		if u.FullName != got.FullName || u.ID != got.ID ||
+		if u.Name != got.Name || u.ID != got.ID ||
 			u.Username != got.Username {
 			t.Fatalf("Retrieved user does not match.  Wanted %v, got %v", u, got)
 		}
@@ -489,7 +489,7 @@ func TestUser(t *testing.T) {
 		// get copy of current user version
 		old := *u
 
-		err = u.SetFullName("version one", u.Version)
+		err = u.SetName("version one", u.Version)
 		if err != nil {
 			t.Fatalf("Error setting name: %s", err)
 		}
@@ -498,7 +498,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Incorrect first version of the user record. Got %d, wanted %d", u.Version, 1)
 		}
 
-		err = old.SetFullName("version old", old.Version)
+		err = old.SetName("version old", old.Version)
 		if err != app.ErrUserConflict {
 			t.Fatalf("Updating an older version of a user did not return a Conflict")
 		}
@@ -569,6 +569,61 @@ func TestUser(t *testing.T) {
 		if err != app.ErrSessionInvalid {
 			t.Fatalf("Old session was not exired when changing passwords")
 		}
+	})
+
+	t.Run("DisplayName", func(t *testing.T) {
+		reset(t)
+		username := "testuser"
+		password := "reallygoodlongpassword"
+		name := "Test User"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user")
+		}
+
+		if u.DisplayName() != username {
+			t.Fatalf("DisplayName is incorrect. Expected %s, got %s.", username, u.DisplayName())
+		}
+
+		err = u.SetName(name, u.Version)
+		if err != nil {
+			t.Fatalf("Error setting name: %s", err)
+		}
+
+		if u.DisplayName() != name {
+			t.Fatalf("DisplayName is incorrect. Expected %s, got %s.", name, u.DisplayName())
+		}
+
+	})
+
+	t.Run("DisplayInitials", func(t *testing.T) {
+		reset(t)
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user")
+		}
+
+		initials := "TE"
+
+		if u.DisplayInitials() != initials {
+			t.Fatalf("DisplayInitials are incorrect. Expected %s, got %s.", initials, u.DisplayInitials())
+		}
+
+		name := "Test User"
+		initials = "TU"
+		err = u.SetName(name, u.Version)
+		if err != nil {
+			t.Fatalf("Error setting name: %s", err)
+		}
+
+		if u.DisplayInitials() != initials {
+			t.Fatalf("DisplayInitials is incorrect. Expected %s, got %s.", initials, u.DisplayName())
+		}
+
 	})
 
 	//TODO: Profile Image tests, use testdata dir

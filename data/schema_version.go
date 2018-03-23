@@ -72,7 +72,7 @@ var schemaVersions = []*Query{
 		create table users (
 			id {{id}} PRIMARY KEY NOT NULL,
 			username {{varchar 64}} NOT NULL,
-			full_name {{text}},
+			name {{text}},
 			auth_type {{text}} NOT NULL,
 			password {{bytes}},
 			password_version {{int}},

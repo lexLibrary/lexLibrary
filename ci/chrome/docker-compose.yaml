@@ -1,7 +1,7 @@
 version: '3'
 services:
   webdriver:
-    image: selenium/standalone-chrome
+    image: selenium/standalone-chrome:3.1.0
     logging:
         driver: "none"
     volumes:
@@ -23,5 +23,5 @@ services:
       GOPATH: /go
       LLBROWSER: 'chrome'
     command: sh -c '
-        cd /go/src/github.com/lexLibrary/lexLibrary/ && go test ./web
+        cd /go/src/github.com/lexLibrary/lexLibrary/ && ./build.sh && go test ./web
       '

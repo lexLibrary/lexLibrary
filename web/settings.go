@@ -14,7 +14,7 @@ type settingInput struct {
 	Settings map[string]interface{}
 }
 
-func settingPut(w http.ResponseWriter, r *http.Request, c ctx) {
+func settingUpdate(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session == nil {
 		unauthorized(w, r)
 		return
@@ -53,7 +53,7 @@ func settingPut(w http.ResponseWriter, r *http.Request, c ctx) {
 }
 
 // settingDelete sets a setting to it's default value
-func settingDelete(w http.ResponseWriter, r *http.Request, c ctx) {
+func settingSetDefault(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session == nil {
 		unauthorized(w, r)
 		return

@@ -36,17 +36,17 @@ func setupRoutes() http.Handler {
 		templateFiles: []string{"login.template.html"},
 	}.ServeHTTP)
 
-	rootHandler.PUT("/expiredpassword", makeHandle(userPutPassword))
+	rootHandler.PUT("/expiredpassword", makeHandle(userUpdatePassword))
 	rootHandler.GET("/signup", templateHandler{
 		handler:       signupTemplate,
 		templateFiles: []string{"signup.template.html"},
 	}.ServeHTTP)
 
 	rootHandler.PUT("/signup/password", makeHandle(passwordTest))
-	rootHandler.GET("/signup/username/:username", makeHandle(usernameGet))
+	rootHandler.GET("/signup/username/:username", makeHandle(usernameTest))
 
-	rootHandler.POST("/session", makeHandle(sessionPost))
-	rootHandler.DELETE("/session", makeHandle(sessionDelete))
+	rootHandler.POST("/session", makeHandle(sessionLogin))
+	rootHandler.DELETE("/session", makeHandle(sessionLogout))
 
 	// about
 	rootHandler.GET("/about", templateHandler{
@@ -55,13 +55,34 @@ func setupRoutes() http.Handler {
 	}.ServeHTTP)
 
 	// settings
-	rootHandler.PUT("/setting", makeHandle(settingPut))
-	rootHandler.DELETE("/setting", makeHandle(settingDelete))
+	rootHandler.PUT("/setting", makeHandle(settingUpdate))
+	rootHandler.DELETE("/setting", makeHandle(settingSetDefault))
 
 	// user
-	rootHandler.POST("/user", makeHandle(userPost))
-	rootHandler.PUT("/user/password", makeHandle(userPutPassword))
-	rootHandler.PUT("/user", makeHandle(userPutName))
+	rootHandler.POST("/user", makeHandle(userCreate))
+
+	// profile
+	rootHandler.PUT("/profile/password", makeHandle(userUpdatePassword))
+	rootHandler.PUT("/profile", makeHandle(userUpdateName))
+	rootHandler.POST("/profile/image", makeHandle(userUploadImage))
+	rootHandler.PUT("/profile/image", makeHandle(userCropImage))
+
+	profile := templateHandler{
+		handler:       profileTemplate,
+		templateFiles: []string{"profile.template.html"},
+	}
+
+	rootHandler.GET("/profile/", profile.ServeHTTP)
+	//FIXME
+	rootHandler.GET("/profile/readLater", profile.ServeHTTP)
+	rootHandler.GET("/profile/history", profile.ServeHTTP)
+	rootHandler.GET("/profile/documents", profile.ServeHTTP)
+	rootHandler.GET("/profile/comments", profile.ServeHTTP)
+
+	rootHandler.GET("/profile/edit", templateHandler{
+		handler:       profileEditTemplate,
+		templateFiles: []string{"profile.template.html"},
+	}.ServeHTTP)
 
 	return rootHandler
 }

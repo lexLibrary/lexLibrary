@@ -166,7 +166,7 @@ func expireSessionCookie(w http.ResponseWriter, r *http.Request, s *app.Session)
 	}
 }
 
-func sessionPost(w http.ResponseWriter, r *http.Request, c ctx) {
+func sessionLogin(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session != nil {
 		//If previous session still exists, log out so it can't be used again
 		go func(session *app.Session) {
@@ -217,8 +217,7 @@ func sessionPost(w http.ResponseWriter, r *http.Request, c ctx) {
 	respond(w, created(u))
 }
 
-// logout
-func sessionDelete(w http.ResponseWriter, r *http.Request, c ctx) {
+func sessionLogout(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session == nil {
 		respond(w, success(nil))
 		return

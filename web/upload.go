@@ -2,6 +2,15 @@
 
 package web
 
+import (
+	"net/http"
+	"time"
+
+	"github.com/lexLibrary/lexLibrary/app"
+)
+
+const lastModifiedHeader = "LL-LastModified"
+
 // func imageGet(w http.ResponseWriter, r *http.Request, c ctx) {
 // 	id, err := xid.FromString(c.params.ByName("image"))
 // 	if err != nil {
@@ -86,30 +95,34 @@ package web
 // 	respond(w, created(images))
 // }
 
-// func imagesFromForm(u *app.User, r *http.Request) ([]*app.Image, error) {
+func filesFromForm(r *http.Request) ([]app.Upload, error) {
+	var uploads []app.Upload
 
-// 	var images []*app.Image
+	err := r.ParseMultipartForm(maxUploadMemory)
+	if err != nil {
+		return nil, err
+	}
 
-// 	err := r.ParseMultipartForm(maxUploadMemory)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	for _, header := range r.MultipartForm.File {
+		for i := range header {
+			file, err := header[i].Open()
+			if err != nil {
+				return nil, err
+			}
 
-// 	for _, files := range r.MultipartForm.File {
-// 		for i := range files {
-// 			file, err := files[i].Open()
-// 			if err != nil {
-// 				return nil, err
-// 			}
+			lastModified, err := time.Parse(time.RFC3339, header[i].Header.Get(lastModifiedHeader))
+			if err != nil {
+				lastModified = time.Time{}
+			}
 
-// 			i, err := app.ImageNew(u, files[i].Header.Get("Content-Type"), file)
-// 			if err != nil {
-// 				return nil, err
-// 			}
-// 			images = append(images, i)
-// 			// TODO: file.Close?
-// 		}
-// 	}
+			uploads = append(uploads, app.Upload{
+				Name:         header[i].Filename,
+				ContentType:  header[i].Header.Get("Content-Type"),
+				ReadCloser:   file,
+				LastModified: lastModified,
+			})
+		}
+	}
 
-// 	return images, nil
-// }
+	return uploads, nil
+}
