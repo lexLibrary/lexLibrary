@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
-	"github.com/pkg/errors"
 )
 
 var publicUserNewRateDelay = app.RateDelay{
@@ -266,111 +265,4 @@ func userCropImage(w http.ResponseWriter, r *http.Request, c ctx) {
 	}
 
 	respond(w, success(nil))
-}
-
-type profileTemplateData struct {
-	User  *app.User
-	Stats app.UserStats
-	Tab   string
-}
-
-func profileTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
-	data, ok := profileView(w, r, c)
-	if !ok {
-		return
-	}
-
-	data.Tab = "documents"
-
-	err := w.(*templateWriter).execute(data)
-
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-	}
-}
-
-// func profileTemplateDocuments(w http.ResponseWriter, r *http.Request, c ctx) {
-// 	data, ok := profileView(w, r, c)
-// 	if !ok {
-// 		return
-// 	}
-
-// 	data.Tab = "documents"
-
-// 	err := w.(*templateWriter).execute(data)
-
-// 	if err != nil {
-// 		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-// 	}
-// }
-
-// func profileTemplateReadLater(w http.ResponseWriter, r *http.Request, c ctx) {
-// 	data, ok := profileView(w, r, c)
-// 	if !ok {
-// 		return
-// 	}
-
-// 	data.Tab = "readLater"
-
-// 	err := w.(*templateWriter).execute(data)
-
-// 	if err != nil {
-// 		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-// 	}
-// }
-
-// func profileTemplateComments(w http.ResponseWriter, r *http.Request, c ctx) {
-// 	data, ok := profileView(w, r, c)
-// 	if !ok {
-// 		return
-// 	}
-
-// 	data.Tab = "comments"
-
-// 	err := w.(*templateWriter).execute(data)
-
-// 	if err != nil {
-// 		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-// 	}
-// }
-
-// func profileTemplateHistory(w http.ResponseWriter, r *http.Request, c ctx) {
-// 	data, ok := profileView(w, r, c)
-// 	if !ok {
-// 		return
-// 	}
-
-// 	data.Tab = "history"
-
-// 	err := w.(*templateWriter).execute(data)
-
-// 	if err != nil {
-// 		app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-// 	}
-// }
-
-func profileView(w http.ResponseWriter, r *http.Request, c ctx) (*profileTemplateData, bool) {
-	if c.session == nil {
-		unauthorized(w, r)
-		return nil, false
-	}
-
-	u, err := c.session.User()
-	if errHandled(err, w, r) {
-		return nil, false
-	}
-
-	stats, err := u.Stats()
-	if errHandled(err, w, r) {
-		return nil, false
-	}
-
-	return &profileTemplateData{
-		User:  u,
-		Stats: stats,
-	}, true
-}
-
-func profileEditTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
-	unauthorized(w, r)
 }

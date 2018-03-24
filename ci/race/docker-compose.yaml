@@ -1,7 +1,7 @@
 version: '3'
 services:
   webdriver:
-    image: selenium/standalone-chrome:3.1.0
+    image: selenium/standalone-firefox:3.11
     logging:
         driver: "none"
     volumes:
@@ -19,7 +19,7 @@ services:
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
       GOPATH: /go
-      LLBROWSER: 'chrome'
+      LLBROWSER: 'firefox'
     command: 
       - /bin/sh
       - -c

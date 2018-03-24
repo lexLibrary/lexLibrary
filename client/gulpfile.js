@@ -21,6 +21,7 @@ var jsFiles = [
     'signup.js',
     'about.js',
     'first_run.js',
+    'profile_edit.js',
 ];
 
 function rollupFiles(dev) {

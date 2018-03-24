@@ -10,14 +10,17 @@
 [[projects]]
   branch = "master"
   name = "github.com/denisenkom/go-mssqldb"
-  packages = ["."]
-  revision = "ee492709d4324cdcb051d2ac266b77ddc380f5c5"
+  packages = [
+    ".",
+    "internal/cp"
+  ]
+  revision = "270bc3860bb94dd3a3ffd047377d746c5e276726"
 
 [[projects]]
   name = "github.com/disintegration/imaging"
   packages = ["."]
-  revision = "1884593a19ddc6f2ea050403430d02c1d0fc1283"
-  version = "v1.3.0"
+  revision = "fd34ef7671b12cdf1b024d98c6b327b2770d32c4"
+  version = "v1.4.1"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -38,6 +41,7 @@
     ".",
     "hcl/ast",
     "hcl/parser",
+    "hcl/printer",
     "hcl/scanner",
     "hcl/strconv",
     "hcl/token",
@@ -45,7 +49,7 @@
     "json/scanner",
     "json/token"
   ]
-  revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
+  revision = "f40e974e75af4e271d97ce0fc917af5898ae7bda"
 
 [[projects]]
   name = "github.com/julienschmidt/httprouter"
@@ -54,19 +58,13 @@
   version = "v1.1"
 
 [[projects]]
-  name = "github.com/lexLibrary/sequence"
-  packages = ["."]
-  revision = "4861a3799a4e6ae31b63697c41635b32ea24ed21"
-  version = "v0.0.4"
-
-[[projects]]
   branch = "master"
   name = "github.com/lib/pq"
   packages = [
     ".",
     "oid"
   ]
-  revision = "88edab0803230a3898347e77b474f8c1820a1f20"
+  revision = "b2004221932bd6b13167ef654c81cffac36f7537"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -149,8 +147,8 @@
 [[projects]]
   name = "github.com/spf13/viper"
   packages = ["."]
-  revision = "25b30aa063fc18e48662b86996252eabdcf2f0c7"
-  version = "v1.0.0"
+  revision = "b5e8006cbee93ec955a89ab31e0e3ce3204f3736"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
@@ -165,6 +163,12 @@
   revision = "a789e65b0e7f126888873e84f528c1c8537dff3e"
 
 [[projects]]
+  name = "github.com/timshannon/sequence"
+  packages = ["."]
+  revision = "4861a3799a4e6ae31b63697c41635b32ea24ed21"
+  version = "v0.0.4"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -172,7 +176,7 @@
     "blake2b",
     "md4"
   ]
-  revision = "91a49db82a88618983a78a06c1cbd4e00ab749ab"
+  revision = "88942b9c40a4c9d203b82b3731787b672d6e809b"
 
 [[projects]]
   branch = "master"
@@ -182,13 +186,13 @@
     "tiff",
     "tiff/lzw"
   ]
-  revision = "12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7"
+  revision = "f3a9b89b59def9194717c1d0bd4c0d08fa1afa7b"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
+  revision = "91ee8cde435411ca3f1cd365e8f20131aed4d0a1"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -212,6 +216,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fa72aa4169e9922343d07b1f5dafa070669a5f623a71d1233db82bb6feb48d70"
+  inputs-digest = "6a13915262ba86792f2f657ac310f6e2d6cc3cf6202a2fd8ab7df1466add9756"
   solver-name = "gps-cdcl"
   solver-version = 1

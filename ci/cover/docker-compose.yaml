@@ -1,7 +1,7 @@
 version: '3'
 services:
   webdriver:
-    image: selenium/standalone-chrome:3.1.0
+    image: selenium/standalone-firefox:3.11
     logging:
         driver: "none"
     volumes:
@@ -19,13 +19,16 @@ services:
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
       GOPATH: /go
-      LLBROWSER: 'chrome'
+      LLBROWSER: 'firefox'
     command: 
       - /bin/sh
       - -c
       - |
             cd /go/src/github.com/lexLibrary/lexLibrary/ 
             ./build.sh
-            go test ./data -cover
-            go test ./app -cover
-            go test ./web -cover
+            go test ./data -coverprofile=data.cover 
+            go tool cover -html=data.cover -o data.html
+            go test ./app -coverprofile=app.cover
+            go tool cover -html=app.cover -o app.html
+            go test ./web -coverprofile=web.cover
+            go tool cover -html=web.cover -o web.html

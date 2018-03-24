@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	[[template "header"]]
+	<title>Edit Profile - Lex Library</title>
+</head>
+
+<body>
+<section class="section">
+
+<div class="container">
+	<div class="columns is-centered">
+			<div class="column is-two-thirds">
+				<div class="card">
+					<div class="card-content">
+						<div class="columns">
+							<div class="column">
+								<section class="section">
+									<form @sumbit="changeName">
+										<div class="field">
+											<label class="label" for="inputName">Name</label>
+											<div class="control is-expanded">
+												<input v-model="user.name" :class="{'is-danger': nameErr}" type="text" class="input" 
+													id="inputName" placeholder="Enter a name">
+											</div>
+											<p v-if="nameErr" v-cloak class="help is-danger">{{nameErr}}</p>
+										</div>
+										<div class="field">
+											<div class="control">
+												<button type="submit" class="button" @click="changeName">
+													Submit
+												</button>
+											</div>
+										</div>
+									</form>
+								</section>
+							</div> <!-- column -->
+							<div class="column has-text-centered">
+								<figure class="avatar avatar-full" data-initial="[[.DisplayInitials]]">
+									[[if .ProfileImage]]
+										<img src="/profile/image" alt="[[.DisplayName]]">
+									[[end]]
+								</figure>
+								<div class="pt-2">
+									<button class="button">
+										Set Profile Image
+									</button>
+								</div>
+							</div> <!-- column -->
+					</div>
+				</div>
+			</div>
+	</div>
+</div>
+</section>
+</body>
+<script type="application/json" id="payload">[[.]]</script>
+<script src="/js/vue.js"></script>
+<script src="/js/profile_edit.js"></script>
+</html>

@@ -133,4 +133,12 @@ pipeline {
 	    }
 	}
     }
+    post {
+    	always {
+		archiveArtifacts artifacts: 'lexLibrary'
+		archiveArtifacts artifacts: '*.html'
+		deleteDir()
+	}
+
+    }
 }

@@ -64,24 +64,25 @@ func setupRoutes() http.Handler {
 	// profile
 	rootHandler.PUT("/profile/password", makeHandle(userUpdatePassword))
 	rootHandler.PUT("/profile", makeHandle(userUpdateName))
+	rootHandler.GET("/profile/image", makeHandle(profileGetImage))
 	rootHandler.POST("/profile/image", makeHandle(userUploadImage))
 	rootHandler.PUT("/profile/image", makeHandle(userCropImage))
 
-	profile := templateHandler{
-		handler:       profileTemplate,
-		templateFiles: []string{"profile.template.html"},
+	profile := &profilePage{
+		templateHandler: templateHandler{
+			templateFiles: []string{"profile.template.html"},
+		},
 	}
 
-	rootHandler.GET("/profile/", profile.ServeHTTP)
-	//TODO: one profile template object that contains from templateHandler
-	// rootHandler.GET("/profile/readLater", profile.readLater)
-	// rootHandler.GET("/profile/history", profile.history)
-	// rootHandler.GET("/profile/documents", profile.documents)
-	// rootHandler.GET("/profile/comments", profile.comments)
+	rootHandler.GET("/profile/", profile.documents)
+	rootHandler.GET("/profile/readLater", profile.readLater)
+	rootHandler.GET("/profile/history", profile.history)
+	rootHandler.GET("/profile/documents", profile.documents)
+	rootHandler.GET("/profile/comments", profile.comments)
 
 	rootHandler.GET("/profile/edit", templateHandler{
 		handler:       profileEditTemplate,
-		templateFiles: []string{"profile.template.html"},
+		templateFiles: []string{"profile_edit.template.html"},
 	}.ServeHTTP)
 
 	return rootHandler

@@ -8,8 +8,8 @@ import (
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
-	"github.com/lexLibrary/sequence"
 	"github.com/tebeka/selenium"
+	"github.com/timshannon/sequence"
 )
 
 func TestSignup(t *testing.T) {
