@@ -34,4 +34,5 @@ client/deploy/*
 files/*
 db_data/*
 
-
+# screenshots from webdriver failures 
+web/SequenceError-*.png

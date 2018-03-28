@@ -1,7 +1,5 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
-.card {
-	border-radius: $radius;
-}
+$column-gap: $layout-spacing;
 
 // credit bootstrap v4
 .card-columns {
@@ -10,12 +8,12 @@
 		margin-top: 1px; // fixes issue with drop shadow
   } 
 
-	@media (min-width: $tablet) {
+	@media (min-width: $size-md) {
     column-count: 3;
     column-gap: $column-gap;
   }
 
-	@media (min-width: $desktop) {
+	@media (min-width: $size-lg) {
     column-count: 4;
     column-gap: $column-gap*2;
 		.card {
@@ -24,7 +22,7 @@
 		}
   }
 
-	@media (min-width: $widescreen) {
+	@media (min-width: $size-xl) {
     column-count: 5;
     column-gap: $column-gap*2;
 		.card {

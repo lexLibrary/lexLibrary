@@ -5,7 +5,7 @@ let currentCSRFToken;
 
 export
 
-function send(method, url, data) {
+function send(method, url, data, progress) {
     return new Promise((resolve, reject) => {
         let request = new XMLHttpRequest();
 
@@ -14,7 +14,7 @@ function send(method, url, data) {
         request.onload = () => {
             let result = {
                 request, //original xhr request
-				response: null,
+                response: null,
             };
 
             let token = request.getResponseHeader(CSRFHeader);
@@ -43,19 +43,38 @@ function send(method, url, data) {
             reject(error);
         };
 
+        if (progress) {
+            request.upload.addEventListener("progress", progress, false);
+        }
+
         request.setRequestHeader('Accept', 'application/json, text/plain');
         if (method != 'get' && currentCSRFToken) {
             request.setRequestHeader(CSRFHeader, currentCSRFToken);
         }
 
-        //TODO: handle files? Will we need any uploads?
+
+        if (data instanceof FormData) {
+            return request.send(data);
+        }
+        if (data instanceof File) {
+            request.setRequestHeader('LL-LastModified', data.lastModified);
+            let form = new FormData();
+            form.append(data.name, data, data.name);
+
+            return request.send(form);
+        }
         if (typeof data === 'object') {
             request.setRequestHeader('Content-Type', 'application/json');
             return request.send(JSON.stringify(data));
         }
-
-        request.send();
+		request.send();
     });
+}
+
+export
+
+function setToken(token) {
+    currentCSRFToken = token;
 }
 
 export
@@ -67,18 +86,18 @@ function get(url) {
 
 export
 
-function put(url, data) {
-    return send('PUT', url, data);
+function put(url, data, progress) {
+    return send('PUT', url, data, progress);
 }
 
 export
 
-function post(url, data) {
-    return send('POST', url, data);
+function post(url, data, progress) {
+    return send('POST', url, data, progress);
 }
 
 export
 
-function del(url, data) {
+function del(url, data, progress) {
     return send('DELETE', url, data);
 }

@@ -203,6 +203,7 @@ func makeHandle(llFunc llHandlerFunc) httprouter.Handle {
 	}
 }
 
+// for use with pre-compressed data / images
 // func makeNoZipHandle(llFunc llHandlerFunc) httprouter.Handle {
 // 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 // 		llPreHandle(w, r, p, llFunc)

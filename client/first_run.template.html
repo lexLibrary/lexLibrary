@@ -7,98 +7,95 @@
 </head>
 
 <body>
-<section class="section">
-<div class="container">
-	<div id="setup" class="columns is-centered">
+<div class="section container grid-xs">
+	<div id="setup" class="columns">
 		<!-- Admin Setup -->
-		<div v-if="!showSettings" class="column mx-4 is-half-tablet is-two-fifths-desktop">
-			<h1 class="title is-size-3 has-text-centered">Lex Library First Run Setup</h1>
-			<div class="card">
-				<div class="card-content">
-					<h1 class="card-title">
+		<div class="column">
+			<h1 class="text-center">Lex Library First Run Setup</h1>
+			<div v-if="!showSettings" class="card">
+				<div class="card-header">
+					<div class="card-title h5">Administration</div>
+					<div class="card-subtitle text-gray">
 						Before you can start using Lex Library, you'll need to to setup an adminstrative user.
-					</h1>
+					</div>
+				</div>
+				<div class="card-body">
 					<form @submit="signup">
-						<div class="field">
-							<label class="label" for="inputUsername">Username</label>
-							<div class="control">
-								<input v-model="username" v-focus v-bind:class="{'is-danger': error}" type="text" class="input" 
-									id="inputUsername" placeholder="Enter username">
-							</div>
-							<p v-if="error" v-cloak class="help is-danger">{{error}}</p>
+						<div :class="{'has-error': error}" class="form-group">
+							<label class="form-label" for="inputUsername">Username</label>
+							<input v-model="username" v-focus type="text" class="form-input" id="inputUsername" placeholder="Enter username">
+							<p v-if="error" v-cloak class="form-input-hint">{{error}}</p>
 						</div>
-						<div class="field">
-							<label for="inputPassword" class="label">Password</label>
-							<div class="control">
-								<input v-model="password" type="password" class="input" id="inputPassword"
-									placeholder="Enter password">
-							</div>
+
+						<div class="form-group">
+							<label for="inputPassword" class="form-label">Password</label>
+							<input v-model="password" type="password" class="form-input" id="inputPassword" placeholder="Enter password">
 						</div>
-						<div class="field">
-							<div class="control">
-								<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"
-									v-bind:class="{'is-danger': password2Err}" type="password" class="input" 
-									id="inputPassword2" placeholder="Enter password again">
-							</div>
-							<p v-if="password2Err" class="help is-danger">{{password2Err}}</p>
+						<div :class="{'has-error': password2Err}" class="form-group">
+							<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"
+									v-bind:class="{'is-danger': password2Err}" type="password" class="form-input"	id="inputPassword2" 
+									placeholder="Enter password again">
+							<p v-if="password2Err" v-cloak class="form-input-hint">{{password2Err}}</p>
 						</div>
-						<button id="submit" type="submit" class="button is-primary is-block">Create User</button>
+						<button id="submit" type="submit" class="btn btn-primary btn-block">Create User</button>
 					</form>
 				</div>
 			</div>
-		</div>
-		<!-- Settings -->
-		<div v-if="showSettings" v-cloak id="settings" class="column is-half">
-			<h1 class="title is-size-3 has-text-centered">Lex Library First Run Setup</h1>
-			<div class="card">
-				<div class="card-content">
-					<h1 class="card-title">What type of instance will this server be:</h1>
-					<div v-if="error" v-cloak class="notification is-danger">
-						{{error}}
-					</div>
-					<div class="control">
-						<label class="radio" :disabled="showAdvanced">
-							<input v-model="instanceType" :disabled="showAdvanced" type="radio" id="inputPrivate" 
-								name="public-private"	value="private">
-							Private: <small>New logins are managed by admins. A login is required to view
-							all documents.</small>
-						</label>
-					</div>
-					<div class="control">
-						<label class="radio" :disabled="showAdvanced">
-							<input v-model="instanceType":disabled="showAdvanced" type="radio" name="public-private" 
-								id="inputPublic" value="public">
-							Public: <small>Anyone can create a login. Documents can be published publically.</small>
-						</label>
-					</div>
-					<a @click="showAdvanced = !showAdvanced" id="showAdvanced">
-						<small v-if="showAdvanced">Advanced<span class="caret"></span></i></small>
-						<small v-else>Advanced<span class="caret-right"></span></i></small>
-					</a>
-					<div v-if="showAdvanced">
-						<div class="control">
-							<label class="checkbox" for="allowPublicDocs">
-								<input v-model="publicDocs" type="checkbox" id="allowPublicDocs">
-									Allow documents to be published publically
-							</label>
-						</div>
-						<div class="control">
-							<label class="checkbox" for="allowPublicSignup">
-								<input v-model="publicSignup" type="checkbox" id="allowPublicSignup">
-								Allow anyone to create a login
-							</label>
-						</div>
-					</div>
-					<footer class="has-text-right">
-						<hr>
-						<button @click="setSettings" id="setSettings" class="button is-primary">Continue</button>
-					</footer>
+			<!-- Settings -->
+			<div v-if="showSettings" v-cloak class="card">
+				<div class="card-header">
+					<div class="card-title h5">What type of instance will this server be:</div>
 				</div>
-			</div>
-		</div>
-	</div>	
+				<div class="card-body">
+					<div v-if="error" v-cloak class="toast toast-error">
+						{{error}}
+						<button @click="error=null" class="btn btn-clear float-right"></button>
+					</div>
+
+					<fieldset :disabled="showAdvanced">
+						<div class="form-group">
+							<label class="form-radio">
+								<input v-model="instanceType" type="radio" id="inputPrivate" name="public-private" value="private">
+								<i class="form-icon"></i>
+								<strong>Private:</strong><br>
+								<small>New logins are managed by admins. A login is required to view all documents.</small>
+							</label>
+						</div>
+						<div class="form-group">
+							<label class="form-radio">
+								<input v-model="instanceType" type="radio" name="public-private" id="inputPublic" value="public">
+								<i class="form-icon"></i>
+								<strong>Public:</strong><br>
+								<small>Anyone can create a login. Documents can be published publically.</small>
+							</label>
+						</div>
+					</fieldset>
+					<button class="btn btn-link" @click="showAdvanced = !showAdvanced" id="showAdvanced">
+						<small v-if="showAdvanced">Advanced<i class="ml-1 icon icon-arrow-down"></i></small>
+						<small v-else>Advanced<i class="ml-1 icon icon-arrow-right"></i></small>
+					</button>
+					<div v-if="showAdvanced">
+						<div class="form-group">
+							<label class="form-switch" for="allowPublicDocs">
+								<input v-model="publicDocs" type="checkbox" id="allowPublicDocs">
+								<i class="form-icon"></i>Allow documents to be published publically
+							</label>
+						</div>
+						<div class="form-group">
+							<label class="form-switch" for="allowPublicSignup">
+								<input v-model="publicSignup" type="checkbox" id="allowPublicSignup">
+								<i class="form-icon"></i>Allow anyone to create a login
+							</label>
+						</div>
+					</div>
+				</div> <!-- card body -->
+				<div class="card-footer text-right">
+					<button @click="setSettings" id="setSettings" class="btn btn-primary">Continue</button>
+				</div>
+			</div> <!-- card -->
+		</div> <!-- column -->
+	</div> <!-- columns -->
 </div>
-</section>
 </body>
 <script src="/js/vue.js"></script>
 <script src="/js/first_run.js"></script>

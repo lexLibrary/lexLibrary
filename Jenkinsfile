@@ -139,6 +139,9 @@ pipeline {
 		archiveArtifacts artifacts: '*.html'
 		deleteDir()
 	}
+	failure {
+		archiveArtifacts artifacts: 'web/SequenceError*.png'
+	}
 
     }
 }

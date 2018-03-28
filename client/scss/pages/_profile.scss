@@ -1,7 +1,7 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 // Profile page specific CSS
 
-$profile-offset: ($size-3 + ($avatar-full-size / 2));
+$profile-offset: ($unit-10 + ($avatar-full-size / 2));
 
 .profile {
 	padding-top: $profile-offset;
@@ -14,6 +14,6 @@ $profile-offset: ($size-3 + ($avatar-full-size / 2));
 
 .profile-edit {
 	position: absolute;
-	top: $spacer;
-	right: $spacer;
+	top: $layout-spacing-lg;
+	right: $layout-spacing-lg;
 }

@@ -13,7 +13,9 @@ import (
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/web"
+	"github.com/pkg/errors"
 	"github.com/tebeka/selenium"
+	"github.com/timshannon/sequence"
 )
 
 const (
@@ -22,6 +24,13 @@ const (
 
 var driver selenium.WebDriver
 var llURL *url.URL
+
+func newSequence() *sequence.Sequence {
+	return sequence.Start(driver).OnError(func(err sequence.Error, s *sequence.Sequence) {
+		s.Debug().
+			Screenshot(fmt.Sprintf("SequenceError-[%s].png", err.Stage))
+	})
+}
 
 func TestMain(m *testing.M) {
 	err := data.TestingSetup()
@@ -110,4 +119,71 @@ func startWebDriver() (selenium.WebDriver, error) {
 	}
 
 	return wd, nil
+}
+
+func signupUser(username, password string, isAdmin bool) error {
+	_, err := data.NewQuery("delete from users").Exec()
+	if err != nil {
+		return errors.Wrap(err, "Error emptying users table before running tests")
+	}
+
+	_, err = data.NewQuery("delete from settings").Exec()
+	if err != nil {
+		return errors.Wrap(err, "Error emptying settings table before running tests")
+	}
+
+	_, err = data.NewQuery("delete from sessions").Exec()
+	if err != nil {
+		return errors.Wrap(err, "Error emptying sessions table before running tests")
+	}
+
+	adminUsername := "admin"
+	adminPassword := "adminP@ssw0rd"
+	if isAdmin {
+		adminUsername = username
+		adminPassword = password
+	}
+
+	user, err := app.FirstRunSetup(adminUsername, adminPassword)
+	if err != nil {
+		return errors.Wrap(err, "Error setting up admin user")
+	}
+	admin := user.AsAdmin()
+
+	err = admin.SetSetting("AllowPublicSignups", true)
+	if err != nil {
+		return errors.Wrap(err, "Error allowing public signups for testing")
+	}
+
+	err = driver.DeleteAllCookies()
+	if err != nil {
+		return errors.Wrap(err, "Error clearing all cookies for testing")
+	}
+
+	if isAdmin {
+		uri := *llURL
+		uri.Path = "login"
+		err = newSequence().
+			Get(uri.String()).
+			Find("#inputUsername").SendKeys(username).
+			Find("#inputPassword").SendKeys(password).
+			Find(".button.is-primary.is-block").Click().
+			End()
+		if err != nil {
+			return errors.Wrap(err, "Error signing up user")
+		}
+		return nil
+	}
+
+	uri := *llURL
+	uri.Path = "signup"
+
+	return newSequence().
+		Get(uri.String()).
+		Find("#inputUsername").SendKeys(username).
+		Find("#inputPassword").SendKeys(password).
+		Find("#inputPassword2").SendKeys(password).
+		Find("#submit").Click().
+		Find(".help.is-danger").Count(0).
+		End()
 }

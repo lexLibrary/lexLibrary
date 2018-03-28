@@ -9,7 +9,6 @@ import (
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/tebeka/selenium"
-	"github.com/timshannon/sequence"
 )
 
 func TestSignup(t *testing.T) {
@@ -42,7 +41,7 @@ func TestSignup(t *testing.T) {
 		t.Fatalf("Error clearing all cookies for testing: %s", err)
 	}
 
-	err = sequence.Start(driver).
+	err = newSequence().
 		Get(uri.String()).
 		Title().Equals("Page Not Found - Lex Library").
 		End()
@@ -56,7 +55,7 @@ func TestSignup(t *testing.T) {
 		t.Fatalf("Error allowing public signups for testing: %s", err)
 	}
 
-	err = sequence.Start(driver).
+	err = newSequence().
 		Get(uri.String()).
 		Find("#submit").Click().
 		Find(".help.is-danger").Count(2).Any().Text().Contains("A username is required").

@@ -1,0 +1,18 @@
+// Copyright (c) 2017-2018 Townsourced Inc.
+
+$section-padding: 3rem 1.5rem !default;
+$section-padding-medium: 9rem 1.5rem !default;
+$section-padding-large: 18rem 1.5rem !default;
+
+.section {
+  padding: $section-padding;
+  // Responsiveness
+	@media screen and (min-width: $size-lg) {
+		.section-md {
+			padding: $section-padding-medium;
+		}
+		.section-lg {
+			padding: $section-padding-large;
+		}
+	}
+}

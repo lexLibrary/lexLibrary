@@ -3,12 +3,23 @@ package web
 
 import (
 	"net/http"
+
+	"github.com/lexLibrary/lexLibrary/app"
 )
 
 func rootTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+	var u *app.User
+	var err error
+	if c.session != nil {
+		u, err = c.session.User()
+		if errHandled(err, w, r) {
+			return
+		}
+	}
+
 	errHandled(w.(*templateWriter).execute(struct {
-		Test string
+		User *app.User
 	}{
-		Test: "test string",
+		User: u,
 	}), w, r)
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/tebeka/selenium"
-	"github.com/timshannon/sequence"
 )
 
 func TestFirstRun(t *testing.T) {
@@ -21,7 +20,7 @@ func TestFirstRun(t *testing.T) {
 		t.Fatalf("Error emptying settings table before running tests: %s", err)
 	}
 
-	err = sequence.Start(driver).
+	err = newSequence().
 		Get(llURL.String()).
 		Find("#submit").Click().
 		Find(".help.is-danger").Text().Contains("A username is required").

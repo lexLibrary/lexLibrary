@@ -7,90 +7,73 @@
 </head>
 
 <body>
-<section class="section">
-<div id="login" class="container">
-	<div class="columns is-centered">
-		<div class="column mx-4 is-half-tablet is-two-fifths-desktop">
-			<h1 class="title is-size-3 has-text-centered">Log In to Lex Library</h1>
+<div id="login" class="section container grid-xs">
+	<div class="columns">
+		<div class="column">
+			<h1 class="text-center">Log In to Lex Library</h1>
 			<div class="card">
-				<div class="card-content">
+				<div class="card-body">
 					<form @submit="login">
-						<div class="field">
-							<label class="label" for="inputUsername">Username</label>
-							<div class="control">
-								<input v-model="username" v-focus :class="{'is-danger': error}" type="text"
-								 class="input" id="inputUsername" placeholder="Enter username">
-							</div>
-							<p v-if="error" v-cloak class="help is-danger">{{error}}</p>
+						<div :class="{'has-error': error}" class="form-group">
+							<label class="form-label" for="inputUsername">Username</label>
+							<input v-model="username" v-focus type="text" class="form-input" id="inputUsername" placeholder="Enter username">
+							<p v-if="error" v-cloak class="form-input-hint">{{error}}</p>
 						</div>
-						<div class="field">
-							<label class="label" for="inputPassword">Password</label>
-							<div class="control">
-								<input v-model="password" type="password" class="input" id="inputPassword"
-									placeholder="Enter password">
-							</div>
+						<div class="form-group">
+							<label class="form-label" for="inputPassword">Password</label>
+							<input v-model="password" type="password" class="form-input" id="inputPassword"
+								placeholder="Enter password">
 						</div>
-						<div class="field">
-							<div class="control">
-								<label class="checkbox" for="inputRememberMe">
-									<input v-model="rememberMe" type="checkbox" id="inputRememberMe">
-									Remember Me	
-								</label>
-							</div>
+						<div class="form-group">
+							<label class="form-switch" for="inputRememberMe">
+								<input v-model="rememberMe" type="checkbox" id="inputRememberMe">
+								<i class="form-icon"></i>Remember Me	
+							</label>
 						</div>
-						<button type="submit" :class="{'is-loading': loading}" class="button is-primary is-block">Log In</button>
+						<button type="submit" :class="{'loading': loading}" class="btn btn-primary btn-block">Log In</button>
 					</form>
 				</div>
 				
 				[[if .AllowSignup]]
-				<footer class="card-footer">
-					<div class="card-footer-item">
-						<span>
-							Don't have a login?  <a href="/signup">Signup!</a>
-						</span>
-					</div>
-				</footer>
+				<div class="card-footer">
+					<span>
+						Don't have a login?  <a href="/signup">Signup!</a>
+					</span>
+				</div>
 				[[end]]
 			</div>
 		</div>
 	</div>
 
-	<div :class="{'is-active': showModal}" class="modal">
-		<div class="modal-background"></div>
-		<div class="modal-card">
-			<header class="modal-card-head">
-				<p class="modal-card-title">{{modalTitle}}</p>
+	<div :class="{'active': showModal}" class="modal">
+		<div class="modal-overlay"></div>
+		<div class="modal-container">
+			<header class="modal-header">
+				<div class="modal-title h5">{{modalTitle}}</div>
 			</header>
 			<form @submit="changePassword">
-				<section class="modal-card-body">
-					<div class="field">
-						<label class="label" for="inputNewPassword">Choose a New Password</label>
-						<div class="control">
-							<input v-model="newPassword" @blur="validatePassword" @keydown="passwordErr=null" autofocus
-								:class="{'is-danger': passwordErr}" type="password" class="input" id="inputNewPassword"	
-								placeholder="Enter a new password">
-						</div>
-						<p v-if="passwordErr" v-cloak class="help is-danger">{{passwordErr}}</p>
+				<section class="modal-body">
+					<div :class="{'has-error': passwordErr}" class="form-group">
+						<label class="form-label" for="inputNewPassword">Choose a New Password</label>
+						<input v-model="newPassword" @blur="validatePassword" @keydown="passwordErr=null" autofocus
+								 type="password" class="form-input" id="inputNewPassword"	placeholder="Enter a new password">
+						<p v-if="passwordErr" v-cloak class="form-input-hint">{{passwordErr}}</p>
 					</div>
-					<div class="field">
-						<div class="control">
-							<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"
-								:class="{'is-danger': password2Err}"	type="password" class="input" 
+					<div :class="{'has-error': password2Err}"	class="form-group">
+						<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"	type="password" class="form-input" 
 								id="inputPassword2" placeholder="Enter password again">
-						</div>
-						<p v-if="password2Err" v-cloak class="help is-danger">{{password2Err}}</p>
+						<p v-if="password2Err" v-cloak class="form-input-hint">{{password2Err}}</p>
 					</div>
 				</section>
-				<footer class="modal-card-foot">
-					<button v-if="user" @click="navigate" type="button" class="button">Skip</button>
-					<button @click="changePassword" type="submit" :class="{'is-loading': loading}" class="button is-primary">Submit</button>
+				<footer class="modal-footer">
+					<button v-if="user" @click="navigate" type="button" class="btn">Skip</button>
+					<button @click="changePassword" type="submit" :class="{'loading': loading}" class="btn btn-primary">Submit</button>
 				</footer>
 			</form>
 		</div>
 	</div> <!-- modal -->
 
 </div>
-</section>
 </body>
 <script src="/js/vue.js"></script>
 <script src="/js/login.js"></script>

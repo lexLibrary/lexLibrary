@@ -89,6 +89,12 @@ func TestSession(t *testing.T) {
 			t.Fatalf("Error adding new session: %s", err)
 		}
 
+		// get session without cached user
+		s, err = app.SessionGet(s.UserID, s.ID)
+		if err != nil {
+			t.Fatalf("Error getting session: %s", err)
+		}
+
 		other, err := s.User()
 		if err != nil {
 			t.Fatalf("Error getting user from session: %s", err)

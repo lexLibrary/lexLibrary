@@ -42,7 +42,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	// Invalid username and password
-	err = sequence.Start(driver).
+	err = newSequence().
 		Get(uri.String()).
 		Find("#login").Visible().
 		Find("#inputUsername").Visible().
@@ -64,7 +64,7 @@ func TestLogin(t *testing.T) {
 		t.Fatalf("Error blocking public signups for testing: %s", err)
 	}
 
-	err = sequence.Start(driver).
+	err = newSequence().
 		Refresh().
 		Find(".card-footer").Count(0).
 		Find("#inputUsername").SendKeys(username).
@@ -84,7 +84,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	testPath := "/testpath"
-	err = sequence.Start(driver).
+	err = newSequence().
 		Get(uri.String() + "?return=" + testPath).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).

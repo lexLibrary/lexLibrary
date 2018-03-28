@@ -63,10 +63,10 @@ func setupRoutes() http.Handler {
 
 	// profile
 	rootHandler.PUT("/profile/password", makeHandle(userUpdatePassword))
-	rootHandler.PUT("/profile", makeHandle(userUpdateName))
+	rootHandler.PUT("/profile", makeHandle(profileUpdateName))
 	rootHandler.GET("/profile/image", makeHandle(profileGetImage))
-	rootHandler.POST("/profile/image", makeHandle(userUploadImage))
-	rootHandler.PUT("/profile/image", makeHandle(userCropImage))
+	rootHandler.POST("/profile/image", makeHandle(profileUploadImage))
+	rootHandler.PUT("/profile/image", makeHandle(profileCropImage))
 
 	profile := &profilePage{
 		templateHandler: templateHandler{

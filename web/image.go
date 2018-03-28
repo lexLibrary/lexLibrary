@@ -10,6 +10,10 @@ import (
 )
 
 func serveImage(w http.ResponseWriter, r *http.Request, image *app.Image) {
+	if image == nil {
+		notFound(w, r)
+		return
+	}
 	w.Header().Set("Content-Type", image.ContentType)
 	w.Header().Set("ETag", image.Etag())
 

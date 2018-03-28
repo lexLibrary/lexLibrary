@@ -11,7 +11,7 @@ var vm = new Vue({
             password2: '',
             error: null,
             password2Err: null,
-            showSettings: false,
+            showSettings: false, 
             showAdvanced: false,
             publicDocs: false,
             publicSignup: false,

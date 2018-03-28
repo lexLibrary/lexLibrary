@@ -9,53 +9,79 @@
 <body>
 <section class="section">
 
-<div class="container">
-	<div class="columns is-centered">
-			<div class="column is-two-thirds">
+<div class="container grid-md">
+	<div class="columns">
+			<div class="column">
 				<div class="card">
 					<div class="card-content">
 						<div class="columns">
 							<div class="column">
 								<section class="section">
+									<h1>Update Profile</h1>
 									<form @sumbit="changeName">
-										<div class="field">
-											<label class="label" for="inputName">Name</label>
-											<div class="control is-expanded">
-												<input v-model="user.name" :class="{'is-danger': nameErr}" type="text" class="input" 
-													id="inputName" placeholder="Enter a name">
-											</div>
-											<p v-if="nameErr" v-cloak class="help is-danger">{{nameErr}}</p>
+										<div :class="{'has-error': nameErr}" class="form-group">
+											<label class="form-label" for="inputName">Name</label>
+											<input v-model="user.name" type="text" class="form-input" id="inputName" placeholder="Enter a name">
+											<p v-if="nameErr" v-cloak class="form-input-hint">{{nameErr}}</p>
 										</div>
-										<div class="field">
-											<div class="control">
-												<button type="submit" class="button" @click="changeName">
-													Submit
-												</button>
-											</div>
+										<div class="form-group">
+											<button type="submit" :class="{'loading': loading}" class="btn btn-primary" @click="changeName">
+												Update
+											</button>
 										</div>
 									</form>
 								</section>
 							</div> <!-- column -->
-							<div class="column has-text-centered">
+							<div class="column text-center">
+								<section class="section">
 								<figure class="avatar avatar-full" data-initial="[[.DisplayInitials]]">
 									[[if .ProfileImage]]
 										<img src="/profile/image" alt="[[.DisplayName]]">
 									[[end]]
 								</figure>
-								<div class="pt-2">
-									<button class="button">
-										Set Profile Image
-									</button>
-								</div>
+								<!-- FIXME: -->
+								<!-- <div class="file centered"> -->
+								<!-- 	<label class="file-label"> -->
+								<!-- 		<input @change="uploadImage"  type="file" accept="image/jpeg,image/gif,image/png"> -->
+								<!-- 		<span class="file-cta"> -->
+								<!-- 			<span class="file-label"> -->
+								<!-- 				Select an image -->
+								<!-- 			</span> -->
+								<!-- 		</span> -->
+								<!-- 	</label> -->
+								<!-- </div> -->
+								</section>
 							</div> <!-- column -->
 					</div>
 				</div>
 			</div>
 	</div>
 </div>
+
+<div :class="{'active': imageModal}" class="modal">
+	<div @click="imageModal=false" class="modal-overlay"></div>
+	<div class="modal">
+		<header class="modal-header">
+			<p class="modal-title">Set Profile Image</p>
+			<button @click="imageModal=false" class="delete" aria-label="close"></button>
+		</header>
+		<section class="modal-content text-center">
+			<figure v-if="uploadComplete" class="image">
+				<img src="/profile/image" alt="[[.DisplayName]]">
+			</figure>
+			<progress v-if="!uploadComplete" class="progress is-primary" :value="imageProgress" max="100">{{imageProgress}}%</progress>
+		</section>
+		<footer class="modal-footer">
+			<button @click="setImage" type="button" :class="{'is-loading': loading}" class="button is-primary">Set</button>
+		</footer>
+	</div>
+</div> <!-- modal -->
+
+
 </section>
 </body>
 <script type="application/json" id="payload">[[.]]</script>
+<script type="application/json" id="csrf">[[.CSRFToken]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/profile_edit.js"></script>
 </html>

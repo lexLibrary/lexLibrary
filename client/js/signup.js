@@ -77,6 +77,7 @@ var vm = new Vue({
                     this.usernameErr = `This username is already taken`;
                 })
                 .catch((err) => {
+					console.log(err);
                     if (err.request.status != 404) {
                         this.usernameErr = err.response;
                     }

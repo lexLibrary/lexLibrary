@@ -137,10 +137,107 @@ func profileEditTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	if errHandled(err, w, r) {
 		return
 	}
-	err = w.(*templateWriter).execute(u)
+	err = w.(*templateWriter).execute(struct {
+		*app.User
+		CSRFToken string
+	}{
+		User:      u,
+		CSRFToken: c.session.CSRFToken,
+	})
 
 	if err != nil {
 		app.LogError(errors.Wrap(err, "Executing profile_edit template: %s"))
 	}
 
+}
+
+func profileUpdateName(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	input := &userInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if input.Name == nil {
+		errHandled(app.NewFailure("name is required"), w, r)
+		return
+	}
+
+	if input.Version == nil {
+		errHandled(app.NewFailure("version is required"), w, r)
+		return
+	}
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if errHandled(u.SetName(*input.Name, *input.Version), w, r) {
+		return
+	}
+
+	respond(w, success(nil))
+
+}
+
+func profileUploadImage(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	uploads, err := filesFromForm(r)
+	if errHandled(err, w, r) {
+		return
+	}
+	if len(uploads) == 0 {
+		errHandled(app.NewFailure("No image uploaded"), w, r)
+		return
+	}
+
+	if len(uploads) > 1 {
+		errHandled(app.NewFailure("More than one image was uploaded.  Please upload one image at a time"), w, r)
+		return
+	}
+
+	if errHandled(u.SetProfileImage(uploads[0], u.Version), w, r) {
+		return
+	}
+
+	respond(w, created(nil))
+
+}
+
+func profileCropImage(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	input := &userImageInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if errHandled(u.CropProfileImage(input.X0, input.Y0, input.X1, input.Y1), w, r) {
+		return
+	}
+
+	respond(w, success(nil))
 }

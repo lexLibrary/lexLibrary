@@ -7,53 +7,43 @@
 </head>
 
 <body>
-<section class="section">
-
-<div class="container">
-	<div class="columns is-centered">
-			<div class="profile column is-half has-text-centered">
+<div class="container grid-md">
+	<div class="columns">
+			<div class="profile column text-center">
 				<div class="card">
-					<div class="card-content">
-						<a class="is-size-6 profile-edit" href="/profile/edit">Edit <span class="is-hidden-mobile">Profile</span></a>
+					<div class="card-body relative">
+						<a class="profile-edit" href="/profile/edit">Update <span class="hide-xs">Profile</span></a>
 						<div class="profile-avatar">
 							<figure class="avatar avatar-full" data-initial="[[.User.DisplayInitials]]">
 								[[if .User.ProfileImage]]
 									<img src="/profile/image" alt="[[.User.DisplayName]]">
 								[[end]]
 							</figure>
-							<p class="is-size-3">[[.User.DisplayName]]</p>
+							<h3 class="pt-1">[[.User.DisplayName]]</h3>
 						</div>
 						<section class="section">
-							<nav class="level">
-								<div class="level-item has-text-centered">
-									<div>
-										<p class="heading">Written</p>
-										<p class="title">[[.Stats.DocumentsWritten]]</p>
-									</div>
+							<div class="columns">
+								<div class="column text-center">
+									<h5 class="title"><small>Written</small></h5>
+									<h3>[[.Stats.DocumentsWritten]]</h3>
 								</div>
-								<div class="level-item has-text-centered">
-									<div>
-										<p class="heading">Read</p>
-										<p class="title">[[.Stats.DocumentsRead]]</p>
-									</div>
+								<div class="column text-center">
+									<h5 class="title"><small>Read</small></h5>
+									<h3>[[.Stats.DocumentsRead]]</h3>
 								</div>
-								<div class="level-item has-text-centered">
-									<div>
-										<p class="heading">Comments</p>
-										<p class="title">[[.Stats.Comments]]</p>
-									</div>
+								<div class="column text-center">
+									<h5 class="title"><small>Comments</small></h5>
+									<h3>[[.Stats.Comments]]</h3>
 								</div>
-							</nav>
+							</div>
 						</section>
 						<section>
-							<div class="tabs is-centered">
-								<ul>
-									<li class='[[if eq .Tab "documents"]]is-active[[end]]'><a href="/profile/documents">Documents</a></li>
-									<li class='[[if eq .Tab "readLater"]]is-active[[end]]'><a href="/profile/readLater">Read Later</a></li>
-									<li class='[[if eq .Tab "comments"]]is-active[[end]]'><a href="/profile/comments">Comments</a></li>
-									<li class='[[if eq .Tab "history"]]is-active[[end]]'><a href="/profile/history">History</a></li>
-								</ul>
-							</div>
+							<ul class="tab tab-block">
+								<li class='tab-item [[if eq .Tab "documents"]]active[[end]]'><a href="/profile/documents">Documents</a></li>
+								<li class='tab-item [[if eq .Tab "readLater"]]active[[end]]'><a href="/profile/readLater">Read Later</a></li>
+								<li class='tab-item [[if eq .Tab "comments"]]active[[end]]'><a href="/profile/comments">Comments</a></li>
+								<li class='tab-item [[if eq .Tab "history"]]active[[end]]'><a href="/profile/history">History</a></li>
+							</ul>
 							[[if eq .Tab "documents"]]
 								<p>TODO: documents</p>
 							[[else if eq .Tab "readLater"]]
@@ -69,6 +59,5 @@
 			</div>
 	</div>
 </div>
-</section>
 </body>
 </html>

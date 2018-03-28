@@ -627,6 +627,7 @@ func TestUser(t *testing.T) {
 	})
 
 	//TODO: Profile Image tests, use testdata dir
+	//TODO: User Stats
 
 	reset(t)
 }

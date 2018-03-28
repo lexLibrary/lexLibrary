@@ -205,6 +205,7 @@ func imageNew(upload Upload) (*imageRaw, error) {
 		contentType:             upload.ContentType,
 		data:                    buff,
 		created:                 time.Now(),
+		updated:                 time.Now(),
 		thumbMinDimension:       imageDefaultThumbDimension,
 		placeholderMinDimension: imageDefaultPlaceholderDimension,
 	}
@@ -235,6 +236,7 @@ func (i *imageRaw) insert(tx *sql.Tx) error {
 		sql.Named("data", i.data),
 		sql.Named("thumb", i.thumb),
 		sql.Named("placeholder", i.placeholder),
+		sql.Named("updated", i.updated),
 		sql.Named("created", i.created),
 	)
 	return err
