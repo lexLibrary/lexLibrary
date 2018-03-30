@@ -15,6 +15,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	strictTransportSecurity = "max-age=86400"
+	//TODO: src-nonce generation
+	cspHeader = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data:"
+)
+
+func standardHeaders(w http.ResponseWriter) {
+	if isSSL {
+		w.Header().Set("Strict-Transport-Security", strictTransportSecurity)
+	}
+}
+
 type ctx struct {
 	params  httprouter.Params
 	session *app.Session
@@ -121,6 +133,7 @@ func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p htt
 
 	if r.Method == "GET" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Security-Policy", cspHeader)
 		llPreHandle(&templateWriter{w, t.template}, r, p, t.handler)
 
 		err := writer.Close()

@@ -58,22 +58,22 @@ func TestSignup(t *testing.T) {
 	err = newSequence().
 		Get(uri.String()).
 		Find("#submit").Click().
-		Find(".help.is-danger").Count(2).Any().Text().Contains("A username is required").
+		Find(".has-error > .form-input-hint").Count(2).Any().Text().Contains("A username is required").
 		Find("#inputUsername").SendKeys(admin.User.Username).
 		Find("#submit").Click().
-		Find(".help.is-danger").Any().Text().Contains("This username is already taken").
+		Find(".has-error > .form-input-hint").Any().Text().Contains("This username is already taken").
 		Find("#inputUsername").SendKeys("testusername").
 		Find("#submit").Click().
-		Find(".help.is-danger").Text().Contains("A password is required").
+		Find(".has-error > .form-input-hint").Text().Contains("A password is required").
 		Find("#inputPassword").SendKeys("bad").
 		Find("#submit").Click().
-		Find(".help.is-danger").Any().Text().Contains("The password must be at least").
+		Find(".has-error > .form-input-hint").Any().Text().Contains("The password must be at least").
 		Find("#inputPassword").Clear().SendKeys(password).
 		Find("#submit").Click().
-		Find(".help.is-danger").Text().Contains("Passwords do not match").
+		Find(".has-error > .form-input-hint").Text().Contains("Passwords do not match").
 		Find("#inputPassword2").SendKeys(password).
 		Find("#submit").Click().
-		Find(".help.is-danger").Count(0).And().
+		Find(".has-error > .form-input-hint").Count(0).And().
 		Test("LL Cookie", func(d selenium.WebDriver) error {
 			c, err := d.GetCookie("lexlibrary")
 			if err != nil {

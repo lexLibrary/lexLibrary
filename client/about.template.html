@@ -7,13 +7,14 @@
 </head>
 
 <body>
-	<div id="main" class="container">
-		<h1 class="title is-2 pt-4">Lex Library</h1>
-		<a v-if="runtime" v-cloak @click="showModal=true" class="is-pulled-right">Report an issue</a>
-		<h2 class="subtitle">Version: [[.Version]] <small>([[.BuildDate]])</small></h2>
+<section class="section">
+	<div id="main" class="container grid-lg">
+		<h2>Lex Library</h2>
+		<a v-if="runtime" v-cloak @click="showModal=true" class="btn btn-link float-right">Report an issue</a>
+		<h4>Version: [[.Version]] <small>([[.BuildDate]])</small></h4>
 		<hr>
 		<div id="attribution">
-			<h2 class="title is-4">Credits and Attribution</h2>
+			<h5>Credits and Attribution</h5>
 				<p>Lex Library is built on open-source software and creative commons resources. These contributions 
 				are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
 				would not be possible.</p>
@@ -21,87 +22,78 @@
 				<div class="card-columns pt-4">
 					[[range .Attribution]]
 					<div class="card">
-						<div class="card-content">
-							<h1 class="title is-4"><a href="[[.URL]]" target="_blank">[[.Name]]</a></h1>
-							<h2 class="subtitle is-6">([[.LicenseType]])</h2>
-							<p>[[.Author]]</p>
+						<div class="card-header">
+							<div class="card-title h5"><a href="[[.URL]]" target="_blank">[[.Name]]</a></div>
+							<div class="card-subtitle text-gray">([[.LicenseType]])</div>
+						</div>
+						<div class="card-body">
+							[[.Author]]
 						</div>
 					</div>
 					[[end]]
 				</div>
 		</div>
 
-		<div :class="{'is-active': showModal}" class="modal">
-			<div @click="showModal=false" class="modal-background"></div>
-			<div class="modal-card">
-				<header class="modal-card-head">
-					<p class="modal-card-title">Submit an Issue</p>
-					<button @click="showModal=false" class="delete" aria-label="close"></button>
+		<div :class="{'active': showModal}" class="modal">
+			<div @click="showModal=false" class="modal-overlay"></div>
+			<div class="modal-container">
+				<header class="modal-header">
+					<a @click="showModal=false" class="btn btn-clear float-right" aria-label="Close"></a>
+					<div class="modal-title h5">Submit an Issue</div>
 				</header>
-				<section class="modal-card-body">
-					<div class="field is-horizontal">
-						<div class="field-label is-normal">
-							<label class="label">Issue Type</label>
-						</div>
-						<div class="field-body">
-							<div class="field">
-								<div class="control">
-									<div class="select">
-										<select v-model="label">
-											<option value="bug">Bug Report</option>
-											<option value="performance">Performance Issue</option>
-											<option value="enhancement">Feature Request</option>
-										</select>
-									</div>
+				<section class="modal-body">
+					<div class="container">
+						<form class="form-horizontal">
+							<div class="form-group">
+								<div class="col-3 col-sm-12">
+									<label class="form-label">Issue Type</label>
 								</div>
-							</div>
-						</div>
-					</div> <!-- Type -->
-					<div class="field is-horizontal">
-						<div class="field-label is-normal">
-							<label class="label">Subject</label>
-						</div>
-						<div class="field-body">
-							<div class="field">
-								<div class="control">
-									<input v-model="subject" class="input" type="text" placeholder="Write a few words describing the issue">
+								<div class="col-4 col-sm-6">
+									<select v-model="label" class="form-select">
+										<option value="bug">Bug Report</option>
+										<option value="performance">Performance Issue</option>
+										<option value="enhancement">Feature Request</option>
+									</select>
 								</div>
-							</div>
-						</div>
-					</div> <!-- Subject -->
-					<div class="field is-horizontal">
-						<div class="field-label"></div>
-						<div class="field-body">
-							<p v-if="label==='bug'" class="help">Describe in detail the steps needed to replicate the issue, including
-							what result was expected and what result occurred.</p>
-							<p v-if="label==='enhancement'" class="help">Describe in detail a single feature that you think will 
-							improve Lex Library.</p>
-							<p v-if="label==='performance'" class="help">Describe in detail what actions where taken that resulted in
-							poor performance.</p>
-						</div>
-					</div>
-					<div class="field is-horizontal">
-						<div class="field-label is-normal">
-							<label class="label">Description</label>
-						</div>
-						<div class="field-body">
-							<div class="field">
-								<div class="control">
-									<textarea v-model="description" class="textarea" rows="10" placeholder="Describe the issue in detail">
+							</div> <!-- type form-group -->
+							<div class="form-group">
+								<div class="col-3 col-sm-12">
+									<label class="form-label">Subject</label>
+								</div>
+								<div class="col-9 col-sm-12">
+									<input v-model="subject" class="form-input" type="text" placeholder="Write a few words describing the issue">
+								</div>
+							</div> <!-- subject form-group -->
+							<div class="form-group">
+                <div class="col-9 col-sm-12 col-ml-auto">
+									<p v-if="label==='bug'" class="form-input-hint">Describe in detail the steps needed to replicate the issue, including
+										what result was expected and what result occurred.</p>
+									<p v-if="label==='enhancement'" class="form-input-hint">Describe in detail a single feature that you think will 
+										improve Lex Library.</p>
+									<p v-if="label==='performance'" class="form-input-hint">Describe in detail what actions where taken that resulted in
+										poor performance.</p>
+                </div>
+							</div> <!-- help form-group -->
+							<div class="form-group">
+								<div class="col-3 col-sm-12">
+									<label class="form-label">Description</label>
+								</div>
+								<div class="col-9 col-sm-12">
+									<textarea v-model="description" class="form-input" rows="10" placeholder="Describe the issue in detail">
 									</textarea>
 								</div>
-							</div>
-						</div>
-					</div> <!-- Body -->
-
+							</div> <!-- description form-group -->
+						</form>
+					</div> <!-- container -->
 				</section>
-				<footer class="modal-card-foot">
-					<a :href="issueURL" target="_blank" class="button is-primary">Preview on Github</a>
+				<footer class="modal-footer">
+					<a :href="issueURL" target="_blank" class="btn btn-primary">Preview on Github</a>
 				</footer>
 			</div>
 		</div> <!-- modal -->
 
 	</div>
+</section>
 </body>
 
 <script type="application/json" id="runtime">[[json .Runtime]]</script>

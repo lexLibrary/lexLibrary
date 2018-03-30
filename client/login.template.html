@@ -53,16 +53,18 @@
 			</header>
 			<form @submit="changePassword">
 				<section class="modal-body">
-					<div :class="{'has-error': passwordErr}" class="form-group">
-						<label class="form-label" for="inputNewPassword">Choose a New Password</label>
-						<input v-model="newPassword" @blur="validatePassword" @keydown="passwordErr=null" autofocus
-								 type="password" class="form-input" id="inputNewPassword"	placeholder="Enter a new password">
-						<p v-if="passwordErr" v-cloak class="form-input-hint">{{passwordErr}}</p>
-					</div>
-					<div :class="{'has-error': password2Err}"	class="form-group">
-						<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"	type="password" class="form-input" 
-								id="inputPassword2" placeholder="Enter password again">
-						<p v-if="password2Err" v-cloak class="form-input-hint">{{password2Err}}</p>
+					<div class="content">
+						<div :class="{'has-error': passwordErr}" class="form-group">
+							<label class="form-label" for="inputNewPassword">Choose a New Password</label>
+							<input v-model="newPassword" @blur="validatePassword" @keydown="passwordErr=null" autofocus
+									 type="password" class="form-input" id="inputNewPassword"	placeholder="Enter a new password">
+							<p v-if="passwordErr" v-cloak class="form-input-hint">{{passwordErr}}</p>
+						</div>
+						<div :class="{'has-error': password2Err}"	class="form-group">
+							<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"	type="password" class="form-input" 
+									id="inputPassword2" placeholder="Enter password again">
+							<p v-if="password2Err" v-cloak class="form-input-hint">{{password2Err}}</p>
+						</div>
 					</div>
 				</section>
 				<footer class="modal-footer">

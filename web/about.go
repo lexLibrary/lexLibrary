@@ -82,11 +82,11 @@ var attribution = []attribute{
 		LicenseType: "MIT",
 		LicenseURL:  "https://github.com/vuejs/vue/blob/master/LICENSE",
 	}, attribute{
-		Name:        "bulma",
-		URL:         "https://bulma.io/",
-		Author:      "Jeremy Thomas",
+		Name:        "Spectre.css",
+		URL:         "https://picturepan2.github.io/spectre",
+		Author:      "Yan Zhu",
 		LicenseType: "MIT",
-		LicenseURL:  "https://github.com/jgthms/bulma/blob/master/LICENSE",
+		LicenseURL:  "https://github.com/picturepan2/spectre/blob/master/LICENSE",
 	}, attribute{
 		Name:        "PostgreSQL",
 		URL:         "https://www.postgresql.org/",

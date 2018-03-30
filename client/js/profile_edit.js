@@ -5,10 +5,19 @@ import {
     payload
 } from './lib/data';
 
-xhr.setToken(payload("csrf"));
+import file_input from './components/file_input';
+
+import * as croppie from 'croppie';
+
+let Croppie = croppie.default.Croppie;
+
+xhr.setToken(payload('csrf'));
 
 var vm = new Vue({
     el: 'body > .section',
+    components: {
+        'file-input': file_input,
+    },
     data: function() {
         return {
             user: payload(),
@@ -18,15 +27,18 @@ var vm = new Vue({
             uploadComplete: false,
             imageProgress: 0,
             imageErr: null,
+            imageLoading: false,
+            crop: null,
+            uploadErr: null,
         };
     },
     computed: {},
     directives: {},
     methods: {
-        "changeName": function(e) {
+        'changeName': function(e) {
             e.preventDefault();
             this.loading = true;
-            xhr.put("/profile", {
+            xhr.put('/profile', {
                     name: this.user.name,
                     version: this.user.version,
                 })
@@ -38,16 +50,16 @@ var vm = new Vue({
                     this.nameErr = err.response;
                 });
         },
-        "uploadImage": function(e) {
+        'uploadImage': function(files) {
             this.imageModal = true;
+            this.uploadComplete = false;
             let progress = (e) => {
                 this.imageProgress = 0;
-                this.uploadComplete = false;
                 if (e.lengthComputable) {
                     this.imageProgress = ((e.loaded / e.total) * 100).toFixed(1);
                 }
             };
-            xhr.post('/profile/image', e.srcElement.files[0], progress)
+            xhr.post('/profile/image', files[0], progress)
                 .then(() => {
                     this.uploadComplete = true;
                 })
@@ -55,8 +67,37 @@ var vm = new Vue({
                     this.imageErr = err.response;
                 });
         },
-        "setImage": function(e) {
+        'setImage': function(e) {
             e.preventDefault();
+            this.imageLoading = true;
+            let c = this.crop.get();
+
+            xhr.put('/profile/image', {
+                    x0: c.points[0] * c.zoom,
+                    y0: c.points[1] * c.zoom,
+                    x1: c.points[2] * c.zoom,
+                    y1: c.points[3] * c.zoom,
+                })
+                .then(() => {
+                    location.reload(true);
+                })
+                .catch((err) => {
+            this.imageLoading = false;
+                    this.uploadErr = err.response;
+                });
+        },
+        'loadCrop': function(e) {
+            this.crop = new Croppie(e.srcElement, {
+                viewport: {
+                    width: 200,
+                    height: 200,
+                    type: 'circle'
+                },
+                boundary: {
+                    width: 400,
+                    height: 300,
+                },
+            });
         },
     },
 });

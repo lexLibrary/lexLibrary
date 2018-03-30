@@ -34,22 +34,14 @@
 							</div> <!-- column -->
 							<div class="column text-center">
 								<section class="section">
-								<figure class="avatar avatar-full" data-initial="[[.DisplayInitials]]">
-									[[if .ProfileImage]]
-										<img src="/profile/image" alt="[[.DisplayName]]">
-									[[end]]
-								</figure>
-								<!-- FIXME: -->
-								<!-- <div class="file centered"> -->
-								<!-- 	<label class="file-label"> -->
-								<!-- 		<input @change="uploadImage"  type="file" accept="image/jpeg,image/gif,image/png"> -->
-								<!-- 		<span class="file-cta"> -->
-								<!-- 			<span class="file-label"> -->
-								<!-- 				Select an image -->
-								<!-- 			</span> -->
-								<!-- 		</span> -->
-								<!-- 	</label> -->
-								<!-- </div> -->
+									<figure class="avatar avatar-full" data-initial="[[.DisplayInitials]]">
+										[[if .ProfileImage]]
+											<img src="/profile/image" alt="[[.DisplayName]]">
+										[[end]]
+									</figure>
+									<file-input accept="image/jpeg,image/gif,image/png" @change="uploadImage">
+										<button class="mt-2 btn">Select an Image</button>
+									</file-input>
 								</section>
 							</div> <!-- column -->
 					</div>
@@ -60,19 +52,28 @@
 
 <div :class="{'active': imageModal}" class="modal">
 	<div @click="imageModal=false" class="modal-overlay"></div>
-	<div class="modal">
+	<div class="modal-container">
 		<header class="modal-header">
-			<p class="modal-title">Set Profile Image</p>
-			<button @click="imageModal=false" class="delete" aria-label="close"></button>
-		</header>
-		<section class="modal-content text-center">
-			<figure v-if="uploadComplete" class="image">
-				<img src="/profile/image" alt="[[.DisplayName]]">
-			</figure>
-			<progress v-if="!uploadComplete" class="progress is-primary" :value="imageProgress" max="100">{{imageProgress}}%</progress>
+			<a @click="imageModal=false" class="btn btn-clear float-right" aria-label="Close"></a>
+      <div class="modal-title h5">Set Profile Image</div>
+    </header>
+		<section class="modal-body">
+			<div class="content text-center">
+				<div v-if="uploadErr" class="toast toast-error">
+					<button @click="uploadErr=null"class="btn btn-clear float-right"></button>
+					{{uploadErr}}
+				</div>
+				<img v-if="uploadComplete" @load="loadCrop" src="/profile/image" class="profile-img-upload img-responsive" alt="[[.DisplayName]]">
+				<div v-if="!uploadComplete" class="bar">
+					<div class="bar-item" role="progressbar" :style="{width: imageProgress+'%'}" 
+						:aria-valuenow="imageProgress" aria-valuemin="0" aria-valuemax="100">
+						{{imageProgress}}%
+					</div>
+				</div>
+			</div>
 		</section>
-		<footer class="modal-footer">
-			<button @click="setImage" type="button" :class="{'is-loading': loading}" class="button is-primary">Set</button>
+		<footer v-if="uploadComplete" class="modal-footer">
+			<button @click="setImage" type="button" :class="{'loading': imageLoading}" class="btn btn-primary">Set Image</button>
 		</footer>
 	</div>
 </div> <!-- modal -->

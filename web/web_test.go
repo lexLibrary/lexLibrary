@@ -167,7 +167,7 @@ func signupUser(username, password string, isAdmin bool) error {
 			Get(uri.String()).
 			Find("#inputUsername").SendKeys(username).
 			Find("#inputPassword").SendKeys(password).
-			Find(".button.is-primary.is-block").Click().
+			Find(".btn.btn-primary.btn-block").Click().
 			End()
 		if err != nil {
 			return errors.Wrap(err, "Error signing up user")
@@ -184,6 +184,6 @@ func signupUser(username, password string, isAdmin bool) error {
 		Find("#inputPassword").SendKeys(password).
 		Find("#inputPassword2").SendKeys(password).
 		Find("#submit").Click().
-		Find(".help.is-danger").Count(0).
+		Find(".has-error > .form-input-hint").Count(0).
 		End()
 }

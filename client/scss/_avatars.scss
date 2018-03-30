@@ -1,7 +1,12 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 
 $avatar-full-size: 12rem;
+$avatar-full-size-xs: 8rem;
 
 .avatar.avatar-full {
-	@include avatar-base($avatar-full-size);
+	@include avatar-base($avatar-full-size-xs);
+
+	@media (min-width: $size-xs) {
+		@include avatar-base($avatar-full-size);
+	}
 }

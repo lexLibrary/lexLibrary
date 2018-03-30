@@ -46,12 +46,12 @@ func TestLogin(t *testing.T) {
 		Get(uri.String()).
 		Find("#login").Visible().
 		Find("#inputUsername").Visible().
-		Find(".help.is-danger").Count(0).
+		Find(".has-error > .form-input-hint").Count(0).
 		Find(".card-footer").Visible().
 		Find("#inputUsername").SendKeys("badusername").
 		Find("#inputPassword").SendKeys("badpassword").
-		Find(".button.is-primary.is-block").Click().
-		Find(".help.is-danger").Visible().
+		Find(".btn.btn-primary.btn-block").Click().
+		Find(".has-error > .form-input-hint").Visible().
 		End()
 
 	if err != nil {
@@ -69,8 +69,8 @@ func TestLogin(t *testing.T) {
 		Find(".card-footer").Count(0).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
-		Find(".button.is-primary.is-block").Click().
-		Find(".help.is-danger").Count(0).
+		Find(".btn.btn-primary.btn-block").Click().
+		Find(".has-error > .form-input-hint").Count(0).
 		End()
 
 	if err != nil {
@@ -88,7 +88,7 @@ func TestLogin(t *testing.T) {
 		Get(uri.String() + "?return=" + testPath).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
-		Find(".button.is-primary.is-block").Click().
+		Find(".btn.btn-primary.btn-block").Click().
 		And().
 		URL().Path(testPath).Eventually().
 		End()
@@ -115,13 +115,13 @@ func TestLogin(t *testing.T) {
 		Get(uri.String()).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
-		Find(".button.is-primary.is-block").Click().
-		Find(".help.is-danger").Count(0).
+		Find(".btn.btn-primary.btn-block").Click().
+		Find(".has-error > .form-input-hint").Count(0).
 		Find(".modal").Count(1).
-		Find(".modal-background").Count(1).
-		Find(".modal-card").Count(1).
-		Find(".modal-card-foot > button").Any().Text().Contains("Skip").
-		Find(".modal-card-foot > button").Any().Text().Contains("Submit").
+		Find(".modal-overlay").Count(1).
+		Find(".modal-container").Count(1).
+		Find(".modal-footer > .btn").Any().Text().Contains("Skip").
+		Find(".modal-footer > .btn.btn-primary").Any().Text().Contains("Submit").
 		End()
 	if err != nil {
 		t.Fatalf("Testing expiring password failed: %s", err)
@@ -143,19 +143,19 @@ func TestLogin(t *testing.T) {
 		Get(uri.String()).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
-		Find(".button.is-primary.is-block").Click().
-		Find(".help.is-danger").Count(0).
+		Find(".btn.btn-primary.btn-block").Click().
+		Find(".has-error > .form-input-hint").Count(0).
 		Find(".modal").Count(1).
-		Find(".modal-background").Count(1).
-		Find(".modal-card").Count(1).
-		Find(".modal-card-foot > button").Count(1).Text().Contains("Submit").Click().
-		Find(".help.is-danger").Text().Contains("You must provide a new password").
+		Find(".modal-overlay").Count(1).
+		Find(".modal-container").Count(1).
+		Find(".modal-footer > .btn").Count(1).Text().Contains("Submit").Click().
+		Find(".has-error > .form-input-hint").Text().Contains("You must provide a new password").
 		Find("#inputNewPassword").SendKeys(password + "new").
-		Find(".modal-card-foot > button").Click().
-		Find(".help.is-danger").Text().Contains("Passwords do not match").
+		Find(".modal-footer > .btn").Click().
+		Find(".has-error > .form-input-hint").Text().Contains("Passwords do not match").
 		Find("#inputPassword2").SendKeys(password + "new").
-		Find(".modal-card-foot > button").Click().
-		Find(".help.is-danger").Count(0).And().
+		Find(".modal-footer > .btn").Click().
+		Find(".has-error > .form-input-hint").Count(0).And().
 		URL().Path("/").
 		End()
 	if err != nil {

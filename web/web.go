@@ -38,10 +38,6 @@ func DefaultConfig() Config {
 	}
 }
 
-const (
-	strictTransportSecurity = "max-age=86400"
-)
-
 var (
 	zipPool         sync.Pool
 	maxUploadMemory = int64(10 << 20)
@@ -129,10 +125,4 @@ func Teardown() error {
 		return server.Shutdown(ctx)
 	}
 	return nil
-}
-
-func standardHeaders(w http.ResponseWriter) {
-	if isSSL {
-		w.Header().Set("Strict-Transport-Security", strictTransportSecurity)
-	}
 }

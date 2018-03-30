@@ -140,7 +140,9 @@ func imageGet(id data.ID) *Image {
 }
 
 func (i *Image) raw() (*imageRaw, error) {
-	raw := &imageRaw{}
+	raw := &imageRaw{
+		id: i.ID,
+	}
 
 	err := sqlImageGetFull.QueryRow(sql.Named("id", i.ID)).Scan(
 		&raw.name,
