@@ -124,4 +124,13 @@ var schemaVersions = []*Query{
 			alter table users add profile_image_id {{id}} REFERENCES images(id)
 		{{end}}
 	`),
+	NewQuery(`
+		{{if cockroachdb}}
+			alter table users add column profile_image_draft_id {{id}};
+			CREATE INDEX ON users (profile_image_draft_id);
+			alter table users add foreign key (profile_image_draft_id) references images(id);
+		{{else}}
+			alter table users add profile_image_draft_id {{id}} REFERENCES images(id)
+		{{end}}
+	`),
 }

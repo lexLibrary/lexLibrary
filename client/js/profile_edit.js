@@ -11,7 +11,6 @@ import * as croppie from 'croppie';
 
 let Croppie = croppie.default.Croppie;
 
-xhr.setToken(payload('csrf'));
 
 var vm = new Vue({
     el: 'body > .section',
@@ -32,7 +31,15 @@ var vm = new Vue({
             uploadErr: null,
         };
     },
-    computed: {},
+    computed: {
+        draftImage: function() {
+            // prevent 404 on inital load by not setting this value until the draft is uploaded
+            if (this.uploadComplete) {
+                return "/profile/image?draft";
+            }
+            return "";
+        },
+    },
     directives: {},
     methods: {
         'changeName': function(e) {
@@ -67,22 +74,27 @@ var vm = new Vue({
                     this.imageErr = err.response;
                 });
         },
+        'closeImageModal': function() {
+            this.imageModal = false;
+            this.crop.destroy();
+        },
         'setImage': function(e) {
             e.preventDefault();
             this.imageLoading = true;
             let c = this.crop.get();
+            this.crop.destroy();
 
             xhr.put('/profile/image', {
-                    x0: c.points[0] * c.zoom,
-                    y0: c.points[1] * c.zoom,
-                    x1: c.points[2] * c.zoom,
-                    y1: c.points[3] * c.zoom,
+                    x0: parseFloat(c.points[0]),
+                    y0: parseFloat(c.points[1]),
+                    x1: parseFloat(c.points[2]),
+                    y1: parseFloat(c.points[3]),
                 })
                 .then(() => {
                     location.reload(true);
                 })
                 .catch((err) => {
-            this.imageLoading = false;
+                    this.imageLoading = false;
                     this.uploadErr = err.response;
                 });
         },

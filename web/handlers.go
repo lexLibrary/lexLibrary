@@ -121,7 +121,8 @@ type templateHandler struct {
 // 	err := w.(*templateWriter).execute("templateName", "templateData")
 type templateWriter struct {
 	http.ResponseWriter
-	template *template.Template
+	template  *template.Template
+	CSRFToken string
 }
 
 func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -134,7 +135,10 @@ func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p htt
 	if r.Method == "GET" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Content-Security-Policy", cspHeader)
-		llPreHandle(&templateWriter{w, t.template}, r, p, t.handler)
+		llPreHandle(&templateWriter{
+			ResponseWriter: w,
+			template:       t.template,
+		}, r, p, t.handler)
 
 		err := writer.Close()
 		if err != nil {
@@ -151,7 +155,11 @@ func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p htt
 }
 
 func (t *templateWriter) execute(data interface{}) error {
-	return t.template.Execute(t, data)
+	return t.template.Funcs(map[string]interface{}{
+		"csrfToken": func() string {
+			return t.CSRFToken
+		},
+	}).Execute(t, data)
 }
 
 // func (t *templateWriter) executeTemplate(name string, data interface{}) error {
@@ -186,6 +194,10 @@ func (t *templateHandler) loadTemplates() {
 
 	// change delims to work with Vuejs
 	t.template = template.Must(template.New("").Funcs(map[string]interface{}{
+		"csrfToken": func() string {
+			// placeholder to be overwritten later by template execute call
+			return ""
+		},
 		"json": func(v interface{}) (template.JS, error) {
 			if v == nil {
 				return "", nil

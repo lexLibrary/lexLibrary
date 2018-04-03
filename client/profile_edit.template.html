@@ -51,10 +51,10 @@
 </div>
 
 <div :class="{'active': imageModal}" class="modal">
-	<div @click="imageModal=false" class="modal-overlay"></div>
+	<div @click="closeImageModal" class="modal-overlay"></div>
 	<div class="modal-container">
 		<header class="modal-header">
-			<a @click="imageModal=false" class="btn btn-clear float-right" aria-label="Close"></a>
+			<a @click="closeImageModal" class="btn btn-clear float-right" aria-label="Close"></a>
       <div class="modal-title h5">Set Profile Image</div>
     </header>
 		<section class="modal-body">
@@ -63,7 +63,7 @@
 					<button @click="uploadErr=null"class="btn btn-clear float-right"></button>
 					{{uploadErr}}
 				</div>
-				<img v-if="uploadComplete" @load="loadCrop" src="/profile/image" class="profile-img-upload img-responsive" alt="[[.DisplayName]]">
+				<img v-if="uploadComplete" @load="loadCrop" :src="draftImage" class="profile-img-upload img-responsive" alt="[[.DisplayName]]">
 				<div v-if="!uploadComplete" class="bar">
 					<div class="bar-item" role="progressbar" :style="{width: imageProgress+'%'}" 
 						:aria-valuenow="imageProgress" aria-valuemin="0" aria-valuemax="100">
@@ -82,7 +82,6 @@
 </section>
 </body>
 <script type="application/json" id="payload">[[.]]</script>
-<script type="application/json" id="csrf">[[.CSRFToken]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/profile_edit.js"></script>
 </html>

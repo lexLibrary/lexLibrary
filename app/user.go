@@ -21,9 +21,10 @@ type User struct {
 	Updated            time.Time     `json:"updated,omitempty"`
 	Created            time.Time     `json:"created,omitempty"`
 
-	password        []byte
-	passwordVersion int
-	profileImage    data.ID
+	password          []byte
+	passwordVersion   int
+	profileImage      data.ID
+	profileImageDraft data.ID
 }
 
 // PublicProfile is the publically viewable user information copied from a private user record
@@ -100,7 +101,8 @@ var (
 			updated, 
 			created, 
 			admin, 
-			profile_image_id
+			profile_image_id,
+			profile_image_draft_id
 		from users where username = {{arg "username"}}
 	`)
 	sqlUserFromID = data.NewQuery(`
@@ -116,7 +118,8 @@ var (
 			updated, 
 			created, 
 			admin, 
-			profile_image_id
+			profile_image_id,
+			profile_image_draft_id
 		from users where id = {{arg "id"}}
 	`)
 	sqlUserPublicProfile = data.NewQuery(`
@@ -138,7 +141,12 @@ var (
 	sqlUserUpdateName = data.NewQuery(`update users set name = {{arg "name"}}, 
 		updated = {{now}}, version = version + 1 where id = {{arg "id"}} 
 		and version = {{arg "version"}}`)
-	sqlUserUpdateProfileImage = data.NewQuery(`update users set profile_image_id= {{arg "profile_image_id"}}, updated = {{now}},
+	sqlUserUpdateProfileImage = data.NewQuery(`update users set profile_image_id = profile_image_draft_id,
+		profile_image_draft_id = null, 
+		updated = {{now}},
+		version = version + 1
+		where id = {{arg "id"}} and version = {{arg "version"}}`)
+	sqlUserUpdateProfileDraftImage = data.NewQuery(`update users set profile_image_draft_id= {{arg "profile_image_draft_id"}}, updated = {{now}},
 		version = version + 1
 		where id = {{arg "id"}} and version = {{arg "version"}}`)
 )
@@ -261,6 +269,7 @@ func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 		&u.Created,
 		&u.Admin,
 		&u.profileImage,
+		&u.profileImageDraft,
 	)
 
 	if err == sql.ErrNoRows {
@@ -290,6 +299,7 @@ func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
 		&u.Created,
 		&u.Admin,
 		&u.profileImage,
+		&u.profileImageDraft,
 	)
 	if err == sql.ErrNoRows {
 		return nil, ErrUserNotFound
@@ -492,8 +502,12 @@ func (u *User) ProfileImage() *Image {
 	return imageGet(u.profileImage)
 }
 
+func (u *User) ProfileImageDraft() *Image {
+	return imageGet(u.profileImageDraft)
+}
+
 // SetProfileImage sets the current user's profile image
-func (u *User) SetProfileImage(upload Upload, version int) error {
+func (u *User) SetProfileImageDraft(upload Upload, version int) error {
 	i, err := imageNew(upload)
 	if err != nil {
 		return err
@@ -502,39 +516,39 @@ func (u *User) SetProfileImage(upload Upload, version int) error {
 	i.thumbMinDimension = userIconWidth
 
 	return data.BeginTx(func(tx *sql.Tx) error {
-		if u.profileImage.Valid {
-			// a previous user image exists, delete it
-			err = imageDelete(tx, u.profileImage)
-			if err != nil {
-				return err
-			}
-
-		}
-
 		err = i.insert(tx)
 		if err != nil {
 			return err
 		}
 
+		if u.profileImageDraft.Valid {
+			// a previous draft user image exists, delete it
+			err = imageDelete(tx, u.profileImageDraft)
+			if err != nil {
+				return err
+			}
+		}
+
 		err = u.update(func() (sql.Result, error) {
-			return sqlUserUpdateProfileImage.Tx(tx).Exec(
-				sql.Named("profile_image_id", i.id),
+			return sqlUserUpdateProfileDraftImage.Tx(tx).Exec(
+				sql.Named("profile_image_draft_id", i.id),
 				sql.Named("id", u.ID),
 				sql.Named("version", version),
 			)
 		})
+
 		if err != nil {
 			return err
 		}
 
-		u.profileImage = i.id
+		u.profileImageDraft = i.id
 		return nil
 	})
 }
 
 // CropProfileImage crops the exising user's profile image
-func (u *User) CropProfileImage(x0, y0, x1, y1 float64) error {
-	i, err := imageGet(u.profileImage).raw()
+func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
+	i, err := imageGet(u.profileImageDraft).raw()
 	if err != nil {
 		return err
 	}
@@ -580,7 +594,28 @@ func (u *User) CropProfileImage(x0, y0, x1, y1 float64) error {
 
 	i.thumbMinDimension = userIconWidth
 
-	return i.update(nil, i.version)
+	return data.BeginTx(func(tx *sql.Tx) error {
+		err := i.update(tx, i.version)
+		if err != nil {
+			return err
+		}
+
+		if u.profileImage.Valid {
+			// a previous user image exists, delete it
+			err = imageDelete(tx, u.profileImage)
+			if err != nil {
+				return err
+			}
+
+		}
+
+		return u.update(func() (sql.Result, error) {
+			return sqlUserUpdateProfileImage.Tx(tx).Exec(
+				sql.Named("id", u.ID),
+				sql.Named("version", u.Version),
+			)
+		})
+	})
 }
 
 // DisplayName is the name displayed.  If no name is set then the username is displayed

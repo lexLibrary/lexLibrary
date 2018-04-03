@@ -9,6 +9,16 @@ function send(method, url, data, progress) {
     return new Promise((resolve, reject) => {
         let request = new XMLHttpRequest();
 
+        if (!currentCSRFToken) {
+            // if current CSRF token isn't set yet from previous GET requests, look it up from
+            // the HTML meta tags in the header
+            let metaToken = document.head.querySelector('[name="csrf-token"]');
+
+            if (metaToken) {
+                currentCSRFToken = metaToken.content;
+            }
+        }
+
         request.open(method, url, true);
 
         request.onload = () => {
@@ -67,14 +77,8 @@ function send(method, url, data, progress) {
             request.setRequestHeader('Content-Type', 'application/json');
             return request.send(JSON.stringify(data));
         }
-		request.send();
+        request.send();
     });
-}
-
-export
-
-function setToken(token) {
-    currentCSRFToken = token;
 }
 
 export

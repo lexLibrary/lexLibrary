@@ -113,6 +113,10 @@ func handleCSRF(w http.ResponseWriter, r *http.Request, s *app.Session) error {
 		return nil
 	}
 
+	if w, ok := w.(*templateWriter); ok {
+		w.CSRFToken = s.CSRFToken
+	}
+
 	//Get requests, put CSRF token in header
 	w.Header().Add("X-CSRFToken", s.CSRFToken)
 

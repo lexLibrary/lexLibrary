@@ -29,6 +29,11 @@ func profileGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
+	if _, ok := r.URL.Query()["draft"]; ok {
+		serveImage(w, r, u.ProfileImageDraft())
+		return
+	}
+
 	serveImage(w, r, u.ProfileImage())
 }
 
@@ -137,13 +142,7 @@ func profileEditTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	if errHandled(err, w, r) {
 		return
 	}
-	err = w.(*templateWriter).execute(struct {
-		*app.User
-		CSRFToken string
-	}{
-		User:      u,
-		CSRFToken: c.session.CSRFToken,
-	})
+	err = w.(*templateWriter).execute(u)
 
 	if err != nil {
 		app.LogError(errors.Wrap(err, "Executing profile_edit template: %s"))
@@ -210,7 +209,7 @@ func profileUploadImage(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(u.SetProfileImage(uploads[0], u.Version), w, r) {
+	if errHandled(u.SetProfileImageDraft(uploads[0], u.Version), w, r) {
 		return
 	}
 
@@ -235,7 +234,7 @@ func profileCropImage(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(u.CropProfileImage(input.X0, input.Y0, input.X1, input.Y1), w, r) {
+	if errHandled(u.SetProfileImageFromDraft(input.X0, input.Y0, input.X1, input.Y1), w, r) {
 		return
 	}
 

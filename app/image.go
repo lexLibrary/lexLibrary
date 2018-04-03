@@ -292,7 +292,7 @@ func (i *imageRaw) validate() error {
 }
 
 func imageDelete(tx *sql.Tx, id data.ID) error {
-	result, err := sqlImageDelete.Exec(sql.Named("id", id))
+	result, err := sqlImageDelete.Tx(tx).Exec(sql.Named("id", id))
 	if err != nil {
 		return err
 	}
