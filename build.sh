@@ -29,3 +29,4 @@ go build -o lexLibrary
 # clean up client build files
 cd client
 rm -rf deploy
+rm -rf files

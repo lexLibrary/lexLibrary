@@ -112,36 +112,35 @@ pipeline {
                 }
             }
         }
-	stage('test browsers') {
+        stage('test browsers') {
             parallel {
                 stage('firefox') {
                     steps {
-                    sh '''
-                        cd ci
-                        sh ./testInDocker.sh firefox
-                    '''
+                        sh '''
+                            cd ci
+                            sh ./testInDocker.sh firefox
+                        '''
                     }
                 }
-		stage('chrome') {
+                stage('chrome') {
                     steps {
-                    sh '''
-                        cd ci
-                        sh ./testInDocker.sh chrome
-                    '''
+                        sh '''
+                            cd ci
+                            sh ./testInDocker.sh chrome
+                        '''
                     }
                 }
-	    }
-	}
+            }
+        }
     }
     post {
     	always {
-		archiveArtifacts artifacts: 'lexLibrary'
-		archiveArtifacts artifacts: '*.html'
-		deleteDir()
-	}
-	failure {
-		archiveArtifacts artifacts: './web/SequenceError*.png'
-	}
-
+            archiveArtifacts artifacts: 'lexLibrary'
+            archiveArtifacts artifacts: '*.html'
+            deleteDir()
+        }
+        failure {
+            archiveArtifacts artifacts: './web/SequenceError*.png'
+        }
     }
 }
