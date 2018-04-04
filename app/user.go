@@ -521,14 +521,6 @@ func (u *User) UploadProfileImageDraft(upload Upload, version int) error {
 			return err
 		}
 
-		if u.profileImageDraft.Valid {
-			// a previous draft user image exists, delete it
-			err = imageDelete(tx, u.profileImageDraft)
-			if err != nil {
-				return err
-			}
-		}
-
 		err = u.update(func() (sql.Result, error) {
 			return sqlUserUpdateProfileDraftImage.Tx(tx).Exec(
 				sql.Named("profile_image_draft_id", i.id),
@@ -541,6 +533,13 @@ func (u *User) UploadProfileImageDraft(upload Upload, version int) error {
 			return err
 		}
 
+		if u.profileImageDraft.Valid {
+			// a previous draft user image exists, delete it
+			err = imageDelete(tx, u.profileImageDraft)
+			if err != nil {
+				return err
+			}
+		}
 		u.profileImageDraft = i.id
 		return nil
 	})
