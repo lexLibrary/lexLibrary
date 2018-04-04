@@ -11,15 +11,15 @@ export default {
         'accept',
         'multiple',
     ],
-    data: function() {
+    data: function () {
         return {};
     },
     methods: {
-        'openDialog': function() {
+        'openDialog': function () {
             this.$refs.input.click();
         },
-        'selectFiles': function(e) {
-            this.$emit('change', e.srcElement.files);
+        'selectFiles': function (e) {
+            this.$emit('change', e.target.files);
         },
     },
 };

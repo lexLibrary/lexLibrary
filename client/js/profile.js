@@ -4,15 +4,15 @@ import * as xhr from './lib/xhr';
 
 
 var vm = new Vue({
-    el: 'body > .container',
+    el: '#main',
     components: {},
-    data: function() {
+    data: function () {
         return {};
     },
     computed: {},
     directives: {},
     methods: {
-        'logout': function(e) {
+        'logout': function (e) {
             e.preventDefault();
             xhr.del('/session')
                 .then(() => {
