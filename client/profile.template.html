@@ -7,7 +7,7 @@
 </head>
 
 <body>
-
+<div id="main">
 
 <div class="container grid-xl relative">
 	<header class="navbar mt-2">
@@ -15,17 +15,17 @@
 			<a href="/" class="navbar-brand mr-2">Lex Library</a>
 		</section>
 		<section class="navbar-section">
-			<a href="/profile/edit">Settings</a>
+			<a href="#" @click="logout">Logout</a>
 		</section>
 	</header>
 </div>
 
-<div id="main" class="container grid-md">
+<div class="container grid-md">
 	<div class="columns">
 			<div class="profile column text-center">
 				<div class="card">
 					<div class="card-body relative">
-						<a href="#" class="profile-logout" @click="logout">Logout</a>
+						<a class="profile-edit" href="/profile/edit">Settings</a>
 						<div class="profile-avatar">
 							<a href="/profile/edit">
 								<figure class="avatar avatar-full tooltip tooltip-bottom" data-tooltip="Set your profile image" data-initial="[[.User.DisplayInitials]]">
@@ -72,6 +72,7 @@
 					</div>
 				</div>
 			</div>
+	</div>
 	</div>
 </div>
 </body>
