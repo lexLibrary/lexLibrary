@@ -7,7 +7,7 @@
 </head>
 
 <body>
-<section class="section">
+	[[template "nav" .]]
 	<div id="main" class="container grid-lg">
 		<h2>Lex Library</h2>
 		<a v-if="runtime" v-cloak @click="showModal=true" class="btn btn-link float-right">Report an issue</a>
@@ -93,7 +93,6 @@
 		</div> <!-- modal -->
 
 	</div>
-</section>
 </body>
 
 <script type="application/json" id="runtime">[[json .Runtime]]</script>

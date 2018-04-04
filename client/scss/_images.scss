@@ -1,0 +1,6 @@
+// Copyright (c) 2017-2018 Townsourced Inc.
+
+.img-loading {
+	@include blur(10px);
+	transition: all 1s linear;
+}

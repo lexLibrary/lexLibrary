@@ -26,11 +26,15 @@ var (
 	errorHandler = templateHandler{
 		templateFiles: []string{"error.template.html"},
 	}
+	unauthorizedHandler = templateHandler{
+		templateFiles: []string{"login.template.html"},
+	}
 )
 
 func init() {
 	errorHandler.loadTemplates()
 	notFoundHandler.loadTemplates()
+	unauthorizedHandler.loadTemplates()
 }
 
 func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
@@ -72,9 +76,11 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 			if terr != nil {
 				app.LogError(errors.Wrap(terr, "Writing not_found template"))
 			}
-		// case http.StatusUnauthorized:
-		// TODO:unauthorized page
-		// redirect with url parm?
+		case http.StatusUnauthorized:
+			terr := unauthorizedHandler.template.Execute(w, map[string]bool{"Unauthorized": true})
+			if terr != nil {
+				app.LogError(errors.Wrap(terr, "Writing login template"))
+			}
 		default:
 			terr := errorHandler.template.Execute(w, struct {
 				ErrorID xid.ID

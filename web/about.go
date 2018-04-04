@@ -43,12 +43,14 @@ func aboutTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	engineName, engineVersion := ua.Engine()
 
 	err = w.(*templateWriter).execute(struct {
+		User        *app.User
 		Version     string
 		BuildDate   string
 		Runtime     *app.RuntimeInfo
 		Attribution []attribute
 		Browser     browserInfo
 	}{
+		User:        u,
 		Version:     app.Version(),
 		BuildDate:   app.BuildDate().Format(time.RFC1123),
 		Runtime:     app.Runtime(u),

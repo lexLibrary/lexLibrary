@@ -2,17 +2,20 @@
 import './lib/polyfill';
 import * as xhr from './lib/xhr';
 
+import image from './components/image';
 
 var vm = new Vue({
     el: '#main',
-    components: {},
-    data: function () {
+    components: {
+        'prog-image': image,
+    },
+    data: function() {
         return {};
     },
     computed: {},
     directives: {},
     methods: {
-        'logout': function (e) {
+        'logout': function(e) {
             e.preventDefault();
             xhr.del('/session')
                 .then(() => {

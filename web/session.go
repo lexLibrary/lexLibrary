@@ -36,10 +36,8 @@ func loginTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-	err := w.(*templateWriter).execute(struct {
-		AllowSignup bool
-	}{
-		AllowSignup: app.SettingMust("AllowPublicSignups").Bool(),
+	err := w.(*templateWriter).execute(map[string]bool{
+		"AllowSignup": app.SettingMust("AllowPublicSignups").Bool(),
 	})
 
 	if err != nil {

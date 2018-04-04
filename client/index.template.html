@@ -7,26 +7,7 @@
 </head>
 
 <body>
-	<div class="container grid-xl">
-		<header class="navbar mt-2">
-			<section class="navbar-section">
-				<a href="/" class="navbar-brand mr-2">Lex Library</a>
-			</section>
-			<section class="navbar-section">
-				[[if .User]]
-				<a href="/profile">
-					<figure class="avatar" data-initial="[[.User.DisplayInitials]]">
-						[[if .User.ProfileImage]]
-							<img src="/profile/image?thumb" alt="[[.User.DisplayName]]">
-						[[end]]
-					</figure>
-				</a>
-				[[else]]
-					<a class="btn btn-link" href="/login">Log In</a>
-				[[end]]
-			</section>
-		</header>
-	</div>
+	[[template "nav" .]]
 </body>
 <script src="/js/vue.js"></script>
 <script src="/js/index.js"></script>

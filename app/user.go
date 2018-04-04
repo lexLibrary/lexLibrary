@@ -4,6 +4,7 @@ package app
 
 import (
 	"database/sql"
+	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -17,7 +18,7 @@ type User struct {
 
 	AuthType           string        `json:"authType,omitempty"`
 	PasswordExpiration data.NullTime `json:"passwordExpiration"`
-	Version            int           `json:"version,omitempty"` // version of this record starting with 0
+	Version            int           `json:"version"` // version of this record starting with 0
 	Updated            time.Time     `json:"updated,omitempty"`
 	Created            time.Time     `json:"created,omitempty"`
 
@@ -88,67 +89,53 @@ var (
 		{{arg "created"}},
 		{{arg "admin"}}
 	)`)
-	sqlUserFromUsername = data.NewQuery(`
-		select 	id, 
-			username, 
-			name, 
-			auth_type, 
-			password, 
-			password_version, 
-			password_expiration, 
-			active, 
-			version, 
-			updated, 
-			created, 
-			admin, 
-			profile_image_id,
-			profile_image_draft_id
-		from users where username = {{arg "username"}}
-	`)
-	sqlUserFromID = data.NewQuery(`
-		select 	id, 
-			username, 
-			name, 
-			auth_type, 
-			password, 
-			password_version, 
-			password_expiration, 
-			active, 
-			version, 
-			updated, 
-			created, 
-			admin, 
-			profile_image_id,
-			profile_image_draft_id
-		from users where id = {{arg "id"}}
-	`)
+
+	sqlUserSelect = func(where string) *data.Query {
+		return data.NewQuery(fmt.Sprintf(`
+			select 	id, 
+				username, 
+				name, 
+				auth_type, 
+				password, 
+				password_version, 
+				password_expiration, 
+				active, 
+				version, 
+				updated, 
+				created, 
+				admin, 
+				profile_image_id,
+				profile_image_draft_id
+			from users 
+			where %s`, where))
+	}
+	sqlUserFromUsername = sqlUserSelect(`username = {{arg "username"}}`)
+	sqlUserFromID       = sqlUserSelect(`id = {{arg "id"}}`)
+
 	sqlUserPublicProfile = data.NewQuery(`
 		select id, username, name, active, admin 
 		from users where username = {{arg "username"}}`)
 
-	sqlUserUpdateActive = data.NewQuery(`update users set active = {{arg "active"}}, updated = {{now}}, version = version + 1 
-		where id = {{arg "id"}} and version = {{arg "version"}}`)
-	sqlUserUpdateAdmin = data.NewQuery(`update users set admin = {{arg "admin"}}, updated = {{now}}, version = version + 1
-		where id = {{arg "id"}} and version = {{arg "version"}}`)
-	sqlUserUpdatePassword = data.NewQuery(`update users
-		set 	password = {{arg "password"}},
-			password_version = {{arg "password_version"}},
-			password_expiration = {{arg "password_expiration"}},
-			updated = {{now}},
-			version = version + 1
-		where id = {{arg "id"}}
-		and version = {{arg "version"}}`)
-	sqlUserUpdateName = data.NewQuery(`update users set name = {{arg "name"}}, 
-		updated = {{now}}, version = version + 1 where id = {{arg "id"}} 
-		and version = {{arg "version"}}`)
-	sqlUserUpdateProfileImage = data.NewQuery(`update users set profile_image_id = profile_image_draft_id,
-		profile_image_draft_id = null, 
-		updated = {{now}},
-		version = version + 1
-		where id = {{arg "id"}} and version = {{arg "version"}}`)
-	sqlUserUpdateProfileDraftImage = data.NewQuery(`update users set profile_image_draft_id= {{arg "profile_image_draft_id"}}, updated = {{now}},
-		version = version + 1
-		where id = {{arg "id"}} and version = {{arg "version"}}`)
+	sqlUserUpdate = func(columns ...string) *data.Query {
+		updates := ""
+		for i := range columns {
+			updates += fmt.Sprintf(`%s = {{arg "%s"}},`, columns[i], columns[i])
+		}
+		return data.NewQuery(fmt.Sprintf(`
+		update users set %s
+			updated = {{now}}, 
+			version = version + 1 
+		where id = {{arg "id"}} 
+		and version = {{arg "version"}}`, updates))
+	}
+
+	sqlUserUpdateActive            = sqlUserUpdate("active")
+	sqlUserUpdateAdmin             = sqlUserUpdate("admin")
+	sqlUserUpdatePassword          = sqlUserUpdate("password", "password_version", "password_expiration")
+	sqlUserUpdateName              = sqlUserUpdate("name")
+	sqlUserUpdateProfileImage      = sqlUserUpdate("profile_image_id", "profile_image_draft_id")
+	sqlUserUpdateProfileDraftImage = sqlUserUpdate("profile_image_draft_id")
+	sqlUserUpdateUsername          = sqlUserUpdate("username")
 )
 
 // UserNew creates a new user, from the sign up page
@@ -502,6 +489,7 @@ func (u *User) ProfileImage() *Image {
 	return imageGet(u.profileImage)
 }
 
+// ProfileImageDraft returns the draft profile image
 func (u *User) ProfileImageDraft() *Image {
 	return imageGet(u.profileImageDraft)
 }
@@ -545,7 +533,7 @@ func (u *User) UploadProfileImageDraft(upload Upload, version int) error {
 	})
 }
 
-// CropProfileImage crops the exising user's profile image
+// SetProfileImageFromDraft crops the exising user's profile image
 func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 	i, err := imageGet(u.profileImageDraft).raw()
 	if err != nil {
@@ -610,6 +598,8 @@ func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 
 		return u.update(func() (sql.Result, error) {
 			return sqlUserUpdateProfileImage.Tx(tx).Exec(
+				sql.Named("profile_image_id", u.profileImageDraft),
+				sql.Named("profile_image_draft_id", nil),
 				sql.Named("id", u.ID),
 				sql.Named("version", u.Version),
 			)
@@ -640,4 +630,35 @@ func (u *User) DisplayInitials() string {
 // Latest gets the latest version of user
 func (u *User) Latest() (*User, error) {
 	return userFromID(nil, u.ID)
+}
+
+// SetUsername updates the user's current username
+func (u *User) SetUsername(username string, version int) error {
+	if username == u.Username {
+		// no change
+		return nil
+	}
+	u.Username = strings.ToLower(username)
+	err := u.validate()
+	if err != nil {
+		return err
+	}
+
+	_, err = userFromUsername(nil, username)
+
+	if err == nil {
+		return NewFailure("A user with the username %s already exists", username)
+	}
+
+	if err != ErrUserNotFound {
+		return err
+	}
+
+	return u.update(func() (sql.Result, error) {
+		return sqlUserUpdateUsername.Exec(
+			sql.Named("username", u.Username),
+			sql.Named("id", u.ID),
+			sql.Named("version", version),
+		)
+	})
 }

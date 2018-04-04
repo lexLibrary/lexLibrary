@@ -53,6 +53,7 @@ var vm = new Vue({
                         })
                         .then((result) => {
                             //TODO: redirect to profile page?
+							//  
                             window.location = '/';
                         })
                         .catch((err) => {

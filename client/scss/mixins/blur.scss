@@ -1,0 +1,10 @@
+// Copyright (c) 2017-2018 Townsourced Inc.
+
+@mixin blur($blur: 5px) {
+	filter: blur($blur);
+	-webkit-filter: blur($blur);
+	-moz-filter: blur($blur);
+	-o-filter: blur($blur);
+	-ms-filter: blur($blur);
+	transform: scale(1);
+}

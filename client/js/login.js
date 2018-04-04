@@ -71,7 +71,7 @@ var vm = new Vue({
             if (q.return && q.return.indexOf('/') === 0) {
                 window.location = q.return;
             } else {
-                window.location = '/';
+				location.reload(true);
             }
         },
         changePassword: function(e) {

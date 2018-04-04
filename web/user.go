@@ -3,7 +3,6 @@ package web
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
@@ -132,12 +131,11 @@ func userUpdatePassword(w http.ResponseWriter, r *http.Request, c ctx) {
 			return
 		}
 
-		if u.Username != strings.ToLower(c.params.ByName("username")) {
-			unauthorized(w, r)
+		err = u.SetPassword(*input.OldPassword, *input.NewPassword, *input.Version)
+		if errHandled(err, w, r) {
 			return
 		}
-
-		err = u.SetPassword(*input.OldPassword, *input.NewPassword, *input.Version)
+		_, err = setSession(w, r, u, false)
 		if errHandled(err, w, r) {
 			return
 		}

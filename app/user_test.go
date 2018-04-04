@@ -53,7 +53,6 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding new user: %s", err)
 		}
 
-		// sleep for one second because that's the minimum precision of some database's datetime fields
 		time.Sleep(1 * time.Second)
 
 		if u.Username != username {
@@ -746,6 +745,38 @@ func TestUser(t *testing.T) {
 		}
 		if img.Bounds().Dy() != 30 {
 			t.Fatalf("Incorrect profile image height. Expected %d, got %d", 30, img.Bounds().Dy())
+		}
+
+	})
+	t.Run("Set Username", func(t *testing.T) {
+		reset(t)
+		username := "testuser"
+		password := "reallygoodlongpassword"
+
+		u, err := app.UserNew(username, password)
+		if err != nil {
+			t.Fatalf("Error adding user for SetName testing")
+		}
+
+		err = u.SetUsername(admin.Username, u.Version)
+		if err == nil {
+			t.Fatalf("Setting username to existing user's username didn't fail")
+		}
+
+		newUsername := "testNewUser"
+		err = u.SetUsername(newUsername, u.Version)
+		if err != nil {
+			t.Fatalf("Error setting name: %s", err)
+		}
+
+		_, err = app.Login(username, password)
+		if err == nil {
+			t.Fatalf("Old username still works")
+		}
+
+		_, err = app.Login(newUsername, password)
+		if err != nil {
+			t.Fatalf("Error logging in with new username: %s", err)
 		}
 
 	})

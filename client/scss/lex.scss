@@ -8,12 +8,13 @@
 @import "spectre";
 
 // Lex
+@import "mixins";
 @import "utilities";
-// @import "buttons";
 @import "cards";
 @import "avatars";
 @import "layout";
 @import "crop";
+@import "images";
 
 // Pages
 @import "pages/profile";

@@ -24,3 +24,8 @@ $profile-offset-xs: ($unit-8 + ($avatar-full-size-xs / 2));
 	top: $layout-spacing-lg;
 	right: $layout-spacing-lg;
 }
+
+.profile-section {
+	margin-bottom: $gap;
+	margin-left: $gap;
+}

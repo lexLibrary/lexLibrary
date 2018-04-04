@@ -222,6 +222,39 @@ func profileUpdateName(w http.ResponseWriter, r *http.Request, c ctx) {
 
 }
 
+func profileUpdateUsername(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	input := &userInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if input.Username == nil {
+		errHandled(app.NewFailure("username is required"), w, r)
+		return
+	}
+
+	if input.Version == nil {
+		errHandled(app.NewFailure("version is required"), w, r)
+		return
+	}
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if errHandled(u.SetUsername(*input.Username, *input.Version), w, r) {
+		return
+	}
+
+	respond(w, success(nil))
+}
+
 func profileUploadImage(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session == nil {
 		unauthorized(w, r)

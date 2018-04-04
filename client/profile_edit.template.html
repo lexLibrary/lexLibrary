@@ -7,13 +7,13 @@
 </head>
 
 <body>
+[[template "nav" .]]
 <section class="section">
 
 <div class="container grid-lg">
 	<div class="columns">
 		<div class="column col-3">
 			<ul class="menu">
-				<!-- menu header text -->
 				<li class="menu-item">
 					<div>
 						<h4>Settings</h4>
@@ -39,44 +39,92 @@
 			</ul>
 		</div>
 		<div class="column">
-			<div class="card">
-				<div class="card-content">
+			[[if eq .Tab "profile"]]
+				<div class="profile-section">
+					<h3>Update Profile</h3>
 					<div class="columns">
 						<div class="column">
-							<section class="section">
-								<h2>Update Profile</h2>
-								<form @sumbit="changeName">
-									<div :class="{'has-error': nameErr}" class="form-group">
-										<label class="form-label" for="inputName">Name</label>
-										<input v-model="user.name" type="text" class="form-input" id="inputName" placeholder="Enter a name">
-										<p v-if="nameErr" v-cloak class="form-input-hint">{{nameErr}}</p>
-									</div>
-									<div class="form-group">
-										<button type="submit" :class="{'loading': loading}" class="btn btn-primary" @click="changeName">
-											Update
-										</button>
-									</div>
-								</form>
-							</section>
+							<form @sumbit="changeName">
+								<div :class="{'has-error': nameErr}" class="form-group">
+									<label class="form-label" for="inputName">Name</label>
+									<input v-model="user.name" type="text" class="form-input" id="inputName" placeholder="Enter a name">
+									<p v-if="nameErr" v-cloak class="form-input-hint">{{nameErr}}</p>
+								</div>
+								<button type="submit" :class="{'loading': nameLoading}" class="btn btn-primary" @click="changeName">
+									Update
+								</button>
+							</form>
 						</div> <!-- column -->
-						<div class="column text-center">
-							<section class="section">
+
+						<div class="column">
+							<div class="text-center">
 								<figure class="avatar avatar-full" data-initial="[[.User.DisplayInitials]]">
 									[[if .User.ProfileImage]]
 										<img src="/profile/image" alt="[[.User.DisplayName]]">
 									[[end]]
 								</figure>
-								<file-input accept="image/jpeg,image/gif,image/png" @change="uploadImage">
-									<button class="mt-2 btn">Select an Image</button>
-								</file-input>
-							</section>
+								<div>
+									<file-input accept="image/jpeg,image/gif,image/png" @change="uploadImage">
+										<button class="mt-2 btn">Select an Image</button>
+									</file-input>
+								</div>
+							</div>
 						</div> <!-- column -->
-					</div>
+					</div> <!-- columns -->
 				</div>
+			[[end]]
+			[[if eq .Tab "account"]]
+			<div class="profile-section">
+				<h3>Change Password </h3>
+				<div class="columns">
+					<div class="column col-6 col-mr-auto">
+						<form @sumbit="changePassword">
+							<div :class="{'has-error': password.old.err}" class="form-group">
+								<label class="form-label" for="inputPasswordOld">Current Password</label>
+								<input v-model="password.old.val" type="password" class="form-input" id="inputPasswordOld" placeholder="Enter your current password">
+								<p v-if="password.old.err" v-cloak class="form-input-hint">{{password.old.err}}</p>
+							</div>
+							<div :class="{'has-error': password.new.err}" class="form-group">
+								<label class="form-label" for="inputPasswordNew">New Password</label>
+								<input v-model="password.new.val" type="password" class="form-input" id="inputPasswordNew" 
+									placeholder="Enter a new password" @blur="validatePassword" @keydown="password.new.err=null">
+								<p v-if="password.new.err" v-cloak class="form-input-hint">{{password.new.err}}</p>
+							</div>
+							<div :class="{'has-error': password.confirm.err}" class="form-group">
+								<input v-model="password.confirm.val" type="password" class="form-input" id="inputPasswordConfirm" 
+									placeholder="Confirm new password" @blur="validatePassword2" @keydown="password.confirm.err=null">
+								<p v-if="password.confirm.err" v-cloak class="form-input-hint">{{password.confirm.err}}</p>
+							</div>
+
+							<button type="submit" :class="{'loading': password.loading}" class="btn btn-primary" @click="changePassword">
+								Change Password
+							</button>
+						</form>
+					</div> <!-- column -->
+				</div> <!-- columns -->
 			</div>
+			<div class="profile-section">
+				<h3>Change Username</h3>
+				<div class="columns">
+					<div class="column col-6 col-mr-auto">
+						<form @sumbit="changeUsername">
+							<div :class="{'has-error': usernameErr}" class="form-group">
+								<label class="form-label" for="inputUsername">Username</label>
+								<input v-model="user.username" type="text" class="form-input" id="inputUsername" placeholder="Enter a username">
+								<p v-if="usernameErr" v-cloak class="form-input-hint">{{usernameErr}}</p>
+							</div>
+							<button type="submit" :class="{'loading': usernameLoading}" class="btn btn-primary" @click="changeUsername">
+								Change Username
+							</button>
+						</form>
+					</div> <!-- column -->
+				</div> <!-- columns -->
+			</div>
+			[[end]]
+		</div>
 	</div>
 </div>
-
+[[if eq .Tab "profile"]]
 <div :class="{'active': imageModal}" class="modal">
 	<div @click="closeImageModal" class="modal-overlay"></div>
 	<div class="modal-container">
@@ -106,7 +154,7 @@
 		</footer>
 	</div>
 </div> <!-- modal -->
-
+[[end]]
 
 </section>
 </body>

@@ -43,7 +43,7 @@ func NewFailureFromErr(err error) *Fail {
 		return nil
 	}
 
-	return NewFailure(err.Error(), http.StatusBadRequest)
+	return NewFailureWithStatus(err.Error(), http.StatusBadRequest)
 }
 
 // IsFail tests whether the passed in error is a failure

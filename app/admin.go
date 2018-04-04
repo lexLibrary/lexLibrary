@@ -5,6 +5,7 @@ type Admin struct {
 	User *User
 }
 
+// ErrNotAdmin is returned when an admin activity is attempted by a non-admin user
 var ErrNotAdmin = Unauthorized("This functionality is reserved for administrators only")
 
 // The methods defined here should simply be wrappers around the actual code doing the inserts / updates / deletes
@@ -40,7 +41,7 @@ func (a *Admin) SetMultipleSettings(settings map[string]interface{}) error {
 	return settingSetMultiple(settings)
 }
 
-// UserSetActive sets the active status of the given user
+// SetUserActive sets the active status of the given user
 func (a *Admin) SetUserActive(u *User, active bool, version int) error {
 	if !a.isAdmin() {
 		return ErrNotAdmin
@@ -48,7 +49,7 @@ func (a *Admin) SetUserActive(u *User, active bool, version int) error {
 	return u.setActive(active, version)
 }
 
-// UserSetAdmin sets if a user is an Administrator or not
+// SetUserAdmin sets if a user is an Administrator or not
 func (a *Admin) SetUserAdmin(u *User, admin bool, version int) error {
 	if !a.isAdmin() {
 		return ErrNotAdmin

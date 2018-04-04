@@ -380,7 +380,7 @@ func (i *imageRaw) decode() error {
 	}
 
 	if len(i.data) == 0 {
-		return errors.New("Image not loaded properly.")
+		return errors.New("image not loaded properly")
 	}
 
 	if i.placeholderMinDimension == 0 {
