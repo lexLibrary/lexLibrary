@@ -9,7 +9,7 @@ func TestProfile(t *testing.T) {
 	uri := *llURL
 	uri.Path = "profile"
 
-	err := signupUser("testUser", "testpasswordThatisLongEnough", false)
+	err := prepUser("testUser", "testpasswordThatisLongEnough", false)
 	if err != nil {
 		t.Fatalf("Error setting up user for testing: %s", err)
 	}

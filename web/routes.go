@@ -80,10 +80,14 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/profile/documents", profile.documents)
 	rootHandler.GET("/profile/comments", profile.comments)
 
-	rootHandler.GET("/profile/edit", templateHandler{
-		handler:       profileEditTemplate,
-		templateFiles: []string{"profile_edit.template.html"},
-	}.ServeHTTP)
+	profileEdit := &profileEditPage{
+		templateHandler: templateHandler{
+			templateFiles: []string{"profile_edit.template.html"},
+		},
+	}
+
+	rootHandler.GET("/profile/edit", profileEdit.root)
+	rootHandler.GET("/profile/edit/account", profileEdit.account)
 
 	return rootHandler
 }

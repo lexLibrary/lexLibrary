@@ -132,22 +132,60 @@ func (p *profilePage) history(w http.ResponseWriter, r *http.Request, parms http
 
 }
 
-func profileEditTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
-	if c.session == nil {
-		unauthorized(w, r)
-		return
+type profileEditPage struct {
+	templateHandler
+	data struct {
+		User *app.User
+		Tab  string
+	}
+}
+
+func (p *profileEditPage) loadData(s *app.Session) error {
+	if s == nil {
+		return app.Unauthorized("You do not have access to this user")
 	}
 
-	u, err := c.session.User()
-	if errHandled(err, w, r) {
-		return
-	}
-	err = w.(*templateWriter).execute(u)
-
+	u, err := s.User()
 	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing profile_edit template: %s"))
+		return err
 	}
 
+	p.data.User = u
+	return nil
+}
+
+func (p *profileEditPage) root(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
+	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+		err := p.loadData(c.session)
+		if errHandled(err, w, r) {
+			return
+		}
+		p.data.Tab = "profile"
+
+		err = w.(*templateWriter).execute(p.data)
+
+		if err != nil {
+			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+		}
+	}
+	p.ServeHTTP(w, r, parms)
+}
+
+func (p *profileEditPage) account(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
+	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+		err := p.loadData(c.session)
+		if errHandled(err, w, r) {
+			return
+		}
+		p.data.Tab = "account"
+
+		err = w.(*templateWriter).execute(p.data)
+
+		if err != nil {
+			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
+		}
+	}
+	p.ServeHTTP(w, r, parms)
 }
 
 func profileUpdateName(w http.ResponseWriter, r *http.Request, c ctx) {
@@ -209,7 +247,7 @@ func profileUploadImage(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(u.SetProfileImageDraft(uploads[0], u.Version), w, r) {
+	if errHandled(u.UploadProfileImageDraft(uploads[0], u.Version), w, r) {
 		return
 	}
 

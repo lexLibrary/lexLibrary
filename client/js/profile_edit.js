@@ -76,6 +76,7 @@ var vm = new Vue({
         },
         'closeImageModal': function() {
             this.imageModal = false;
+            this.imageLoading = false;
             this.crop.destroy();
         },
         'setImage': function(e) {

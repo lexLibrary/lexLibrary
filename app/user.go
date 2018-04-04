@@ -50,8 +50,8 @@ const (
 	// images
 	userImageWidth  = 300
 	userImageHeight = 300
-	userIconWidth   = 32
-	userIconHeight  = 32
+	userIconWidth   = 64
+	userIconHeight  = 64
 )
 
 // ErrUserNotFound is when a user could not be found
@@ -506,8 +506,8 @@ func (u *User) ProfileImageDraft() *Image {
 	return imageGet(u.profileImageDraft)
 }
 
-// SetProfileImage sets the current user's profile image
-func (u *User) SetProfileImageDraft(upload Upload, version int) error {
+// UploadProfileImageDraft sets the current user's profile image
+func (u *User) UploadProfileImageDraft(upload Upload, version int) error {
 	i, err := imageNew(upload)
 	if err != nil {
 		return err
@@ -636,4 +636,9 @@ func (u *User) DisplayInitials() string {
 		return strings.ToUpper(string([]rune(initials[0])[:2]))
 	}
 	return strings.ToUpper(string([]rune(initials[0])[0]) + string([]rune(initials[1])[0]))
+}
+
+// Latest gets the latest version of user
+func (u *User) Latest() (*User, error) {
+	return userFromID(nil, u.ID)
 }

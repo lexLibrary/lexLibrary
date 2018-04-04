@@ -121,7 +121,7 @@ func startWebDriver() (selenium.WebDriver, error) {
 	return wd, nil
 }
 
-func signupUser(username, password string, isAdmin bool) error {
+func prepUser(username, password string, isAdmin bool) error {
 	_, err := data.NewQuery("delete from users").Exec()
 	if err != nil {
 		return errors.Wrap(err, "Error emptying users table before running tests")

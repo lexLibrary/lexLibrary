@@ -5,6 +5,7 @@ package app_test
 import (
 	"database/sql"
 	"fmt"
+	"image/png"
 	"strings"
 	"testing"
 	"time"
@@ -571,7 +572,7 @@ func TestUser(t *testing.T) {
 		}
 	})
 
-	t.Run("DisplayName", func(t *testing.T) {
+	t.Run("Display Name", func(t *testing.T) {
 		reset(t)
 		username := "testuser"
 		password := "reallygoodlongpassword"
@@ -597,7 +598,7 @@ func TestUser(t *testing.T) {
 
 	})
 
-	t.Run("DisplayInitials", func(t *testing.T) {
+	t.Run("Display Initials", func(t *testing.T) {
 		reset(t)
 		username := "testuser"
 		password := "reallygoodlongpassword"
@@ -626,7 +627,129 @@ func TestUser(t *testing.T) {
 
 	})
 
-	//TODO: Profile Image tests, use testdata dir
+	t.Run("Profile Image", func(t *testing.T) {
+		reset(t)
+
+		u, err := app.UserNew("testuser", "testuserpassword")
+		if err != nil {
+			t.Fatalf("Error adding user")
+		}
+		upload := getImageUpload(t, 5000, 5000)
+
+		err = u.UploadProfileImageDraft(upload, u.Version)
+		if err != nil {
+			t.Fatalf("Error uploading profile image draft: %s", err)
+		}
+
+		if u.ProfileImage() != nil {
+			t.Fatalf("User's profile image should not have been updated by the draft image")
+		}
+
+		rs, err := u.ProfileImageDraft().Full()
+		if err != nil {
+			t.Fatalf("Error getting fullsize draft image: %s", err)
+		}
+
+		img, err := png.Decode(rs)
+		if err != nil {
+			t.Fatalf("Unable to decode uploaded image: %s", err)
+		}
+
+		maxImageSize := 4096
+
+		// uploaded images larger than max size will get automatically scaled to max
+
+		if img.Bounds().Dx() != maxImageSize {
+			t.Fatalf("Incorrect profile image width. Expected %d, got %d", maxImageSize, img.Bounds().Dx())
+		}
+		if img.Bounds().Dy() != maxImageSize {
+			t.Fatalf("Incorrect profile image height. Expected %d, got %d", maxImageSize, img.Bounds().Dy())
+		}
+
+		origDraftID := u.ProfileImageDraft().ID
+		err = u.UploadProfileImageDraft(getImageUpload(t, 1000, 4000), u.Version)
+		if err != nil {
+			t.Fatalf("Error uploading profile image draft: %s", err)
+		}
+
+		if origDraftID == u.ProfileImageDraft().ID {
+			t.Fatalf("New draft image upload did not replace old draft image")
+		}
+
+		count := 0
+
+		err = data.NewQuery(`select count(*) as cnt from images where id = {{arg "id"}}`).
+			QueryRow(sql.Named("id", origDraftID)).Scan(&count)
+		if err != nil {
+			t.Fatalf("Error getting image count: %s", err)
+		}
+		if count != 0 {
+			t.Fatalf("Old draft image was not deleted. Expected %d, got %d.", 0, count)
+		}
+
+		err = u.SetProfileImageFromDraft(-1, 0, 100, 100)
+		if err != nil {
+			t.Fatalf("Error setting profile image: %s", err)
+		}
+
+		u, err = u.Latest()
+		if err != nil {
+			t.Fatalf("Error refreshing user: %s", err)
+		}
+
+		if u.ProfileImageDraft() != nil {
+			t.Fatalf("Draft image was not set to null after setting Profile image: %s", u.ProfileImageDraft().ID)
+		}
+
+		rs, err = u.ProfileImage().Full()
+		if err != nil {
+			t.Fatalf("Error getting fullsize profile image: %s", err)
+		}
+
+		img, err = png.Decode(rs)
+		if err != nil {
+			t.Fatalf("Unable to decode uploaded image: %s", err)
+		}
+		if img.Bounds().Dx() != 300 {
+			t.Fatalf("Incorrect profile image width. Expected %d, got %d", 300, img.Bounds().Dx())
+		}
+		if img.Bounds().Dy() != 300 {
+			t.Fatalf("Incorrect profile image height. Expected %d, got %d", 300, img.Bounds().Dy())
+		}
+
+		rs, err = u.ProfileImage().Thumb()
+		if err != nil {
+			t.Fatalf("Error getting fullsize profile image: %s", err)
+		}
+
+		img, err = png.Decode(rs)
+		if err != nil {
+			t.Fatalf("Unable to decode uploaded image: %s", err)
+		}
+		if img.Bounds().Dx() != 64 {
+			t.Fatalf("Incorrect profile image width. Expected %d, got %d", 64, img.Bounds().Dx())
+		}
+		if img.Bounds().Dy() != 64 {
+			t.Fatalf("Incorrect profile image height. Expected %d, got %d", 64, img.Bounds().Dy())
+		}
+		rs, err = u.ProfileImage().Placeholder()
+		if err != nil {
+			t.Fatalf("Error getting fullsize profile image: %s", err)
+		}
+
+		img, err = png.Decode(rs)
+		if err != nil {
+			t.Fatalf("Unable to decode uploaded image: %s", err)
+		}
+		if img.Bounds().Dx() != 30 {
+			t.Fatalf("Incorrect profile image width. Expected %d, got %d", 30, img.Bounds().Dx())
+		}
+		if img.Bounds().Dy() != 30 {
+			t.Fatalf("Incorrect profile image height. Expected %d, got %d", 30, img.Bounds().Dy())
+		}
+
+	})
+
 	//TODO: User Stats
 
 	reset(t)

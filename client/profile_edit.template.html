@@ -9,41 +9,68 @@
 <body>
 <section class="section">
 
-<div class="container grid-md">
+<div class="container grid-lg">
 	<div class="columns">
-			<div class="column">
-				<div class="card">
-					<div class="card-content">
-						<div class="columns">
-							<div class="column">
-								<section class="section">
-									<h1>Update Profile</h1>
-									<form @sumbit="changeName">
-										<div :class="{'has-error': nameErr}" class="form-group">
-											<label class="form-label" for="inputName">Name</label>
-											<input v-model="user.name" type="text" class="form-input" id="inputName" placeholder="Enter a name">
-											<p v-if="nameErr" v-cloak class="form-input-hint">{{nameErr}}</p>
-										</div>
-										<div class="form-group">
-											<button type="submit" :class="{'loading': loading}" class="btn btn-primary" @click="changeName">
-												Update
-											</button>
-										</div>
-									</form>
-								</section>
-							</div> <!-- column -->
-							<div class="column text-center">
-								<section class="section">
-									<figure class="avatar avatar-full" data-initial="[[.DisplayInitials]]">
-										[[if .ProfileImage]]
-											<img src="/profile/image" alt="[[.DisplayName]]">
-										[[end]]
-									</figure>
-									<file-input accept="image/jpeg,image/gif,image/png" @change="uploadImage">
-										<button class="mt-2 btn">Select an Image</button>
-									</file-input>
-								</section>
-							</div> <!-- column -->
+		<div class="column col-3">
+			<ul class="menu">
+				<!-- menu header text -->
+				<li class="menu-item">
+					<div>
+						<h4>Settings</h4>
+					</div>
+				</li>
+				<li class="divider">
+				</li>
+				<li class="menu-item">
+					<a class='[[if eq .Tab "profile"]]active[[end]]' href="/profile/edit/">
+						Profile
+					</a>
+				</li>
+				<li class="menu-item">
+					<a class='[[if eq .Tab "account"]]active[[end]]' href="/profile/edit/account">
+						Account
+					</a>
+				</li>
+				<!-- <li class="menu-item text-right"> -->
+				<!-- 	<a href="/profile/"> -->
+				<!-- 		<small><i class="icon icon-back"></i> Back</small> -->
+				<!-- 	</a> -->
+				<!-- </li> -->
+			</ul>
+		</div>
+		<div class="column">
+			<div class="card">
+				<div class="card-content">
+					<div class="columns">
+						<div class="column">
+							<section class="section">
+								<h2>Update Profile</h2>
+								<form @sumbit="changeName">
+									<div :class="{'has-error': nameErr}" class="form-group">
+										<label class="form-label" for="inputName">Name</label>
+										<input v-model="user.name" type="text" class="form-input" id="inputName" placeholder="Enter a name">
+										<p v-if="nameErr" v-cloak class="form-input-hint">{{nameErr}}</p>
+									</div>
+									<div class="form-group">
+										<button type="submit" :class="{'loading': loading}" class="btn btn-primary" @click="changeName">
+											Update
+										</button>
+									</div>
+								</form>
+							</section>
+						</div> <!-- column -->
+						<div class="column text-center">
+							<section class="section">
+								<figure class="avatar avatar-full" data-initial="[[.User.DisplayInitials]]">
+									[[if .User.ProfileImage]]
+										<img src="/profile/image" alt="[[.User.DisplayName]]">
+									[[end]]
+								</figure>
+								<file-input accept="image/jpeg,image/gif,image/png" @change="uploadImage">
+									<button class="mt-2 btn">Select an Image</button>
+								</file-input>
+							</section>
+						</div> <!-- column -->
 					</div>
 				</div>
 			</div>
@@ -63,7 +90,9 @@
 					<button @click="uploadErr=null"class="btn btn-clear float-right"></button>
 					{{uploadErr}}
 				</div>
-				<img v-if="uploadComplete" @load="loadCrop" :src="draftImage" class="profile-img-upload img-responsive" alt="[[.DisplayName]]">
+				<div v-if="uploadComplete">
+					<img @load="loadCrop" :src="draftImage" class="profile-img-upload img-responsive" alt="[[.User.DisplayName]]">
+				</div>
 				<div v-if="!uploadComplete" class="bar">
 					<div class="bar-item" role="progressbar" :style="{width: imageProgress+'%'}" 
 						:aria-valuenow="imageProgress" aria-valuemin="0" aria-valuemax="100">
@@ -81,7 +110,7 @@
 
 </section>
 </body>
-<script type="application/json" id="payload">[[.]]</script>
+<script type="application/json" id="payload">[[.User]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/profile_edit.js"></script>
 </html>

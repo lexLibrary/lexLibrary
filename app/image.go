@@ -383,6 +383,14 @@ func (i *imageRaw) decode() error {
 		return errors.New("Image not loaded properly.")
 	}
 
+	if i.placeholderMinDimension == 0 {
+		i.placeholderMinDimension = imageDefaultPlaceholderDimension
+	}
+
+	if i.thumbMinDimension == 0 {
+		i.thumbMinDimension = imageDefaultThumbDimension
+	}
+
 	var err error
 	buffer := bytes.NewBuffer(i.data)
 
