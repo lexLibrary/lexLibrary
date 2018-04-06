@@ -25,6 +25,7 @@ services:
       - -c
       - |
             cd /go/src/github.com/lexLibrary/lexLibrary/ 
+            ./build.sh
             go test ./data -coverprofile=data.cover 
             go tool cover -html=data.cover -o data.html
             go test ./app -coverprofile=app.cover
