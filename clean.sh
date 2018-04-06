@@ -1,7 +1,7 @@
 go clean -i -a
 
 # clean up client build files
-rm version
+# rm version
 # rm -rf ./files
 # cd ./client
 # rm -rf ./deploy
