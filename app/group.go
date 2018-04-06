@@ -92,11 +92,7 @@ func (u *User) NewGroup(name string) (*Group, error) {
 			sql.Named("group_id", g.ID),
 			sql.Named("admin", true),
 		)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -148,19 +144,19 @@ func (g *Group) insert(tx *sql.Tx) error {
 	return err
 }
 
-func (g *Group) update(update func() (sql.Result, error)) error {
-	r, err := update()
+// func (g *Group) update(update func() (sql.Result, error)) error {
+// 	r, err := update()
 
-	if err != nil {
-		return err
-	}
-	rows, err := r.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return ErrGroupConflict
-	}
-	g.Version++
-	return nil
-}
+// 	if err != nil {
+// 		return err
+// 	}
+// 	rows, err := r.RowsAffected()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if rows == 0 {
+// 		return ErrGroupConflict
+// 	}
+// 	g.Version++
+// 	return nil
+// }
