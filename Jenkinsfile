@@ -18,6 +18,7 @@ pipeline {
                 sh '''
                     cd $REPO
                     ./build.sh
+		    ./clean.sh
                 '''
             }
         }

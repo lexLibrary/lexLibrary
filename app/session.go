@@ -70,10 +70,10 @@ var (
 	sqlSessionGet = data.NewQuery(`select id, user_id, valid, expires, csrf_token, csrf_date 
 		from sessions where id = {{arg "id"}} and user_id = {{arg "user_id"}}`)
 	sqlSessionInvalidateAll = data.NewQuery(`
-		update sessions set valid = {{dbFalse}} 
+		update sessions set valid = {{FALSE}} 
 		where user_id = {{arg "user_id"}} 
-		and valid <> {{dbFalse}}
-		and expires >= {{arg "now"}}
+		and valid <> {{FALSE}}
+		and expires >= {{NOW}}
 	`)
 )
 

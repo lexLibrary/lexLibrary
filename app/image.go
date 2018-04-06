@@ -75,7 +75,7 @@ var (
 		set	data = {{arg "data"}},
 			thumb = {{arg "thumb"}},
 			placeholder = {{arg "placeholder"}},
-			updated = {{now}},
+			updated = {{NOW}},
 			version = version + 1
 		where id = {{arg "id"}}
 		and version = {{arg "version"}}

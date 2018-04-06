@@ -21,8 +21,6 @@ go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go 
     ./client/deploy/... \
     ./app/bad_passwords.txt
 
-rm -rf ./client/deploy
-
 #build executable
 go clean -i -a
 go build -o lexLibrary

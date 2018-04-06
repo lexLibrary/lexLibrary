@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-//Random returns a random, url safe value of the bit length passed in
+//Random returns a cryptographic random, url safe value of the bit length passed in
 func Random(bits int) string {
 	result := make([]byte, bits/8)
 	_, err := io.ReadFull(rand.Reader, result)

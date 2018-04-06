@@ -143,7 +143,7 @@ var schemaVersions = []*Query{
 		)	
 	`),
 	NewQuery(`
-		create table users_to_groups (
+		create table user_to_groups (
 			user_id {{id}} NOT NULL REFERENCES users(id),
 			group_id {{id}} NOT NULL REFERENCES groups(id),
 			admin {{bool}},
@@ -152,5 +152,22 @@ var schemaVersions = []*Query{
 	`),
 	NewQuery(`
 		create index i_name on groups (name)
+	`),
+	NewQuery(`
+		create table registration_tokens (
+			token {{varchar 32}} PRIMARY KEY NOT NULL,
+			"limit" {{int}} NOT NULL,
+			expires {{datetime}},
+			valid {{bool}} NOT NULL,
+			updated {{datetime}} NOT NULL,
+			created {{datetime}} NOT NULL
+		)
+	`),
+	NewQuery(`
+		create table registration_token_groups (
+			token {{varchar 32}} NOT NULL REFERENCES registration_tokens(token),
+			group_id {{id}} NOT NULL REFERENCES groups(id),
+			PRIMARY KEY(token, group_id)
+		)
 	`),
 }

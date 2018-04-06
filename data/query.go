@@ -114,7 +114,7 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
-		"now": func() string {
+		"NOW": func() string {
 			t := time.Now()
 			switch dbType {
 			case mysql:
@@ -204,7 +204,7 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
-		"dbTrue": func() string {
+		"TRUE": func() string {
 			switch dbType {
 			case mysql, postgres, cockroachdb:
 				return "true"
@@ -214,7 +214,7 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
-		"dbFalse": func() string {
+		"FALSE": func() string {
 			switch dbType {
 			case mysql, postgres, cockroachdb:
 				return "false"

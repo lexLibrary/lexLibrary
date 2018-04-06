@@ -62,59 +62,60 @@ var ErrUserNotFound = NotFound("User Not found")
 var ErrUserConflict = Conflict("You are not editing the most current version of this user. Please refresh and try again")
 
 var (
-	sqlUserInsert = data.NewQuery(`insert into users (
-		id,
+	sqlUserInsert = data.NewQuery(`
+		insert into users (
+			id,
+			username, 
+			name, 
+			auth_type,
+			password,
+			password_version,
+			password_expiration,
+			active,
+			version,
+			updated, 
+			created,
+			admin
+		) values (
+			{{arg "id"}}, 
+			{{arg "username"}}, 
+			{{arg "name"}}, 
+			{{arg "auth_type"}},
+			{{arg "password"}},
+			{{arg "password_version"}},
+			{{arg "password_expiration"}},
+			{{arg "active"}},
+			{{arg "version"}},
+			{{arg "updated"}}, 
+			{{arg "created"}},
+			{{arg "admin"}}
+		)
+	`)
+
+	userPublicColumns  = "id, username, name, active, admin"
+	userPrivateColumns = `id, 
 		username, 
 		name, 
-		auth_type,
-		password,
-		password_version,
-		password_expiration,
-		active,
-		version,
+		auth_type, 
+		password, 
+		password_version, 
+		password_expiration, 
+		active, 
+		version, 
 		updated, 
-		created,
-		admin
-	) values (
-		{{arg "id"}}, 
-		{{arg "username"}}, 
-		{{arg "name"}}, 
-		{{arg "auth_type"}},
-		{{arg "password"}},
-		{{arg "password_version"}},
-		{{arg "password_expiration"}},
-		{{arg "active"}},
-		{{arg "version"}},
-		{{arg "updated"}}, 
-		{{arg "created"}},
-		{{arg "admin"}}
-	)`)
+		created, 
+		admin, 
+		profile_image_id,
+		profile_image_draft_id`
 
-	sqlUserSelect = func(where string) *data.Query {
-		return data.NewQuery(fmt.Sprintf(`
-			select 	id, 
-				username, 
-				name, 
-				auth_type, 
-				password, 
-				password_version, 
-				password_expiration, 
-				active, 
-				version, 
-				updated, 
-				created, 
-				admin, 
-				profile_image_id,
-				profile_image_draft_id
-			from users 
-			where %s`, where))
-	}
-	sqlUserFromUsername = sqlUserSelect(`username = {{arg "username"}}`)
-	sqlUserFromID       = sqlUserSelect(`id = {{arg "id"}}`)
-
-	sqlUserPublicProfile = data.NewQuery(`
-		select id, username, name, active, admin 
-		from users where username = {{arg "username"}}`)
+	sqlUserFromUsername = data.NewQuery(
+		fmt.Sprintf(`select %s from users where username = {{arg "username"}}`, userPrivateColumns))
+	sqlUserFromID = data.NewQuery(
+		fmt.Sprintf(`select %s from users where id = {{arg "id"}}`, userPrivateColumns))
+	sqlUserPublicProfileFromUsername = data.NewQuery(
+		fmt.Sprintf(`select %s from users where username = {{arg "username"}}`, userPublicColumns))
+	sqlUserPublicProfileFromID = data.NewQuery(
+		fmt.Sprintf(`select %s from users where id = {{arg "id"}}`, userPublicColumns))
 
 	sqlUserUpdate = func(columns ...string) *data.Query {
 		updates := ""
@@ -123,7 +124,7 @@ var (
 		}
 		return data.NewQuery(fmt.Sprintf(`
 		update users set %s
-			updated = {{now}}, 
+			updated = {{NOW}}, 
 			version = version + 1 
 		where id = {{arg "id"}} 
 		and version = {{arg "version"}}`, updates))
@@ -218,9 +219,19 @@ func userNew(tx *sql.Tx, username, password string) (*User, error) {
 // UserGet retrieves the publically viewable user profile information based from the passed in username
 // app internal code should use un-exported funcs that contain the full User record
 func UserGet(username string) (*PublicProfile, error) {
+	return publicProfileFromRow(sqlUserPublicProfileFromUsername.
+		QueryRow(sql.Named("username", strings.ToLower(username))))
+}
+
+func publicProfileGet(id data.ID) (*PublicProfile, error) {
+	return publicProfileFromRow(sqlUserPublicProfileFromID.
+		QueryRow(sql.Named("id", id)))
+}
+
+func publicProfileFromRow(row *sql.Row) (*PublicProfile, error) {
 	u := &PublicProfile{}
 
-	err := sqlUserPublicProfile.QueryRow(sql.Named("username", strings.ToLower(username))).
+	err := row.
 		Scan(
 			&u.ID,
 			&u.Username,
@@ -467,7 +478,6 @@ func (u *User) SetPassword(oldPassword, newPassword string, version int) error {
 		// invalidate all sessions for user
 		_, err := sqlSessionInvalidateAll.Exec(
 			sql.Named("user_id", u.ID),
-			sql.Named("now", time.Now()),
 		)
 		if err != nil {
 			return err

@@ -15,7 +15,7 @@ import (
 	"github.com/rs/xid"
 )
 
-func prepUser(t *testing.T, username, password string) *app.User {
+func prepAdmin(t *testing.T, username, password string) *app.User {
 	t.Helper()
 	_, err := data.NewQuery("delete from sessions").Exec()
 	if err != nil {
@@ -44,7 +44,7 @@ func TestUser(t *testing.T) {
 	reset := func(t *testing.T) {
 		t.Helper()
 
-		admin = prepUser(t, "admin", "adminpassword")
+		admin = prepAdmin(t, "admin", "adminpassword")
 
 		err := admin.AsAdmin().SetSetting("AllowPublicSignups", true)
 		if err != nil {
