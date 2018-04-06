@@ -172,6 +172,16 @@ func (e *Elements) Eventually() *Elements {
 
 	err := e.seq.driver.WaitWithTimeoutAndInterval(func(d selenium.WebDriver) (bool, error) {
 		e.seq.err = nil
+		var err error
+		e.elems, err = e.selectFunc(e.selector)
+		if err != nil {
+			e.seq.err = &Error{
+				Stage:  "Elements",
+				Err:    err,
+				Caller: caller(1),
+			}
+			return false, nil
+		}
 		e = e.last()
 		if e.seq.err != nil {
 			return false, nil
@@ -492,21 +502,26 @@ func (s *Sequence) Find(selector string) *Elements {
 			return s.driver.FindElements(selenium.ByCSSSelector, selector)
 		},
 	}
+
 	if s.err != nil {
 		return e
 	}
-	var err error
-	e.elems, err = e.selectFunc(selector)
 
-	if err != nil {
-		s.err = &Error{
-			Stage:  "Elements",
-			Err:    err,
-			Caller: caller(1),
+	e.last = func() *Elements {
+		var err error
+		e.elems, err = e.selectFunc(selector)
+
+		if err != nil {
+			s.err = &Error{
+				Stage:  "Elements",
+				Err:    err,
+				Caller: caller(1),
+			}
+			return e
 		}
 		return e
 	}
-	return e
+	return e.last()
 }
 
 // Wait will wait for the given duration before continuing in the sequence

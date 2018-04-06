@@ -31,15 +31,15 @@ var vm = new Vue({
             uploadErr: null,
             password: {
                 old: {
-                    val: "",
+                    val: '',
                     err: null,
                 },
                 new: {
-                    val: "",
+                    val: '',
                     err: null,
                 },
                 confirm: {
-                    val: "",
+                    val: '',
                     err: null,
                 },
                 loading: false,
@@ -52,9 +52,9 @@ var vm = new Vue({
         draftImage: function() {
             // prevent 404 on inital load by not setting this value until the draft is uploaded
             if (this.uploadComplete) {
-                return "/profile/image?draft";
+                return '/profile/image?draft';
             }
-            return "";
+            return '';
         },
     },
     directives: {},
@@ -131,10 +131,22 @@ var vm = new Vue({
         },
         'changePassword': function(e) {
             e.preventDefault();
+            this.password.old.err = null;
             if (this.password.new.err || this.password.confirm.err) {
                 return;
             }
-            this.password.old.err = null;
+            if (!this.password.old.val) {
+                this.password.old.err = 'You must enter your old password';
+                return;
+            }
+            if (!this.password.new.val) {
+                this.password.new.err = 'You must enter a new password';
+                return;
+            }
+            if (this.password.new.val !== this.password.confirm.val) {
+                this.password.confirm.err = 'Passwords do not match';
+				return;
+            }
             this.password.loading = true;
             xhr.put('/profile/password', {
                     version: this.user.version,
@@ -156,7 +168,7 @@ var vm = new Vue({
             if (!this.password.new.val) {
                 return;
             }
-            xhr.put("/signup/password", {
+            xhr.put('/signup/password', {
                     password: this.password.new.val
                 })
                 .catch((err) => {

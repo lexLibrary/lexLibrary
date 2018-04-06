@@ -133,4 +133,24 @@ var schemaVersions = []*Query{
 			alter table users add profile_image_draft_id {{id}} REFERENCES images(id)
 		{{end}}
 	`),
+	NewQuery(`
+		create table groups (
+			id {{id}} PRIMARY KEY NOT NULL,
+			name {{text}} UNIQUE NOT NULL,
+			version {{int}} NOT NULL,
+			updated {{datetime}} NOT NULL,
+			created {{datetime}} NOT NULL
+		)	
+	`),
+	NewQuery(`
+		create table users_to_groups (
+			user_id {{id}} NOT NULL REFERENCES users(id),
+			group_id {{id}} NOT NULL REFERENCES groups(id),
+			admin {{bool}},
+			PRIMARY KEY(user_id, group_id)
+		)
+	`),
+	NewQuery(`
+		create index i_name on groups (name)
+	`),
 }

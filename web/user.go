@@ -135,6 +135,8 @@ func userUpdatePassword(w http.ResponseWriter, r *http.Request, c ctx) {
 		if errHandled(err, w, r) {
 			return
 		}
+		expireSessionCookie(w, r, c.session)
+
 		_, err = setSession(w, r, u, false)
 		if errHandled(err, w, r) {
 			return

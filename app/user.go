@@ -323,7 +323,7 @@ func (u *User) validate() error {
 	}
 
 	if len(u.Username) < usernameMinLength {
-		return NewFailure("A username must be more then %d characters.", usernameMinLength)
+		return NewFailure("A username must be more than %d characters", usernameMinLength)
 	}
 
 	if !urlify(u.Username).is() {
@@ -617,14 +617,14 @@ func (u *User) DisplayName() string {
 
 // DisplayInitials is two characters that display if no profile image is set
 func (u *User) DisplayInitials() string {
-	initials := strings.SplitN(u.DisplayName(), " ", 2)
+	initials := strings.Split(u.DisplayName(), " ")
 	if len(initials) == 1 {
 		if len(initials[0]) == 1 {
 			return initials[0]
 		}
 		return strings.ToUpper(string([]rune(initials[0])[:2]))
 	}
-	return strings.ToUpper(string([]rune(initials[0])[0]) + string([]rune(initials[1])[0]))
+	return strings.ToUpper(string([]rune(initials[0])[0]) + string([]rune(initials[len(initials)-1])[0]))
 }
 
 // Latest gets the latest version of user

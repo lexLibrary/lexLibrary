@@ -26,10 +26,13 @@ var driver selenium.WebDriver
 var llURL *url.URL
 
 func newSequence() *sequence.Sequence {
-	return sequence.Start(driver).OnError(func(err sequence.Error, s *sequence.Sequence) {
-		s.Debug().
-			Screenshot(fmt.Sprintf("SequenceError-[%s].png", err.Stage))
-	})
+	if os.Getenv("LLDEBUGONERR") != "" {
+		return sequence.Start(driver).OnError(func(err sequence.Error, s *sequence.Sequence) {
+			s.Debug().
+				Screenshot(fmt.Sprintf("SequenceError-[%s].png", err.Stage))
+		})
+	}
+	return sequence.Start(driver)
 }
 
 func TestMain(m *testing.M) {
@@ -121,7 +124,7 @@ func startWebDriver() (selenium.WebDriver, error) {
 	return wd, nil
 }
 
-func prepUser(username, password string, isAdmin bool) error {
+func createUserAndLogin(username, password string, isAdmin bool) error {
 	_, err := data.NewQuery("delete from users").Exec()
 	if err != nil {
 		return errors.Wrap(err, "Error emptying users table before running tests")

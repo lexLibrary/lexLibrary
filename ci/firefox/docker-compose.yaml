@@ -18,6 +18,7 @@ services:
       LLPORT: 8080
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
+      LLDEBUGONERR: "true"
       GOPATH: /go
       LLBROWSER: 'firefox'
     command: sh -c '

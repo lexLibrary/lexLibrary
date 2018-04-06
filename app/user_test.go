@@ -15,30 +15,38 @@ import (
 	"github.com/rs/xid"
 )
 
+func prepUser(t *testing.T, username, password string) *app.User {
+	t.Helper()
+	_, err := data.NewQuery("delete from sessions").Exec()
+	if err != nil {
+		t.Fatalf("Error emptying sessions table before running tests: %s", err)
+	}
+
+	_, err = data.NewQuery("delete from users").Exec()
+	if err != nil {
+		t.Fatalf("Error emptying users table before running tests: %s", err)
+	}
+	_, err = data.NewQuery("delete from settings").Exec()
+	if err != nil {
+		t.Fatalf("Error emptying settings table before running tests: %s", err)
+	}
+
+	u, err := app.FirstRunSetup(username, password)
+	if err != nil {
+		t.Fatalf("Error setting up admin user: %s", err)
+	}
+
+	return u
+}
+
 func TestUser(t *testing.T) {
 	var admin *app.User
 	reset := func(t *testing.T) {
 		t.Helper()
 
-		_, err := data.NewQuery("delete from sessions").Exec()
-		if err != nil {
-			t.Fatalf("Error emptying sessions table before running tests: %s", err)
-		}
+		admin = prepUser(t, "admin", "adminpassword")
 
-		_, err = data.NewQuery("delete from users").Exec()
-		if err != nil {
-			t.Fatalf("Error emptying users table before running tests: %s", err)
-		}
-		_, err = data.NewQuery("delete from settings").Exec()
-		if err != nil {
-			t.Fatalf("Error emptying settings table before running tests: %s", err)
-		}
-		admin, err = app.FirstRunSetup("admin", "adminpassword")
-		if err != nil {
-			t.Fatalf("Error setting up admin user: %s", err)
-		}
-
-		err = admin.AsAdmin().SetSetting("AllowPublicSignups", true)
+		err := admin.AsAdmin().SetSetting("AllowPublicSignups", true)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
@@ -602,26 +610,35 @@ func TestUser(t *testing.T) {
 		username := "testuser"
 		password := "reallygoodlongpassword"
 
+		tests := map[string]string{
+			"Test Name":        "TN",
+			"Test Other":       "TO",
+			"TestSingle":       "TE",
+			"Test Three Names": "TN",
+			"Test Fo ur Names": "TN",
+		}
+
 		u, err := app.UserNew(username, password)
 		if err != nil {
 			t.Fatalf("Error adding user")
 		}
 
-		initials := "TE"
-
-		if u.DisplayInitials() != initials {
-			t.Fatalf("DisplayInitials are incorrect. Expected %s, got %s.", initials, u.DisplayInitials())
+		if u.DisplayInitials() != "TE" {
+			t.Fatalf("DisplayInitials are incorrect. Expected %s, got %s.", "TE", u.DisplayInitials())
 		}
 
-		name := "Test User"
-		initials = "TU"
-		err = u.SetName(name, u.Version)
-		if err != nil {
-			t.Fatalf("Error setting name: %s", err)
-		}
+		for name, initials := range tests {
+			t.Run(name, func(t *testing.T) {
 
-		if u.DisplayInitials() != initials {
-			t.Fatalf("DisplayInitials is incorrect. Expected %s, got %s.", initials, u.DisplayName())
+				err = u.SetName(name, u.Version)
+				if err != nil {
+					t.Fatalf("Error setting name: %s", err)
+				}
+
+				if u.DisplayInitials() != initials {
+					t.Fatalf("DisplayInitials are incorrect. Expected %s, got %s.", initials, u.DisplayInitials())
+				}
+			})
 		}
 
 	})
