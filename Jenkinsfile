@@ -19,10 +19,6 @@ pipeline {
                     cd $REPO
                     ./build.sh
                 '''
-                sh '''
-                    cd $REPO
-                    ./clean.sh
-                '''
             }
         }
         stage('static analysis') {
