@@ -3,7 +3,6 @@ set -e
 
 # build client
 cd client
-rm -rf deploy
 yarn
 gulp
 
@@ -21,6 +20,8 @@ go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go 
     ./version \
     ./client/deploy/... \
     ./app/bad_passwords.txt
+
+rm -rf ./client/deploy
 
 #build executable
 go clean -i -a
