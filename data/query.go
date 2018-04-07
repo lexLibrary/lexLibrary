@@ -265,6 +265,18 @@ func (q *Query) buildTemplate() {
 		"sqlserver": func() bool {
 			return dbType == sqlserver
 		},
+		"limit": func() string {
+			switch dbType {
+			case sqlite, postgres, cockroachdb:
+				return `"limit"`
+			case mysql:
+				return "`limit`"
+			case sqlserver:
+				return "[limit]"
+			default:
+				panic("Unsupported database type")
+			}
+		},
 	}
 
 	buff := bytes.NewBuffer([]byte{})

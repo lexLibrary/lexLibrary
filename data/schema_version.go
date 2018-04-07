@@ -136,7 +136,7 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create table groups (
 			id {{id}} PRIMARY KEY NOT NULL,
-			name {{text}} UNIQUE NOT NULL,
+			name {{varchar 64}} UNIQUE NOT NULL,
 			version {{int}} NOT NULL,
 			updated {{datetime}} NOT NULL,
 			created {{datetime}} NOT NULL
@@ -156,7 +156,7 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create table registration_tokens (
 			token {{varchar 32}} PRIMARY KEY NOT NULL,
-			"limit" {{int}} NOT NULL,
+			{{limit}} {{int}} NOT NULL,
 			expires {{datetime}},
 			valid {{bool}} NOT NULL,
 			updated {{datetime}} NOT NULL,
