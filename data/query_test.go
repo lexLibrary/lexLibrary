@@ -539,7 +539,7 @@ func TestDataTypes(t *testing.T) {
 		reset(t)
 		round := 2 * time.Second
 		other := time.Now().Round(round)
-		_, err := data.NewQuery(`insert into data_types (datetime_type) values ({{now}})`).Exec()
+		_, err := data.NewQuery(`insert into data_types (datetime_type) values ({{NOW}})`).Exec()
 		if err != nil {
 			t.Fatalf("Error inserting now record: %s", err)
 		}
