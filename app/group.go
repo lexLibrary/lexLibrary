@@ -296,10 +296,7 @@ func (ga *GroupAdmin) SetMember(userID data.ID, admin bool) error {
 			sql.Named("user_id", userID),
 			sql.Named("admin", admin),
 		)
-		if err != nil {
-			return err
-		}
-		return nil
+		return err
 	}
 	if err != sql.ErrNoRows {
 		return err
@@ -311,6 +308,9 @@ func (ga *GroupAdmin) SetMember(userID data.ID, admin bool) error {
 		sql.Named("user_id", userID),
 		sql.Named("admin", admin),
 	)
+	if err != nil {
+		return err
+	}
 
 	rows, err := result.RowsAffected()
 	if err != nil {

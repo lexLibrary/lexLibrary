@@ -99,7 +99,7 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Error removing admin from group: %s", err)
 		}
 
-		ga, err = g.Admin(admin)
+		_, err = g.Admin(admin)
 		if err != nil {
 			t.Fatalf("Site admin did not have implicit admin permissions on groups: %s", err)
 		}
