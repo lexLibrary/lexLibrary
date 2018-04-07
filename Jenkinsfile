@@ -17,8 +17,8 @@ pipeline {
             steps {
                 sh '''
                     cd $REPO
-                    ./build.sh
-		    ./clean.sh
+                    sh ./build.sh
+		    sh ./clean.sh
                 '''
             }
         }
