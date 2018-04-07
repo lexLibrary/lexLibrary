@@ -31,7 +31,6 @@ version
 
 # development directories
 client/deploy/*
-files/*
 db_data/*
 
 # screenshots from webdriver failures 
