@@ -22,5 +22,5 @@ services:
       GOPATH: /go
       LLBROWSER: 'firefox'
     command: sh -c '
-        cd /go/src/github.com/lexLibrary/lexLibrary/ && go test ./web
+        cd /go/src/github.com/lexLibrary/lexLibrary/ && ./build.sh && go test ./web
       '
