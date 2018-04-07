@@ -21,15 +21,7 @@ func TestSession(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error emptying sessions table before running tests: %s", err)
 		}
-		_, err = data.NewQuery("delete from users").Exec()
-		if err != nil {
-			t.Fatalf("Error emptying users table before running tests: %s", err)
-		}
-
-		u, err = app.FirstRunSetup(username, password)
-		if err != nil {
-			t.Fatalf("Error adding user for session testing: %s", err)
-		}
+		u = prepAdmin(t, username, password)
 	}
 
 	t.Run("New", func(t *testing.T) {

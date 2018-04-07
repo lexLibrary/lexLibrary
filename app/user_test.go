@@ -22,6 +22,10 @@ func prepAdmin(t *testing.T, username, password string) *app.User {
 		t.Fatalf("Error emptying sessions table before running tests: %s", err)
 	}
 
+	_, err = data.NewQuery("delete from user_to_groups").Exec()
+	if err != nil {
+		t.Fatalf("Error emptying user_to_groups table before running tests: %s", err)
+	}
 	_, err = data.NewQuery("delete from users").Exec()
 	if err != nil {
 		t.Fatalf("Error emptying users table before running tests: %s", err)
