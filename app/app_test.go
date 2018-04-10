@@ -3,6 +3,7 @@
 package app_test
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -22,4 +23,11 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Error tearing down data connections: %s", err)
 	}
 	os.Exit(result)
+}
+
+func truncateTable(t *testing.T, table string) {
+	_, err := data.NewQuery(fmt.Sprintf("delete from %s", table)).Exec()
+	if err != nil {
+		t.Fatalf("Error emptying %s table before running tests: %s", table, err)
+	}
 }

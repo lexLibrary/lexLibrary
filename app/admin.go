@@ -38,7 +38,11 @@ func (a *Admin) SetMultipleSettings(settings map[string]interface{}) error {
 	if !a.isAdmin() {
 		return ErrNotAdmin
 	}
-	return settingSetMultiple(settings)
+	err := settingSetMultiple(settings)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // SetUserActive sets the active status of the given user

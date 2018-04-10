@@ -149,18 +149,6 @@ func UserNew(username, password string) (*User, error) {
 	return userNew(nil, username, password)
 }
 
-// UserNewFromURL creates a new user if the passed in token is valid
-// func UserNewFromURL(username, password, token string) (*User, error) {
-// 	err := data.BeginTx(func(tx *sql.Tx) error {
-// 		//TODO:
-// 		return errors.New("TODO")
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return nil, nil
-// }
-
 func userNew(tx *sql.Tx, username, password string) (*User, error) {
 	u := &User{
 		PublicProfile: PublicProfile{

@@ -28,16 +28,8 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Error adding user: %s", err)
 		}
 
-		_, err = data.NewQuery("delete from user_to_groups").Exec()
-		if err != nil {
-			t.Fatalf("Error emptying user_to_groups table before running tests: %s", err)
-		}
-
-		_, err = data.NewQuery("delete from groups").Exec()
-		if err != nil {
-			t.Fatalf("Error emptying groups table before running tests: %s", err)
-		}
-
+		truncateTable(t, "user_to_groups")
+		truncateTable(t, "groups")
 	}
 
 	t.Run("New", func(t *testing.T) {

@@ -11,11 +11,13 @@ var vm = new Vue({
             password2: '',
             error: null,
             password2Err: null,
-            showSettings: false, 
+            showSettings: false,
             showAdvanced: false,
             publicDocs: false,
             publicSignup: false,
             instanceType: 'private',
+            instanceURL: window.location.origin,
+            urlErr: null,
         };
     },
     directives: {
@@ -26,7 +28,7 @@ var vm = new Vue({
         },
     },
     methods: {
-        signup: function(e) {
+        'signup': function(e) {
             e.preventDefault();
             this.error = null;
             if (this.password2Err) {
@@ -56,7 +58,7 @@ var vm = new Vue({
                     this.error = err.response;
                 });
         },
-        validatePassword2: function() {
+        'validatePassword2': function() {
             if (this.password2Err) {
                 return;
             }
@@ -67,11 +69,23 @@ var vm = new Vue({
                 this.password2Err = 'Passwords do not match';
             }
         },
-        setSettings: function() {
+        'validateURL': function() {
+            if (this.urlErr) {
+                return;
+            }
+            if (!this.instanceURL) {
+                return;
+            }
+            if (!this.instanceURL.startsWith("http://") && !this.instanceURL.startsWith("https://")) {
+                this.urlErr = "The URL must start with http:// or https://";
+            }
+        },
+        'setSettings': function() {
             this.error = null;
             let settings = {
                 'AllowPublicSignups': (this.showAdvanced && this.publicSignup) || (this.instanceType == 'public'),
                 'AllowPublicDocuments': (this.showAdvanced && this.publicDocs) || (this.instanceType == 'public'),
+                'URL': this.instanceURL,
             };
             xhr.put('/setting', {
                     settings: settings

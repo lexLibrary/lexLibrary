@@ -17,10 +17,7 @@ func TestSession(t *testing.T) {
 	var u *app.User
 
 	reset := func(t *testing.T) {
-		_, err := data.NewQuery("delete from sessions").Exec()
-		if err != nil {
-			t.Fatalf("Error emptying sessions table before running tests: %s", err)
-		}
+		truncateTable(t, "sessions")
 		u = prepAdmin(t, username, password)
 	}
 

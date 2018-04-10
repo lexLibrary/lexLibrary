@@ -11,25 +11,15 @@ import (
 )
 
 func TestSetting(t *testing.T) {
-	_, err := data.NewQuery("delete from sessions").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying sessions table before running tests: %s", err)
-	}
-	_, err = data.NewQuery("delete from users").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying users table before running tests: %s", err)
-	}
+	truncateTable(t, "sessions")
+	truncateTable(t, "users")
 	admin, err := app.FirstRunSetup("admin", "adminpassword")
 	if err != nil {
 		t.Fatalf("Error setting up admin user: %s", err)
 	}
 
 	reset := func(t *testing.T) {
-		_, err := data.NewQuery("delete from settings").Exec()
-		if err != nil {
-			t.Fatalf("Error emptying settings table before running tests: %s", err)
-		}
-
+		truncateTable(t, "settings")
 	}
 
 	t.Run("Default", func(t *testing.T) {

@@ -11,12 +11,12 @@ import (
 
 // RegistrationToken is a temporary token that can be used to register new logins for Lex Library
 type RegistrationToken struct {
-	Token   string
-	Limit   int       // number of times this token can be used
-	Expires time.Time // when this token expires and is no longer valid
-	Groups  []data.ID // users registered by this token will be members of these groups
+	Token   string    `json:"token"`
+	Limit   int       `json:"limit"`   // number of times this token can be used
+	Expires time.Time `json:"expires"` // when this token expires and is no longer valid
+	Groups  []data.ID `json:"groups"`  // users registered by this token will be members of these groups
 
-	Valid   bool
+	Valid   bool      `json:"valid"`
 	Updated time.Time `json:"updated,omitempty"`
 	Created time.Time `json:"created,omitempty"`
 
@@ -27,18 +27,20 @@ var (
 	sqlRegistrationTokenInsert = data.NewQuery(`
 		insert into registration_tokens (
 			token,
-			"limit",
+			{{limit}},
 			expires,
 			valid,
 			updated,
-			created
+			created,
+			creator
 		) values (
 			{{arg "token"}},
 			{{arg "limit"}},
 			{{arg "expires"}},
 			{{arg "valid"}},
 			{{arg "updated"}},
-			{{arg "created"}}
+			{{arg "created"}},
+			{{arg "creator"}}
 		)
 	`)
 	sqlRegistrationTokenGroupInsert = data.NewQuery(`
@@ -50,7 +52,29 @@ var (
 			{{arg "group_id"}}
 		)
 	`)
+	sqlRegistrationTokenGet = data.NewQuery(`
+		select	t.token,
+			t.{{limit}},
+			t.expires,
+			t.valid,
+			t.updated,
+			t.created,
+			t.creator,
+			g.group_id
+		from 	registration_tokens t
+			left outer join registration_token_groups g 
+				on t.token = g.token
+		where 	t.token = {{arg "token"}}
+	`)
+	sqlRegistrationTokenDecrementLimit = data.NewQuery(`
+		update 	registration_tokens
+		set 	{{limit}} = {{limit}} - 1
+		where 	token = {{arg "token"}}
+		and 	{{limit}} > 1
+	`)
 )
+
+var errRegistrationTokenInvalid = NewFailure("This registration URL has expired or is no longer valid.  Please contact your adminstrator for a new URL.")
 
 // NewRegistrationToken generates a new token that can be used to register new users on private instances of Lex Library
 // if limit == 0 there is no limit on the number of times the token can be used
@@ -78,7 +102,9 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 		return nil, err
 	}
 
-	err = t.insert(nil)
+	err = data.BeginTx(func(tx *sql.Tx) error {
+		return t.insert(tx)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -87,6 +113,9 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 }
 
 func (t *RegistrationToken) validate() error {
+	if !t.Expires.IsZero() && t.Expires.Before(time.Now()) {
+		return NewFailure("Expires must be a date after the current date")
+	}
 	if len(t.Groups) != 0 {
 		query, args := sqlGroupsFromIDs(t.Groups)
 		result, err := query.Exec(args...)
@@ -117,6 +146,7 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 		sql.Named("valid", t.Valid),
 		sql.Named("updated", t.Updated),
 		sql.Named("created", t.Created),
+		sql.Named("creator", t.creator),
 	)
 	if err != nil {
 		return err
@@ -139,5 +169,122 @@ func (t *RegistrationToken) Creator() (*PublicProfile, error) {
 	return publicProfileGet(t.creator)
 }
 
-// func (t *RegistrationToken) consume() error {
-// }
+// RegisterUserFromToken creates a new user if the passed in token is valid
+func RegisterUserFromToken(username, password, token string) (*User, error) {
+	t, err := registrationTokenGet(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if !t.Valid {
+		return nil, errRegistrationTokenInvalid
+	}
+
+	if t.Expires.Before(time.Now()) && !t.Expires.IsZero() {
+		return nil, errRegistrationTokenInvalid
+	}
+
+	if t.Limit == 0 {
+		return nil, errRegistrationTokenInvalid
+	}
+
+	var u *User
+
+	err = data.BeginTx(func(tx *sql.Tx) error {
+		if t.Limit != -1 {
+			err = t.decrementLimit(tx)
+			if err != nil {
+				return err
+			}
+		}
+		u, err = userNew(tx, username, password)
+		if err != nil {
+			return err
+		}
+
+		for i := range t.Groups {
+			result, err := sqlGroupInsertMember.Tx(tx).Exec(
+				sql.Named("group_id", t.Groups[i]),
+				sql.Named("user_id", u.ID),
+				sql.Named("admin", false),
+			)
+			if err != nil {
+				return err
+			}
+
+			rows, err := result.RowsAffected()
+			if err != nil {
+				return err
+			}
+
+			if rows == 0 {
+				// shouldn't happen
+				return NewFailure("Cannot add an invalid user to a group")
+			}
+		}
+		return nil
+	})
+
+	return u, err
+}
+
+func registrationTokenGet(token string) (*RegistrationToken, error) {
+	t := &RegistrationToken{}
+	rows, err := sqlRegistrationTokenGet.Query(sql.Named("token", token))
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	count := 0
+
+	for rows.Next() {
+		count++
+		var groupID data.ID
+
+		err = rows.Scan(
+			&t.Token,
+			&t.Limit,
+			&t.Expires,
+			&t.Valid,
+			&t.Updated,
+			&t.Created,
+			&t.creator,
+			&groupID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if groupID.Valid {
+			t.Groups = append(t.Groups, groupID)
+		}
+	}
+
+	if count == 0 {
+		return nil, errRegistrationTokenInvalid
+	}
+
+	return t, nil
+}
+
+// decrementLimit decrements the available registration limit
+func (t *RegistrationToken) decrementLimit(tx *sql.Tx) error {
+	result, err := sqlRegistrationTokenDecrementLimit.Tx(tx).Exec(sql.Named("token", t.Token))
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errRegistrationTokenInvalid
+	}
+	return nil
+}
+
+//TODO: SetValid by admin

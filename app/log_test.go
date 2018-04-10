@@ -8,15 +8,12 @@ import (
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
-	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/pkg/errors"
 )
 
 func TestLog(t *testing.T) {
-	_, err := data.NewQuery("delete from logs").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying logs table before running tests: %s", err)
-	}
+
+	truncateTable(t, "logs")
 
 	t.Run("Log Error", func(t *testing.T) {
 		testErr := fmt.Errorf("New test error")

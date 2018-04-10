@@ -7,7 +7,7 @@
 </head>
 
 <body>
-<div class="section container grid-xs">
+<div class="section container grid-sm">
 	<div id="setup" class="columns">
 		<!-- Admin Setup -->
 		<div class="column">
@@ -43,17 +43,23 @@
 			</div>
 			<!-- Settings -->
 			<div v-if="showSettings" v-cloak id="settings" class="card">
-				<div class="card-header">
-					<div class="card-title h5">What type of instance will this server be:</div>
-				</div>
 				<div class="card-body">
 					<div v-if="error" v-cloak class="toast toast-error">
 						{{error}}
 						<button @click="error=null" class="btn btn-clear float-right"></button>
 					</div>
 
+					<div :class="{'has-error': urlErr}" class="form-group">
+						<label for="inputInstanceURL" class="h6 form-label">Instance URL</label>
+						<input v-model="instanceURL" @blur="validateURL" @keydown="urlErr=null"
+								v-bind:class="{'is-danger': instanceURL}" type="text" class="form-input"	id="inputInstanceURL" 
+								placeholder="Enter the base URL of the current instance">
+						<p v-if="urlErr" v-cloak class="form-input-hint">{{urlErr}}</p>
+					</div>
+					<p class="form-input-hint">Confirm, or update the URL to where Lex Library will be running.</p>
 					<fieldset :disabled="showAdvanced">
 						<div class="form-group">
+							<label for="inputInstanceURL" class="h6 form-label">What type of instance will this server be:</label>
 							<label class="form-radio">
 								<input v-model="instanceType" type="radio" id="inputPrivate" name="public-private" value="private">
 								<i class="form-icon"></i>

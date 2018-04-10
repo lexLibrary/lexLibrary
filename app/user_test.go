@@ -17,23 +17,11 @@ import (
 
 func prepAdmin(t *testing.T, username, password string) *app.User {
 	t.Helper()
-	_, err := data.NewQuery("delete from sessions").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying sessions table before running tests: %s", err)
-	}
 
-	_, err = data.NewQuery("delete from user_to_groups").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying user_to_groups table before running tests: %s", err)
-	}
-	_, err = data.NewQuery("delete from users").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying users table before running tests: %s", err)
-	}
-	_, err = data.NewQuery("delete from settings").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying settings table before running tests: %s", err)
-	}
+	truncateTable(t, "sessions")
+	truncateTable(t, "user_to_groups")
+	truncateTable(t, "users")
+	truncateTable(t, "settings")
 
 	u, err := app.FirstRunSetup(username, password)
 	if err != nil {

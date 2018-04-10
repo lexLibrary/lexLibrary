@@ -160,7 +160,8 @@ var schemaVersions = []*Query{
 			expires {{datetime}},
 			valid {{bool}} NOT NULL,
 			updated {{datetime}} NOT NULL,
-			created {{datetime}} NOT NULL
+			created {{datetime}} NOT NULL,
+			creator {{id}} NOT NULL
 		)
 	`),
 	NewQuery(`
