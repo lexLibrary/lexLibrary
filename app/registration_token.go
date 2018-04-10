@@ -231,11 +231,11 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 func registrationTokenGet(token string) (*RegistrationToken, error) {
 	t := &RegistrationToken{}
 	rows, err := sqlRegistrationTokenGet.Query(sql.Named("token", token))
-	defer rows.Close()
-
 	if err != nil {
 		return nil, err
 	}
+
+	defer rows.Close()
 
 	count := 0
 
