@@ -11,7 +11,7 @@ services:
     links:
       - webdriver
     volumes:
-      - ../..:/go/src/github.com/lexLibrary/lexLibrary
+      - ../..:/in:ro
     environment:
       LLTEST: 'true'
       LLDATABASE: 'sqlite'
@@ -21,6 +21,12 @@ services:
       LLDEBUGONERR: "true"
       GOPATH: /go
       LLBROWSER: 'firefox'
-    command: sh -c '
-        cd /go/src/github.com/lexLibrary/lexLibrary/ && go test ./web
-      '
+    command: 
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /go/src/github.com/lexLibrary/
+        cp /in /go/src/github.com/lexLibrary/lexLibrary -R
+        cd /go/src/github.com/lexLibrary/lexLibrary/ 
+        ./build.sh
+        go test ./web

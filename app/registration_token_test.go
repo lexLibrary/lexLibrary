@@ -51,7 +51,7 @@ func TestRegistrationToken(t *testing.T) {
 
 		_, err = admin.NewRegistrationToken(0, time.Time{}, []data.ID{group.ID, group2.ID, data.NewID()})
 		if !app.IsFail(err) {
-			t.Fatalf("Generating a token with at least one invalid groupID did not fail")
+			t.Fatalf("Generating a token with at least one invalid groupID did not fail: %s", err)
 		}
 
 		token, err := admin.NewRegistrationToken(0, time.Time{}, nil)
@@ -62,7 +62,7 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Invalid token: %s", token.Token)
 		}
 
-		if !token.Expires.IsZero() {
+		if !token.Expires.Time.IsZero() {
 			t.Fatalf("Invalid null expiration value. Expected %v, got %v", time.Time{}, token.Expires)
 		}
 
@@ -111,7 +111,39 @@ func TestRegistrationToken(t *testing.T) {
 
 	})
 
-	// register new with limit
+	t.Run("Limit", func(t *testing.T) {
+		reset(t)
+
+		token, err := admin.NewRegistrationToken(3, time.Time{}, nil)
+		if err != nil {
+			t.Fatalf("Generating registration token failed: %s", err)
+		}
+
+		_, err = app.RegisterUserFromToken("user1", "newuserPassword", token.Token)
+		if err != nil {
+			t.Fatalf("Error registering new user from token: %s", err)
+		}
+
+		_, err = app.RegisterUserFromToken("user2", "newuserPassword", token.Token)
+		if err != nil {
+			t.Fatalf("Error registering new user from token: %s", err)
+		}
+
+		_, err = app.RegisterUserFromToken("user3", "newuserPassword", token.Token)
+		if err != nil {
+			t.Fatalf("Error registering new user from token: %s", err)
+		}
+
+		_, err = app.RegisterUserFromToken("user4", "newuserPassword", token.Token)
+		if !app.IsFail(err) {
+			t.Fatalf("Registering more users than limit did not fail: %s", err)
+		}
+	})
+
+	t.Run("Expiration", func(t *testing.T) {
+
+	})
+
 	// register new with expiration
 	// register new with groups
 }

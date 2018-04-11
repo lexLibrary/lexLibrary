@@ -11,10 +11,10 @@ import (
 
 // RegistrationToken is a temporary token that can be used to register new logins for Lex Library
 type RegistrationToken struct {
-	Token   string    `json:"token"`
-	Limit   int       `json:"limit"`   // number of times this token can be used
-	Expires time.Time `json:"expires"` // when this token expires and is no longer valid
-	Groups  []data.ID `json:"groups"`  // users registered by this token will be members of these groups
+	Token   string        `json:"token"`
+	Limit   int           `json:"limit"`   // number of times this token can be used
+	Expires data.NullTime `json:"expires"` // when this token expires and is no longer valid
+	Groups  []data.ID     `json:"groups"`  // users registered by this token will be members of these groups
 
 	Valid   bool      `json:"valid"`
 	Updated time.Time `json:"updated,omitempty"`
@@ -70,7 +70,7 @@ var (
 		update 	registration_tokens
 		set 	{{limit}} = {{limit}} - 1
 		where 	token = {{arg "token"}}
-		and 	{{limit}} > 1
+		and 	{{limit}} > 0
 	`)
 )
 
@@ -87,9 +87,12 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 		setLimit = int(limit)
 	}
 	t := &RegistrationToken{
-		Token:   Random(128),
-		Limit:   setLimit,
-		Expires: expires,
+		Token: Random(128),
+		Limit: setLimit,
+		Expires: data.NullTime{
+			Valid: !expires.IsZero(),
+			Time:  expires,
+		},
 		Groups:  groups,
 		Valid:   true,
 		Updated: time.Now(),
@@ -113,7 +116,7 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 }
 
 func (t *RegistrationToken) validate() error {
-	if !t.Expires.IsZero() && t.Expires.Before(time.Now()) {
+	if !t.Expires.Time.IsZero() && t.Expires.Time.Before(time.Now()) {
 		return NewFailure("Expires must be a date after the current date")
 	}
 	if len(t.Groups) != 0 {
@@ -180,7 +183,7 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 		return nil, errRegistrationTokenInvalid
 	}
 
-	if t.Expires.Before(time.Now()) && !t.Expires.IsZero() {
+	if t.Expires.Time.Before(time.Now()) && !t.Expires.Time.IsZero() {
 		return nil, errRegistrationTokenInvalid
 	}
 

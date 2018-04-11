@@ -9,11 +9,16 @@ services:
     links:
       - mysql
     volumes:
-      - ../..:/go/src/github.com/lexLibrary/lexLibrary
+      - ../..:/in:ro
     environment:
       LLDATABASE: 'mysql'
       LLTEST: 'true'
       GOPATH: /go
-    command: sh -c '
-        cd /go/src/github.com/lexLibrary/lexLibrary/ci/ && sh ./test.sh
-      '
+    command: 
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p /go/src/github.com/lexLibrary/
+        cp /in /go/src/github.com/lexLibrary/lexLibrary -R
+        cd /go/src/github.com/lexLibrary/lexLibrary/ci
+        sh ./test.sh
