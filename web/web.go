@@ -43,6 +43,7 @@ var (
 	maxUploadMemory = int64(10 << 20)
 	isSSL           = false
 	devMode         = false
+	currentConfig   Config
 )
 
 func init() {
@@ -81,6 +82,8 @@ func StartServer(cfg Config, developMode bool) error {
 			log.Printf("Invalid WriteTimeout duration format (%s), using default", cfg.WriteTimeout)
 		}
 	}
+
+	currentConfig = cfg
 
 	tlsCFG := &tls.Config{MinVersion: cfg.MinTLSVersion}
 

@@ -23,6 +23,7 @@ var jsFiles = [
     'first_run.js',
     'profile.js',
     'profile_edit.js',
+    'admin.js',
 ];
 
 function rollupFiles(dev) {

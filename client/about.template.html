@@ -15,23 +15,23 @@
 		<hr>
 		<div id="attribution">
 			<h5>Credits and Attribution</h5>
-				<p>Lex Library is built on open-source software and creative commons resources. These contributions 
-				are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
-				would not be possible.</p>
-				<p><em>Thank you</em></p>
-				<div class="card-columns pt-4">
-					[[range .Attribution]]
-					<div class="card">
-						<div class="card-header">
-							<div class="card-title h5"><a href="[[.URL]]" target="_blank">[[.Name]]</a></div>
-							<div class="card-subtitle text-gray">([[.LicenseType]])</div>
-						</div>
-						<div class="card-body">
-							[[.Author]]
-						</div>
+			<p>Lex Library is built on open-source software and creative commons resources. These contributions 
+			are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
+			would not be possible.</p>
+			<p><em>Thank you</em></p>
+			<div class="card-columns pt-4">
+				[[range .Attribution]]
+				<div class="card">
+					<div class="card-header">
+						<div class="card-title h5"><a href="[[.URL]]" target="_blank">[[.Name]]</a></div>
+						<div class="card-subtitle text-gray">([[.LicenseType]])</div>
 					</div>
-					[[end]]
+					<div class="card-body">
+						[[.Author]]
+					</div>
 				</div>
+				[[end]]
+			</div>
 		</div>
 
 		<div :class="{'active': showModal}" class="modal">

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	[[template "header"]]
+	<title>Administration - Lex Library</title>
+</head>
+
+<body>
+	[[template "nav" .]]
+	<div class="container grid-xl">
+		<h1>Administration</h1>
+		<ul class="tab tab-block">
+			<li class='tab-item [[if eq .Tab "overview"]]active[[end]]'><a href="/admin">Overview</a></li>
+			<li class='tab-item [[if eq .Tab "settings"]]active[[end]]'><a href="/admin/settings">Settings</a></li>
+			<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
+			<li class='tab-item [[if eq .Tab "registration"]]active[[end]]'><a href="/admin/registration">Registration</a></li>
+		</ul>
+		<div>
+			[[if eq .Tab "overview"]]
+				<section class="pt-2">
+					<div class="columns">
+						<div class="column text-center">
+							<h5 class="title"><small>Users</small></h5>
+							<h3>[[.Overview.InstanceStats.Users]]</h3>
+						</div>
+						<div class="column text-center">
+							<h5 class="title"><small>Logged In</small></h5>
+							<h3>[[.Overview.InstanceStats.Sessions]]</h3>
+						</div>
+						<div class="column text-center">
+							<h5 class="title"><small>Documents</small></h5>
+							<h3>[[.Overview.InstanceStats.Documents]]</h3>
+						</div>
+					</div>
+				</section>
+				<section class="overview pt-2">
+					<div class="columns">
+						<div class="column">
+							<h4>Configuration</h4>
+							<p class="text-gray">Values are set by configuration or environment variable.</p>
+							<table class="overview table">
+								<tbody>
+									<tr>
+										<td>Read Timeout</td>
+										<td>[[.WebConfig.ReadTimeout]]</td>
+									</tr>
+									<tr>
+										<td>Write Timeout</td>
+										<td>[[.WebConfig.WriteTimeout]]</td>
+									</tr>
+								</tbody>
+							</table>
+						</div> <!-- columns -->
+						<div class="column">
+						</div> <!-- column -->
+					</div> <!-- columns -->
+				</section>
+			[[else if eq .Tab "settings"]]
+				<p>Settings</p>
+			[[else if eq .Tab "logs"]]
+				<p>Logs</p>
+			[[else if eq .Tab "registration"]]
+				<p>Registration</p>
+			[[end]]
+		</div>
+	</div>
+</body>
+<script src="/js/vue.js"></script>
+<script src="/js/admin.js"></script>
+</html>

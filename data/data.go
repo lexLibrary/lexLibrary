@@ -33,8 +33,9 @@ const (
 const databaseName = "lex_library"
 
 var (
-	db     *sql.DB
-	dbType int
+	db         *sql.DB
+	dbType     int
+	currentCFG Config
 )
 
 // Config is the data layer configuration used to determine how to initialize the data layer
@@ -111,7 +112,14 @@ func Init(cfg Config) error {
 	db.SetMaxIdleConns(cfg.MaxIdleConnections)
 	db.SetMaxOpenConns(cfg.MaxOpenConnections)
 
+	currentCFG = cfg
+
 	return ensureSchema()
+}
+
+// CurrentCFG returns the current config LL is running on
+func CurrentCFG() Config {
+	return currentCFG
 }
 
 func testDB(attempt int) {

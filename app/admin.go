@@ -1,5 +1,7 @@
 package app
 
+import "github.com/lexLibrary/lexLibrary/data"
+
 // Admin is a wrapper around User that only provides access to admin level functions
 type Admin struct {
 	User *User
@@ -55,4 +57,63 @@ func (a *Admin) SetUserAdmin(u *User, admin bool, version int) error {
 		return ErrNotAdmin
 	}
 	return u.setAdmin(admin, version)
+}
+
+// Overview is a collection of statistics and information about the LL instance
+type Overview struct {
+	InstanceStats struct {
+		Users     int
+		Documents int
+		Sessions  int
+		Size      data.SizeStats
+	}
+	SystemStats struct {
+		FreeSpace int
+		// https://golang.org/pkg/syscall/#Statfs_t
+		// https://golang.org/pkg/syscall/#Sysinfo_t
+	}
+
+	data.Config
+}
+
+var (
+	sqlInstanceStats = data.NewQuery(`
+		select count(*), 'users' as stat_type from users
+		union all
+		select count(*), 'sessions' from sessions where expires > {{NOW}} and valid = {{TRUE}}
+	`)
+)
+
+// Overview returns statistics on the current instance
+func (a *Admin) Overview() (*Overview, error) {
+	if !a.isAdmin() {
+		return nil, ErrNotAdmin
+	}
+
+	o := &Overview{
+		Config: data.CurrentCFG(),
+	}
+	rows, err := sqlInstanceStats.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var statType string
+		var stat int
+		err = rows.Scan(&stat, &statType)
+		if err != nil {
+			return nil, err
+		}
+		if statType == "users" {
+			o.InstanceStats.Users = stat
+		}
+		if statType == "documents" {
+			o.InstanceStats.Documents = stat
+		}
+		if statType == "sessions" {
+			o.InstanceStats.Sessions = stat
+		}
+	}
+	return o, nil
 }

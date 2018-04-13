@@ -90,5 +90,16 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/profile/edit", profileEdit.root)
 	rootHandler.GET("/profile/edit/account", profileEdit.account)
 
+	// admin
+	admin := &adminPage{
+		templateHandler: templateHandler{
+			templateFiles: []string{"admin.template.html"},
+		},
+	}
+
+	rootHandler.GET("/admin", admin.overview)
+	rootHandler.GET("/admin/settings", admin.settings)
+	rootHandler.GET("/admin/logs", admin.logs)
+	rootHandler.GET("/admin/registration", admin.registration)
 	return rootHandler
 }

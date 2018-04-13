@@ -37,7 +37,7 @@ func profileGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
 	serveImage(w, r, u.ProfileImage())
 }
 
-func (p *profilePage) loadData(s *app.Session) error {
+func (p *profilePage) loadShared(s *app.Session) error {
 	if s == nil {
 		return app.Unauthorized("You do not have access to this user")
 	}
@@ -60,7 +60,7 @@ func (p *profilePage) loadData(s *app.Session) error {
 func (p *profilePage) documents(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadData(c.session)
+		err := p.loadShared(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
@@ -78,7 +78,7 @@ func (p *profilePage) documents(w http.ResponseWriter, r *http.Request, parms ht
 func (p *profilePage) readLater(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadData(c.session)
+		err := p.loadShared(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
@@ -97,7 +97,7 @@ func (p *profilePage) readLater(w http.ResponseWriter, r *http.Request, parms ht
 func (p *profilePage) comments(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadData(c.session)
+		err := p.loadShared(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
@@ -116,7 +116,7 @@ func (p *profilePage) comments(w http.ResponseWriter, r *http.Request, parms htt
 func (p *profilePage) history(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadData(c.session)
+		err := p.loadShared(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
@@ -140,7 +140,7 @@ type profileEditPage struct {
 	}
 }
 
-func (p *profileEditPage) loadData(s *app.Session) error {
+func (p *profileEditPage) loadShared(s *app.Session) error {
 	if s == nil {
 		return app.Unauthorized("You do not have access to this user")
 	}
@@ -156,7 +156,7 @@ func (p *profileEditPage) loadData(s *app.Session) error {
 
 func (p *profileEditPage) root(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadData(c.session)
+		err := p.loadShared(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
@@ -173,7 +173,7 @@ func (p *profileEditPage) root(w http.ResponseWriter, r *http.Request, parms htt
 
 func (p *profileEditPage) account(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadData(c.session)
+		err := p.loadShared(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
