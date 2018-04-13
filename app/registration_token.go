@@ -44,7 +44,7 @@ var (
 		)
 	`)
 	sqlRegistrationTokenGroupInsert = data.NewQuery(`
-		insert into registration_tokens (
+		insert into registration_token_groups (
 			token,
 			group_id
 		) values (
@@ -117,19 +117,20 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 
 func (t *RegistrationToken) validate() error {
 	if !t.Expires.Time.IsZero() && t.Expires.Time.Before(time.Now()) {
-		return NewFailure("Expires must be a date after the current date")
+		return NewFailure("Expires must be a date in the future")
 	}
 	if len(t.Groups) != 0 {
-		query, args := sqlGroupsFromIDs(t.Groups)
-		result, err := query.Exec(args...)
+		query, args := sqlGroupsFromIDs(t.Groups, true)
+		groupCount := 0
+		err := query.QueryRow(args...).Scan(&groupCount)
+		if err == sql.ErrNoRows {
+			return NewFailure("One or more of the groups are invalid")
+		}
 		if err != nil {
 			return err
 		}
-		rows, err := result.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if int(rows) != len(t.Groups) {
+
+		if groupCount != len(t.Groups) {
 			// one or more groups were not found
 			return NewFailure("One or more of the groups are invalid")
 		}
@@ -240,10 +241,10 @@ func registrationTokenGet(token string) (*RegistrationToken, error) {
 
 	defer rows.Close()
 
-	count := 0
+	found := false
 
 	for rows.Next() {
-		count++
+		found = true
 		var groupID data.ID
 
 		err = rows.Scan(
@@ -265,7 +266,7 @@ func registrationTokenGet(token string) (*RegistrationToken, error) {
 		}
 	}
 
-	if count == 0 {
+	if !found {
 		return nil, errRegistrationTokenInvalid
 	}
 

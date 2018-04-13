@@ -44,24 +44,6 @@ func NewQuery(tmpl string) *Query {
 func (q *Query) orderedArgs(args []sql.NamedArg) []interface{} {
 	ordered := make([]interface{}, 0, len(q.args))
 
-	if dbType == sqlserver {
-		uniqueArgs := make([]sql.NamedArg, 0, len(args))
-		// append unique id names to args
-		for i := range args {
-			uName := args[i].Name
-			found := 0
-			for j := range uniqueArgs {
-				if uName == uniqueArgs[j].Name {
-					found++
-					uName = args[i].Name + strconv.Itoa(found)
-				}
-			}
-			args[i].Name = uName
-			uniqueArgs = append(uniqueArgs, args[i])
-		}
-		args = uniqueArgs
-	}
-
 	for i := range q.args {
 		for j := range args {
 			if args[j].Name == q.args[i] {
@@ -86,25 +68,21 @@ func (q *Query) buildTemplate() {
 	}
 	funcs := template.FuncMap{
 		"arg": func(name string) string {
-			// Args must be named, and must use sql.Named
+			// Args must be named and must be unique, and must use sql.Named
 			if name == "" {
 				panic("Arguments must be named in sql statements")
+			}
+			for i := range q.args {
+				if name == q.args[i] {
+					panic(fmt.Sprintf("%s already exists in the query arguments", name))
+				}
 			}
 			q.args = append(q.args, name)
 			switch dbType {
 			case postgres, cockroachdb:
 				return "$" + strconv.Itoa(len(q.args))
 			case sqlserver:
-				found := 0
-				uName := name
-				for i := range q.args {
-					if q.args[i] == uName && i != len(q.args)-1 {
-						found++
-						uName = name + strconv.Itoa(found)
-					}
-				}
-				q.args[len(q.args)-1] = uName
-				return "@" + uName
+				return "@" + name
 			default:
 				return "?"
 			}

@@ -5,6 +5,7 @@ package app
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -61,22 +62,27 @@ var (
 		from groups 
 		where name = {{arg "name"}}
 	`)
-	sqlGroupsFromIDs = func(ids []data.ID) (*data.Query, []sql.NamedArg) {
+	sqlGroupsFromIDs = func(ids []data.ID, countOnly bool) (*data.Query, []sql.NamedArg) {
 		in := ""
 		args := make([]sql.NamedArg, len(ids))
 		for i := range ids {
 			if i != 0 {
 				in += ", "
 			}
-			in += `{{arg "id"}}`
-			args[i].Name = "id"
+			name := "id" + strconv.Itoa(i)
+			in += fmt.Sprintf(`{{arg "%s"}}`, name)
+			args[i].Name = name
 			args[i].Value = ids[i]
 		}
+		sel := `select id, name, version, updated, created`
+		if countOnly {
+			sel = `select count(id)`
+		}
 		return data.NewQuery(fmt.Sprintf(`
-			select id, name, version, updated, created 
+			%s 
 			from groups 
 			where id in (%s)
-		`, in)), args
+		`, sel, in)), args
 	}
 	sqlGroupGetMember = data.NewQuery(`
 		select admin 

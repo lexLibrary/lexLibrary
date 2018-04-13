@@ -19,6 +19,7 @@ pipeline {
                     cd $REPO
                     sh ./build.sh
                 '''
+	        archiveArtifacts artifacts: 'lexLibrary'
             }
         }
         stage('static analysis') {
@@ -135,7 +136,6 @@ pipeline {
     }
     post {
     	always {
-            archiveArtifacts artifacts: 'lexLibrary'
             archiveArtifacts artifacts: '*.html'
             deleteDir()
         }
@@ -143,4 +143,8 @@ pipeline {
             archiveArtifacts artifacts: './web/SequenceError*.png'
         }
     }
+     options {
+	    buildDiscarder(logRotator(numToKeepStr:'10'))
+	    timeout(time: 60, unit: 'MINUTES')
+	}
 }
