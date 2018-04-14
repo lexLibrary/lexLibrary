@@ -17,9 +17,10 @@ import (
 	"github.com/tebeka/selenium/internal/zip"
 )
 
-// CapabilitiesKey is the key in the top-level Capabilities map under which
+// DeprecatedCapabilitiesKey and CapabilitiesKey are the key in the top-level Capabilities map under which
 // ChromeDriver expects the Chrome-specific options to be set.
-const CapabilitiesKey = "chromeOptions"
+const DeprecatedCapabilitiesKey = "chromeOptions"
+const CapabilitiesKey = "goog:chromeOptions"
 
 // Capabilities defines the Chrome-specific desired capabilities when using
 // ChromeDriver. An instance of this struct can be stored in the Capabilities
@@ -62,6 +63,8 @@ type Capabilities struct {
 	// window handles. For access to <webview> elements, include "webview" in
 	// this list.
 	WindowTypes []string `json:"windowTypes,omitempty"`
+	// Android Chrome WebDriver path "com.android.chrome"
+	AndroidPackage string `json:"androidPackage,omitempty"`
 }
 
 // TODO(minusnine): https://bugs.chromium.org/p/chromedriver/issues/detail?id=1625

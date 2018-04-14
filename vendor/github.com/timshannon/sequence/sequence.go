@@ -25,7 +25,7 @@ type Sequence struct {
 	EventualPoll    time.Duration
 	EventualTimeout time.Duration
 	last            func() *Sequence
-	onErr           func(*Sequence)
+	onErr           func(Error, *Sequence)
 }
 
 // Error describes an error that occured during the sequence processing.
@@ -121,7 +121,7 @@ func Start(driver selenium.WebDriver) *Sequence {
 func (s *Sequence) End() error {
 	if s.err != nil {
 		if s.onErr != nil {
-			s.onErr(s)
+			s.onErr(*s.err, s)
 		}
 		return s.err
 	}
@@ -131,7 +131,8 @@ func (s *Sequence) End() error {
 // OnError registers a function to call when an error occurs in the sequence.
 // Handy for calling things like .Debug() and .Screenshot("err.png") in error scenarios to output to
 // a CI server
-func (s *Sequence) OnError(fn func(s *Sequence)) *Sequence {
+// OnError must be called before any errors in order for it to be triggered properly
+func (s *Sequence) OnError(fn func(err Error, s *Sequence)) *Sequence {
 	s.onErr = fn
 	return s
 }
@@ -171,6 +172,16 @@ func (e *Elements) Eventually() *Elements {
 
 	err := e.seq.driver.WaitWithTimeoutAndInterval(func(d selenium.WebDriver) (bool, error) {
 		e.seq.err = nil
+		var err error
+		e.elems, err = e.selectFunc(e.selector)
+		if err != nil {
+			e.seq.err = &Error{
+				Stage:  "Elements",
+				Err:    err,
+				Caller: caller(1),
+			}
+			return false, nil
+		}
 		e = e.last()
 		if e.seq.err != nil {
 			return false, nil
@@ -491,21 +502,26 @@ func (s *Sequence) Find(selector string) *Elements {
 			return s.driver.FindElements(selenium.ByCSSSelector, selector)
 		},
 	}
+
 	if s.err != nil {
 		return e
 	}
-	var err error
-	e.elems, err = e.selectFunc(selector)
 
-	if err != nil {
-		s.err = &Error{
-			Stage:  "Elements",
-			Err:    err,
-			Caller: caller(1),
+	e.last = func() *Elements {
+		var err error
+		e.elems, err = e.selectFunc(selector)
+
+		if err != nil {
+			s.err = &Error{
+				Stage:  "Elements",
+				Err:    err,
+				Caller: caller(1),
+			}
+			return e
 		}
 		return e
 	}
-	return e
+	return e.last()
 }
 
 // Wait will wait for the given duration before continuing in the sequence
@@ -520,15 +536,12 @@ func (s *Sequence) Wait(duration time.Duration) *Sequence {
 // Debug will print the current page's title and source
 // For use with debugging issues mostly
 func (s *Sequence) Debug() *Sequence {
-	if s.err != nil {
-		return s
-	}
 	src, err := s.driver.PageSource()
 	if err != nil {
 		s.err = &Error{
 			Stage:  "Debug Source",
 			Err:    err,
-			Caller: caller(1),
+			Caller: caller(0),
 		}
 		return s
 	}
@@ -538,7 +551,7 @@ func (s *Sequence) Debug() *Sequence {
 		s.err = &Error{
 			Stage:  "Debug Title",
 			Err:    err,
-			Caller: caller(1),
+			Caller: caller(0),
 		}
 		return s
 	}
@@ -548,24 +561,37 @@ func (s *Sequence) Debug() *Sequence {
 		s.err = &Error{
 			Stage:  "Debug URL",
 			Err:    err,
-			Caller: caller(1),
+			Caller: caller(0),
 		}
 		return s
 	}
+
+	// logs, err := s.driver.Log(log.Browser)
+	// if err != nil {
+	// 	s.err = &Error{
+	// 		Stage:  "Debug Log",
+	// 		Err:    err,
+	// 		Caller: caller(0),
+	// 	}
+	// 	return s
+	// }
+	// log := ""
+	// for i := range logs {
+	// 	log += fmt.Sprintf("%s - (%s): %s\n", logs[i].Level, logs[i].Timestamp.Format(time.Stamp), logs[i].Message)
+	// }
 
 	fmt.Println("-----------------------------------------------")
 	fmt.Printf("%s - (%s)\n", title, uri)
 	fmt.Println("-----------------------------------------------")
 	fmt.Println(src)
+	fmt.Println("-----------------------------------------------")
+	// fmt.Println("LOG")
+	// fmt.Println(log)
 	return s
 }
 
 // Screenshot takes a screenshot
 func (s *Sequence) Screenshot(filename string) *Sequence {
-	if s.err != nil {
-		return s
-	}
-
 	buff, err := s.driver.Screenshot()
 	if err != nil {
 		s.err = &Error{
