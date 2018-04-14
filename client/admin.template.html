@@ -34,25 +34,37 @@
 						</div>
 					</div>
 				</section>
-				<section class="overview pt-2">
+				<section class="overview pt-4">
 					<div class="columns">
 						<div class="column">
 							<h4>Configuration</h4>
 							<p class="text-gray">Values are set by configuration or environment variable.</p>
 							<table class="overview table">
 								<tbody>
-									<tr>
-										<td>Read Timeout</td>
-										<td>[[.WebConfig.ReadTimeout]]</td>
-									</tr>
-									<tr>
-										<td>Write Timeout</td>
-										<td>[[.WebConfig.WriteTimeout]]</td>
-									</tr>
+									<tr><td>Read Timeout</td><td>[[.WebConfig.ReadTimeout]]</td></tr>
+									<tr><td>Write Timeout</td><td>[[.WebConfig.WriteTimeout]]</td></tr>
+									<tr><td>Max Header Bytes</td><td>[[.WebConfig.MaxHeaderBytes]]</td></tr>
+									<tr><td>Min TLS Version</td><td>[[.WebConfig.MinTLSVersion]]</td></tr>
+									<tr><td>Certificate File</td><td>[[.WebConfig.CertFile]]</td></tr>
+									<tr><td>Key File</td><td>[[.WebConfig.KeyFile]]</td></tr>
+									<tr><td>Max Upload Memory</td><td>[[.WebConfig.MaxUploadMemoryMB]]</td></tr>
+									<tr><td>Port</td><td>[[.WebConfig.Port]]</td></tr>
 								</tbody>
 							</table>
 						</div> <!-- columns -->
 						<div class="column">
+							<h4>Data Usage</h4>
+							[[with .Overview.InstanceStats]]
+							<table class="overview table">
+								<tbody>
+									<tr><td>Database Size</td><td>[[.Size.Data]]</td></tr>
+									<tr><td>Image Size</td><td>[[.Size.Image]]</td></tr>
+									<tr><td>Search Index Size</td><td>[[.Size.Search]]</td></tr>
+									<tr><td>Total Size</td><td>[[.Size.Total]]</td></tr>
+								</tbody>
+							</table>
+							[[end]]
+						
 						</div> <!-- column -->
 					</div> <!-- columns -->
 				</section>

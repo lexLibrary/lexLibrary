@@ -1,6 +1,9 @@
 package app
 
-import "github.com/lexLibrary/lexLibrary/data"
+import (
+	"github.com/dustin/go-humanize"
+	"github.com/lexLibrary/lexLibrary/data"
+)
 
 // Admin is a wrapper around User that only provides access to admin level functions
 type Admin struct {
@@ -65,7 +68,12 @@ type Overview struct {
 		Users     int
 		Documents int
 		Sessions  int
-		Size      data.SizeStats
+		Size      struct {
+			Data   string
+			Search string
+			Image  string
+			Total  string
+		}
 	}
 	SystemStats struct {
 		FreeSpace int
@@ -115,5 +123,19 @@ func (a *Admin) Overview() (*Overview, error) {
 			o.InstanceStats.Sessions = stat
 		}
 	}
+
+	size, err := data.Size()
+	if err != nil {
+		return nil, err
+	}
+
+	o.InstanceStats.Size.Data = humanize.Bytes(size.Data)
+	if size.Image == 0 {
+		o.InstanceStats.Size.Image = "not supported on this platform"
+	} else {
+		o.InstanceStats.Size.Image = humanize.Bytes(size.Image)
+	}
+
+	o.InstanceStats.Size.Total = humanize.Bytes(size.Total)
 	return o, nil
 }

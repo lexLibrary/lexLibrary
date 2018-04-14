@@ -10,10 +10,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/denisenkom/go-mssqldb"
-  packages = [
-    ".",
-    "internal/cp"
-  ]
+  packages = [".","internal/cp"]
   revision = "270bc3860bb94dd3a3ffd047377d746c5e276726"
 
 [[projects]]
@@ -21,6 +18,12 @@
   packages = ["."]
   revision = "fd34ef7671b12cdf1b024d98c6b327b2770d32c4"
   version = "v1.4.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  revision = "bb3d318650d48840a39aa21a027c6630e198e626"
 
 [[projects]]
   name = "github.com/fsnotify/fsnotify"
@@ -37,18 +40,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-  packages = [
-    ".",
-    "hcl/ast",
-    "hcl/parser",
-    "hcl/printer",
-    "hcl/scanner",
-    "hcl/strconv",
-    "hcl/token",
-    "json/parser",
-    "json/scanner",
-    "json/token"
-  ]
+  packages = [".","hcl/ast","hcl/parser","hcl/printer","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
   revision = "f40e974e75af4e271d97ce0fc917af5898ae7bda"
 
 [[projects]]
@@ -60,10 +52,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/lib/pq"
-  packages = [
-    ".",
-    "oid"
-  ]
+  packages = [".","oid"]
   revision = "b2004221932bd6b13167ef654c81cffac36f7537"
 
 [[projects]]
@@ -111,18 +100,12 @@
 [[projects]]
   branch = "go1"
   name = "github.com/rwcarlsen/goexif"
-  packages = [
-    "exif",
-    "tiff"
-  ]
+  packages = ["exif","tiff"]
   revision = "17202558c8d9c3fd047859f1a5e73fd9ae709187"
 
 [[projects]]
   name = "github.com/spf13/afero"
-  packages = [
-    ".",
-    "mem"
-  ]
+  packages = [".","mem"]
   revision = "bb8f1927f2a9d3ab41c9340aa034f6b803f4359c"
   version = "v1.0.2"
 
@@ -153,13 +136,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/tebeka/selenium"
-  packages = [
-    ".",
-    "chrome",
-    "firefox",
-    "internal/zip",
-    "log"
-  ]
+  packages = [".","chrome","firefox","internal/zip","log"]
   revision = "a789e65b0e7f126888873e84f528c1c8537dff3e"
 
 [[projects]]
@@ -171,21 +148,13 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = [
-    "argon2",
-    "blake2b",
-    "md4"
-  ]
+  packages = ["argon2","blake2b","md4"]
   revision = "88942b9c40a4c9d203b82b3731787b672d6e809b"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/image"
-  packages = [
-    "bmp",
-    "tiff",
-    "tiff/lzw"
-  ]
+  packages = ["bmp","tiff","tiff/lzw"]
   revision = "f3a9b89b59def9194717c1d0bd4c0d08fa1afa7b"
 
 [[projects]]
@@ -196,14 +165,7 @@
 
 [[projects]]
   name = "golang.org/x/text"
-  packages = [
-    "internal/gen",
-    "internal/triegen",
-    "internal/ucd",
-    "transform",
-    "unicode/cldr",
-    "unicode/norm"
-  ]
+  packages = ["internal/gen","internal/triegen","internal/ucd","transform","unicode/cldr","unicode/norm"]
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
@@ -216,6 +178,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6a13915262ba86792f2f657ac310f6e2d6cc3cf6202a2fd8ab7df1466add9756"
+  inputs-digest = "43947356922be914110ab15dbd6ba0675bd00e5ada16f101695e5b215fa4da89"
   solver-name = "gps-cdcl"
   solver-version = 1
