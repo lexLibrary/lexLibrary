@@ -1,6 +1,8 @@
 package data
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 // SizeStats are statistics about the size of the data in LL
 type SizeStats struct {
@@ -17,20 +19,31 @@ var (
 	sqlitePages = NewQuery(`
 		pragma page_count;
 	`)
-	postgresDBSize = NewQuery(`
+	postgresSize = NewQuery(`
 		select pg_database_size({{arg "db"}})
-	`)
-	postgresTableSize = NewQuery(`
+		union all
 		select pg_total_relation_size({{arg "table"}})
 	`)
 	mysqlSize = NewQuery(`
 		SELECT SUM(data_length + index_length) 
 		FROM information_schema.tables 
-		GROUP BY table_schema; 
 		union all
 		SELECT SUM(data_length + index_length) 
 		FROM information_schema.tables 
 		where table_name = {{arg "table"}}
+	`)
+	sqlserverSize = NewQuery(`
+		SELECT size
+		FROM sys.master_files WITH(NOWAIT)
+		WHERE database_id = {{arg "db"}}
+		union all
+		SELECT
+		SUM(a.total_pages) * 8192
+		FROM sys.tables t
+		INNER JOIN sys.indexes i ON t.OBJECT_ID = i.object_id
+		INNER JOIN sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
+		INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+		INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
 	`)
 )
 
@@ -53,14 +66,22 @@ func Size() (SizeStats, error) {
 		stats.Image = 0
 	case postgres:
 		var dbSize, tableSize uint64
-		err := postgresDBSize.QueryRow(sql.Named("db", databaseName)).Scan(&dbSize)
+		rows, err := postgresSize.Query(sql.Named("table", "images"), sql.Named("db", databaseName))
 		if err != nil {
 			return stats, err
 		}
-		err = postgresTableSize.QueryRow(sql.Named("table", "images")).Scan(&tableSize)
+		defer rows.Close()
+		rows.Next()
+		err = rows.Scan(&dbSize)
 		if err != nil {
 			return stats, err
 		}
+		rows.Next()
+		err = rows.Scan(&tableSize)
+		if err != nil {
+			return stats, err
+		}
+
 		stats.Data = dbSize - tableSize
 		stats.Image = tableSize
 	case mysql:
@@ -83,7 +104,29 @@ func Size() (SizeStats, error) {
 
 		stats.Data = dbSize - tableSize
 		stats.Image = tableSize
+	case sqlserver:
+		var dbSize, tableSize uint64
+		sqlserverSize.DebugPrint(sql.Named("table", "images"), sql.Named("db", databaseName))
+		rows, err := sqlserverSize.Query(sql.Named("table", "images"), sql.Named("db", databaseName))
+		if err != nil {
+			return stats, err
+		}
+		defer rows.Close()
+		rows.Next()
+		err = rows.Scan(&dbSize)
+		if err != nil {
+			return stats, err
+		}
+		rows.Next()
+		err = rows.Scan(&tableSize)
+		if err != nil {
+			return stats, err
+		}
+
+		stats.Data = dbSize - tableSize
+		stats.Image = tableSize
 	default:
+		panic("Unsupported database type")
 	}
 
 	stats.Search = 0 // TODO:
