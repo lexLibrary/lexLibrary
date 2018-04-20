@@ -96,7 +96,7 @@ func (q *Query) buildTemplate() {
 				return "BYTEA"
 			case cockroachdb:
 				return "BYTES"
-			case mysql:
+			case mysql, mariadb:
 				return "BLOB"
 			case sqlserver:
 				return "VARBINARY(max)"
@@ -107,7 +107,7 @@ func (q *Query) buildTemplate() {
 		"defaultDateTime": func() string {
 			t := time.Time{}
 			switch dbType {
-			case mysql:
+			case mysql, mariadb:
 				return t.Format("2006-01-02 15:04:05.000")
 			case sqlite:
 				return t.Format(sqlite3.SQLiteTimestampFormats[0])
@@ -122,7 +122,7 @@ func (q *Query) buildTemplate() {
 		"NOW": func() string {
 			t := time.Now()
 			switch dbType {
-			case mysql:
+			case mysql, mariadb:
 				return fmt.Sprintf("'%s'", t.Format("2006-01-02 15:04:05.000"))
 			case sqlite:
 				return fmt.Sprintf("'%s'", t.Format(sqlite3.SQLiteTimestampFormats[0]))
@@ -137,14 +137,14 @@ func (q *Query) buildTemplate() {
 		"datetime": func() string {
 			// date + time with precision to milliseconds
 			switch dbType {
-			case mysql:
+			case mysql, mariadb:
 				return "DATETIME(5)"
 			case sqlite:
 				return "DATETIME"
 			case postgres, cockroachdb:
 				return "TIMESTAMP with time ZONE"
 			case sqlserver:
-				return "DATETIME2"
+				return "DATETIMEOFFSET"
 			default:
 				panic("Unsupported database type")
 			}
@@ -152,7 +152,7 @@ func (q *Query) buildTemplate() {
 		"text": func() string {
 			// case sensitive unicode with no limit on size
 			switch dbType {
-			case sqlite, postgres, cockroachdb, mysql:
+			case sqlite, postgres, cockroachdb, mysql, mariadb:
 				return "TEXT"
 			case sqlserver:
 				return "nvarchar(max)"
@@ -163,7 +163,7 @@ func (q *Query) buildTemplate() {
 		"varchar": func(size int) string {
 			// case sensitive unicode with size limits
 			switch dbType {
-			case postgres, cockroachdb, mysql:
+			case postgres, cockroachdb, mysql, mariadb:
 				return fmt.Sprintf("varchar(%d)", size)
 			case sqlite:
 				return "TEXT"
@@ -176,7 +176,7 @@ func (q *Query) buildTemplate() {
 		"id": func() string {
 			// case sensitive unicode with size limits
 			switch dbType {
-			case postgres, cockroachdb, mysql:
+			case postgres, cockroachdb, mysql, mariadb:
 				return "varchar(20)"
 			case sqlite:
 				return "TEXT"
@@ -191,7 +191,7 @@ func (q *Query) buildTemplate() {
 			switch dbType {
 			case sqlite:
 				return "int"
-			case postgres, mysql, cockroachdb, sqlserver:
+			case postgres, mysql, mariadb, cockroachdb, sqlserver:
 				return "bigint"
 			default:
 				panic("Unsupported database type")
@@ -199,7 +199,7 @@ func (q *Query) buildTemplate() {
 		},
 		"bool": func() string {
 			switch dbType {
-			case postgres, cockroachdb, mysql:
+			case postgres, cockroachdb, mysql, mariadb:
 				return "boolean"
 			case sqlserver:
 				return "bit"
@@ -211,7 +211,7 @@ func (q *Query) buildTemplate() {
 		},
 		"TRUE": func() string {
 			switch dbType {
-			case mysql, postgres, cockroachdb:
+			case mysql, mariadb, postgres, cockroachdb:
 				return "true"
 			case sqlite, sqlserver:
 				return "1"
@@ -221,7 +221,7 @@ func (q *Query) buildTemplate() {
 		},
 		"FALSE": func() string {
 			switch dbType {
-			case mysql, postgres, cockroachdb:
+			case mysql, mariadb, postgres, cockroachdb:
 				return "false"
 			case sqlite, sqlserver:
 				return "0"
@@ -231,7 +231,7 @@ func (q *Query) buildTemplate() {
 		},
 		"defaultBool": func() string {
 			switch dbType {
-			case mysql, postgres, cockroachdb:
+			case mysql, mariadb, postgres, cockroachdb:
 				return "false"
 			case sqlite, sqlserver:
 				return "0"
@@ -247,6 +247,8 @@ func (q *Query) buildTemplate() {
 				return "postgres"
 			case mysql:
 				return "mysql"
+			case mariadb:
+				return "mariadb"
 			case cockroachdb:
 				return "cockroachdb"
 			case sqlserver:
@@ -264,6 +266,9 @@ func (q *Query) buildTemplate() {
 		"mysql": func() bool {
 			return dbType == mysql
 		},
+		"mariadb": func() bool {
+			return dbType == mariadb
+		},
 		"cockroachdb": func() bool {
 			return dbType == cockroachdb
 		},
@@ -274,7 +279,7 @@ func (q *Query) buildTemplate() {
 			switch dbType {
 			case sqlite, postgres, cockroachdb:
 				return `"limit"`
-			case mysql:
+			case mysql, mariadb:
 				return "`limit`"
 			case sqlserver:
 				return "[limit]"

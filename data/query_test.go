@@ -116,7 +116,6 @@ func TestDataTypes(t *testing.T) {
 		if !expected.Equal(got) && !expectedTruncate.Equal(gotTruncate) && !expectedRound.Equal(gotRound) {
 			t.Fatalf("datetime type does not match expected %v, got %v", expected, got)
 		}
-
 	})
 	t.Run("datetime overflow", func(t *testing.T) {
 		reset(t)

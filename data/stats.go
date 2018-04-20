@@ -5,6 +5,7 @@ import (
 )
 
 // SizeStats are statistics about the size of the data in LL
+// all sizes are in bytes
 type SizeStats struct {
 	Data   uint64
 	Search uint64
@@ -33,17 +34,17 @@ var (
 		where table_name = {{arg "table"}}
 	`)
 	sqlserverSize = NewQuery(`
-		SELECT size
-		FROM sys.master_files WITH(NOWAIT)
-		WHERE database_id = {{arg "db"}}
+		SELECT size * 8 * 1000 
+		FROM sys.database_files
 		union all
 		SELECT
-		SUM(a.total_pages) * 8192
+		SUM(a.total_pages) * 8 * 1000
 		FROM sys.tables t
 		INNER JOIN sys.indexes i ON t.OBJECT_ID = i.object_id
 		INNER JOIN sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
 		INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
 		INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+		where t.name = {{arg "table"}}
 	`)
 )
 
@@ -106,8 +107,7 @@ func Size() (SizeStats, error) {
 		stats.Image = tableSize
 	case sqlserver:
 		var dbSize, tableSize uint64
-		sqlserverSize.DebugPrint(sql.Named("table", "images"), sql.Named("db", databaseName))
-		rows, err := sqlserverSize.Query(sql.Named("table", "images"), sql.Named("db", databaseName))
+		rows, err := sqlserverSize.Query(sql.Named("table", "images"))
 		if err != nil {
 			return stats, err
 		}
@@ -125,6 +125,9 @@ func Size() (SizeStats, error) {
 
 		stats.Data = dbSize - tableSize
 		stats.Image = tableSize
+	case cockroachdb:
+		stats.Data = 0
+		stats.Image = 0
 	default:
 		panic("Unsupported database type")
 	}

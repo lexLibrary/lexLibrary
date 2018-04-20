@@ -4,16 +4,27 @@ services:
     image: postgres:latest
     environment:
       POSTGRES_PASSWORD: lexlibrary
+  webdriver:
+    image: selenium/standalone-firefox:3.11
+    logging:
+        driver: "none"
+    volumes:
+      - /dev/shm:/dev/shm
   tests:
     build: "../build"
     links:
       - postgres
+      - webdriver
     volumes:
       - ../..:/in:ro
     environment:
       LLDATABASE: 'postgres'
       LLTEST: 'true'
       GOPATH: /go
+      LLPORT: 8080
+      LLHOST: "tests"
+      LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
+      LLBROWSER: 'firefox'
     command: 
       - /bin/sh
       - -c

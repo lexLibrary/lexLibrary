@@ -26,6 +26,7 @@ const (
 	sqlite      = iota // github.com/mattn/go-sqlite3
 	postgres           // github.com/lib/pq
 	mysql              // github.com/go-sql-driver/mysql/
+	mariadb            // github.com/go-sql-driver/mysql/
 	sqlserver          // github.com/denisenkom/go-mssqldb
 	cockroachdb        // github.com/lib/pq
 )
@@ -77,8 +78,11 @@ func Init(cfg Config) error {
 	case "postgres":
 		dbType = postgres
 		err = initPostgresAndCDB(cfg)
-	case "mysql", "mariadb":
+	case "mysql":
 		dbType = mysql
+		err = initMySQL(cfg)
+	case "mariadb":
+		dbType = mariadb
 		err = initMySQL(cfg)
 	case "sqlite":
 		dbType = sqlite

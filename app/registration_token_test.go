@@ -143,7 +143,7 @@ func TestRegistrationToken(t *testing.T) {
 
 	t.Run("Expiration", func(t *testing.T) {
 		reset(t)
-		token, err := admin.NewRegistrationToken(0, time.Now().Add(1*time.Second), nil)
+		token, err := admin.NewRegistrationToken(0, time.Now().Add(2*time.Second), nil)
 		if err != nil {
 			t.Fatalf("Generating registration token failed: %s", err)
 		}
@@ -153,7 +153,7 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Error registering new user from token: %s", err)
 		}
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(4 * time.Second)
 
 		_, err = app.RegisterUserFromToken("userfail", "newuserPassword", token.Token)
 		if !app.IsFail(err) {

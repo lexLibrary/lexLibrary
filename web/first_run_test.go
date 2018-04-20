@@ -6,18 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/tebeka/selenium"
 )
 
 func TestFirstRun(t *testing.T) {
-	_, err := data.NewQuery("delete from users").Exec()
+	err := reset()
 	if err != nil {
-		t.Fatalf("Error emptying users table before running tests: %s", err)
-	}
-	_, err = data.NewQuery("delete from settings").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying settings table before running tests: %s", err)
+		t.Fatalf("Error resetting table before running tests: %s", err)
 	}
 
 	err = newSequence().

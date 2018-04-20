@@ -124,13 +124,8 @@ func startWebDriver() (selenium.WebDriver, error) {
 	return wd, nil
 }
 
-func createUserAndLogin(username, password string, isAdmin bool) error {
-	_, err := data.NewQuery("delete from users").Exec()
-	if err != nil {
-		return errors.Wrap(err, "Error emptying users table before running tests")
-	}
-
-	_, err = data.NewQuery("delete from settings").Exec()
+func reset() error {
+	_, err := data.NewQuery("delete from settings").Exec()
 	if err != nil {
 		return errors.Wrap(err, "Error emptying settings table before running tests")
 	}
@@ -140,6 +135,16 @@ func createUserAndLogin(username, password string, isAdmin bool) error {
 		return errors.Wrap(err, "Error emptying sessions table before running tests")
 	}
 
+	_, err = data.NewQuery("delete from users").Exec()
+	if err != nil {
+		return errors.Wrap(err, "Error emptying users table before running tests")
+	}
+
+	return app.Init()
+}
+
+func createUserAndLogin(username, password string, isAdmin bool) error {
+	reset()
 	adminUsername := "admin"
 	adminPassword := "adminP@ssw0rd"
 	if isAdmin {

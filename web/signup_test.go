@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
-	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/tebeka/selenium"
 )
 
@@ -15,16 +14,13 @@ func TestSignup(t *testing.T) {
 	uri := *llURL
 	uri.Path = "signup"
 
+	err := reset()
+	if err != nil {
+		t.Fatalf("Error resetting table before running tests: %s", err)
+	}
+
 	adminUsername := "admin"
 	password := "testWithAPrettyGoodP@ssword"
-	_, err := data.NewQuery("delete from users").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying users table before running tests: %s", err)
-	}
-	_, err = data.NewQuery("delete from settings").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying settings table before running tests: %s", err)
-	}
 	user, err := app.FirstRunSetup(adminUsername, password)
 	if err != nil {
 		t.Fatalf("Error setting up admin user: %s", err)

@@ -15,16 +15,13 @@ func TestLogin(t *testing.T) {
 	uri := *llURL
 	uri.Path = "login"
 
+	err := reset()
+	if err != nil {
+		t.Fatalf("Error resetting table before running tests: %s", err)
+	}
+
 	username := "testusername"
 	password := "testWithAPrettyGoodP@ssword"
-	_, err := data.NewQuery("delete from users").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying users table before running tests: %s", err)
-	}
-	_, err = data.NewQuery("delete from settings").Exec()
-	if err != nil {
-		t.Fatalf("Error emptying settings table before running tests: %s", err)
-	}
 	user, err := app.FirstRunSetup(username, password)
 	if err != nil {
 		t.Fatalf("Error setting up admin user: %s", err)
@@ -156,7 +153,7 @@ func TestLogin(t *testing.T) {
 		Find("#inputPassword2").SendKeys(password + "new").
 		Find(".modal-footer > .btn").Click().
 		Find(".has-error > .form-input-hint").Count(0).And().
-		URL().Path("/").
+		URL().Path("/").Eventually().
 		End()
 	if err != nil {
 		t.Fatalf("Testing expiring password failed: %s", err)
