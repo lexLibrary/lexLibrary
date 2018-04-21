@@ -3,17 +3,14 @@ package files
 
 import (
 	"io/ioutil"
-	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/shurcooL/httpgzip"
 )
 
-var FileSystem http.FileSystem
-
 // Asset returns an embedded asset
 func Asset(name string) ([]byte, error) {
-	file, err := FileSystem.Open(name)
+	file, err := Assets.Open(name)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +29,7 @@ func Asset(name string) ([]byte, error) {
 
 // AssetCompressed returns a compressed embedded asset
 func AssetCompressed(name string) ([]byte, error) {
-	file, err := FileSystem.Open(name)
+	file, err := Assets.Open(name)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +57,7 @@ func AssetCompressed(name string) ([]byte, error) {
 
 // AssetDir returns a file / dir listing for embedded assets
 func AssetDir(name string) ([]string, error) {
-	file, err := FileSystem.Open(name)
+	file, err := Assets.Open(name)
 	if err != nil {
 		return nil, err
 	}

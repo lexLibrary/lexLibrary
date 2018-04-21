@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	err := vfsgen.Generate(files.FileSystem, vfsgen.Options{
+	err := vfsgen.Generate(files.Assets, vfsgen.Options{
 		PackageName:  "files",
 		BuildTags:    "!dev",
 		VariableName: "Assets",
