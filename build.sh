@@ -18,7 +18,7 @@ $LASTMODIFIED">version
 # embed client data and version info into executable
 go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go \
     ./version \
-    ./client/deploy/... \
+    $PWD/client/deploy/... \
     ./app/bad_passwords.txt
 
 #build executable

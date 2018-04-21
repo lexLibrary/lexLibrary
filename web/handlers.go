@@ -4,6 +4,7 @@ package web
 import (
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -169,7 +170,8 @@ func (t *templateWriter) execute(data interface{}) error {
 func (t *templateHandler) loadTemplates() {
 	tmpl := ""
 
-	partialsDir := "partials"
+	partialsDir := "/partials"
+	fmt.Println(files.AssetNames())
 
 	partials, err := files.AssetDir(partialsDir)
 	if err != nil {

@@ -7,10 +7,10 @@ import (
 // SizeStats are statistics about the size of the data in LL
 // all sizes are in bytes
 type SizeStats struct {
-	Data   uint64
-	Search uint64
-	Image  uint64
-	Total  uint64
+	Data   int64
+	Search int64
+	Image  int64
+	Total  int64
 }
 
 var (
@@ -53,7 +53,7 @@ func Size() (SizeStats, error) {
 	stats := SizeStats{}
 	switch dbType {
 	case sqlite:
-		var pages, pageSize uint64
+		var pages, pageSize int64
 		err := sqlitePageSize.QueryRow().Scan(&pageSize)
 		if err != nil {
 			return stats, err
@@ -64,9 +64,9 @@ func Size() (SizeStats, error) {
 		}
 
 		stats.Data = pages * pageSize
-		stats.Image = 0
+		stats.Image = -1
 	case postgres:
-		var dbSize, tableSize uint64
+		var dbSize, tableSize int64
 		rows, err := postgresSize.Query(sql.Named("table", "images"), sql.Named("db", databaseName))
 		if err != nil {
 			return stats, err
@@ -86,7 +86,7 @@ func Size() (SizeStats, error) {
 		stats.Data = dbSize - tableSize
 		stats.Image = tableSize
 	case mysql:
-		var dbSize, tableSize uint64
+		var dbSize, tableSize int64
 		rows, err := mysqlSize.Query(sql.Named("table", "images"))
 		if err != nil {
 			return stats, err
@@ -106,7 +106,7 @@ func Size() (SizeStats, error) {
 		stats.Data = dbSize - tableSize
 		stats.Image = tableSize
 	case sqlserver:
-		var dbSize, tableSize uint64
+		var dbSize, tableSize int64
 		rows, err := sqlserverSize.Query(sql.Named("table", "images"))
 		if err != nil {
 			return stats, err
@@ -126,13 +126,13 @@ func Size() (SizeStats, error) {
 		stats.Data = dbSize - tableSize
 		stats.Image = tableSize
 	case cockroachdb:
-		stats.Data = 0
-		stats.Image = 0
+		stats.Data = -1
+		stats.Image = -1
 	default:
 		panic("Unsupported database type")
 	}
 
-	stats.Search = 0 // TODO:
+	stats.Search = -1 // TODO:
 	stats.Total = stats.Data + stats.Image + stats.Search
 	return stats, nil
 }

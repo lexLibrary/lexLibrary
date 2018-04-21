@@ -129,13 +129,21 @@ func (a *Admin) Overview() (*Overview, error) {
 		return nil, err
 	}
 
-	o.InstanceStats.Size.Data = humanize.Bytes(size.Data)
-	if size.Image == 0 {
+	if size.Data == -1 {
+		o.InstanceStats.Size.Data = "not supported on this platform"
+	} else {
+		o.InstanceStats.Size.Data = humanize.Bytes(uint64(size.Data))
+	}
+	if size.Image == -1 {
 		o.InstanceStats.Size.Image = "not supported on this platform"
 	} else {
-		o.InstanceStats.Size.Image = humanize.Bytes(size.Image)
+		o.InstanceStats.Size.Image = humanize.Bytes(uint64(size.Image))
 	}
 
-	o.InstanceStats.Size.Total = humanize.Bytes(size.Total)
+	if size.Total == -1 {
+		o.InstanceStats.Size.Total = "not supported on this platform"
+	} else {
+		o.InstanceStats.Size.Total = humanize.Bytes(uint64(size.Total))
+	}
 	return o, nil
 }
