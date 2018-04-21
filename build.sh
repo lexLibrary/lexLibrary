@@ -13,14 +13,9 @@ LASTMODIFIED=$(date)
 
 # set version and git sha in version file
 echo "$VERSION
-$LASTMODIFIED">version
-
-# embed client data and version info into executable
-go-bindata -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go \
-    ./version \
-    $PWD/client/deploy/... \
-    ./app/bad_passwords.txt
+$LASTMODIFIED">./files/assets/version
 
 #build executable
+go generate files/files.go
 go clean -i -a
 go build -o lexLibrary

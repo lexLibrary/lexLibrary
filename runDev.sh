@@ -4,15 +4,14 @@ set -e
 
 DBTYPE=${1:-none}
 
-mkdir -p client/deploy
-rm -rf files/
+mkdir -p ./files/assets
 
 VERSION=$(git describe --tags --long)
 LASTMODIFIED=$(date)
 
 # set version and git sha in version file
 echo "$VERSION
-$LASTMODIFIED">version
+$LASTMODIFIED">./files/assets/version
 
 cd client 
 rm -rf deploy
@@ -20,11 +19,6 @@ yarn
 gulp dev
 
 cd ..
-
-go-bindata -debug -nomemcopy -prefix $PWD/client/deploy -pkg files -o files/bindata.go \
-    ./version \
-    ./client/deploy/... \
-    ./app/bad_passwords.txt
 
 go build -o lexLibrary
 

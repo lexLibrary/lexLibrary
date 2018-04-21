@@ -23,7 +23,6 @@ config.yaml
 config.toml
 lexLibrary.db
 lexLibrary.search
-version
 
 *node_modules*
 *.vscode*
@@ -31,7 +30,8 @@ version
 *yarn-error.log*
 
 # development directories
-client/deploy/*
+files/assets/*
+files/assets_vfsdata.go
 db_data/*
 
 # screenshots from webdriver failures 

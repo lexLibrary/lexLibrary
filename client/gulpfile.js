@@ -13,7 +13,7 @@ const buble = require('rollup-plugin-buble');
 const resolve = require('rollup-plugin-node-resolve');
 const commonjs = require('rollup-plugin-commonjs');
 
-var deployDir = './deploy';
+var assetDir = '../files/assets/';
 
 var jsFiles = [
     'login.js',
@@ -47,36 +47,36 @@ function rollupFile(file, dev) {
         plugins.push(uglify());
     }
     return rollup.rollup({
-            input: file,
-            plugins: plugins
-        })
+        input: file,
+        plugins: plugins
+    })
         .then(bundle => {
             return bundle.write({
-                file: path.join(deployDir, file),
+                file: path.join(assetDir, file),
                 format: 'iife',
                 sourcemap: sourcemaps,
             });
         });
 }
 
-gulp.task('js', function() {
+gulp.task('js', function () {
     return [
         rollupFiles(),
         gulp.src('./node_modules/vue/dist/vue.min.js')
-        .pipe(rename('vue.js'))
-        .pipe(gulp.dest(path.join(deployDir, 'js')))
+            .pipe(rename('vue.js'))
+            .pipe(gulp.dest(path.join(assetDir, 'js')))
     ];
 });
 
-gulp.task('devJs', function() {
+gulp.task('devJs', function () {
     return [
         rollupFiles(true),
         gulp.src('./node_modules/vue/dist/vue.js')
-        .pipe(gulp.dest(path.join(deployDir, 'js')))
+            .pipe(gulp.dest(path.join(assetDir, 'js')))
     ];
 });
 
-gulp.task('css', function() {
+gulp.task('css', function () {
     return gulp.src('./scss/**/*.scss')
         .pipe(sass({
             outputStyle: 'compressed',
@@ -87,10 +87,10 @@ gulp.task('css', function() {
                 cascade: false
             })
         ]))
-        .pipe(gulp.dest(path.join(deployDir, 'css')));
+        .pipe(gulp.dest(path.join(assetDir, 'css')));
 });
 
-gulp.task('devCss', function() {
+gulp.task('devCss', function () {
     return gulp.src('./scss/**/*.scss')
         .pipe(sourcemaps.init())
         .pipe(sass({
@@ -103,28 +103,27 @@ gulp.task('devCss', function() {
             })
         ]))
         .pipe(sourcemaps.write())
-        .pipe(gulp.dest(path.join(deployDir, 'css')));
+        .pipe(gulp.dest(path.join(assetDir, 'css')));
 });
 
 
 // static files
-gulp.task('html', function() {
+gulp.task('html', function () {
     return gulp.src([
         './**/*.html',
-        '!deploy/**/*',
         '!node_modules/**/*'
-    ]).pipe(gulp.dest(deployDir));
+    ]).pipe(gulp.dest(assetDir));
 });
 
-gulp.task('images', function() {
+gulp.task('images', function () {
     return gulp.src('./images/*')
-        .pipe(gulp.dest(path.join(deployDir, 'images')));
+        .pipe(gulp.dest(path.join(assetDir, 'images')));
 });
 
 
 // watch for changes
-gulp.task('watch', function() {
-    gulp.watch(['./**/*.html', '!./deploy/**/*'], ['html']);
+gulp.task('watch', function () {
+    gulp.watch(['./**/*.html'], ['html']);
     gulp.watch('./images/**/*', ['images']);
     gulp.watch(['./scss/**/*.scss'], ['devCss']);
     gulp.watch(['./js/**/*.js'], ['devJs']);

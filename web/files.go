@@ -42,9 +42,8 @@ func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 		var reader *bytes.Reader
 		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && compress &&
 			w.Header().Get("Content-Encoding") != "gzip" {
-			// w.Header().Set("Content-Encoding", "gzip")
-			// TODO: return already compressed data https://github.com/shuLhan/go-bindata/issues/25
-			data, err := files.Asset(file)
+			w.Header().Set("Content-Encoding", "gzip")
+			data, err := files.AssetCompressed(file)
 			if err != nil {
 				notFound(w, r)
 				return
