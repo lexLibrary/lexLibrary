@@ -4,7 +4,15 @@ set -e
 
 DBTYPE=${1:-none}
 
+rm -rf ./files/assets
 mkdir -p ./files/assets
+
+# build client
+cd client 
+yarn
+gulp dev
+
+cd ..
 
 VERSION=$(git describe --tags --long)
 LASTMODIFIED=$(date)
@@ -13,14 +21,13 @@ LASTMODIFIED=$(date)
 echo "$VERSION
 $LASTMODIFIED">./files/assets/version
 
-cd client 
-rm -rf deploy
-yarn
-gulp dev
+# copy in bad passwords list
+cp ./app/bad_passwords.txt ./files/assets
 
-cd ..
+# generate embedded files
+go generate
 
-go build -o lexLibrary
+go build -o lexLibrary -tags=dev
 
 YELLOW='\x1b[1;33m'
 NC='\x1b[0m' # No Color

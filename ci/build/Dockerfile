@@ -18,7 +18,6 @@ ENV GOPATH=/go
 ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
 RUN go get -u github.com/alecthomas/gometalinter && gometalinter --install
-RUN go get -u github.com/shuLhan/go-bindata/...
 
 # Node
 RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -

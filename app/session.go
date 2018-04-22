@@ -4,7 +4,6 @@ package app
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -172,9 +171,6 @@ func SessionGet(userID data.ID, sessionID string) (*Session, error) {
 
 	// FIXME: Only reset CSRF tokens on GET calls
 	if s.CSRFDate.Add(csrfTokenMaxAge).Before(time.Now()) {
-		fmt.Println(s.CSRFDate)
-		fmt.Println(s.CSRFDate.Add(csrfTokenMaxAge))
-		fmt.Println(time.Now())
 		err = s.ResetCSRF()
 		if err != nil {
 			return nil, err

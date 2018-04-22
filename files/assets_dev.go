@@ -4,4 +4,4 @@ package files
 
 import "net/http"
 
-var Assets = http.Dir("./assets/")
+var Assets http.FileSystem = http.Dir("./files/assets")

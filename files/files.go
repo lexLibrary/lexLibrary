@@ -1,7 +1,9 @@
-//go:generate go run -tags=dev assets_generate.go
 package files
 
 import (
+	"bytes"
+	"compress/gzip"
+	"io"
 	"io/ioutil"
 
 	"github.com/pkg/errors"
@@ -14,6 +16,7 @@ func Asset(name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	info, err := file.Stat()
 	if err != nil {
@@ -33,6 +36,7 @@ func AssetCompressed(name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	info, err := file.Stat()
 	if err != nil {
@@ -44,15 +48,27 @@ func AssetCompressed(name string) ([]byte, error) {
 	}
 
 	if _, ok := file.(httpgzip.NotWorthGzipCompressing); ok {
-		return nil, errors.Errorf("Cannot get compressed Asset %s. It is Not Worth Compressing", name)
+		return nil, errors.Errorf("Asset %s is not worth compressing", name)
 	}
 
-	gz, ok := file.(httpgzip.GzipByter)
-	if !ok {
-		return nil, errors.Errorf("Cannot get compressed Asset %s", name)
+	if gz, ok := file.(httpgzip.GzipByter); ok {
+		return gz.GzipBytes(), nil
 	}
 
-	return gz.GzipBytes(), nil
+	// this shouldn't be necessary unless running in dev mode
+	var b bytes.Buffer
+	writer := gzip.NewWriter(&b)
+	_, err = io.Copy(writer, file)
+	if err != nil {
+		return nil, err
+	}
+
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
 }
 
 // AssetDir returns a file / dir listing for embedded assets
@@ -61,6 +77,7 @@ func AssetDir(name string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	info, err := file.Stat()
 	if err != nil {

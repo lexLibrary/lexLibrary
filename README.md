@@ -9,7 +9,6 @@ documentation files and web sites, and natural language processing for automatic
  * Go 1.9 or greater
  * Node 8 or greater
  * yarn
- * go-binddata - `go get -u github.com/shuLhan/go-bindata/...`
 
 
 `runDev.sh` - build LL, build the client files, and run LL in dev mode where web files are rebuilt and loaded on the fly, 
@@ -19,6 +18,4 @@ documentation files and web sites, and natural language processing for automatic
     simply run the script with any Lex Library arguments you want: `runDev.sh -config=config.yaml`.
 
 
-`build.sh` - build LL, build the client files, and embed the static files into the binary, made for release.  Increments
-    the semver in the verison file which is also embedded into the binary and used for things like e-tagging static
-    assets.
+`build.sh` - build LL, build the client files, and embed the static files into the binary, made for release.

@@ -69,6 +69,9 @@ func ValidatePassword(password string) error {
 			if mixed && unicode.IsLower(r) {
 				lowerFound = true
 			}
+			if mixed && upperFound && lowerFound {
+				break
+			}
 		}
 
 		if special && !specialFound {
@@ -83,7 +86,7 @@ func ValidatePassword(password string) error {
 	}
 
 	if SettingMust("BadPasswordCheck").Bool() {
-		bad, err := files.Asset("app/bad_passwords.txt")
+		bad, err := files.Asset("bad_passwords.txt")
 		if err != nil {
 			return err
 		}

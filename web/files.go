@@ -45,6 +45,7 @@ func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 			w.Header().Set("Content-Encoding", "gzip")
 			data, err := files.AssetCompressed(file)
 			if err != nil {
+				app.LogError(err)
 				notFound(w, r)
 				return
 			}
@@ -52,6 +53,7 @@ func serveStatic(fileOrDir string, compress bool) httprouter.Handle {
 		} else {
 			data, err := files.Asset(file)
 			if err != nil {
+				app.LogError(err)
 				notFound(w, r)
 				return
 			}

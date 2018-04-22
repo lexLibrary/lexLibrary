@@ -1,3 +1,4 @@
+//go:generate go run -tags=dev files/assets_generate.go
 // Copyright (c) 2017-2018 Townsourced Inc.
 
 package main

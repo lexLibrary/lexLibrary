@@ -169,7 +169,7 @@ func (t *templateWriter) execute(data interface{}) error {
 func (t *templateHandler) loadTemplates() {
 	tmpl := ""
 
-	partialsDir := "/partials"
+	partialsDir := "partials"
 
 	partials, err := files.AssetDir(partialsDir)
 	if err != nil {
