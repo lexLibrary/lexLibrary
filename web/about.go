@@ -194,4 +194,18 @@ var attribution = []attribute{
 		LicenseType: "MIT",
 		LicenseURL:  "https://opensource.org/licenses/mit-license.php",
 	},
+	attribute{
+		Name:        "croppie",
+		URL:         "https://foliotek.github.io/Croppie/",
+		Author:      "Foliotek Inc",
+		LicenseType: "MIT",
+		LicenseURL:  "https://github.com/Foliotek/Croppie/blob/master/LICENSE",
+	},
+	attribute{
+		Name:        "Docker",
+		URL:         "https://www.docker.com/",
+		Author:      "The Docker Authors",
+		LicenseType: "Apache 2.0",
+		LicenseURL:  "https://github.com/moby/moby/blob/master/LICENSE",
+	},
 }
