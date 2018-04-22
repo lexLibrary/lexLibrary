@@ -125,9 +125,21 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/shurcooL/httpfs"
+  packages = ["vfsutil"]
+  revision = "809beceb23714880abc4a382a00c05f89d13b1cc"
+
+[[projects]]
+  branch = "master"
   name = "github.com/shurcooL/httpgzip"
   packages = ["."]
   revision = "d78e9b0bdad734ae5eb8805b13586e53c9d43205"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/shurcooL/vfsgen"
+  packages = ["."]
+  revision = "bded413e56ef86004fb6a11dd9d1bb9dc118ed03"
 
 [[projects]]
   name = "github.com/spf13/afero"
@@ -245,6 +257,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fda8cb1bbc1a5fed18f32d2505217844e10b1cd5cdff6ffb0a792f0c8437aa3d"
+  inputs-digest = "af512a6a6515afc065358fb2456cc58c2498d509b3f620d06502975d3b8d5aed"
   solver-name = "gps-cdcl"
   solver-version = 1

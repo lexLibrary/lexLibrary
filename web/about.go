@@ -187,4 +187,11 @@ var attribution = []attribute{
 		LicenseType: "MIT",
 		LicenseURL:  "https://github.com/mssola/user_agent/blob/master/LICENSE",
 	},
+	attribute{
+		Name:        "vfsgen",
+		URL:         "https://github.com/shurcooL/vfsgen",
+		Author:      "Dmitri Shuralyov",
+		LicenseType: "MIT",
+		LicenseURL:  "https://opensource.org/licenses/mit-license.php",
+	},
 }
