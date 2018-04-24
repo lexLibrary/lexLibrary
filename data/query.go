@@ -134,58 +134,10 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
-		"datetime": func() string {
-			// date + time + offset with precision to at least milliseconds
-			switch dbType {
-			case mysql, mariadb:
-				return "DATETIME(5)"
-			case sqlite:
-				return "DATETIME"
-			case postgres, cockroachdb:
-				return "TIMESTAMP with time ZONE"
-			case sqlserver:
-				return "DATETIMEOFFSET"
-			default:
-				panic("Unsupported database type")
-			}
-		},
-		"text": func() string {
-			// case sensitive unicode with no limit on size
-			switch dbType {
-			case sqlite, postgres, cockroachdb, mysql, mariadb:
-				return "TEXT"
-			case sqlserver:
-				return "nvarchar(max)"
-			default:
-				panic("Unsupported database type")
-			}
-		},
-		"varchar": func(size int) string {
-			// case sensitive unicode with size limits
-			switch dbType {
-			case postgres, cockroachdb, mysql, mariadb:
-				return fmt.Sprintf("varchar(%d)", size)
-			case sqlite:
-				return "TEXT"
-			case sqlserver:
-				return fmt.Sprintf("nvarchar(%d)", size)
-			default:
-				panic("Unsupported database type")
-			}
-		},
-		"id": func() string {
-			// case sensitive unicode with size limits
-			switch dbType {
-			case postgres, cockroachdb, mysql, mariadb:
-				return "varchar(20)"
-			case sqlite:
-				return "TEXT"
-			case sqlserver:
-				return fmt.Sprintf("nvarchar(20)")
-			default:
-				panic("Unsupported database type")
-			}
-		},
+		"datetime": datetimeColumn,
+		"text":     textColumn,
+		"varchar":  varcharColumn,
+		"id":       idColumn,
 		"int": func() string {
 			// 64bit integers
 			switch dbType {
@@ -197,18 +149,7 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
-		"bool": func() string {
-			switch dbType {
-			case postgres, cockroachdb, mysql, mariadb:
-				return "boolean"
-			case sqlserver:
-				return "bit"
-			case sqlite:
-				return "int"
-			default:
-				panic("Unsupported database type")
-			}
-		},
+		"bool": boolColumn,
 		"TRUE": func() string {
 			switch dbType {
 			case mysql, mariadb, postgres, cockroachdb:
