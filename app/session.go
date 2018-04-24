@@ -169,14 +169,6 @@ func SessionGet(userID data.ID, sessionID string) (*Session, error) {
 		return nil, ErrSessionInvalid
 	}
 
-	// FIXME: Only reset CSRF tokens on GET calls
-	if s.CSRFDate.Add(csrfTokenMaxAge).Before(time.Now()) {
-		err = s.ResetCSRF()
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return s, nil
 }
 
@@ -225,9 +217,13 @@ func (s *Session) User() (*User, error) {
 	return u, nil
 }
 
-// ResetCSRF will generate a new CRSF token, an update the session with it
+// CycleCSRF will generate a new CRSF token if it is too old, and update the session with it
 // allows CSRF token to change more than once per session if need be
-func (s *Session) ResetCSRF() error {
+func (s *Session) CycleCSRF() error {
+	if s.CSRFDate.Add(csrfTokenMaxAge).After(time.Now()) {
+		return nil
+	}
+
 	s.CSRFToken = Random(256)
 	s.CSRFDate = time.Now()
 	_, err := sqlSessionSetCSRF.Exec(sql.Named("csrf_token", s.CSRFToken), sql.Named("csrf_date", s.CSRFDate),

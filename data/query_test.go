@@ -422,7 +422,7 @@ func TestDataTypes(t *testing.T) {
 			}
 
 			if !datetime_type.Time.IsZero() {
-				t.Fatalf("Empty time value was not Zero time")
+				t.Fatalf("Empty time value was not Zero time: %s", datetime_type.Time)
 			}
 
 			if text_type.String != "" {
@@ -504,7 +504,7 @@ func TestDataTypes(t *testing.T) {
 				text_type {{text}},
 				varchar_type {{varchar 30}} NOT NULL DEFAULT '',
 				int_type {{int}} NOT NULL DEFAULT 0,
-				bool_type {{bool}} NOT NULL DEFAULT {{defaultBool}},
+				bool_type {{bool}} NOT NULL DEFAULT {{FALSE}},
 				id_type {{id}}
 			)
 		`).Exec()

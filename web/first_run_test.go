@@ -4,15 +4,14 @@ package web_test
 import (
 	"errors"
 	"strings"
-	"testing"
 
 	"github.com/tebeka/selenium"
 )
 
-func TestFirstRun(t *testing.T) {
+func firstRun() error {
 	err := reset()
 	if err != nil {
-		t.Fatalf("Error resetting table before running tests: %s", err)
+		return err
 	}
 
 	err = newSequence().
@@ -53,7 +52,7 @@ func TestFirstRun(t *testing.T) {
 		Find(".toast.toast-error").Count(0).
 		End()
 	if err != nil {
-		t.Fatalf("Testing First run failed: %s", err)
+		return err
 	}
-
+	return nil
 }

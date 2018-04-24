@@ -135,7 +135,7 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"datetime": func() string {
-			// date + time with precision to milliseconds
+			// date + time + offset with precision to at least milliseconds
 			switch dbType {
 			case mysql, mariadb:
 				return "DATETIME(5)"
@@ -220,16 +220,6 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"FALSE": func() string {
-			switch dbType {
-			case mysql, mariadb, postgres, cockroachdb:
-				return "false"
-			case sqlite, sqlserver:
-				return "0"
-			default:
-				panic("Unsupported database type")
-			}
-		},
-		"defaultBool": func() string {
 			switch dbType {
 			case mysql, mariadb, postgres, cockroachdb:
 				return "false"

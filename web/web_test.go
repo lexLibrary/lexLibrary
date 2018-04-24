@@ -79,6 +79,11 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Error starting web driver: %s", err)
 	}
 
+	err = firstRun()
+	if err != nil {
+		log.Fatalf("First run failed: %s", err)
+	}
+
 	result := m.Run()
 
 	err = driver.Quit()
@@ -139,8 +144,7 @@ func reset() error {
 	if err != nil {
 		return errors.Wrap(err, "Error emptying users table before running tests")
 	}
-
-	return app.Init()
+	return nil
 }
 
 func createUserAndLogin(username, password string, isAdmin bool) error {

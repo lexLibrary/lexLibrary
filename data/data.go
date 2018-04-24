@@ -232,6 +232,7 @@ func initMySQL(cfg Config) error {
 	}
 
 	mCfg.ParseTime = true
+	mCfg.Loc = time.Now().Location()
 
 	db, err = sql.Open("mysql", mCfg.FormatDSN())
 	if err != nil {
