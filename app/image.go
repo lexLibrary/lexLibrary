@@ -94,18 +94,18 @@ type Image struct {
 
 // Full returns the full size image
 func (i *Image) Full() (io.ReadSeeker, error) {
-	return i.fromRow(sqlImageGetFull.QueryRow(sql.Named("id", i.ID)))
+	return i.fromRow(sqlImageGetFull.QueryRow(data.Arg("id", i.ID)))
 }
 
 // Thumb returns the image thumbnail
 func (i *Image) Thumb() (io.ReadSeeker, error) {
-	return i.fromRow(sqlImageGetThumb.QueryRow(sql.Named("id", i.ID)))
+	return i.fromRow(sqlImageGetThumb.QueryRow(data.Arg("id", i.ID)))
 }
 
 // Placeholder returns the image placeholder which is shown while waiting for the
 // rest of the image to load
 func (i *Image) Placeholder() (io.ReadSeeker, error) {
-	return i.fromRow(sqlImageGetPlaceholder.QueryRow(sql.Named("id", i.ID)))
+	return i.fromRow(sqlImageGetPlaceholder.QueryRow(data.Arg("id", i.ID)))
 }
 
 func (i *Image) fromRow(row *sql.Row) (io.ReadSeeker, error) {
@@ -133,7 +133,7 @@ func (i *Image) Etag() string {
 }
 
 func imageGet(id data.ID) *Image {
-	if !id.Valid {
+	if id.IsNil() {
 		return nil
 	}
 	return &Image{ID: id}
@@ -144,7 +144,7 @@ func (i *Image) raw() (*imageRaw, error) {
 		id: i.ID,
 	}
 
-	err := sqlImageGetFull.QueryRow(sql.Named("id", i.ID)).Scan(
+	err := sqlImageGetFull.QueryRow(data.Arg("id", i.ID)).Scan(
 		&raw.name,
 		&raw.version,
 		&raw.contentType,
@@ -231,15 +231,15 @@ func (i *imageRaw) insert(tx *sql.Tx) error {
 		return err
 	}
 	_, err = sqlImageInsert.Tx(tx).Exec(
-		sql.Named("id", i.id),
-		sql.Named("name", i.name),
-		sql.Named("version", i.version),
-		sql.Named("content_type", i.contentType),
-		sql.Named("data", i.data),
-		sql.Named("thumb", i.thumb),
-		sql.Named("placeholder", i.placeholder),
-		sql.Named("updated", i.updated),
-		sql.Named("created", i.created),
+		data.Arg("id", i.id),
+		data.Arg("name", i.name),
+		data.Arg("version", i.version),
+		data.Arg("content_type", i.contentType),
+		data.Arg("data", i.data),
+		data.Arg("thumb", i.thumb),
+		data.Arg("placeholder", i.placeholder),
+		data.Arg("updated", i.updated),
+		data.Arg("created", i.created),
 	)
 	return err
 }
@@ -250,11 +250,11 @@ func (i *imageRaw) update(tx *sql.Tx, version int) error {
 		return err
 	}
 	r, err := sqlImageUpdate.Exec(
-		sql.Named("data", i.data),
-		sql.Named("thumb", i.thumb),
-		sql.Named("placeholder", i.placeholder),
-		sql.Named("id", i.id),
-		sql.Named("version", version),
+		data.Arg("data", i.data),
+		data.Arg("thumb", i.thumb),
+		data.Arg("placeholder", i.placeholder),
+		data.Arg("id", i.id),
+		data.Arg("version", version),
 	)
 
 	if err != nil {
@@ -292,7 +292,7 @@ func (i *imageRaw) validate() error {
 }
 
 func imageDelete(tx *sql.Tx, id data.ID) error {
-	result, err := sqlImageDelete.Tx(tx).Exec(sql.Named("id", id))
+	result, err := sqlImageDelete.Tx(tx).Exec(data.Arg("id", id))
 	if err != nil {
 		return err
 	}

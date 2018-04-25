@@ -3,7 +3,6 @@
 package app_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
@@ -63,7 +62,7 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Invalid token: %s", token.Token)
 		}
 
-		if !token.Expires.Time.IsZero() {
+		if token.Expires.Valid || !token.Expires.Time.IsZero() {
 			t.Fatalf("Invalid null expiration value. Expected %v, got %v", time.Time{}, token.Expires)
 		}
 
@@ -184,7 +183,7 @@ func TestRegistrationToken(t *testing.T) {
 		}
 
 		rows, err := data.NewQuery(`select group_id from user_to_groups where user_id = {{arg "id"}}`).
-			Query(sql.Named("id", u.ID))
+			Query(data.Arg("id", u.ID))
 		if err != nil {
 			t.Fatalf("Error looking up user groups: %s", err)
 		}

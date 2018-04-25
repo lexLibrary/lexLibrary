@@ -41,6 +41,10 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
+	err = reset()
+	if err != nil {
+		log.Fatalf("Error resetting database: %s", err)
+	}
 	err = app.Init()
 	if err != nil {
 		log.Fatalf("Error initializing app layer: %s", err)

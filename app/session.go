@@ -147,7 +147,7 @@ func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Se
 // SessionGet retrieves a session
 func SessionGet(userID data.ID, sessionID string) (*Session, error) {
 	s := &Session{}
-	err := sqlSessionGet.QueryRow(sql.Named("id", sessionID), sql.Named("user_id", userID)).
+	err := sqlSessionGet.QueryRow(data.Arg("id", sessionID), data.Arg("user_id", userID)).
 		Scan(
 			&s.ID,
 			&s.UserID,
@@ -174,16 +174,16 @@ func SessionGet(userID data.ID, sessionID string) (*Session, error) {
 
 func (s *Session) insert() error {
 	_, err := sqlSessionInsert.Exec(
-		sql.Named("id", s.ID),
-		sql.Named("user_id", s.UserID),
-		sql.Named("valid", s.Valid),
-		sql.Named("expires", s.Expires),
-		sql.Named("ip_address", s.IPAddress),
-		sql.Named("user_agent", s.UserID),
-		sql.Named("csrf_token", s.CSRFToken),
-		sql.Named("csrf_date", s.CSRFDate),
-		sql.Named("created", s.Created),
-		sql.Named("updated", s.Updated),
+		data.Arg("id", s.ID),
+		data.Arg("user_id", s.UserID),
+		data.Arg("valid", s.Valid),
+		data.Arg("expires", s.Expires),
+		data.Arg("ip_address", s.IPAddress),
+		data.Arg("user_agent", s.UserID),
+		data.Arg("csrf_token", s.CSRFToken),
+		data.Arg("csrf_date", s.CSRFDate),
+		data.Arg("created", s.Created),
+		data.Arg("updated", s.Updated),
 	)
 	return err
 }
@@ -191,7 +191,7 @@ func (s *Session) insert() error {
 // Logout logs a session out
 func (s *Session) Logout() error {
 	s.Valid = false
-	_, err := sqlSessionSetValid.Exec(sql.Named("valid", s.Valid), sql.Named("id", s.ID))
+	_, err := sqlSessionSetValid.Exec(data.Arg("valid", s.Valid), data.Arg("id", s.ID))
 	return err
 }
 
@@ -226,7 +226,7 @@ func (s *Session) CycleCSRF() error {
 
 	s.CSRFToken = Random(256)
 	s.CSRFDate = time.Now()
-	_, err := sqlSessionSetCSRF.Exec(sql.Named("csrf_token", s.CSRFToken), sql.Named("csrf_date", s.CSRFDate),
-		sql.Named("id", s.ID))
+	_, err := sqlSessionSetCSRF.Exec(data.Arg("csrf_token", s.CSRFToken), data.Arg("csrf_date", s.CSRFDate),
+		data.Arg("id", s.ID))
 	return err
 }

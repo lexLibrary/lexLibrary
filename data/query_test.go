@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"database/sql"
+	"fmt"
 	"io"
 	"math"
 	"strings"
@@ -59,7 +60,7 @@ func TestDataTypes(t *testing.T) {
 			t.Fatal(err)
 		}
 		_, err = data.NewQuery(`insert into data_types (bytes_type) values ({{arg "bytes_type"}})`).
-			Exec(sql.Named("bytes_type", buf.Bytes()))
+			Exec(data.Arg("bytes_type", buf.Bytes()))
 		if err != nil {
 			t.Fatalf("Error inserting bytes data: %s", err)
 		}
@@ -98,10 +99,12 @@ func TestDataTypes(t *testing.T) {
 		expectedTruncate := expected.Truncate(time.Millisecond)
 
 		_, err := data.NewQuery(`insert into data_types (datetime_type) values ({{arg "datetime_type"}})`).
-			Exec(sql.Named("datetime_type", expected))
+			Exec(data.Arg("datetime_type", expected))
 		if err != nil {
 			t.Fatalf("Error inserting datetime type: %s", err)
 		}
+
+		fmt.Printf("Expected: %v\n", expected)
 
 		var got time.Time
 		err = data.NewQuery("Select datetime_type from data_types").QueryRow().Scan(&got)
@@ -112,7 +115,8 @@ func TestDataTypes(t *testing.T) {
 		gotRound := got.Round(time.Millisecond)
 		gotTruncate := got.Truncate(time.Millisecond)
 
-		// Databases will either round to milisecond or truncate to milisecond
+		// Databases will either round or truncate, so depending on how close to the nearest millisecond it was
+		// it may be up or down one
 		if !expected.Equal(got) && !expectedTruncate.Equal(gotTruncate) && !expectedRound.Equal(gotRound) {
 			t.Fatalf("datetime type does not match expected %v, got %v", expected, got)
 		}
@@ -127,7 +131,7 @@ func TestDataTypes(t *testing.T) {
 		}
 
 		_, err = data.NewQuery(`insert into data_types (datetime_type) values ({{arg "datetime_type"}})`).
-			Exec(sql.Named("datetime_type", expected))
+			Exec(data.Arg("datetime_type", expected))
 		if err != nil {
 			t.Fatalf("Error inserting datetime type: %s", err)
 		}
@@ -148,27 +152,27 @@ func TestDataTypes(t *testing.T) {
 		reset(t)
 		col := columnType + "_type"
 		_, err := data.NewQuery(`insert into data_types (` + col + `) values ({{arg "` + col + `"}})`).
-			Exec(sql.Named(col, expected))
+			Exec(data.Arg(col, expected))
 
 		if err != nil {
 			t.Fatalf("Error inserting case sensitive text: %s", err)
 		}
 
 		_, err = data.NewQuery(`insert into data_types (` + col + `) values ({{arg "` + col + `"}})`).
-			Exec(sql.Named(col, strings.ToLower(expected)))
+			Exec(data.Arg(col, strings.ToLower(expected)))
 		if err != nil {
 			t.Fatalf("Error inserting lowered string: %s", err)
 		}
 
 		_, err = data.NewQuery(`insert into data_types (` + col + `) values ({{arg "` + col + `"}})`).
-			Exec(sql.Named(col, strings.ToUpper(expected)))
+			Exec(data.Arg(col, strings.ToUpper(expected)))
 		if err != nil {
 			t.Fatalf("Error inserting uppered string: %s", err)
 		}
 
 		got := ""
 		err = data.NewQuery(`select ` + col + ` from data_types where ` + col + ` = {{arg "value"}}`).QueryRow(
-			sql.Named("value", expected)).Scan(&got)
+			data.Arg("value", expected)).Scan(&got)
 
 		if err != nil {
 			t.Fatalf("Error retrieving case sensitive text: %s", err)
@@ -180,7 +184,7 @@ func TestDataTypes(t *testing.T) {
 		count := 0
 
 		err = data.NewQuery(`select count(*) from data_types where ` + col + ` = {{arg "` + col + `"}}`).
-			QueryRow(sql.Named(col, expected)).Scan(&count)
+			QueryRow(data.Arg(col, expected)).Scan(&count)
 		if err != nil {
 			t.Fatalf("Error testing sql equality for case: %s", err)
 		}
@@ -190,7 +194,7 @@ func TestDataTypes(t *testing.T) {
 		}
 
 		err = data.NewQuery(`select count(*) from data_types where ` + col + ` <> {{arg "` + col + `"}}`).
-			QueryRow(sql.Named(col, expected)).Scan(&count)
+			QueryRow(data.Arg(col, expected)).Scan(&count)
 
 		if err != nil {
 			t.Fatalf("Error testing sql inequality for case: %s", err)
@@ -205,7 +209,7 @@ func TestDataTypes(t *testing.T) {
 		reset(t)
 		col := columnType + "_type"
 		_, err := data.NewQuery(`insert into data_types (` + col + `) values ({{arg "` + col + `"}})`).
-			Exec(sql.Named(col, expected))
+			Exec(data.Arg(col, expected))
 
 		if err != nil {
 			t.Fatalf("Error inserting unicode text: %s", err)
@@ -224,7 +228,7 @@ func TestDataTypes(t *testing.T) {
 		count := 0
 
 		err = data.NewQuery(`select count(*) from data_types where ` + col + ` = {{arg "` + col + `"}}`).
-			QueryRow(sql.Named(col, expected)).Scan(&count)
+			QueryRow(data.Arg(col, expected)).Scan(&count)
 		if err != nil {
 			t.Fatalf("Error testing sql equality for unicode: %s", err)
 		}
@@ -234,7 +238,7 @@ func TestDataTypes(t *testing.T) {
 		}
 
 		err = data.NewQuery(`select count(*) from data_types where ` + col + ` <> {{arg "` + col + `"}}`).
-			QueryRow(sql.Named(col, expected)).Scan(&count)
+			QueryRow(data.Arg(col, expected)).Scan(&count)
 
 		if err != nil {
 			t.Fatalf("Error testing sql inequality for unicode: %s", err)
@@ -263,7 +267,7 @@ func TestDataTypes(t *testing.T) {
 		t.Helper()
 
 		_, err := data.NewQuery(`insert into data_types (int_type) values ({{arg "int_type"}})`).
-			Exec(sql.Named("int_type", expected))
+			Exec(data.Arg("int_type", expected))
 		if err != nil {
 			t.Fatalf("Error inserting int type: %s", err)
 		}
@@ -297,7 +301,7 @@ func TestDataTypes(t *testing.T) {
 		expected := true
 
 		_, err := data.NewQuery(`insert into data_types (bool_type) values ({{arg "bool_type"}})`).
-			Exec(sql.Named("bool_type", expected))
+			Exec(data.Arg("bool_type", expected))
 		if err != nil {
 			t.Fatalf("Error inserting bool type: %s", err)
 		}
@@ -318,19 +322,19 @@ func TestDataTypes(t *testing.T) {
 		expected := data.NewID()
 
 		_, err := data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).
-			Exec(sql.Named("id_type", expected))
+			Exec(data.Arg("id_type", expected))
 		if err != nil {
 			t.Fatalf("Error inserting id type: %s", err)
 		}
 		_, err = data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).
-			Exec(sql.Named("id_type", data.NewID()))
+			Exec(data.Arg("id_type", data.NewID()))
 		if err != nil {
 			t.Fatalf("Error inserting id type: %s", err)
 		}
 
 		var got data.ID
 		err = data.NewQuery(`Select id_type from data_types where id_type = {{arg "id_type"}}`).QueryRow(
-			sql.Named("id_type", expected)).Scan(&got)
+			data.Arg("id_type", expected)).Scan(&got)
 		if err != nil {
 			t.Fatalf("Error retrieving id type: %s", err)
 		}
@@ -340,7 +344,7 @@ func TestDataTypes(t *testing.T) {
 		}
 
 		err = data.NewQuery(`Select id_type from data_types where id_type <> {{arg "id_type"}}`).QueryRow(
-			sql.Named("id_type", expected)).Scan(&got)
+			data.Arg("id_type", expected)).Scan(&got)
 		if err != nil {
 			t.Fatalf("Error retrieving id type: %s", err)
 		}
@@ -358,19 +362,19 @@ func TestDataTypes(t *testing.T) {
 		var errTest = errors.New("Rollback transaction for test")
 		err := data.BeginTx(func(tx *sql.Tx) error {
 			_, err := data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).Tx(tx).
-				Exec(sql.Named("id_type", id1))
+				Exec(data.Arg("id_type", id1))
 
 			if err != nil {
 				return err
 			}
 			err = data.NewQuery(`select id_type from data_types where id_type = {{arg "id_type"}}`).Tx(tx).
-				QueryRow(sql.Named("id_type", id1)).Scan(&otherId)
+				QueryRow(data.Arg("id_type", id1)).Scan(&otherId)
 			if err != nil {
 				return err
 			}
 
 			_, err = data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).Tx(tx).
-				Exec(sql.Named("id_type", id2))
+				Exec(data.Arg("id_type", id2))
 			if err != nil {
 				return err
 			}
@@ -387,7 +391,7 @@ func TestDataTypes(t *testing.T) {
 		}
 
 		err = data.NewQuery(`select id_type from data_types where id_type = {{arg "id_type"}}`).
-			QueryRow(sql.Named("id_type", id1)).Scan(&otherId)
+			QueryRow(data.Arg("id_type", id1)).Scan(&otherId)
 		if err != sql.ErrNoRows {
 			t.Fatalf("Rows were returned after transaction rollback.")
 		}
@@ -403,13 +407,13 @@ func TestDataTypes(t *testing.T) {
 		var bool_type sql.NullBool
 		var id_type data.ID
 		_, err := data.NewQuery(`insert into data_types (id) values ({{arg "id"}})`).
-			Exec(sql.Named("id", id))
+			Exec(data.Arg("id", id))
 		if err != nil {
 			t.Fatalf("Error inserting data for null /default testing: %s", err)
 		}
 		sel := func(t *testing.T) {
 			err = data.NewQuery(`select datetime_type, text_type, varchar_type, int_type, bool_type, id_type
-				from data_types where id = {{arg "id"}}`).QueryRow(sql.Named("id", id)).Scan(
+				from data_types where id = {{arg "id"}}`).QueryRow(data.Arg("id", id)).Scan(
 				&datetime_type,
 				&text_type,
 				&varchar_type,
@@ -438,7 +442,7 @@ func TestDataTypes(t *testing.T) {
 				t.Fatalf("Incorrect empty type for boolean. Expected %v got %v", false, bool_type.Bool)
 			}
 
-			if id_type.Valid {
+			if !id_type.IsNil() {
 				t.Fatalf("Incorrect empty type for id. Expected %v got %v", data.ID{}, id_type)
 			}
 
@@ -454,7 +458,7 @@ func TestDataTypes(t *testing.T) {
 			t.Fatalf("Error dropping data columns: %s", err)
 		}
 		_, err = data.NewQuery(`insert into data_types (id) values ({{arg "id"}})`).
-			Exec(sql.Named("id", id))
+			Exec(data.Arg("id", id))
 		if err != nil {
 			t.Fatalf("Error inserting data for null /default testing: %s", err)
 		}

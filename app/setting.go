@@ -88,7 +88,7 @@ func settingGet(id string) (Setting, error) {
 		return Setting{}, err
 	}
 
-	err = sqlSettingGet.QueryRow(sql.Named("id", id)).Scan(&strValue)
+	err = sqlSettingGet.QueryRow(data.Arg("id", id)).Scan(&strValue)
 	if err == sql.ErrNoRows {
 		// nothing in the DB return the default setting value
 		return setting, nil
@@ -166,12 +166,12 @@ func settingSet(tx *sql.Tx, id string, value interface{}) error {
 
 	setting.Value = value
 	var tmp = ""
-	err = sqlSettingGet.Tx(tx).QueryRow(sql.Named("id", id)).Scan(&tmp)
+	err = sqlSettingGet.Tx(tx).QueryRow(data.Arg("id", id)).Scan(&tmp)
 	if err == sql.ErrNoRows {
 		_, err := sqlSettingInsert.Tx(tx).Exec(
-			sql.Named("id", id),
-			sql.Named("description", setting.Description),
-			sql.Named("value", strValue))
+			data.Arg("id", id),
+			data.Arg("description", setting.Description),
+			data.Arg("value", strValue))
 		if err != nil {
 			return errors.Wrapf(err, "Error inserting setting %s", id)
 		}
@@ -182,7 +182,7 @@ func settingSet(tx *sql.Tx, id string, value interface{}) error {
 		return err
 	}
 
-	_, err = sqlSettingUpdate.Tx(tx).Exec(sql.Named("id", id), sql.Named("value", value))
+	_, err = sqlSettingUpdate.Tx(tx).Exec(data.Arg("id", id), data.Arg("value", value))
 	if err != nil {
 		return errors.Wrapf(err, "Error updating setting %s", id)
 	}

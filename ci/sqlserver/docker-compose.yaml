@@ -18,7 +18,7 @@ services:
       - sqlserver
       - webdriver
     volumes:
-      - ../..:/in:ro
+      - ../..:/in
     environment:
       LLDATABASE: 'sqlserver'
       LLTEST: 'true'

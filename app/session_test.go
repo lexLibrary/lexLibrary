@@ -3,7 +3,6 @@
 package app_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
@@ -59,7 +58,7 @@ func TestSession(t *testing.T) {
 		}
 
 		valid := true
-		err = data.NewQuery(`select valid from sessions where id = {{arg "id"}}`).QueryRow(sql.Named("id", s.ID)).
+		err = data.NewQuery(`select valid from sessions where id = {{arg "id"}}`).QueryRow(data.Arg("id", s.ID)).
 			Scan(&valid)
 		if err != nil {
 			t.Fatalf("Error getting session for ID %s: %s", s.ID, err)
@@ -94,21 +93,36 @@ func TestSession(t *testing.T) {
 		}
 
 	})
-	t.Run("Reset CSRF", func(t *testing.T) {
+	t.Run("Cycle CSRF", func(t *testing.T) {
 		reset(t)
 		s, err := app.SessionNew(u, time.Time{}, "127.0.0.1", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
 		}
 
+		// update session's csrf date to more than 15 minutes ago so it'll reset
+		_, err = data.NewQuery(`update sessions set csrf_date = {{arg "expires"}} where id = {{arg "id"}}`).Exec(
+			data.Arg("expires", time.Now().Add(-20*time.Minute)),
+			data.Arg("id", s.ID),
+		)
+		if err != nil {
+			t.Fatalf("Error setting csrf token date: %s", err)
+		}
+
 		original := s.CSRFToken
-		err = s.ResetCSRF()
+
+		s, err = app.SessionGet(u.ID, s.ID)
+		if err != nil {
+			t.Fatalf("Error getting session: %s", err)
+		}
+
+		err = s.CycleCSRF()
 		if err != nil {
 			t.Fatalf("Error resetting csrf token in session: %s", err)
 		}
 
 		token := ""
-		err = data.NewQuery(`select csrf_token from sessions where id = {{arg "id"}}`).QueryRow(sql.Named("id", s.ID)).
+		err = data.NewQuery(`select csrf_token from sessions where id = {{arg "id"}}`).QueryRow(data.Arg("id", s.ID)).
 			Scan(&token)
 		if err != nil {
 			t.Fatalf("Error getting session for ID %s: %s", s.ID, err)
@@ -196,7 +210,7 @@ func TestSession(t *testing.T) {
 		reset(t)
 
 		_, err := data.NewQuery(`update users set password_expiration = {{arg "expire"}} where id = {{arg "id"}}`).
-			Exec(sql.Named("expire", time.Now().AddDate(0, 0, -1)), sql.Named("id", u.ID))
+			Exec(data.Arg("expire", time.Now().AddDate(0, 0, -1)), data.Arg("id", u.ID))
 		if err != nil {
 			t.Fatalf("Error expiring user's password: %s", err)
 		}

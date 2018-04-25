@@ -126,7 +126,7 @@ func TestGroup(t *testing.T) {
 		}
 
 		newName := ""
-		err = data.NewQuery(`select name from groups where id = {{arg "id"}}`).QueryRow(sql.Named("id", g.ID)).
+		err = data.NewQuery(`select name from groups where id = {{arg "id"}}`).QueryRow(data.Arg("id", g.ID)).
 			Scan(&newName)
 		if err != nil {
 			t.Fatalf("Error getting new group name: %s", err)
@@ -154,8 +154,7 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Error adding user: %s", err)
 		}
 
-		id := data.NewID()
-		id.Valid = false
+		id := data.ID{}
 
 		err = ga.SetMember(id, false)
 		if !app.IsFail(err) {
@@ -176,7 +175,7 @@ func TestGroup(t *testing.T) {
 		getMember := data.NewQuery(`select admin from user_to_groups 
 		where group_id = {{arg "group_id"}} and user_id = {{arg "user_id"}}`)
 
-		err = getMember.QueryRow(sql.Named("user_id", other.ID), sql.Named("group_id", g.ID)).Scan(&isAdmin)
+		err = getMember.QueryRow(data.Arg("user_id", other.ID), data.Arg("group_id", g.ID)).Scan(&isAdmin)
 		if err != nil {
 			t.Fatalf("Error getting group member: %s", err)
 		}
@@ -189,7 +188,7 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Error updating group member: %s", err)
 		}
 
-		err = getMember.QueryRow(sql.Named("user_id", other.ID), sql.Named("group_id", g.ID)).Scan(&isAdmin)
+		err = getMember.QueryRow(data.Arg("user_id", other.ID), data.Arg("group_id", g.ID)).Scan(&isAdmin)
 		if err != nil {
 			t.Fatalf("Error getting group member: %s", err)
 		}

@@ -2,7 +2,6 @@
 package web_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
@@ -103,7 +102,7 @@ func TestLogin(t *testing.T) {
 	// expire password soon
 	_, err = data.NewQuery(`update users set password_expiration = {{arg "expires"}}
 			where username = {{arg "username"}}`).
-		Exec(sql.Named("expires", time.Now().AddDate(0, 0, 6)), sql.Named("username", username))
+		Exec(data.Arg("expires", time.Now().AddDate(0, 0, 6)), data.Arg("username", username))
 	if err != nil {
 		t.Fatalf("Error expiring password: %s", err)
 	}
@@ -127,7 +126,7 @@ func TestLogin(t *testing.T) {
 	// expire password completely
 	_, err = data.NewQuery(`update users set password_expiration = {{arg "expires"}}
 			where username = {{arg "username"}}`).
-		Exec(sql.Named("expires", time.Now()), sql.Named("username", username))
+		Exec(data.Arg("expires", time.Now()), data.Arg("username", username))
 	if err != nil {
 		t.Fatalf("Error expiring password: %s", err)
 	}

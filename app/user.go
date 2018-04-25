@@ -193,7 +193,10 @@ func userNew(tx *sql.Tx, username, password string) (*User, error) {
 	}
 
 	if SettingMust("PasswordExpirationDays").Int() >= 0 {
-		u.PasswordExpiration.Time = time.Now().AddDate(0, 0, SettingMust("PasswordExpirationDays").Int())
+		u.PasswordExpiration = data.NullTime{
+			Valid: true,
+			Time:  time.Now().AddDate(0, 0, SettingMust("PasswordExpirationDays").Int()),
+		}
 	}
 
 	err = u.insert(tx)
@@ -208,12 +211,12 @@ func userNew(tx *sql.Tx, username, password string) (*User, error) {
 // app internal code should use un-exported funcs that contain the full User record
 func UserGet(username string) (*PublicProfile, error) {
 	return publicProfileFromRow(sqlUserPublicProfileFromUsername.
-		QueryRow(sql.Named("username", strings.ToLower(username))))
+		QueryRow(data.Arg("username", strings.ToLower(username))))
 }
 
 func publicProfileGet(id data.ID) (*PublicProfile, error) {
 	return publicProfileFromRow(sqlUserPublicProfileFromID.
-		QueryRow(sql.Named("id", id)))
+		QueryRow(data.Arg("id", id)))
 }
 
 func publicProfileFromRow(row *sql.Row) (*PublicProfile, error) {
@@ -241,7 +244,7 @@ func publicProfileFromRow(row *sql.Row) (*PublicProfile, error) {
 func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 	u := &User{}
 
-	err := sqlUserFromUsername.Tx(tx).QueryRow(sql.Named("username", strings.ToLower(username))).Scan(
+	err := sqlUserFromUsername.Tx(tx).QueryRow(data.Arg("username", strings.ToLower(username))).Scan(
 		&u.ID,
 		&u.Username,
 		&u.Name,
@@ -271,7 +274,7 @@ func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 
 func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
 	u := &User{}
-	err := sqlUserFromID.Tx(tx).QueryRow(sql.Named("id", id)).Scan(
+	err := sqlUserFromID.Tx(tx).QueryRow(data.Arg("id", id)).Scan(
 		&u.ID,
 		&u.Username,
 		&u.Name,
@@ -299,18 +302,18 @@ func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
 
 func (u *User) insert(tx *sql.Tx) error {
 	_, err := sqlUserInsert.Tx(tx).Exec(
-		sql.Named("id", u.ID),
-		sql.Named("username", u.Username),
-		sql.Named("name", u.Name),
-		sql.Named("auth_type", u.AuthType),
-		sql.Named("password", u.password),
-		sql.Named("password_version", u.passwordVersion),
-		sql.Named("password_expiration", u.PasswordExpiration),
-		sql.Named("active", u.Active),
-		sql.Named("version", u.Version),
-		sql.Named("updated", u.Updated),
-		sql.Named("created", u.Created),
-		sql.Named("admin", u.Admin),
+		data.Arg("id", u.ID),
+		data.Arg("username", u.Username),
+		data.Arg("name", u.Name),
+		data.Arg("auth_type", u.AuthType),
+		data.Arg("password", u.password),
+		data.Arg("password_version", u.passwordVersion),
+		data.Arg("password_expiration", u.PasswordExpiration),
+		data.Arg("active", u.Active),
+		data.Arg("version", u.Version),
+		data.Arg("updated", u.Updated),
+		data.Arg("created", u.Created),
+		data.Arg("admin", u.Admin),
 	)
 
 	return err
@@ -360,8 +363,8 @@ func (u *User) update(update func() (sql.Result, error)) error {
 // setActive sets the active status of the given user
 func (u *User) setActive(active bool, version int) error {
 	err := u.update(func() (sql.Result, error) {
-		return sqlUserUpdateActive.Exec(sql.Named("active", active), sql.Named("id", u.ID),
-			sql.Named("version", version))
+		return sqlUserUpdateActive.Exec(data.Arg("active", active), data.Arg("id", u.ID),
+			data.Arg("version", version))
 	})
 	if err != nil {
 		return err
@@ -381,9 +384,9 @@ func (u *User) SetName(name string, version int) error {
 		}
 
 		return sqlUserUpdateName.Exec(
-			sql.Named("name", u.Name),
-			sql.Named("id", u.ID),
-			sql.Named("version", version),
+			data.Arg("name", u.Name),
+			data.Arg("id", u.ID),
+			data.Arg("version", version),
 		)
 	})
 }
@@ -392,9 +395,9 @@ func (u *User) SetName(name string, version int) error {
 func (u *User) setAdmin(admin bool, version int) error {
 	err := u.update(func() (sql.Result, error) {
 		return sqlUserUpdateAdmin.Exec(
-			sql.Named("admin", admin),
-			sql.Named("id", u.ID),
-			sql.Named("version", version),
+			data.Arg("admin", admin),
+			data.Arg("id", u.ID),
+			data.Arg("version", version),
 		)
 	})
 	if err != nil {
@@ -453,11 +456,11 @@ func (u *User) SetPassword(oldPassword, newPassword string, version int) error {
 		// update password, version and expiration
 		err = u.update(func() (sql.Result, error) {
 			return sqlUserUpdatePassword.Exec(
-				sql.Named("password", hash),
-				sql.Named("password_version", passVer),
-				sql.Named("password_expiration", expires),
-				sql.Named("id", u.ID),
-				sql.Named("version", version),
+				data.Arg("password", hash),
+				data.Arg("password_version", passVer),
+				data.Arg("password_expiration", expires),
+				data.Arg("id", u.ID),
+				data.Arg("version", version),
 			)
 		})
 		if err != nil {
@@ -465,7 +468,7 @@ func (u *User) SetPassword(oldPassword, newPassword string, version int) error {
 		}
 		// invalidate all sessions for user
 		_, err := sqlSessionInvalidateAll.Exec(
-			sql.Named("user_id", u.ID),
+			data.Arg("user_id", u.ID),
 		)
 		if err != nil {
 			return err
@@ -509,9 +512,9 @@ func (u *User) UploadProfileImageDraft(upload Upload, version int) error {
 
 		err = u.update(func() (sql.Result, error) {
 			return sqlUserUpdateProfileDraftImage.Tx(tx).Exec(
-				sql.Named("profile_image_draft_id", i.id),
-				sql.Named("id", u.ID),
-				sql.Named("version", version),
+				data.Arg("profile_image_draft_id", i.id),
+				data.Arg("id", u.ID),
+				data.Arg("version", version),
 			)
 		})
 
@@ -519,7 +522,7 @@ func (u *User) UploadProfileImageDraft(upload Upload, version int) error {
 			return err
 		}
 
-		if u.profileImageDraft.Valid {
+		if !u.profileImageDraft.IsNil() {
 			// a previous draft user image exists, delete it
 			err = imageDelete(tx, u.profileImageDraft)
 			if err != nil {
@@ -585,7 +588,7 @@ func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 			return err
 		}
 
-		if u.profileImage.Valid {
+		if !u.profileImage.IsNil() {
 			// a previous user image exists, delete it
 			err = imageDelete(tx, u.profileImage)
 			if err != nil {
@@ -596,10 +599,10 @@ func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 
 		return u.update(func() (sql.Result, error) {
 			return sqlUserUpdateProfileImage.Tx(tx).Exec(
-				sql.Named("profile_image_id", u.profileImageDraft),
-				sql.Named("profile_image_draft_id", nil),
-				sql.Named("id", u.ID),
-				sql.Named("version", u.Version),
+				data.Arg("profile_image_id", u.profileImageDraft),
+				data.Arg("profile_image_draft_id", nil),
+				data.Arg("id", u.ID),
+				data.Arg("version", u.Version),
 			)
 		})
 	})
@@ -654,9 +657,9 @@ func (u *User) SetUsername(username string, version int) error {
 
 	return u.update(func() (sql.Result, error) {
 		return sqlUserUpdateUsername.Exec(
-			sql.Named("username", u.Username),
-			sql.Named("id", u.ID),
-			sql.Named("version", version),
+			data.Arg("username", u.Username),
+			data.Arg("id", u.ID),
+			data.Arg("version", version),
 		)
 	})
 }

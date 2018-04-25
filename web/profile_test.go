@@ -41,7 +41,7 @@ func TestProfile(t *testing.T) {
 		Find("figure.avatar.avatar-full").Attribute("data-initial").Equals("TE").
 		Find("#inputName").SendKeys("Test A New Name").
 		Find("#changeName > button.btn").Click().
-		Find("figure.avatar.avatar-full").Attribute("data-initial").Equals("TN").
+		Find("figure.avatar.avatar-full").Attribute("data-initial").Equals("TN").Eventually().
 		End()
 	if err != nil {
 		t.Fatal(err)

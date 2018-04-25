@@ -26,6 +26,24 @@ type Query struct {
 	tx        *sql.Tx
 }
 
+// Argument is a wrapper around sql.NamedArg so that a data can be unified across all database backends
+// mainly dateTime handling
+type Argument sql.NamedArg
+
+func Arg(name string, value interface{}) Argument {
+	switch v := value.(type) {
+	case time.Time:
+		value = v.UTC()
+	case NullTime:
+		if v.Valid {
+			v.Time = v.Time.UTC()
+			value = v
+		}
+	}
+
+	return Argument(sql.Named(name, value))
+}
+
 // NewQuery creates a new query from the template passed in
 func NewQuery(tmpl string) *Query {
 	q := &Query{
@@ -41,7 +59,7 @@ func NewQuery(tmpl string) *Query {
 	return q
 }
 
-func (q *Query) orderedArgs(args []sql.NamedArg) []interface{} {
+func (q *Query) orderedArgs(args []Argument) []interface{} {
 	ordered := make([]interface{}, 0, len(q.args))
 
 	for i := range q.args {
@@ -50,7 +68,7 @@ func (q *Query) orderedArgs(args []sql.NamedArg) []interface{} {
 				switch dbType {
 				case postgres, cockroachdb, sqlserver:
 					// named args
-					ordered = append(ordered, args[j])
+					ordered = append(ordered, sql.NamedArg(args[j]))
 				default:
 					// unnamed values
 					ordered = append(ordered, args[j].Value)
@@ -87,23 +105,13 @@ func (q *Query) buildTemplate() {
 				return "?"
 			}
 		},
-		"bytes": func() string {
-			// binary data with no size limits
-			switch dbType {
-			case sqlite:
-				return "BLOB"
-			case postgres:
-				return "BYTEA"
-			case cockroachdb:
-				return "BYTES"
-			case mysql, mariadb:
-				return "BLOB"
-			case sqlserver:
-				return "VARBINARY(max)"
-			default:
-				panic("Unsupported database type")
-			}
-		},
+		"bytes":    bytesColumn,
+		"datetime": datetimeColumn,
+		"text":     textColumn,
+		"varchar":  varcharColumn,
+		"id":       idColumn,
+		"int":      intColumn,
+		"bool":     boolColumn,
 		"defaultDateTime": func() string {
 			t := time.Time{}
 			switch dbType {
@@ -120,7 +128,7 @@ func (q *Query) buildTemplate() {
 			}
 		},
 		"NOW": func() string {
-			t := time.Now()
+			t := time.Now().UTC()
 			switch dbType {
 			case mysql, mariadb:
 				return fmt.Sprintf("'%s'", t.Format("2006-01-02 15:04:05.000"))
@@ -134,22 +142,6 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
-		"datetime": datetimeColumn,
-		"text":     textColumn,
-		"varchar":  varcharColumn,
-		"id":       idColumn,
-		"int": func() string {
-			// 64bit integers
-			switch dbType {
-			case sqlite:
-				return "int"
-			case postgres, mysql, mariadb, cockroachdb, sqlserver:
-				return "bigint"
-			default:
-				panic("Unsupported database type")
-			}
-		},
-		"bool": boolColumn,
 		"TRUE": func() string {
 			switch dbType {
 			case mysql, mariadb, postgres, cockroachdb:
@@ -235,7 +227,7 @@ func (q *Query) buildTemplate() {
 }
 
 // Exec executes a templated query without returning any rows
-func (q *Query) Exec(args ...sql.NamedArg) (sql.Result, error) {
+func (q *Query) Exec(args ...Argument) (sql.Result, error) {
 	if !q.built {
 		q.buildTemplate()
 	}
@@ -246,7 +238,7 @@ func (q *Query) Exec(args ...sql.NamedArg) (sql.Result, error) {
 }
 
 // Query executes a templated query that returns rows
-func (q *Query) Query(args ...sql.NamedArg) (*sql.Rows, error) {
+func (q *Query) Query(args ...Argument) (*sql.Rows, error) {
 	if !q.built {
 		q.buildTemplate()
 	}
@@ -257,7 +249,7 @@ func (q *Query) Query(args ...sql.NamedArg) (*sql.Rows, error) {
 }
 
 // QueryRow executes a templated query that returns a single row
-func (q *Query) QueryRow(args ...sql.NamedArg) *sql.Row {
+func (q *Query) QueryRow(args ...Argument) *sql.Row {
 	if !q.built {
 		q.buildTemplate()
 	}
@@ -328,7 +320,7 @@ func BeginTx(trnFunc func(tx *sql.Tx) error) error {
 // Debug runs the passed in query and returns a string of the results
 // in a tab delimited format, with columns listed in the first row
 // meant for debugging use. Will panic instead of throwing an error
-func (q *Query) Debug(args ...sql.NamedArg) string {
+func (q *Query) Debug(args ...Argument) string {
 	padding := 25
 	result := ""
 
@@ -398,7 +390,7 @@ func (q *Query) Debug(args ...sql.NamedArg) string {
 }
 
 // DebugPrint prints out the debug query to the screen
-func (q *Query) DebugPrint(args ...sql.NamedArg) {
+func (q *Query) DebugPrint(args ...Argument) {
 	fmt.Println(q.Debug(args...))
 }
 

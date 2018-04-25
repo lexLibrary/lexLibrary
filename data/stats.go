@@ -1,9 +1,5 @@
 package data
 
-import (
-	"database/sql"
-)
-
 // SizeStats are statistics about the size of the data in LL
 // all sizes are in bytes
 type SizeStats struct {
@@ -67,7 +63,7 @@ func Size() (SizeStats, error) {
 		stats.Image = -1
 	case postgres:
 		var dbSize, tableSize int64
-		rows, err := postgresSize.Query(sql.Named("table", "images"), sql.Named("db", databaseName))
+		rows, err := postgresSize.Query(Arg("table", "images"), Arg("db", databaseName))
 		if err != nil {
 			return stats, err
 		}
@@ -87,7 +83,7 @@ func Size() (SizeStats, error) {
 		stats.Image = tableSize
 	case mysql:
 		var dbSize, tableSize int64
-		rows, err := mysqlSize.Query(sql.Named("table", "images"))
+		rows, err := mysqlSize.Query(Arg("table", "images"))
 		if err != nil {
 			return stats, err
 		}
@@ -107,7 +103,7 @@ func Size() (SizeStats, error) {
 		stats.Image = tableSize
 	case sqlserver:
 		var dbSize, tableSize int64
-		rows, err := sqlserverSize.Query(sql.Named("table", "images"))
+		rows, err := sqlserverSize.Query(Arg("table", "images"))
 		if err != nil {
 			return stats, err
 		}

@@ -62,9 +62,9 @@ var (
 		from groups 
 		where name = {{arg "name"}}
 	`)
-	sqlGroupsFromIDs = func(ids []data.ID, countOnly bool) (*data.Query, []sql.NamedArg) {
+	sqlGroupsFromIDs = func(ids []data.ID, countOnly bool) (*data.Query, []data.Argument) {
 		in := ""
-		args := make([]sql.NamedArg, len(ids))
+		args := make([]data.Argument, len(ids))
 		for i := range ids {
 			if i != 0 {
 				in += ", "
@@ -158,9 +158,9 @@ func (u *User) NewGroup(name string) (*Group, error) {
 
 		// add current user as member and admin
 		_, err = sqlUserToGroupInsert.Tx(tx).Exec(
-			sql.Named("user_id", u.ID),
-			sql.Named("group_id", g.ID),
-			sql.Named("admin", true),
+			data.Arg("user_id", u.ID),
+			data.Arg("group_id", g.ID),
+			data.Arg("admin", true),
 		)
 		return err
 	})
@@ -175,7 +175,7 @@ func (u *User) NewGroup(name string) (*Group, error) {
 func GroupFromName(name string) (*Group, error) {
 	g := &Group{}
 
-	err := sqlGroupFromName.QueryRow(sql.Named("name", name)).Scan(
+	err := sqlGroupFromName.QueryRow(data.Arg("name", name)).Scan(
 		&g.ID,
 		&g.Name,
 		&g.Version,
@@ -204,11 +204,11 @@ func (g *Group) validate() error {
 
 func (g *Group) insert(tx *sql.Tx) error {
 	_, err := sqlGroupInsert.Tx(tx).Exec(
-		sql.Named("id", g.ID),
-		sql.Named("name", g.Name),
-		sql.Named("version", g.Version),
-		sql.Named("updated", g.Updated),
-		sql.Named("created", g.Created),
+		data.Arg("id", g.ID),
+		data.Arg("name", g.Name),
+		data.Arg("version", g.Version),
+		data.Arg("updated", g.Updated),
+		data.Arg("created", g.Created),
 	)
 
 	return err
@@ -245,7 +245,7 @@ func (g *Group) Admin(who *User) (*GroupAdmin, error) {
 		}, nil
 	}
 	admin := false
-	err := sqlGroupGetMember.QueryRow(sql.Named("user_id", who.ID), sql.Named("group_id", g.ID)).Scan(
+	err := sqlGroupGetMember.QueryRow(data.Arg("user_id", who.ID), data.Arg("group_id", g.ID)).Scan(
 		&admin,
 	)
 	if err == sql.ErrNoRows {
@@ -275,21 +275,21 @@ func (ga *GroupAdmin) SetName(name string, version int) error {
 	}
 	return ga.group.update(func() (sql.Result, error) {
 		return sqlGroupUpdate.Exec(
-			sql.Named("name", name),
-			sql.Named("id", ga.group.ID),
-			sql.Named("version", version),
+			data.Arg("name", name),
+			data.Arg("id", ga.group.ID),
+			data.Arg("version", version),
 		)
 	})
 }
 
 // SetMember adds a new member to a group or updates an existing member
 func (ga *GroupAdmin) SetMember(userID data.ID, admin bool) error {
-	if !userID.Valid {
+	if userID.IsNil() {
 		return NewFailure("Cannot add an invalid user to a group")
 	}
 
 	currentAdmin := false
-	err := sqlGroupGetMember.QueryRow(sql.Named("group_id", ga.group.ID), sql.Named("user_id", userID)).
+	err := sqlGroupGetMember.QueryRow(data.Arg("group_id", ga.group.ID), data.Arg("user_id", userID)).
 		Scan(&currentAdmin)
 	if err == nil {
 		// user is already a member
@@ -298,9 +298,9 @@ func (ga *GroupAdmin) SetMember(userID data.ID, admin bool) error {
 			return nil
 		}
 		_, err = sqlGroupUpdateMember.Exec(
-			sql.Named("group_id", ga.group.ID),
-			sql.Named("user_id", userID),
-			sql.Named("admin", admin),
+			data.Arg("group_id", ga.group.ID),
+			data.Arg("user_id", userID),
+			data.Arg("admin", admin),
 		)
 		return err
 	}
@@ -310,9 +310,9 @@ func (ga *GroupAdmin) SetMember(userID data.ID, admin bool) error {
 
 	// not currently a member
 	result, err := sqlGroupInsertMember.Exec(
-		sql.Named("group_id", ga.group.ID),
-		sql.Named("user_id", userID),
-		sql.Named("admin", admin),
+		data.Arg("group_id", ga.group.ID),
+		data.Arg("user_id", userID),
+		data.Arg("admin", admin),
 	)
 	if err != nil {
 		return err

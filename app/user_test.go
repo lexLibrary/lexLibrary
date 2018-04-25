@@ -3,7 +3,6 @@
 package app_test
 
 import (
-	"database/sql"
 	"fmt"
 	"image/png"
 	"strings"
@@ -80,7 +79,7 @@ func TestUser(t *testing.T) {
 					updated,
 					created
 			from users
-			where id = {{arg "id"}}`).QueryRow(sql.Named("id", u.ID)).Scan(
+			where id = {{arg "id"}}`).QueryRow(data.Arg("id", u.ID)).Scan(
 			&oID,
 			&oUsername,
 			&oPassword,
@@ -687,7 +686,7 @@ func TestUser(t *testing.T) {
 		count := 0
 
 		err = data.NewQuery(`select count(*) as cnt from images where id = {{arg "id"}}`).
-			QueryRow(sql.Named("id", origDraftID)).Scan(&count)
+			QueryRow(data.Arg("id", origDraftID)).Scan(&count)
 		if err != nil {
 			t.Fatalf("Error getting image count: %s", err)
 		}

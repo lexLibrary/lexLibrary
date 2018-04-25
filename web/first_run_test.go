@@ -9,12 +9,7 @@ import (
 )
 
 func firstRun() error {
-	err := reset()
-	if err != nil {
-		return err
-	}
-
-	err = newSequence().
+	err := newSequence().
 		Get(llURL.String()).
 		Find("#submit").Click().
 		Find(".has-error > .form-input-hint").Text().Contains("A username is required").

@@ -3,7 +3,6 @@
 package app
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"time"
@@ -56,9 +55,9 @@ func LogError(lerr error) xid.ID {
 	log.Printf("ERROR: %s", l.Message)
 
 	_, err := sqlLogInsert.Exec(
-		sql.Named("id", l.ID),
-		sql.Named("occurred", l.Occurred),
-		sql.Named("message", l.Message))
+		data.Arg("id", l.ID),
+		data.Arg("occurred", l.Occurred),
+		data.Arg("message", l.Message))
 
 	if err != nil {
 		log.Printf(`Error inserting error log entry %s. Log entry: %s ERROR: %s`, l.ID, lerr, err)
@@ -74,7 +73,7 @@ func LogGet(offset, limit int) ([]*Log, error) {
 	}
 	var logs []*Log
 
-	rows, err := sqlLogGet.Query(sql.Named("offset", offset), sql.Named("limit", limit))
+	rows, err := sqlLogGet.Query(data.Arg("offset", offset), data.Arg("limit", limit))
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +95,7 @@ func LogGet(offset, limit int) ([]*Log, error) {
 func LogGetByID(id xid.ID) (*Log, error) {
 	log := &Log{}
 
-	err := sqlLogGetByID.QueryRow(sql.Named("id", id)).Scan(&log.ID, &log.Occurred, &log.Message)
+	err := sqlLogGetByID.QueryRow(data.Arg("id", id)).Scan(&log.ID, &log.Occurred, &log.Message)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +111,9 @@ func LogSearch(search string, offset, limit int) ([]*Log, error) {
 	var logs []*Log
 
 	rows, err := sqlLogSearch.Query(
-		sql.Named("search", "%"+search+"%"),
-		sql.Named("offset", offset),
-		sql.Named("limit", limit))
+		data.Arg("search", "%"+search+"%"),
+		data.Arg("offset", offset),
+		data.Arg("limit", limit))
 	if err != nil {
 		return nil, err
 	}

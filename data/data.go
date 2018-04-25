@@ -5,7 +5,6 @@ package data
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"fmt"
 	"log"
 	"net/url"
@@ -232,7 +231,6 @@ func initMySQL(cfg Config) error {
 	}
 
 	mCfg.ParseTime = true
-	mCfg.Loc = time.Now().Location()
 
 	db, err = sql.Open("mysql", mCfg.FormatDSN())
 	if err != nil {
@@ -335,42 +333,4 @@ func initSQLServer(cfg Config) error {
 	// db connection is pointing at a specific database, use as lexLibrary DB
 
 	return nil
-}
-
-// NullTime represents a time.Time that may be null. NullTime implements the
-// sql.Scanner interface so it can be used as a scan destination, similar to
-// sql.NullString.
-type NullTime struct {
-	Time  time.Time
-	Valid bool // Valid is true if Time is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (nt *NullTime) Scan(value interface{}) error {
-	nt.Time, nt.Valid = value.(time.Time)
-	return nil
-}
-
-// Value implements the driver Valuer interface.
-func (nt NullTime) Value() (driver.Value, error) {
-	if !nt.Valid {
-		return nil, nil
-	}
-	return nt.Time, nil
-}
-
-// MarshalJSON implements the JSON interface for NullTime
-func (nt NullTime) MarshalJSON() ([]byte, error) {
-	if !nt.Valid {
-		return []byte("null"), nil
-	}
-	return nt.Time.MarshalJSON()
-}
-
-// UnmarshalJSON implements the JSON interface for NullTime
-func (nt *NullTime) UnmarshalJSON(data []byte) error {
-	if data == nil {
-		nt.Valid = false
-	}
-	return nt.Time.UnmarshalJSON(data)
 }

@@ -87,17 +87,20 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 		setLimit = int(limit)
 	}
 	t := &RegistrationToken{
-		Token: Random(128),
-		Limit: setLimit,
-		Expires: data.NullTime{
-			Valid: !expires.IsZero(),
-			Time:  expires,
-		},
+		Token:   Random(128),
+		Limit:   setLimit,
 		Groups:  groups,
 		Valid:   true,
 		Updated: time.Now(),
 		Created: time.Now(),
 		creator: a.User.ID,
+	}
+
+	if !expires.IsZero() {
+		t.Expires = data.NullTime{
+			Valid: true,
+			Time:  expires,
+		}
 	}
 
 	err := t.validate()
@@ -116,7 +119,7 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 }
 
 func (t *RegistrationToken) validate() error {
-	if !t.Expires.Time.IsZero() && t.Expires.Time.Before(time.Now()) {
+	if t.Expires.Valid && t.Expires.Time.Before(time.Now()) {
 		return NewFailure("Expires must be a date in the future")
 	}
 	if len(t.Groups) != 0 {
@@ -144,13 +147,13 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 	}
 
 	_, err := sqlRegistrationTokenInsert.Tx(tx).Exec(
-		sql.Named("token", t.Token),
-		sql.Named("limit", t.Limit),
-		sql.Named("expires", t.Expires),
-		sql.Named("valid", t.Valid),
-		sql.Named("updated", t.Updated),
-		sql.Named("created", t.Created),
-		sql.Named("creator", t.creator),
+		data.Arg("token", t.Token),
+		data.Arg("limit", t.Limit),
+		data.Arg("expires", t.Expires),
+		data.Arg("valid", t.Valid),
+		data.Arg("updated", t.Updated),
+		data.Arg("created", t.Created),
+		data.Arg("creator", t.creator),
 	)
 	if err != nil {
 		return err
@@ -158,8 +161,8 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 
 	for i := range t.Groups {
 		_, err = sqlRegistrationTokenGroupInsert.Tx(tx).Exec(
-			sql.Named("token", t.Token),
-			sql.Named("group_id", t.Groups[i]),
+			data.Arg("token", t.Token),
+			data.Arg("group_id", t.Groups[i]),
 		)
 		if err != nil {
 			return err
@@ -184,7 +187,7 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 		return nil, errRegistrationTokenInvalid
 	}
 
-	if t.Expires.Time.Before(time.Now()) && !t.Expires.Time.IsZero() {
+	if t.Expires.Valid && t.Expires.Time.Before(time.Now()) && !t.Expires.Time.IsZero() {
 		return nil, errRegistrationTokenInvalid
 	}
 
@@ -208,9 +211,9 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 
 		for i := range t.Groups {
 			result, err := sqlGroupInsertMember.Tx(tx).Exec(
-				sql.Named("group_id", t.Groups[i]),
-				sql.Named("user_id", u.ID),
-				sql.Named("admin", false),
+				data.Arg("group_id", t.Groups[i]),
+				data.Arg("user_id", u.ID),
+				data.Arg("admin", false),
 			)
 			if err != nil {
 				return err
@@ -234,7 +237,7 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 
 func registrationTokenGet(token string) (*RegistrationToken, error) {
 	t := &RegistrationToken{}
-	rows, err := sqlRegistrationTokenGet.Query(sql.Named("token", token))
+	rows, err := sqlRegistrationTokenGet.Query(data.Arg("token", token))
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +264,7 @@ func registrationTokenGet(token string) (*RegistrationToken, error) {
 			return nil, err
 		}
 
-		if groupID.Valid {
+		if !groupID.IsNil() {
 			t.Groups = append(t.Groups, groupID)
 		}
 	}
@@ -275,7 +278,7 @@ func registrationTokenGet(token string) (*RegistrationToken, error) {
 
 // decrementLimit decrements the available registration limit
 func (t *RegistrationToken) decrementLimit(tx *sql.Tx) error {
-	result, err := sqlRegistrationTokenDecrementLimit.Tx(tx).Exec(sql.Named("token", t.Token))
+	result, err := sqlRegistrationTokenDecrementLimit.Tx(tx).Exec(data.Arg("token", t.Token))
 	if err != nil {
 		return err
 	}

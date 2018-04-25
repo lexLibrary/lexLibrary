@@ -61,8 +61,8 @@ func FirstRunSetup(username, password string) (*User, error) {
 		}
 		u.Admin = true
 
-		_, err = sqlUserUpdateAdmin.Tx(tx).Exec(sql.Named("admin", u.Admin), sql.Named("id", u.ID),
-			sql.Named("version", u.Version))
+		_, err = sqlUserUpdateAdmin.Tx(tx).Exec(data.Arg("admin", u.Admin), data.Arg("id", u.ID),
+			data.Arg("version", u.Version))
 		if err != nil {
 			return err
 		}
