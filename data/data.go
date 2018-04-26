@@ -334,3 +334,23 @@ func initSQLServer(cfg Config) error {
 
 	return nil
 }
+
+// DatabaseType returns the current database type LL is running on
+func DatabaseType() string {
+	switch dbType {
+	case sqlite:
+		return "sqlite"
+	case postgres:
+		return "postgres"
+	case mysql:
+		return "mysql"
+	case mariadb:
+		return "mariadb"
+	case cockroachdb:
+		return "cockroachdb"
+	case sqlserver:
+		return "sqlserver"
+	default:
+		panic("Unsupported database type")
+	}
+}

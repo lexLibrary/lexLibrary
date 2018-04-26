@@ -162,24 +162,7 @@ func (q *Query) buildTemplate() {
 				panic("Unsupported database type")
 			}
 		},
-		"db": func() string {
-			switch dbType {
-			case sqlite:
-				return "sqlite"
-			case postgres:
-				return "postgres"
-			case mysql:
-				return "mysql"
-			case mariadb:
-				return "mariadb"
-			case cockroachdb:
-				return "cockroachdb"
-			case sqlserver:
-				return "sqlserver"
-			default:
-				panic("Unsupported database type")
-			}
-		},
+		"db": DatabaseType,
 		"sqlite": func() bool {
 			return dbType == sqlite
 		},

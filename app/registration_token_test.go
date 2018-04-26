@@ -15,15 +15,11 @@ func TestRegistrationToken(t *testing.T) {
 	reset := func(t *testing.T) {
 		t.Helper()
 
-		admin = prepAdmin(t, "admin", "newuserpassword").AsAdmin()
+		admin = resetAdmin(t, "admin", "newuserpassword").AsAdmin()
 		err := admin.SetSetting("AllowPublicSignups", true)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
-		truncateTable(t, "registration_tokens")
-		truncateTable(t, "registration_token_groups")
-		truncateTable(t, "user_to_groups")
-		truncateTable(t, "groups")
 	}
 
 	t.Run("New", func(t *testing.T) {

@@ -115,6 +115,7 @@ func startWebDriver() (selenium.WebDriver, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	err = wd.SetAsyncScriptTimeout(defaultTimeout)
 	if err != nil {
 		return nil, err

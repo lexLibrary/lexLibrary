@@ -11,15 +11,10 @@ import (
 )
 
 func TestSetting(t *testing.T) {
-	truncateTable(t, "sessions")
-	truncateTable(t, "users")
-	admin, err := app.FirstRunSetup("admin", "adminpassword")
-	if err != nil {
-		t.Fatalf("Error setting up admin user: %s", err)
-	}
+	var admin *app.User
 
 	reset := func(t *testing.T) {
-		truncateTable(t, "settings")
+		admin = resetAdmin(t, "admin", "adminpassword")
 	}
 
 	t.Run("Default", func(t *testing.T) {

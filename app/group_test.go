@@ -17,8 +17,7 @@ func TestGroup(t *testing.T) {
 	var user *app.User
 	reset := func(t *testing.T) {
 		t.Helper()
-
-		admin = prepAdmin(t, "admin", "newuserpassword")
+		admin = resetAdmin(t, "admin", "newuserpassword")
 		err := admin.AsAdmin().SetSetting("AllowPublicSignups", true)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
@@ -28,8 +27,6 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Error adding user: %s", err)
 		}
 
-		truncateTable(t, "user_to_groups")
-		truncateTable(t, "groups")
 	}
 
 	t.Run("New", func(t *testing.T) {

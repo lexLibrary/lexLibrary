@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
 )
 
@@ -25,7 +26,33 @@ func TestMain(m *testing.M) {
 	os.Exit(result)
 }
 
+func resetDB(t *testing.T) {
+	t.Helper()
+	truncateTable(t, "logs")
+	truncateTable(t, "sessions")
+	truncateTable(t, "user_to_groups")
+	truncateTable(t, "users")
+	truncateTable(t, "registration_token_groups")
+	truncateTable(t, "groups")
+	truncateTable(t, "settings")
+	truncateTable(t, "images")
+	truncateTable(t, "registration_tokens")
+}
+
+func resetAdmin(t *testing.T, username, password string) *app.User {
+	t.Helper()
+	resetDB(t)
+
+	u, err := app.FirstRunSetup(username, password)
+	if err != nil {
+		t.Fatalf("Error setting up admin user: %s", err)
+	}
+
+	return u
+}
+
 func truncateTable(t *testing.T, table string) {
+	t.Helper()
 	_, err := data.NewQuery(fmt.Sprintf("delete from %s", table)).Exec()
 	if err != nil {
 		t.Fatalf("Error emptying %s table before running tests: %s", table, err)

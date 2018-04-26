@@ -16,8 +16,7 @@ func TestSession(t *testing.T) {
 	var u *app.User
 
 	reset := func(t *testing.T) {
-		truncateTable(t, "sessions")
-		u = prepAdmin(t, username, password)
+		u = resetAdmin(t, username, password)
 	}
 
 	t.Run("New", func(t *testing.T) {

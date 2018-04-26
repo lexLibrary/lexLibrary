@@ -14,28 +14,12 @@ import (
 	"github.com/rs/xid"
 )
 
-func prepAdmin(t *testing.T, username, password string) *app.User {
-	t.Helper()
-
-	truncateTable(t, "sessions")
-	truncateTable(t, "user_to_groups")
-	truncateTable(t, "users")
-	truncateTable(t, "settings")
-
-	u, err := app.FirstRunSetup(username, password)
-	if err != nil {
-		t.Fatalf("Error setting up admin user: %s", err)
-	}
-
-	return u
-}
-
 func TestUser(t *testing.T) {
 	var admin *app.User
 	reset := func(t *testing.T) {
 		t.Helper()
 
-		admin = prepAdmin(t, "admin", "adminpassword")
+		admin = resetAdmin(t, "admin", "adminpassword")
 
 		err := admin.AsAdmin().SetSetting("AllowPublicSignups", true)
 		if err != nil {

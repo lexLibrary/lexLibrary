@@ -6,27 +6,16 @@ services:
       ACCEPT_EULA: 'Y'
       SA_PASSWORD: lexlibraryP!ssw0rd
       MSSQL_PID: Express
-  webdriver:
-    image: selenium/standalone-firefox:3.11
-    logging:
-        driver: "none"
-    volumes:
-      - /dev/shm:/dev/shm
   tests:
     build: "../build"
     links:
       - sqlserver
-      - webdriver
     volumes:
-      - ../..:/in
+      - ../..:/in:ro
     environment:
       LLDATABASE: 'sqlserver'
       LLTEST: 'true'
       GOPATH: /go
-      LLPORT: 8080
-      LLHOST: "tests"
-      LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
-      LLBROWSER: 'firefox'
     command: 
       - /bin/sh
       - -c
