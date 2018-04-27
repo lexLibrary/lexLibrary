@@ -2,7 +2,6 @@ version: '3'
 services:
   tests:
     build: "../build"
-    links:
     volumes:
       - ../..:/in:ro
     environment:
