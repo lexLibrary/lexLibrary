@@ -1,4 +1,5 @@
 // +build darwin dragonfly freebsd linux netbsd openbsd
+
 // Copyright (c) 2017-2018 Townsourced Inc.
 package app
 
