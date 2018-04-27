@@ -25,7 +25,7 @@ type RuntimeInfo struct {
 	NumCPU   int
 }
 
-var runtimeInfo = &RuntimeInfo{
+var runtimeInfo = RuntimeInfo{
 	OS:       runtime.GOOS,
 	GoVer:    runtime.Version(),
 	Arch:     runtime.GOARCH,
@@ -71,7 +71,7 @@ func BuildDate() time.Time {
 func Runtime(who *User) *RuntimeInfo {
 	if who != nil {
 		if who.Admin || SettingMust("NonAdminIssueSubmission").Bool() {
-			return runtimeInfo
+			return &runtimeInfo
 		}
 	}
 

@@ -6,7 +6,12 @@
 // No web structures or packages (http, cookies, etc) should show up in this package
 package app
 
+import "time"
+
 const maxRows = 10000
+
+// initTime is when this instance was initialized, used to track uptime
+var initTime time.Time
 
 // Init initializes the application layer
 func Init() error {
@@ -22,5 +27,6 @@ func Init() error {
 	}
 
 	err = firstRunCheck()
+	initTime = time.Now()
 	return err
 }

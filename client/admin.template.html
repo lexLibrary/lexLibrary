@@ -18,17 +18,18 @@
 		</ul>
 		<div>
 			[[if eq .Tab "overview"]]
-				[[template "overview"]]
+				[[template "overview" .]]
 			[[else if eq .Tab "settings"]]
-				[[template "settings"]]
+				[[template "settings" .]]
 			[[else if eq .Tab "logs"]]
-				[[template "logs"]]
+				[[template "logs" .]]
 			[[else if eq .Tab "registration"]]
-				[[template "registration"]]
+				[[template "registration" .]]
 			[[end]]
 		</div>
 	</div>
 </body>
+<script type="application/json" id="payload">[[.]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/admin.js"></script>
 </html>
@@ -39,51 +40,149 @@
 	<div class="columns">
 		<div class="column text-center">
 			<h5 class="title"><small>Users</small></h5>
-			<h3>[[.Overview.InstanceStats.Users]]</h3>
+			<h3>[[.Overview.Instance.Users]]</h3>
 		</div>
 		<div class="column text-center">
 			<h5 class="title"><small>Logged In</small></h5>
-			<h3>[[.Overview.InstanceStats.Sessions]]</h3>
+			<h3>[[.Overview.Instance.Sessions]]</h3>
 		</div>
 		<div class="column text-center">
 			<h5 class="title"><small>Documents</small></h5>
-			<h3>[[.Overview.InstanceStats.Documents]]</h3>
+			<h3>[[.Overview.Instance.Documents]]</h3>
 		</div>
 	</div>
 </section>
 <section class="overview pt-4">
-	<div class="columns">
-		<div class="column">
-			<h4>Configuration</h4>
-			<p class="text-gray">Values are set by configuration or environment variable.</p>
-			<table class="overview table">
-				<tbody>
-					<tr><td>Read Timeout</td><td>[[.WebConfig.ReadTimeout]]</td></tr>
-					<tr><td>Write Timeout</td><td>[[.WebConfig.WriteTimeout]]</td></tr>
-					<tr><td>Max Header Bytes</td><td>[[.WebConfig.MaxHeaderBytes]]</td></tr>
-					<tr><td>Min TLS Version</td><td>[[.WebConfig.MinTLSVersion]]</td></tr>
-					<tr><td>Certificate File</td><td>[[.WebConfig.CertFile]]</td></tr>
-					<tr><td>Key File</td><td>[[.WebConfig.KeyFile]]</td></tr>
-					<tr><td>Max Upload Memory</td><td>[[.WebConfig.MaxUploadMemoryMB]]</td></tr>
-					<tr><td>Port</td><td>[[.WebConfig.Port]]</td></tr>
-				</tbody>
-			</table>
-		</div> <!-- columns -->
-		<div class="column">
-			<h4>Data Usage</h4>
-			[[with .Overview.InstanceStats]]
-			<table class="overview table">
-				<tbody>
-					<tr><td>Database Size</td><td>[[.Size.Data]]</td></tr>
-					<tr><td>Image Size</td><td>[[.Size.Image]]</td></tr>
-					<tr><td>Search Index Size</td><td>[[.Size.Search]]</td></tr>
-					<tr><td>Total Size</td><td>[[.Size.Total]]</td></tr>
-				</tbody>
-			</table>
-			[[end]]
+	<div class="card-columns col-lg">
 		
-		</div> <!-- column -->
-	</div> <!-- columns -->
+		<div class="card">
+			<div class="card-header">
+				<div class="card-title h5">Instance Information</div>
+			</div>
+			<div class="card-body">
+				[[with .Overview.Instance]]
+				<table class="overview table">
+					<tbody>
+						<tr><td>Version</td><td>[[.Version]]</td></tr>
+						<tr><td>Build Date</td><td>[[.BuildDate]]</td></tr>
+						<tr><td>Uptime</td><td>[[.Uptime]]</td></tr>
+						<tr><td>First Launch</td><td>[[.FirstLaunch]]</td></tr>
+						<tr><td>Errors Since Last Start</td><td>[[.ErrorsSinceStart]]</td></tr>
+						<tr><td>Total Number of Errors</td><td>[[.ErrorsTotal]]</td></tr>
+					</tbody>
+				</table>
+				[[end]]
+			</div>
+		</div> <!-- card -->
+		<div class="card">
+			<div class="card-header">
+				<div class="card-title h5">Data Usage</div>
+			</div>
+			<div class="card-body">
+				<table class="overview table">
+					<tbody>
+						[[with .Overview.Instance.Size]]
+						<tr><td>Database Size</td><td>[[.Data]]</td></tr>
+						<tr><td>Image Size</td><td>[[.Image]]</td></tr>
+						<tr><td>Search Index Size</td><td>[[.Search]]</td></tr>
+						<tr><td>Total Size</td><td>[[.Total]]</td></tr>
+						[[end]]
+						<tr><td>Space Available</td><td>[[.Overview.System.FreeSpace]]</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div> <!-- card -->
+		<div class="card">
+			<div class="card-header">
+				<div class="card-title h5">System Information</div>
+			</div>
+			<div class="card-body">
+				[[with .Overview.System]]
+				<table class="overview table">
+					<tbody>
+						<tr><td>Uptime</td><td>[[.Uptime]]</td></tr>
+						<tr><td>Total RAM</td><td>[[.Totalram]]</td></tr>
+						<tr><td>Free RAM</td><td>[[.Freeram]]</td></tr>
+						<tr><td>Shared RAM</td><td>[[.Sharedram]]</td></tr>
+						<tr><td>Total Swap</td><td>[[.Totalswap]]</td></tr>
+						<tr><td>Free Swap</td><td>[[.Freeswap]]</td></tr>
+						<tr><td>Free Space</td><td>[[.FreeSpace]]</td></tr>
+						<tr><td>Total Space</td><td>[[.TotalSpace]]</td></tr>
+					</tbody>
+				</table>
+				[[end]]
+			</div>
+		</div> <!-- card -->
+
+		<div class="card">
+			<div class="card-header">
+				<div class="card-title h5">Runtime</div>
+			</div>
+			<div class="card-body">
+				[[with .Overview.Runtime]]
+				<table class="overview table">
+					<tbody>
+						<tr><td>OS</td><td>[[.OS]]</td></tr>
+						<tr><td>Go Version</td><td>[[.GoVer]]</td></tr>
+						<tr><td>Architecture</td><td>[[.Arch]]</td></tr>
+						<tr><td>Compiler</td><td>[[.Compiler]]</td></tr>
+						<tr><td>Max Procs</td><td>[[.MaxProcs]]</td></tr>
+						<tr><td>Number of CPUs</td><td>[[.NumCPU]]</td></tr>
+					</tbody>
+				</table>
+				[[end]]
+			</div>
+		</div> <!-- card -->
+		<div class="card">
+			<div class="card-header">
+				<div class="card-title h5">Web Configuration</div>
+				<div class="card-subtitle text-gray">Values are set by configuration or environment variable.</div>
+			</div>
+			<div class="card-body">
+				<table class="overview table">
+					<tbody>
+						[[with .WebConfig]]
+						<tr><td>Read Timeout</td><td>[[.ReadTimeout]]</td></tr>
+						<tr><td>Write Timeout</td><td>[[.WriteTimeout]]</td></tr>
+						<tr><td>Max Header Bytes</td><td>[[.MaxHeaderBytes]]</td></tr>
+						<tr><td>Min TLS Version</td><td>[[.MinTLSVersion]]</td></tr>
+						<tr><td>Certificate File</td><td title="[[.CertFile]]">[[.CertFile]]</td></tr>
+						<tr><td>Key File</td><td title="[[.KeyFile]]">[[.KeyFile]]</td></tr>
+						<tr><td>Max Upload Memory</td><td>[[.MaxUploadMemoryMB]]</td></tr>
+						<tr><td>Port</td><td>[[.Port]]</td></tr>
+						[[end]]
+					</tbody>
+				</table>
+			</div>
+		</div> <!-- card -->
+		<div class="card">
+			<div class="card-header">
+				<div class="card-title h5">Data Configuration</div>
+				<div class="card-subtitle text-gray">Values are set by configuration or environment variable.</div>
+			</div>
+			<div class="card-body">
+				<table class="overview table">
+					<tbody>
+						[[with .Overview.Config]]
+						[[if eq .DatabaseType "sqlite"]]
+						<tr><td>Data File</td><td title="[[.DatabaseFile]]">[[.DatabaseFile]]</td></tr>
+						[[end]]
+						<tr><td>Search File</td><td title="[[.SearchFile]]">[[.SearchFile]]</td></tr>
+						<tr><td>Database Type</td><td>[[.DatabaseType]]</td></tr>
+						<tr><td>SSL Cert</td><td title="[[.SSLCert]]">[[.SSLCert]]</td></tr>
+						<tr><td>SSL Key</td><td title="[[.SSLKey]]">[[.SSLKey]]</td></tr>
+						<tr><td>SSL Root Cert</td><td title="[[.SSLRootCert]]">[[.SSLRootCert]]</td></tr>
+						<tr><td>Max Idle Connections</td><td>[[.MaxIdleConnections]]</td></tr>
+						<tr><td>Max Open Connections</td><td>[[.MaxOpenConnections]]</td></tr>
+						<tr><td>Max Connection Lifetime</td><td>[[.MaxConnectionLifetime]]</td></tr>
+						[[end]]
+					</tbody>
+				</table>
+			</div>
+		</div> <!-- card -->
+
+
+	</div> <!-- card-columns -->
 </section>
 [[end]]
 
@@ -91,7 +190,24 @@
 <p>Settings</p>
 [[end]]
 [[define "logs"]]
-<p>Logs</p>
+<section class="section">
+	<table class="table logs">
+		<thead>
+			<tr>
+				<th>Date</th>
+				<th>Entry</th>
+			</tr>
+		</thead>
+		<tbody>
+			[[range .Logs]]
+				<tr>
+					<td>[[.Occurred.Format "Mon Jan _2 15:04:05 2006"]]</td>
+					<td>[[.Message]]</td>
+				</tr>
+			[[end]]
+		</tbody>
+	</table>
+</section>
 [[end]]
 [[define "registration"]]
 <p>Registration</p>

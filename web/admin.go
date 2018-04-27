@@ -3,6 +3,7 @@ package web
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
@@ -16,6 +17,7 @@ type adminPage struct {
 		Tab       string
 		Overview  *app.Overview
 		WebConfig Config
+		Logs      []*app.Log
 	}
 }
 
@@ -34,7 +36,6 @@ func (a *adminPage) loadShared(s *app.Session) error {
 	}
 
 	a.data.User = u
-	a.data.WebConfig = currentConfig
 	return nil
 }
 
@@ -45,6 +46,7 @@ func (a *adminPage) overview(w http.ResponseWriter, r *http.Request, parms httpr
 			return
 		}
 		a.data.Tab = "overview"
+		a.data.WebConfig = currentConfig
 		overview, err := a.data.User.AsAdmin().Overview()
 		if errHandled(err, w, r) {
 			return
@@ -83,7 +85,19 @@ func (a *adminPage) logs(w http.ResponseWriter, r *http.Request, parms httproute
 			return
 		}
 		a.data.Tab = "logs"
-		err := w.(*templateWriter).execute(a.data)
+		limit := 100
+
+		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+		if err != nil {
+			offset = 0
+		}
+
+		logs, err := app.LogGet(offset, limit)
+		if errHandled(err, w, r) {
+			return
+		}
+		a.data.Logs = logs
+		err = w.(*templateWriter).execute(a.data)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing admin template: %s"))

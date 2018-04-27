@@ -1,6 +1,8 @@
 package app
 
 import (
+	"time"
+
 	"github.com/dustin/go-humanize"
 	"github.com/lexLibrary/lexLibrary/data"
 )
@@ -64,31 +66,44 @@ func (a *Admin) SetUserAdmin(u *User, admin bool, version int) error {
 
 // Overview is a collection of statistics and information about the LL instance
 type Overview struct {
-	InstanceStats struct {
+	Instance struct {
 		Users     int
 		Documents int
 		Sessions  int
 		Size      struct {
-			Data   string
-			Search string
-			Image  string
-			Total  string
+			Data      string
+			Search    string
+			Image     string
+			Total     string
+			Available string
 		}
+		Uptime           string
+		FirstLaunch      string
+		Version          string
+		BuildDate        string
+		ErrorsTotal      int
+		ErrorsSinceStart int
 	}
-	SystemStats struct {
-		FreeSpace int
-		// https://golang.org/pkg/syscall/#Statfs_t
-		// https://golang.org/pkg/syscall/#Sysinfo_t
-	}
+	System  sysInfo
+	Runtime RuntimeInfo
 
 	data.Config
 }
 
 var (
 	sqlInstanceStats = data.NewQuery(`
-		select count(*), 'users' as stat_type from users
-		union all
-		select count(*), 'sessions' from sessions where expires > {{NOW}} and valid = {{TRUE}}
+		select users.num, sessions.num, documents.num, errorsTotal.num, errorsSinceStart.num
+		from
+		(select count(*) as num from users) as users,
+		(select count(*) as num from sessions where expires > {{NOW}} and valid = {{TRUE}}) as sessions,
+		(select 0 as num) as documents, 
+		(select count(*) num from logs) as errorsTotal,
+		(select count(*) num 
+			from logs where occurred >= (select occurred from schema_versions where version = 0)
+		) as errorsSinceStart
+	`)
+	sqlInstanceInit = data.NewQuery(`
+		select occurred from schema_versions where version = 0
 	`)
 )
 
@@ -101,49 +116,63 @@ func (a *Admin) Overview() (*Overview, error) {
 	o := &Overview{
 		Config: data.CurrentCFG(),
 	}
-	rows, err := sqlInstanceStats.Query()
+	o.Config.DatabaseURL = "" // hide to prevent showing db password
+
+	// Instance Stats
+	err := sqlInstanceStats.QueryRow().Scan(
+		&o.Instance.Users,
+		&o.Instance.Sessions,
+		&o.Instance.Documents,
+		&o.Instance.ErrorsTotal,
+		&o.Instance.ErrorsSinceStart,
+	)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var statType string
-		var stat int
-		err = rows.Scan(&stat, &statType)
-		if err != nil {
-			return nil, err
-		}
-		if statType == "users" {
-			o.InstanceStats.Users = stat
-		}
-		if statType == "documents" {
-			o.InstanceStats.Documents = stat
-		}
-		if statType == "sessions" {
-			o.InstanceStats.Sessions = stat
-		}
-	}
 
+	o.Instance.Uptime = humanize.RelTime(initTime, time.Now(), "", "")
+
+	var firstLaunch time.Time
+	err = sqlInstanceInit.QueryRow().Scan(&firstLaunch)
+	if err != nil {
+		return nil, err
+	}
+	o.Instance.FirstLaunch = humanize.Time(firstLaunch)
+
+	o.Instance.Version = Version()
+	o.Instance.BuildDate = BuildDate().Format(time.ANSIC)
+
+	// Size Stats
 	size, err := data.Size()
 	if err != nil {
 		return nil, err
 	}
 
 	if size.Data == -1 {
-		o.InstanceStats.Size.Data = "not supported on this platform"
+		o.Instance.Size.Data = "not supported"
 	} else {
-		o.InstanceStats.Size.Data = humanize.Bytes(uint64(size.Data))
+		o.Instance.Size.Data = humanize.Bytes(uint64(size.Data))
 	}
 	if size.Image == -1 {
-		o.InstanceStats.Size.Image = "not supported on this platform"
+		o.Instance.Size.Image = "not supported"
 	} else {
-		o.InstanceStats.Size.Image = humanize.Bytes(uint64(size.Image))
+		o.Instance.Size.Image = humanize.Bytes(uint64(size.Image))
+	}
+
+	if size.Search == -1 {
+		o.Instance.Size.Search = "not supported"
+	} else {
+		o.Instance.Size.Search = humanize.Bytes(uint64(size.Search))
 	}
 
 	if size.Total == -1 {
-		o.InstanceStats.Size.Total = "not supported on this platform"
+		o.Instance.Size.Total = "not supported"
 	} else {
-		o.InstanceStats.Size.Total = humanize.Bytes(uint64(size.Total))
+		o.Instance.Size.Total = humanize.Bytes(uint64(size.Total))
 	}
+
+	o.Runtime = runtimeInfo
+	o.System = systemInfo()
+
 	return o, nil
 }

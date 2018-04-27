@@ -9,7 +9,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var schemaVersionInsert = NewQuery(`insert into schema_versions (version, script) values ({{arg "version"}}, {{arg "script"}})`)
+var schemaVersionInsert = NewQuery(`
+	insert into schema_versions (version, script, occurred) values ({{arg "version"}}, {{arg "script"}}, {{NOW}})
+`)
 
 func ensureSchema() error {
 	// NOTE: Not all DB's allow DDL in transactions, so this needs to run outside of one

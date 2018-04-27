@@ -9,7 +9,7 @@ import (
 )
 
 func firstRun() error {
-	err := newSequence().
+	return newSequence().
 		Get(llURL.String()).
 		Find("#submit").Click().
 		Find(".has-error > .form-input-hint").Text().Contains("A username is required").
@@ -46,8 +46,4 @@ func firstRun() error {
 		Find("#setSettings").Click().
 		Find(".toast.toast-error").Count(0).
 		End()
-	if err != nil {
-		return err
-	}
-	return nil
 }

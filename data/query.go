@@ -26,10 +26,12 @@ type Query struct {
 	tx        *sql.Tx
 }
 
-// Argument is a wrapper around sql.NamedArg so that a data can be unified across all database backends
-// mainly dateTime handling
+// Argument is a wrapper around sql.NamedArg so that a data behavior can be unified across all database backends
+// mainly dateTime handling.  Always use the data.Arg function, and not the type directly
 type Argument sql.NamedArg
 
+// Arg defines an argument for use in a Lex Library query, and makes sure that data behaviors are consistent across
+// multiple database backends
 func Arg(name string, value interface{}) Argument {
 	switch v := value.(type) {
 	case time.Time:

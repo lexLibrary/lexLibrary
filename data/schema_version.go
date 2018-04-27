@@ -47,8 +47,9 @@ package data
 var schemaVersions = []*Query{
 	NewQuery(`
 		create table schema_versions (
-			version INTEGER PRIMARY KEY NOT NULL,
-			script {{text}} NOT NULL
+			version {{int}} PRIMARY KEY NOT NULL,
+			script {{text}} NOT NULL,
+			occurred {{datetime}} NOT NULL
 		)
 	`),
 	NewQuery(`

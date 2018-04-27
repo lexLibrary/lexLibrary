@@ -13,6 +13,7 @@ var nilID ID
 // ID is a globally unique ID
 type ID xid.ID
 
+// Scan implements the sql.Scanner interface.
 func (i *ID) Scan(src interface{}) error {
 	if src == nil {
 		*i = nilID
@@ -21,6 +22,7 @@ func (i *ID) Scan(src interface{}) error {
 	return (*xid.ID)(i).Scan(src)
 }
 
+// Value implements the driver.Valuer interface.
 func (i ID) Value() (driver.Value, error) {
 	return xid.ID(i).Value()
 }
@@ -45,16 +47,16 @@ func (i ID) IsNil() bool {
 	return i == nilID
 }
 
-func (id ID) String() string {
-	return xid.ID(id).String()
+func (i ID) String() string {
+	return xid.ID(i).String()
 }
 
 // MarshalText implements encoding/text TextMarshaler interface
-func (id ID) MarshalText() ([]byte, error) {
-	return xid.ID(id).MarshalText()
+func (i ID) MarshalText() ([]byte, error) {
+	return xid.ID(i).MarshalText()
 }
 
 // UnmarshalText implements encoding/text TextUnmarshaler interface
-func (id *ID) UnmarshalText(text []byte) error {
-	return (*xid.ID)(id).UnmarshalText(text)
+func (i *ID) UnmarshalText(text []byte) error {
+	return (*xid.ID)(i).UnmarshalText(text)
 }
