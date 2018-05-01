@@ -7,19 +7,17 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
-
-	humanize "github.com/dustin/go-humanize"
 )
 
 type sysInfo struct {
-	Uptime     string
-	Totalram   string
-	Freeram    string
-	Sharedram  string
-	Totalswap  string
-	Freeswap   string
-	TotalSpace string
-	FreeSpace  string
+	Uptime     time.Duration
+	Totalram   uint64
+	Freeram    uint64
+	Sharedram  uint64
+	Totalswap  uint64
+	Freeswap   uint64
+	TotalSpace uint64
+	FreeSpace  uint64
 }
 
 func systemInfo() sysInfo {
@@ -31,12 +29,12 @@ func systemInfo() sysInfo {
 	if err != nil {
 		return result
 	}
-	result.Uptime = humanize.RelTime(time.Now().Add(time.Duration(info.Uptime)*-1*time.Second), time.Now(), "", "")
-	result.Totalram = humanize.Bytes(info.Totalram)
-	result.Freeram = humanize.Bytes(info.Freeram)
-	result.Sharedram = humanize.Bytes(info.Sharedram)
-	result.Totalswap = humanize.Bytes(info.Totalswap)
-	result.Freeswap = humanize.Bytes(info.Freeswap)
+	result.Uptime = time.Duration(info.Uptime) * time.Second
+	result.Totalram = info.Totalram
+	result.Freeram = info.Freeram
+	result.Sharedram = info.Sharedram
+	result.Totalswap = info.Totalswap
+	result.Freeswap = info.Freeswap
 
 	cwd, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
@@ -47,7 +45,7 @@ func systemInfo() sysInfo {
 	if err != nil {
 		return result
 	}
-	result.TotalSpace = humanize.Bytes(uint64(total))
-	result.FreeSpace = humanize.Bytes(uint64(free))
+	result.TotalSpace = uint64(total)
+	result.FreeSpace = uint64(free)
 	return result
 }

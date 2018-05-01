@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/pkg/errors"
-	"github.com/rs/xid"
 )
 
 const (
@@ -44,7 +44,7 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 
 	var errMsg string
 	var status int
-	var errID xid.ID
+	var errID data.ID
 
 	switch err.(type) {
 
@@ -83,7 +83,7 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 			}
 		default:
 			terr := errorHandler.template.Execute(w, struct {
-				ErrorID xid.ID
+				ErrorID data.ID
 			}{
 				ErrorID: errID,
 			})

@@ -16,7 +16,7 @@
 			<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
 			<li class='tab-item [[if eq .Tab "registration"]]active[[end]]'><a href="/admin/registration">Registration</a></li>
 		</ul>
-		<div>
+		<div id="admin">
 			[[if eq .Tab "overview"]]
 				[[template "overview" .]]
 			[[else if eq .Tab "settings"]]
@@ -29,7 +29,6 @@
 		</div>
 	</div>
 </body>
-<script type="application/json" id="payload">[[.]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/admin.js"></script>
 </html>
@@ -52,7 +51,7 @@
 		</div>
 	</div>
 </section>
-<section class="overview pt-4">
+<section class="pt-4">
 	<div class="card-columns col-lg">
 		
 		<div class="card">
@@ -64,9 +63,9 @@
 				<table class="overview table">
 					<tbody>
 						<tr><td>Version</td><td>[[.Version]]</td></tr>
-						<tr><td>Build Date</td><td>[[.BuildDate]]</td></tr>
-						<tr><td>Uptime</td><td>[[.Uptime]]</td></tr>
-						<tr><td>First Launch</td><td>[[.FirstLaunch]]</td></tr>
+						<tr><td>Build Date</td><td title="[[time .BuildDate]]">[[time .BuildDate]]</td></tr>
+						<tr><td>Uptime</td><td>[[duration .Uptime]]</td></tr>
+						<tr><td>First Launch</td><td title="[[time .FirstLaunch]]">[[since .FirstLaunch]]</td></tr>
 						<tr><td>Errors Since Last Start</td><td>[[.ErrorsSinceStart]]</td></tr>
 						<tr><td>Total Number of Errors</td><td>[[.ErrorsTotal]]</td></tr>
 					</tbody>
@@ -77,17 +76,22 @@
 		<div class="card">
 			<div class="card-header">
 				<div class="card-title h5">Data Usage</div>
+				[[if eq .Overview.Config.DatabaseType "sqlite"]]
+					<div class="card-subtitle text-gray">Image Size is not available on SQLITE</div>
+				[[else if eq .Overview.Config.DatabaseType "cockroachdb"]]
+					<div class="card-subtitle text-gray">Data Sizes are not currently availble on Cockroach DB</div>
+				[[end]]
 			</div>
 			<div class="card-body">
 				<table class="overview table">
 					<tbody>
 						[[with .Overview.Instance.Size]]
-						<tr><td>Database Size</td><td>[[.Data]]</td></tr>
-						<tr><td>Image Size</td><td>[[.Image]]</td></tr>
-						<tr><td>Search Index Size</td><td>[[.Search]]</td></tr>
-						<tr><td>Total Size</td><td>[[.Total]]</td></tr>
+						<tr><td>Database Size</td><td>[[bytes .Data]]</td></tr>
+						<tr><td>Image Size</td><td>[[bytes .Image]]</td></tr>
+						<tr><td>Search Index Size</td><td>[[bytes .Search]]</td></tr>
+						<tr><td>Total Size</td><td>[[bytes .Total]]</td></tr>
 						[[end]]
-						<tr><td>Space Available</td><td>[[.Overview.System.FreeSpace]]</td></tr>
+						<tr><td>Space Available</td><td>[[bytes .Overview.System.FreeSpace]]</td></tr>
 					</tbody>
 				</table>
 			</div>
@@ -100,14 +104,14 @@
 				[[with .Overview.System]]
 				<table class="overview table">
 					<tbody>
-						<tr><td>Uptime</td><td>[[.Uptime]]</td></tr>
-						<tr><td>Total RAM</td><td>[[.Totalram]]</td></tr>
-						<tr><td>Free RAM</td><td>[[.Freeram]]</td></tr>
-						<tr><td>Shared RAM</td><td>[[.Sharedram]]</td></tr>
-						<tr><td>Total Swap</td><td>[[.Totalswap]]</td></tr>
-						<tr><td>Free Swap</td><td>[[.Freeswap]]</td></tr>
-						<tr><td>Free Space</td><td>[[.FreeSpace]]</td></tr>
-						<tr><td>Total Space</td><td>[[.TotalSpace]]</td></tr>
+						<tr><td>Uptime</td><td>[[duration .Uptime]]</td></tr>
+						<tr><td>Total RAM</td><td>[[bytes .Totalram]]</td></tr>
+						<tr><td>Free RAM</td><td>[[bytes .Freeram]]</td></tr>
+						<tr><td>Shared RAM</td><td>[[bytes .Sharedram]]</td></tr>
+						<tr><td>Total Swap</td><td>[[bytes .Totalswap]]</td></tr>
+						<tr><td>Free Swap</td><td>[[bytes .Freeswap]]</td></tr>
+						<tr><td>Free Space</td><td>[[bytes .FreeSpace]]</td></tr>
+						<tr><td>Total Space</td><td>[[bytes .TotalSpace]]</td></tr>
 					</tbody>
 				</table>
 				[[end]]
@@ -148,7 +152,7 @@
 						<tr><td>Min TLS Version</td><td>[[.MinTLSVersion]]</td></tr>
 						<tr><td>Certificate File</td><td title="[[.CertFile]]">[[.CertFile]]</td></tr>
 						<tr><td>Key File</td><td title="[[.KeyFile]]">[[.KeyFile]]</td></tr>
-						<tr><td>Max Upload Memory</td><td>[[.MaxUploadMemoryMB]]</td></tr>
+						<tr><td>Max Upload Memory (MB)</td><td>[[.MaxUploadMemoryMB]]</td></tr>
 						<tr><td>Port</td><td>[[.Port]]</td></tr>
 						[[end]]
 					</tbody>
@@ -190,24 +194,47 @@
 <p>Settings</p>
 [[end]]
 [[define "logs"]]
-<section class="section">
-	<table class="table logs">
-		<thead>
-			<tr>
-				<th>Date</th>
-				<th>Entry</th>
-			</tr>
-		</thead>
-		<tbody>
-			[[range .Logs]]
-				<tr>
-					<td>[[.Occurred.Format "Mon Jan _2 15:04:05 2006"]]</td>
-					<td>[[.Message]]</td>
-				</tr>
+	[[with .Log]]
+	<section class="logs section">
+		[[if .Entry]]
+			[[with .Entry]]
+				<h4>Log Entry from [[time .Occurred]] <small class="text-gray">([[.ID]])</small></h4>
+				<hr>
+				<p>[[.Message]]</p>
 			[[end]]
-		</tbody>
-	</table>
-</section>
+		[[else]]
+			<div class="columns">
+				<div class="col-sm-12 col-5 centered">
+					<form id="logSearch" @submit="search">
+						<div class="input-group">
+							<input v-model="searchValue" type="text" class="form-input input" placeholder="Search Logs">
+							<button type="submit" class="btn btn-primary input-group-btn">Search</button>
+						</div>
+					</form>
+				</div>
+			</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="date">Date</th>
+						<th>Error</th>
+						<th class="view-link"></th>
+					</tr>
+				</thead>
+				<tbody>
+					[[range .Logs]]
+						<tr>
+							<td>[[time .Occurred]]</td>
+							<td title="[[.Message]]">[[.Message]]</td>
+							<td><a class="float-right" href="/admin/logs/[[.ID]]">View</a></td>
+						</tr>
+					[[end]]
+				</tbody>
+			</table>
+			[[template "pager" .Pager]]
+		[[end]]
+	</section>
+	[[end]]
 [[end]]
 [[define "registration"]]
 <p>Registration</p>

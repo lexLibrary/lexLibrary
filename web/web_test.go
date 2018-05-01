@@ -26,7 +26,7 @@ var driver selenium.WebDriver
 var llURL *url.URL
 
 func newSequence() *sequence.Sequence {
-	if os.Getenv("LLDEBUGONERR") != "" {
+	if os.Getenv("LLDEBUGONERR") == "true" {
 		return sequence.Start(driver).OnError(func(err sequence.Error, s *sequence.Sequence) {
 			s.Debug().
 				Screenshot(fmt.Sprintf("SequenceError-[%s].png", err.Stage))

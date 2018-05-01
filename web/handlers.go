@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/files"
@@ -206,6 +208,15 @@ func (t *templateHandler) loadTemplates() {
 			bytes, err := json.Marshal(v)
 
 			return template.JS(bytes), err
+		},
+		"time": func(t time.Time) string {
+			return t.Local().Format("January _2 03:04:05 PM")
+		},
+		"relTime": humanize.RelTime,
+		"bytes":   humanize.Bytes,
+		"since":   humanize.Time,
+		"duration": func(d time.Duration) string {
+			return humanize.RelTime(time.Now().Add(-1*d), time.Now(), "", "")
 		},
 	}).Delims("[[", "]]").Parse(tmpl))
 }

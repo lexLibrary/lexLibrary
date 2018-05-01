@@ -3,57 +3,65 @@ package web
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/pkg/errors"
 )
 
 type adminPage struct {
 	templateHandler
-	data struct {
-		User      *app.User
-		Tab       string
-		Overview  *app.Overview
-		WebConfig Config
-		Logs      []*app.Log
+}
+
+type adminData struct {
+	User      *app.User
+	Tab       string
+	Overview  *app.Overview
+	WebConfig Config
+	Log       struct {
+		Logs  []*app.Log
+		Pager pager
+		Entry *app.Log
 	}
 }
 
-func (a *adminPage) loadShared(s *app.Session) error {
+func (a *adminPage) data(s *app.Session) (*adminData, error) {
 	if s == nil {
-		return app.Unauthorized("You do not have access to this page")
+		return nil, app.Unauthorized("You do not have access to this page")
 	}
 
 	u, err := s.User()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !u.Admin {
-		return app.Unauthorized("You do not have access to this page")
+		return nil, app.Unauthorized("You do not have access to this page")
 	}
 
-	a.data.User = u
-	return nil
+	return &adminData{
+		User: u,
+	}, nil
+
 }
 
 func (a *adminPage) overview(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		if errHandled(a.loadShared(c.session), w, r) {
-			return
-		}
-		a.data.Tab = "overview"
-		a.data.WebConfig = currentConfig
-		overview, err := a.data.User.AsAdmin().Overview()
+		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
 
-		a.data.Overview = overview
-		err = w.(*templateWriter).execute(a.data)
+		tData.Tab = "overview"
+		tData.WebConfig = currentConfig
+		overview, err := tData.User.AsAdmin().Overview()
+		if errHandled(err, w, r) {
+			return
+		}
+
+		tData.Overview = overview
+		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
@@ -65,11 +73,13 @@ func (a *adminPage) overview(w http.ResponseWriter, r *http.Request, parms httpr
 func (a *adminPage) settings(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		if errHandled(a.loadShared(c.session), w, r) {
+		tData, err := a.data(c.session)
+		if errHandled(err, w, r) {
 			return
 		}
-		a.data.Tab = "settings"
-		err := w.(*templateWriter).execute(a.data)
+
+		tData.Tab = "settings"
+		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
@@ -81,23 +91,54 @@ func (a *adminPage) settings(w http.ResponseWriter, r *http.Request, parms httpr
 func (a *adminPage) logs(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		if errHandled(a.loadShared(c.session), w, r) {
-			return
-		}
-		a.data.Tab = "logs"
-		limit := 100
-
-		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
-		if err != nil {
-			offset = 0
-		}
-
-		logs, err := app.LogGet(offset, limit)
+		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
-		a.data.Logs = logs
-		err = w.(*templateWriter).execute(a.data)
+
+		var id data.ID
+		var search string
+		tData.Tab = "logs"
+
+		if c.params.ByName("id") != "" {
+			id, err = data.IDFromString(c.params.ByName("id"))
+			if err != nil {
+				notFound(w, r)
+				return
+			}
+		} else {
+			search = r.URL.Query().Get("search")
+			id, _ = data.IDFromString(search)
+		}
+
+		if !id.IsNil() {
+			log, err := app.LogGetByID(id)
+			if errHandled(err, w, r) {
+				return
+			}
+			tData.Log.Entry = log
+		} else {
+			var logs []*app.Log
+			total := 0
+			pgr := newPager(r.URL, 30)
+			if search != "" {
+				logs, total, err = app.LogSearch(search, pgr.Offset(), pgr.PageSize())
+				if errHandled(err, w, r) {
+					return
+				}
+			} else {
+
+				logs, total, err = app.LogGet(pgr.Offset(), pgr.PageSize())
+				if errHandled(err, w, r) {
+					return
+				}
+			}
+			pgr.SetTotal(total)
+			tData.Log.Pager = pgr
+			tData.Log.Logs = logs
+
+		}
+		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
@@ -109,11 +150,13 @@ func (a *adminPage) logs(w http.ResponseWriter, r *http.Request, parms httproute
 func (a *adminPage) registration(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		if errHandled(a.loadShared(c.session), w, r) {
+		tData, err := a.data(c.session)
+		if errHandled(err, w, r) {
 			return
 		}
-		a.data.Tab = "registration"
-		err := w.(*templateWriter).execute(a.data)
+
+		tData.Tab = "registration"
+		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing admin template: %s"))

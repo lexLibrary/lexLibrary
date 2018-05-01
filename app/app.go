@@ -6,7 +6,9 @@
 // No web structures or packages (http, cookies, etc) should show up in this package
 package app
 
-import "time"
+import (
+	"time"
+)
 
 const maxRows = 10000
 
@@ -28,5 +30,6 @@ func Init() error {
 
 	err = firstRunCheck()
 	initTime = time.Now()
+
 	return err
 }

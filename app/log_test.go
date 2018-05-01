@@ -21,12 +21,14 @@ func TestLog(t *testing.T) {
 		app.LogError(testErr)
 	})
 	t.Run("Log Get", func(t *testing.T) {
-		for i := 0; i < 12; i++ {
+		truncateTable(t, "logs")
+		count := 12
+		for i := 0; i < count; i++ {
 			app.LogError(fmt.Errorf("Error %d", i))
 		}
 
 		t.Run("Min", func(t *testing.T) {
-			logs, err := app.LogGet(0, 0)
+			logs, total, err := app.LogGet(0, 0)
 			if err != nil {
 				t.Fatalf("Error retrieving the minimum number of logs: %s", err)
 			}
@@ -34,9 +36,13 @@ func TestLog(t *testing.T) {
 			if len(logs) != 10 {
 				t.Fatalf("Invalid number of logs, wanted %d got %d", 10, len(logs))
 			}
+
+			if total != count {
+				t.Fatalf("Log total incorrect. Expected %d, got %d.", count, total)
+			}
 		})
 		t.Run("Max", func(t *testing.T) {
-			logs, err := app.LogGet(0, 10001)
+			logs, total, err := app.LogGet(0, 10001)
 			if err != nil {
 				t.Fatalf("Error retrieving the max number of logs: %s", err)
 			}
@@ -44,18 +50,26 @@ func TestLog(t *testing.T) {
 			if len(logs) != 10 {
 				t.Fatalf("Invalid number of logs, wanted %d got %d", 10, len(logs))
 			}
+
+			if total != count {
+				t.Fatalf("Log total incorrect. Expected %d, got %d.", count, total)
+			}
 		})
 		t.Run("First Five", func(t *testing.T) {
-			logs, err := app.LogGet(0, 5)
+			logs, total, err := app.LogGet(0, 5)
 			if err != nil {
 				t.Fatalf("Error retrieving first five logs: %s", err)
 			}
 			if len(logs) != 5 {
 				t.Fatalf("Invalid number of logs. Wanted %d got %d", 5, len(logs))
 			}
+
+			if total != count {
+				t.Fatalf("Log total incorrect. Expected %d, got %d.", count, total)
+			}
 		})
 		t.Run("Second Five", func(t *testing.T) {
-			logs, err := app.LogGet(5, 5)
+			logs, total, err := app.LogGet(5, 5)
 			if err != nil {
 				t.Fatalf("Error retrieving second five logs: %s", err)
 			}
@@ -63,15 +77,23 @@ func TestLog(t *testing.T) {
 			if len(logs) != 5 {
 				t.Fatalf("Invalid number of logs. Wanted %d got %d", 5, len(logs))
 			}
+
+			if total != count {
+				t.Fatalf("Log total incorrect. Expected %d, got %d.", count, total)
+			}
 		})
 		t.Run("Third Five", func(t *testing.T) {
-			logs, err := app.LogGet(10, 5)
+			logs, total, err := app.LogGet(10, 5)
 			if err != nil {
 				t.Fatalf("Error retrieving third five logs: %s", err)
 			}
 
-			if len(logs) != 3 {
-				t.Fatalf("Invalid number of logs. Wanted %d got %d", 3, len(logs))
+			if len(logs) != 2 {
+				t.Fatalf("Invalid number of logs. Wanted %d got %d", 2, len(logs))
+			}
+
+			if total != count {
+				t.Fatalf("Log total incorrect. Expected %d, got %d.", count, total)
 			}
 		})
 	})
@@ -79,13 +101,13 @@ func TestLog(t *testing.T) {
 	t.Run("Search", func(t *testing.T) {
 		search := "Search Test"
 		app.LogError(fmt.Errorf("Error message with %s", search))
-		logs, err := app.LogSearch(strings.ToLower(search), 0, 10)
+		logs, total, err := app.LogSearch(strings.ToLower(search), 0, 10)
 		if err != nil {
 			t.Fatalf("Error searching logs: %s", err)
 		}
 
-		if len(logs) != 1 {
-			t.Fatalf("Invalid number of logs. Wanted %d got %d", 1, len(logs))
+		if total != 1 {
+			t.Fatalf("Invalid number of logs. Wanted %d got %d", 1, total)
 		}
 
 		if !strings.Contains(logs[0].Message, search) {
@@ -99,7 +121,7 @@ func TestLog(t *testing.T) {
 
 		logger.Print(entry)
 
-		logs, err := app.LogGet(0, 1)
+		logs, _, err := app.LogGet(0, 1)
 		if err != nil {
 			t.Fatalf("Error getting logs after logger test")
 		}

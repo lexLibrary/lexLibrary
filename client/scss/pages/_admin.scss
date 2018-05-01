@@ -13,12 +13,22 @@
 	}
 }
 
-.logs.table {
+.logs > .table {
 	table-layout: fixed;
+	.date {
+		width: 180px;
+	}
+	.view-link {
+		width: 50px;
+	}
 	td {
 		overflow-x: hidden;
 		overflow-y: auto;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+}
+
+.logs > .pagination {
+	justify-content: center;
 }

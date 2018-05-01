@@ -3,7 +3,6 @@ package app
 import (
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/lexLibrary/lexLibrary/data"
 )
 
@@ -71,16 +70,12 @@ type Overview struct {
 		Documents int
 		Sessions  int
 		Size      struct {
-			Data      string
-			Search    string
-			Image     string
-			Total     string
-			Available string
+			data.SizeStats
 		}
-		Uptime           string
-		FirstLaunch      string
+		Uptime           time.Duration
+		FirstLaunch      time.Time
 		Version          string
-		BuildDate        string
+		BuildDate        time.Time
 		ErrorsTotal      int
 		ErrorsSinceStart int
 	}
@@ -99,7 +94,7 @@ var (
 		(select 0 as num) as documents, 
 		(select count(*) num from logs) as errorsTotal,
 		(select count(*) num 
-			from logs where occurred >= (select occurred from schema_versions where version = 0)
+			from logs where occurred >= {{arg "start"}}
 		) as errorsSinceStart
 	`)
 	sqlInstanceInit = data.NewQuery(`
@@ -119,7 +114,7 @@ func (a *Admin) Overview() (*Overview, error) {
 	o.Config.DatabaseURL = "" // hide to prevent showing db password
 
 	// Instance Stats
-	err := sqlInstanceStats.QueryRow().Scan(
+	err := sqlInstanceStats.QueryRow(data.Arg("start", initTime)).Scan(
 		&o.Instance.Users,
 		&o.Instance.Sessions,
 		&o.Instance.Documents,
@@ -130,17 +125,17 @@ func (a *Admin) Overview() (*Overview, error) {
 		return nil, err
 	}
 
-	o.Instance.Uptime = humanize.RelTime(initTime, time.Now(), "", "")
+	o.Instance.Uptime = time.Since(initTime)
 
 	var firstLaunch time.Time
 	err = sqlInstanceInit.QueryRow().Scan(&firstLaunch)
 	if err != nil {
 		return nil, err
 	}
-	o.Instance.FirstLaunch = humanize.Time(firstLaunch)
+	o.Instance.FirstLaunch = firstLaunch
 
 	o.Instance.Version = Version()
-	o.Instance.BuildDate = BuildDate().Format(time.ANSIC)
+	o.Instance.BuildDate = BuildDate()
 
 	// Size Stats
 	size, err := data.Size()
@@ -148,28 +143,7 @@ func (a *Admin) Overview() (*Overview, error) {
 		return nil, err
 	}
 
-	if size.Data == -1 {
-		o.Instance.Size.Data = "not supported"
-	} else {
-		o.Instance.Size.Data = humanize.Bytes(uint64(size.Data))
-	}
-	if size.Image == -1 {
-		o.Instance.Size.Image = "not supported"
-	} else {
-		o.Instance.Size.Image = humanize.Bytes(uint64(size.Image))
-	}
-
-	if size.Search == -1 {
-		o.Instance.Size.Search = "not supported"
-	} else {
-		o.Instance.Size.Search = humanize.Bytes(uint64(size.Search))
-	}
-
-	if size.Total == -1 {
-		o.Instance.Size.Total = "not supported"
-	} else {
-		o.Instance.Size.Total = humanize.Bytes(uint64(size.Total))
-	}
+	o.Instance.Size.SizeStats = size
 
 	o.Runtime = runtimeInfo
 	o.System = systemInfo()

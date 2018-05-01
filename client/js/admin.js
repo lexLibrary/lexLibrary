@@ -1,19 +1,18 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 import './lib/polyfill';
 import * as xhr from './lib/xhr';
-import {
-    payload
-} from './lib/data';
 
-
-var vm = new Vue({
-    el: 'body > .container',
+var logVM = new Vue({
+    el: document.getElementById("logSearch"),
     data: function() {
         return {
-            payload: payload(),
+            searchValue: "",
         };
     },
-    computed: {},
-    directives: {},
-    methods: {},
+    methods: {
+        'search': function(e) {
+            e.preventDefault();
+            window.location = '/admin/logs?search=' + this.searchValue;
+        },
+    },
 });

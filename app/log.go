@@ -8,12 +8,11 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
-	"github.com/rs/xid"
 )
 
 // Log is a logged error message in the database
 type Log struct {
-	ID       xid.ID    `json:"id"`
+	ID       data.ID   `json:"id"`
 	Message  string    `json:"message,omitempty"`
 	Occurred time.Time `json:"occurred,omitempty"`
 }
@@ -29,12 +28,15 @@ var sqlLogGet = data.NewQuery(`
 	{{end}}
 `)
 
+var sqlLogTotal = data.NewQuery(`select count(*) from logs`)
+
 // Performance of this search will be poor, and I may just remove this functionality altogether
 // but it's an admin only thing, so maybe it's worth keeping around.  There is no nice way to do case-insensitve
-// columns across all of the databases, unless I drop support for TiDB, Cockroach, and DB2.  It might be
+// columns across all of the databases, unless I drop support for TiDB, Cockroach.  It might be
 // worth it if other features require case insensitivity, but I think we can get by without it.
 var sqlLogSearch = data.NewQuery(`
-	select id, occurred, message from logs where lower(message) like lower({{arg "search"}}) order by occurred desc 
+	select id, occurred, message from logs 
+	where lower(message) like lower({{arg "search"}}) order by occurred desc 
 	{{if sqlserver}}
 		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
 	{{else}}
@@ -42,12 +44,13 @@ var sqlLogSearch = data.NewQuery(`
 	{{end}}
 `)
 
+var sqlLogSearchTotal = data.NewQuery(`select count(*) from logs where lower(message) like lower({{arg "search"}})`)
 var sqlLogGetByID = data.NewQuery(`select id, occurred, message from logs where id = {{arg "id"}}`)
 
 // LogError logs an error to the logs table
-func LogError(lerr error) xid.ID {
+func LogError(lerr error) data.ID {
 	l := Log{
-		ID:       xid.New(),
+		ID:       data.NewID(),
 		Message:  lerr.Error(),
 		Occurred: time.Now(),
 	}
@@ -67,15 +70,16 @@ func LogError(lerr error) xid.ID {
 }
 
 // LogGet retrieves logs from the error log in the database
-func LogGet(offset, limit int) ([]*Log, error) {
+func LogGet(offset, limit int) ([]*Log, int, error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
+
 	var logs []*Log
 
 	rows, err := sqlLogGet.Query(data.Arg("offset", offset), data.Arg("limit", limit))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -83,16 +87,22 @@ func LogGet(offset, limit int) ([]*Log, error) {
 		log := &Log{}
 		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		logs = append(logs, log)
 	}
 
-	return logs, nil
+	total := 0
+	err = sqlLogTotal.QueryRow().Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return logs, total, nil
 }
 
 // LogGetByID retrieves logs from the error log in the database for the given ID
-func LogGetByID(id xid.ID) (*Log, error) {
+func LogGetByID(id data.ID) (*Log, error) {
 	log := &Log{}
 
 	err := sqlLogGetByID.QueryRow(data.Arg("id", id)).Scan(&log.ID, &log.Occurred, &log.Message)
@@ -104,7 +114,7 @@ func LogGetByID(id xid.ID) (*Log, error) {
 }
 
 // LogSearch retrieves logs from the error log in the database that contain the search value in it's message
-func LogSearch(search string, offset, limit int) ([]*Log, error) {
+func LogSearch(search string, offset, limit int) ([]*Log, int, error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
@@ -115,7 +125,7 @@ func LogSearch(search string, offset, limit int) ([]*Log, error) {
 		data.Arg("offset", offset),
 		data.Arg("limit", limit))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -123,12 +133,18 @@ func LogSearch(search string, offset, limit int) ([]*Log, error) {
 		log := &Log{}
 		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		logs = append(logs, log)
 	}
 
-	return logs, nil
+	total := 0
+	err = sqlLogSearchTotal.QueryRow(data.Arg("search", "%"+search+"%")).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return logs, total, nil
 }
 
 type logWriter struct {

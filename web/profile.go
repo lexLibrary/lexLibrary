@@ -11,11 +11,12 @@ import (
 
 type profilePage struct {
 	templateHandler
-	data struct {
-		User  *app.User
-		Stats app.UserStats
-		Tab   string
-	}
+}
+
+type profileData struct {
+	User  *app.User
+	Stats app.UserStats
+	Tab   string
 }
 
 func profileGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
@@ -37,36 +38,37 @@ func profileGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
 	serveImage(w, r, u.ProfileImage())
 }
 
-func (p *profilePage) loadShared(s *app.Session) error {
+func (p *profilePage) data(s *app.Session) (*profileData, error) {
 	if s == nil {
-		return app.Unauthorized("You do not have access to this user")
+		return nil, app.Unauthorized("You do not have access to this user")
 	}
 
 	u, err := s.User()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	stats, err := u.Stats()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	p.data.User = u
-	p.data.Stats = stats
-	return nil
+	return &profileData{
+		User:  u,
+		Stats: stats,
+	}, nil
 }
 
 func (p *profilePage) documents(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadShared(c.session)
+		tData, err := p.data(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
 
-		p.data.Tab = "documents"
-		err = w.(*templateWriter).execute(p.data)
+		tData.Tab = "documents"
+		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
@@ -78,13 +80,13 @@ func (p *profilePage) documents(w http.ResponseWriter, r *http.Request, parms ht
 func (p *profilePage) readLater(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadShared(c.session)
+		tData, err := p.data(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
 
-		p.data.Tab = "readLater"
-		err = w.(*templateWriter).execute(p.data)
+		tData.Tab = "readLater"
+		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
@@ -97,13 +99,13 @@ func (p *profilePage) readLater(w http.ResponseWriter, r *http.Request, parms ht
 func (p *profilePage) comments(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadShared(c.session)
+		tData, err := p.data(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
 
-		p.data.Tab = "comments"
-		err = w.(*templateWriter).execute(p.data)
+		tData.Tab = "comments"
+		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
@@ -116,13 +118,13 @@ func (p *profilePage) comments(w http.ResponseWriter, r *http.Request, parms htt
 func (p *profilePage) history(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
 
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
-		err := p.loadShared(c.session)
+		tData, err := p.data(c.session)
 		if errHandled(err, w, r) {
 			return
 		}
 
-		p.data.Tab = "history"
-		err = w.(*templateWriter).execute(p.data)
+		tData.Tab = "history"
+		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
 			app.LogError(errors.Wrap(err, "Executing profile template: %s"))

@@ -1,0 +1,23 @@
+[[define "pager"]]
+	[[if gt .Pages 1]]
+	<ul class="pagination">
+		<li class="page-item [[if eq .Previous -1]]disabled[[end]]">
+			<a href="[[.Link .Previous]]" [[if eq .Previous -1]]tabindex="-1"[[end]]>Previous</a>
+		</li>
+		[[range .PageDisplay 7]]
+			[[if gt . 0]]
+			<li class="page-item [[if eq . $.Page]]active[[end]]">
+				<a href="[[$.Link .]]">[[.]]</a>
+			</li>
+			[[else]]
+				<li class="page-item">
+					<span>...</span>
+				</li>
+			[[end]]
+		[[end]]
+		<li class="page-item [[if eq .Next -1]]disabled[[end]]">
+			<a href="[[.Link .Next]]" [[if eq .Next -1]]tabindex="-1"[[end]]>Next</a>
+		</li>
+	</ul>
+	[[end]]
+[[end]]
