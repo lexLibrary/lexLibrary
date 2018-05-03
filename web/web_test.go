@@ -185,6 +185,7 @@ func createUserAndLogin(username, password string, isAdmin bool) error {
 			Find("#inputUsername").SendKeys(username).
 			Find("#inputPassword").SendKeys(password).
 			Find(".btn.btn-primary.btn-block").Click().
+			And().URL().Path("/").Eventually().
 			End()
 		if err != nil {
 			return errors.Wrap(err, "Error signing up user")
@@ -202,5 +203,6 @@ func createUserAndLogin(username, password string, isAdmin bool) error {
 		Find("#inputPassword2").SendKeys(password).
 		Find("#submit").Click().
 		Find(".has-error > .form-input-hint").Count(0).
+		And().URL().Path("/").Eventually().
 		End()
 }

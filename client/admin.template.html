@@ -190,9 +190,66 @@
 </section>
 [[end]]
 
+
 [[define "settings"]]
-<p>Settings</p>
+<section class="section settings">
+	<div class="container">
+		<div class="columns">
+			<div class="column">
+				<div class="card">
+					<div class="card-header">
+						<div class="card-title h5">Security and Authentication</div>
+					</div>
+					<div class="card-body">
+						<form class="form-horizontal">
+							<div class="form-group">
+								<div class="col-3 col-sm-12">
+									<label class="form-label" for="input-example-1">Name</label>
+								</div>
+								<div class="col-9 col-sm-12">
+									<input class="form-input" type="text" id="input-example-1" placeholder="Name">
+								</div>
+							</div>
+							<!-- form structure -->
+						</form>
+					</div>
+				</div> <!-- card -->
+			</div> <!-- column -->
+			<div class="column">
+				<div class="card">
+					<div class="card-header">
+						<div class="card-title h5">Documents</div>
+					</div>
+					<div class="card-body">
+					</div>
+				</div> <!-- card -->
+			</div> <!-- column -->
+		</div> <!-- columns -->
+		<div class="columns">
+			<div class="column">
+				<div class="card">
+					<div class="card-header">
+						<div class="card-title h5">Web Server</div>
+					</div>
+					<div class="card-body">
+					</div>
+				</div> <!-- card -->
+			</div> <!-- column -->
+			<div class="column">
+				<div class="card">
+					<div class="card-header">
+						<div class="card-title h5">Misc</div>
+					</div>
+					<div class="card-body">
+					</div>
+				</div> <!-- card -->
+			</div> <!-- column -->
+		</div> <!-- columns -->
+	</div> <!-- container -->
+</section>
 [[end]]
+
+
 [[define "logs"]]
 	[[with .Log]]
 	<section class="logs section">

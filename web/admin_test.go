@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/tebeka/selenium"
+	"github.com/timshannon/sequence"
 )
 
 func TestAdmin(t *testing.T) {
@@ -84,16 +86,26 @@ func TestAdmin(t *testing.T) {
 		}
 	}
 
+	testPagination := func(driver selenium.WebDriver, pageLinks []string) error {
+		seq := sequence.Start(driver)
+		for i := range pageLinks {
+			seq = seq.Find(fmt.Sprintf("ul.pagination > li:nth-child(%d).page-item", i+1)).
+				Text().Contains(pageLinks[i]).And()
+		}
+		return seq.End()
+	}
+
 	uri.Path = "/admin/logs"
 
 	addPage()
 	err = seq.Get(uri.String()).
 		Find(".logs > table.table > tbody > tr").Count(30).
 		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
-		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").
-		Find("ul.pagination > li:nth-child(3).page-item").Text().Contains("2").
-		Find("ul.pagination > li:nth-child(4).page-item").Text().Contains("Next").
-		End()
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "Next"})
+		}).End()
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,11 +113,148 @@ func TestAdmin(t *testing.T) {
 	addPage()
 	err = seq.Get(uri.String()).
 		Find(".logs > table.table > tbody > tr").Count(30).
-		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").
-		Find("ul.pagination > li:nth-child(3).page-item").Text().Contains("2").
-		Find("ul.pagination > li:nth-child(4).page-item").Any().Text().Contains("3").
-		Find("ul.pagination > li:nth-child(5).page-item").Text().Contains("Next").
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "3", "Next"})
+		}).End()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addPage()
+	err = seq.Get(uri.String()).
+		Find(".logs > table.table > tbody > tr").Count(30).
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "Next"})
+		}).End()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addPage()
+	err = seq.Get(uri.String()).
+		Find(".logs > table.table > tbody > tr").Count(30).
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "5", "Next"})
+		}).End()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addPage()
+	err = seq.Get(uri.String()).
+		Find(".logs > table.table > tbody > tr").Count(30).
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "5", "6", "Next"})
+		}).End()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addPage()
+	err = seq.Get(uri.String()).
+		Find(".logs > table.table > tbody > tr").Count(30).
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "5", "6", "7", "Next"})
+		}).End()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addPage()
+	err = seq.Get(uri.String()).
+		Find(".logs > table.table > tbody > tr").Count(30).
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "5", "6", "...", "8", "Next"})
+		}).End()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addPage()
+	err = seq.Get(uri.String()).
+		Find(".logs > table.table > tbody > tr").Count(30).
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "5", "6", "...", "9", "Next"})
+		}).End()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addPage()
+	err = seq.Get(uri.String()).
+		Find(".logs > table.table > tbody > tr").Count(30).
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
+		Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "5", "6", "...", "10", "Next"})
+		}).
+		Find("ul.pagination > li:nth-child(3).page-item").Text().Contains("2").Click().And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver,
+				[]string{"Previous", "1", "2", "3", "4", "5", "6", "...", "10", "Next"})
+		}).
+		Find("ul.pagination > li.page-item.active").Text().Contains("2").
+		Find("ul.pagination > li:nth-child(6).page-item").Text().Contains("5").Click().And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver,
+				[]string{"Previous", "1", "...", "3", "4", "5", "6", "7", "...", "10", "Next"})
+		}).
+		Find("ul.pagination > li.page-item.active").Text().Contains("5").
+		Find("ul.pagination > li:nth-child(1).page-item").Text().Contains("Previous").Click().And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver,
+				[]string{"Previous", "1", "2", "3", "4", "5", "6", "...", "10", "Next"})
+		}).
+		Find("ul.pagination > li.page-item.active").Text().Contains("4").
+		Find("ul.pagination > li:nth-child(10).page-item").Text().Contains("Next").Click().And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver,
+				[]string{"Previous", "1", "...", "3", "4", "5", "6", "7", "...", "10", "Next"})
+		}).
+		Find("ul.pagination > li.page-item.active").Text().Contains("5").
+		Find("ul.pagination > li:nth-child(10).page-item").Text().Contains("10").Click().And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver,
+				[]string{"Previous", "1", "...", "5", "6", "7", "8", "9", "10", "Next"})
+		}).
+		Find("ul.pagination > li.page-item.active").Text().Contains("10").
+		Find("ul.pagination > li.page-item.disabled").Text().Contains("Next").
+		Find(".logs > table.table > tbody > tr").Count(2).
+		Find("ul.pagination > li:nth-child(1).page-item").Text().Contains("Previous").Click().And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver,
+				[]string{"Previous", "1", "...", "5", "6", "7", "8", "9", "10", "Next"})
+		}).
+		Find("ul.pagination > li.page-item.active").Text().Contains("9").
+		Find("ul.pagination > li:nth-child(5).page-item").Text().Contains("6").Click().And().
+		Test("pagination", func(driver selenium.WebDriver) error {
+			return testPagination(driver,
+				[]string{"Previous", "1", "...", "4", "5", "6", "7", "8", "...", "10", "Next"})
+		}).
+		Find("ul.pagination > li.page-item.active").Text().Contains("6").
 		End()
+
 	if err != nil {
 		t.Fatal(err)
 	}
