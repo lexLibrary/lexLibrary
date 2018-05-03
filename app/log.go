@@ -5,6 +5,7 @@ package app
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -55,7 +56,10 @@ func LogError(lerr error) data.ID {
 		Occurred: time.Now(),
 	}
 
-	log.Printf("ERROR: %s", l.Message)
+	if os.Getenv("LLTEST") != "true" {
+		// don't print out error logs during testing, it keeps console cleaner
+		log.Printf("ERROR: %s", l.Message)
+	}
 
 	_, err := sqlLogInsert.Exec(
 		data.Arg("id", l.ID),
