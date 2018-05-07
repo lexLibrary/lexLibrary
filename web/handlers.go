@@ -19,7 +19,7 @@ import (
 
 const (
 	strictTransportSecurity = "max-age=86400"
-	//TODO: src-nonce generation
+	//TODO: src-nonce generation if inline is needed
 	cspHeader = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data:"
 )
 

@@ -29,6 +29,7 @@
 		</div>
 	</div>
 </body>
+<script type="application/json" id="settingsPayload">[[.Settings]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/admin.js"></script>
 </html>
@@ -192,57 +193,100 @@
 
 
 [[define "settings"]]
-<section class="section settings">
-	<div class="container">
+<section id="settings" class="pt-2">
+	<div class="container grid-lg">
 		<div class="columns">
-			<div class="column">
-				<div class="card">
-					<div class="card-header">
-						<div class="card-title h5">Security and Authentication</div>
-					</div>
-					<div class="card-body">
-						<form class="form-horizontal">
-							<div class="form-group">
-								<div class="col-3 col-sm-12">
-									<label class="form-label" for="input-example-1">Name</label>
-								</div>
-								<div class="col-9 col-sm-12">
-									<input class="form-input" type="text" id="input-example-1" placeholder="Name">
-								</div>
+			<div class="column col-3">
+				<ul class="menu">
+					<li class="menu-item">
+						<div>
+							<h4>Settings</h4>
+						</div>
+					</li>
+					<li class="divider"></li>
+					<li class="menu-item">
+						<a @click="setPage('security', $event)" :class="{'active': securityActive}" href="">Security and Authentication</a>
+					</li>
+					<li class="menu-item">
+						<a @click="setPage('documents', $event)" :class="{'active': documentsActive}" href="">Documents</a>
+					</li>
+					<li class="menu-item">
+						<a @click="setPage('web', $event)" :class="{'active': webActive}" href="">Web Server</a>
+					</li>
+					<li class="menu-item">
+						<a @click="setPage('misc', $event)" :class="{'active': miscActive}" href="">Misc</a>
+					</li>
+					<li class="divider"></li>
+					<li class="menu-item">
+						<input class="form-input" type="text" id="settingSearch" placeholder="Search Settings">
+					</li>
+				</ul>
+			</div> <!-- column -->
+			<div class="ml-8 column">
+				<h3 v-if="securityActive" v-cloak>Security</h3>
+				<h3 v-if="documentsActive" v-cloak>Documents</h3>
+				<h3 v-if="webActive" v-cloak>Web Server</h3>
+				<h3 v-if="miscActive" v-cloak>Misc</h3>
+				<h6 class="text-gray">Settings take effect immediately unless noted otherwise</h6>
+
+				<form v-if="pages.security.PasswordMinLength" @submit="updateSetting('PasswordMinLength', $event)" 
+					v-cloak class="setting-group form-horizontal">
+						<div :class="{'has-error': hasError=='PasswordMinLength'}" class="form-group">
+							<div class="col-7">
+								<label class="form-label" for="PasswordMinLength">Minimum Allowed Password Length</label>
 							</div>
-							<!-- form structure -->
-						</form>
+							<div class="input-group col-5">
+								<input v-model="settings.PasswordMinLength" class="form-input" type="text" 
+									id="PasswordMinLength" placeholder="Min password length">
+								<button type="submit" :class="{loading: isWaiting=='PasswordMinLength'}" class="btn btn-primary input-group-btn">
+									Change
+								</button>
+							</div>
+							<p v-if="hasError=='PasswordMinLength'" v-cloak class="form-input-hint">{{error}}</p>
 					</div>
-				</div> <!-- card -->
-			</div> <!-- column -->
-			<div class="column">
-				<div class="card">
-					<div class="card-header">
-						<div class="card-title h5">Documents</div>
+				</form> <!-- setting -->
+
+				<form v-if="pages.security.PasswordRequireNumber" v-cloak class="setting-group">
+					<div class="form-group">
+						<label :class="{'is-error': hasError=='PasswordRequireNumber'}" class="form-switch">
+							<input v-model="settings.PasswordRequireNumber" @change="updateSetting('PasswordRequireNumber')" type="checkbox" 
+								:disabled="isWaiting=='PasswordRequireNumber'">
+							<i class="form-icon"></i> Require that all new passwords have at least one number
+						</label>
+						<p v-if="hasError=='PasswordRequireNumber'" v-cloak class="form-input-hint">{{error}}</p>
 					</div>
-					<div class="card-body">
+				</form> <!-- setting -->
+				<form v-if="pages.security.PasswordRequireSpecial" v-cloak class="setting-group">
+					<div class="form-group">
+						<label :class="{'is-error': hasError=='PasswordRequireSpecial'}" class="form-switch">
+							<input v-model="settings.PasswordRequireSpecial" @change="updateSetting('PasswordRequireSpecial')" type="checkbox" 
+								:disabled="isWaiting=='PasswordRequireSpecial'">
+							<i class="form-icon"></i> Require that all new passwords have at least one special character
+						</label>
+						<p v-if="hasError=='PasswordRequireSpecial'" v-cloak class="form-input-hint">{{error}}</p>
 					</div>
-				</div> <!-- card -->
-			</div> <!-- column -->
-		</div> <!-- columns -->
-		<div class="columns">
-			<div class="column">
-				<div class="card">
-					<div class="card-header">
-						<div class="card-title h5">Web Server</div>
+				</form> <!-- setting -->
+				<form v-if="pages.security.PasswordRequireMixedCase" v-cloak class="setting-group">
+					<div class="form-group">
+						<label :class="{'is-error': hasError=='PasswordRequireMixedCase'}" class="form-switch">
+							<input v-model="settings.PasswordRequireMixedCase" @change="updateSetting('PasswordRequireMixedCase')" type="checkbox" 
+								:disabled="isWaiting=='PasswordRequireMixedCase'">
+							<i class="form-icon"></i> Require that all new passwords have at least one upper and one lower case letter.
+						</label>
+						<p v-if="hasError=='PasswordRequireMixedCase'" v-cloak class="form-input-hint">{{error}}</p>
 					</div>
-					<div class="card-body">
+				</form> <!-- setting -->
+				<form v-if="pages.security.BadPasswordCheck" v-cloak class="setting-group">
+					<div class="form-group">
+						<label :class="{'is-error': hasError=='BadPasswordCheck'}" class="form-switch">
+							<input v-model="settings.BadPasswordCheck" @change="updateSetting('BadPasswordCheck')" type="checkbox" 
+								:disabled="isWaiting=='BadPasswordCheck'">
+							<i class="form-icon"></i> Require that all new passwords aren't in a list of the most common passwords
+						</label>
+						<p v-if="hasError=='BadPasswordCheck'" v-cloak class="form-input-hint">{{error}}</p>
 					</div>
-				</div> <!-- card -->
-			</div> <!-- column -->
-			<div class="column">
-				<div class="card">
-					<div class="card-header">
-						<div class="card-title h5">Misc</div>
-					</div>
-					<div class="card-body">
-					</div>
-				</div> <!-- card -->
+				</form> <!-- setting -->
+
 			</div> <!-- column -->
 		</div> <!-- columns -->
 	</div> <!-- container -->

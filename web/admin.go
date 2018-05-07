@@ -24,6 +24,7 @@ type adminData struct {
 		Pager pager
 		Entry *app.Log
 	}
+	Settings []app.Setting
 }
 
 func (a *adminPage) data(s *app.Session) (*adminData, error) {
@@ -79,6 +80,11 @@ func (a *adminPage) settings(w http.ResponseWriter, r *http.Request, parms httpr
 		}
 
 		tData.Tab = "settings"
+		settings, err := app.Settings(tData.User)
+		if errHandled(err, w, r) {
+			return
+		}
+		tData.Settings = settings
 		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {
