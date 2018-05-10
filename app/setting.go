@@ -138,6 +138,10 @@ func settingSet(tx *sql.Tx, id string, value interface{}) error {
 	if err == ErrSettingNotFound {
 		return err
 	}
+	value, err = setting.convertValue(value)
+	if err != nil {
+		return err
+	}
 
 	if !setting.canSet(value) {
 		return ErrSettingInvalidValue
@@ -198,6 +202,61 @@ func SettingDefault(id string) (Setting, error) {
 		}
 	}
 	return Setting{}, ErrSettingNotFound
+}
+
+// convertValue returns the passed in value as the type needed for the setting
+func (s *Setting) convertValue(value interface{}) (interface{}, error) {
+	switch s.Value.(type) {
+	case int:
+		switch value := value.(type) {
+		case float32:
+			return int(value), nil
+		case float64:
+			return int(value), nil
+		case int32:
+			return int(value), nil
+		case int64:
+			return int(value), nil
+		case int:
+			return int(value), nil
+		case string:
+			return strconv.Atoi(value)
+		default:
+			return nil, ErrSettingInvalidValue
+		}
+	case string:
+		if value, ok := value.(string); ok {
+			return value, nil
+		}
+	case bool:
+		if value, ok := value.(bool); ok {
+			return value, nil
+		}
+	case time.Duration:
+		switch value := value.(type) {
+		case float32:
+			return time.Duration(value), nil
+		case float64:
+			return time.Duration(value), nil
+		case int32:
+			return time.Duration(value), nil
+		case int64:
+			return time.Duration(value), nil
+		case int:
+			return time.Duration(value), nil
+		case string:
+			i, err := strconv.Atoi(value)
+			if err != nil {
+				return nil, err
+			}
+			return time.Duration(i), nil
+		default:
+			return nil, ErrSettingInvalidValue
+		}
+	default:
+		return nil, ErrSettingInvalidValue
+	}
+	return nil, ErrSettingInvalidValue
 }
 
 func (s *Setting) setValue(tableValue string) error {

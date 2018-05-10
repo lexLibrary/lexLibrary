@@ -55,6 +55,12 @@ var settingDefaults = []Setting{
 		ID:          "RateLimit",
 		Description: "Number of requests per minute a unique user or ip address is allowed to make.",
 		Value:       2000,
+		validate: func(value interface{}) error {
+			if value.(int) <= 0 {
+				return NewFailure("Rate limit must be positive")
+			}
+			return nil
+		},
 	},
 	Setting{
 		ID:          "RememberSessionDays",
@@ -64,6 +70,9 @@ var settingDefaults = []Setting{
 			if value.(int) > sessionMaxDaysRemembered {
 				return NewFailure("The maximium number of days a session can be remembered for is %d",
 					sessionMaxDaysRemembered)
+			}
+			if value.(int) <= 0 {
+				return NewFailure("Value must be greater than 0")
 			}
 			return nil
 		},

@@ -29,6 +29,7 @@ var (
 	unauthorizedHandler = templateHandler{
 		templateFiles: []string{"login.template.html"},
 	}
+	//TODO: handle 429 - Too many requests
 )
 
 func init() {

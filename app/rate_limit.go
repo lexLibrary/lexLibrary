@@ -16,11 +16,12 @@ type rateKey struct {
 	rateType string
 }
 
-//TODO: periodically clear out expired rates
 var rates = struct {
 	sync.RWMutex
 	r map[rateKey]*RateLeft
 }{r: make(map[rateKey]*RateLeft)}
+
+// TODO: remove expired rates that haven't been used in a while?
 
 // RateLimit Fails immediately when the limit is reached within the Reset period
 type RateLimit struct {
@@ -90,10 +91,15 @@ func (rd *RateDelay) Attempt(id string) error {
 
 func (rk *rateKey) find() (*RateLeft, bool) {
 	rates.RLock()
-	defer rates.RUnlock()
 
 	result, ok := rates.r[*rk]
-	return result, ok
+	rates.RUnlock()
+
+	if !ok || result.Reset.Before(time.Now()) {
+		return nil, false
+	}
+
+	return result, true
 }
 
 func (rk *rateKey) add(limit int32, reset time.Time) RateLeft {

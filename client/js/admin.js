@@ -30,7 +30,11 @@ var settingsVM = new Vue({
                 let settings = {};
                 let p = payload("settingsPayload");
                 for (let i in p) {
-                    settings[p[i].id] = p[i].value;
+                    settings[p[i].id] = {
+                        id: p[i].id,
+                        description: p[i].description,
+                        value: p[i].value,
+                    };
                 }
                 return settings;
             }(),
@@ -41,16 +45,26 @@ var settingsVM = new Vue({
                     PasswordRequireNumber: true,
                     PasswordRequireMixedCase: true,
                     BadPasswordCheck: true,
+                    RememberSessionDays: true,
+                    AllowPublicSignups: true,
+                    PasswordExpirationDays: true,
                 },
                 documents: {
-                    documents: false,
+                    AllowPublicDocuments: false,
                 },
-                web: {},
-                misc: {},
+                web: {
+                    RateLimit: false,
+                    URL: false,
+                },
+                misc: {
+                    NonAdminIssueSubmission: false,
+                },
             },
             error: null,
             hasError: '',
             isWaiting: '',
+            search: "",
+            currentPage: 'security',
         };
     },
     computed: {
@@ -87,6 +101,26 @@ var settingsVM = new Vue({
             return false;
         },
     },
+    watch: {
+        search: function(val) {
+            if (val == "") {
+                this.setPage(this.currentPage);
+                return;
+            }
+
+            for (let p in this.pages) {
+                for (let s in this.pages[p]) {
+                    if (s.toLowerCase().indexOf(val.toLowerCase()) != -1 || 
+						this.settings[s].description.toLowerCase().indexOf(val.toLowerCase()) != -1) {
+                        this.pages[p][s] = true;
+                    } else {
+                        this.pages[p][s] = false;
+                    }
+                }
+            }
+
+        }
+    },
     methods: {
         'setPage': function(page, e) {
             if (e) {
@@ -103,18 +137,22 @@ var settingsVM = new Vue({
                     }
                 }
             }
+            this.currentPage = page;
+            this.search = '';
         },
         'updateSetting': function(setting, e) {
             if (e) {
                 e.preventDefault();
             }
             this.isWaiting = setting;
-            xhr.put("/setting/", {
+            xhr.put("/setting", {
                     id: setting,
-                    value: this.settings[setting],
+                    value: this.settings[setting].value,
                 })
                 .then(() => {
                     this.isWaiting = '';
+                    this.hasError = '';
+                    this.error = null;
                 })
                 .catch((err) => {
                     this.isWaiting = '';

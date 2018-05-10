@@ -205,7 +205,7 @@
 					</li>
 					<li class="divider"></li>
 					<li class="menu-item">
-						<a @click="setPage('security', $event)" :class="{'active': securityActive}" href="">Security and Authentication</a>
+						<a @click="setPage('security', $event)" :class="{'active': securityActive}" href="">Security</a>
 					</li>
 					<li class="menu-item">
 						<a @click="setPage('documents', $event)" :class="{'active': documentsActive}" href="">Documents</a>
@@ -218,15 +218,17 @@
 					</li>
 					<li class="divider"></li>
 					<li class="menu-item">
-						<input class="form-input" type="text" id="settingSearch" placeholder="Search Settings">
+						<input v-model="search" class="form-input" type="text" id="settingSearch" 
+							placeholder="Search Settings">
 					</li>
 				</ul>
 			</div> <!-- column -->
 			<div class="ml-8 column">
-				<h3 v-if="securityActive" v-cloak>Security</h3>
-				<h3 v-if="documentsActive" v-cloak>Documents</h3>
-				<h3 v-if="webActive" v-cloak>Web Server</h3>
-				<h3 v-if="miscActive" v-cloak>Misc</h3>
+				<h3 v-if="search" v-cloak>Searching</h3>
+				<h3 v-else-if="securityActive" v-cloak>Security</h3>
+				<h3 v-else-if="documentsActive" v-cloak>Documents</h3>
+				<h3 v-else-if="webActive" v-cloak>Web Server</h3>
+				<h3 v-else-if="miscActive" v-cloak>Misc</h3>
 				<h6 class="text-gray">Settings take effect immediately unless noted otherwise</h6>
 
 				<form v-if="pages.security.PasswordMinLength" @submit="updateSetting('PasswordMinLength', $event)" 
@@ -236,9 +238,10 @@
 								<label class="form-label" for="PasswordMinLength">Minimum Allowed Password Length</label>
 							</div>
 							<div class="input-group col-5">
-								<input v-model="settings.PasswordMinLength" class="form-input" type="text" 
+								<input v-model="settings.PasswordMinLength.value" class="form-input" type="number" 
 									id="PasswordMinLength" placeholder="Min password length">
-								<button type="submit" :class="{loading: isWaiting=='PasswordMinLength'}" class="btn btn-primary input-group-btn">
+								<button type="submit" :class="{loading: isWaiting=='PasswordMinLength'}" 
+									class="btn btn-primary input-group-btn">
 									Change
 								</button>
 							</div>
@@ -249,8 +252,8 @@
 				<form v-if="pages.security.PasswordRequireNumber" v-cloak class="setting-group">
 					<div class="form-group">
 						<label :class="{'is-error': hasError=='PasswordRequireNumber'}" class="form-switch">
-							<input v-model="settings.PasswordRequireNumber" @change="updateSetting('PasswordRequireNumber')" type="checkbox" 
-								:disabled="isWaiting=='PasswordRequireNumber'">
+							<input v-model="settings.PasswordRequireNumber.value" @change="updateSetting('PasswordRequireNumber')" 
+							type="checkbox" :disabled="isWaiting=='PasswordRequireNumber'">
 							<i class="form-icon"></i> Require that all new passwords have at least one number
 						</label>
 						<p v-if="hasError=='PasswordRequireNumber'" v-cloak class="form-input-hint">{{error}}</p>
@@ -259,7 +262,8 @@
 				<form v-if="pages.security.PasswordRequireSpecial" v-cloak class="setting-group">
 					<div class="form-group">
 						<label :class="{'is-error': hasError=='PasswordRequireSpecial'}" class="form-switch">
-							<input v-model="settings.PasswordRequireSpecial" @change="updateSetting('PasswordRequireSpecial')" type="checkbox" 
+							<input v-model="settings.PasswordRequireSpecial.value" @change="updateSetting('PasswordRequireSpecial')" 
+							type="checkbox" 
 								:disabled="isWaiting=='PasswordRequireSpecial'">
 							<i class="form-icon"></i> Require that all new passwords have at least one special character
 						</label>
@@ -269,9 +273,10 @@
 				<form v-if="pages.security.PasswordRequireMixedCase" v-cloak class="setting-group">
 					<div class="form-group">
 						<label :class="{'is-error': hasError=='PasswordRequireMixedCase'}" class="form-switch">
-							<input v-model="settings.PasswordRequireMixedCase" @change="updateSetting('PasswordRequireMixedCase')" type="checkbox" 
+							<input v-model="settings.PasswordRequireMixedCase.value" @change="updateSetting('PasswordRequireMixedCase')" 
+							type="checkbox" 
 								:disabled="isWaiting=='PasswordRequireMixedCase'">
-							<i class="form-icon"></i> Require that all new passwords have at least one upper and one lower case letter.
+							<i class="form-icon"></i> Require that all new passwords have at least one upper and one lower case letter
 						</label>
 						<p v-if="hasError=='PasswordRequireMixedCase'" v-cloak class="form-input-hint">{{error}}</p>
 					</div>
@@ -279,11 +284,128 @@
 				<form v-if="pages.security.BadPasswordCheck" v-cloak class="setting-group">
 					<div class="form-group">
 						<label :class="{'is-error': hasError=='BadPasswordCheck'}" class="form-switch">
-							<input v-model="settings.BadPasswordCheck" @change="updateSetting('BadPasswordCheck')" type="checkbox" 
+							<input v-model="settings.BadPasswordCheck.value" @change="updateSetting('BadPasswordCheck')" type="checkbox" 
 								:disabled="isWaiting=='BadPasswordCheck'">
 							<i class="form-icon"></i> Require that all new passwords aren't in a list of the most common passwords
 						</label>
 						<p v-if="hasError=='BadPasswordCheck'" v-cloak class="form-input-hint">{{error}}</p>
+					</div>
+				</form> <!-- setting -->
+				<form v-if="pages.security.RememberSessionDays" @submit="updateSetting('RememberSessionDays', $event)" 
+					v-cloak class="setting-group form-horizontal">
+						<div :class="{'has-error': hasError=='RememberSessionDays'}" class="form-group">
+							<div class="col-9">
+								<label class="form-label" for="RememberSessionDays">How many days a session is valid for if 
+									<em>Remember Me</em> is checked when logging in.</label>
+							</div>
+							<div class="input-group col-3">
+								<input v-model="settings.RememberSessionDays.value" class="form-input" type="number" 
+									id="RememberSessionDays" placeholder="Days to remember a session">
+								<button type="submit" :class="{loading: isWaiting=='RememberSessionDays'}" 
+									class="btn btn-primary input-group-btn">
+									Change
+								</button>
+							</div>
+							<p v-if="hasError=='RememberSessionDays'" v-cloak class="form-input-hint">{{error}}</p>
+					</div>
+				</form> <!-- setting -->
+				<form v-if="pages.security.AllowPublicSignups" v-cloak class="setting-group">
+					<div class="form-group">
+						<label :class="{'is-error': hasError=='AllowPublicSignups'}" class="form-switch">
+							<input v-model="settings.AllowPublicSignups.value" @change="updateSetting('AllowPublicSignups')" type="checkbox" 
+								:disabled="isWaiting=='AllowPublicSignups'">
+							<i class="form-icon"></i>Allow anyone to create a login for Lex Library.  If not set, logins can <em>only</em>
+							be created from <a href="/admin/registration">Registration Links</a>.
+						</label>
+						<p v-if="hasError=='AllowPublicSignups'" v-cloak class="form-input-hint">{{error}}</p>
+					</div>
+				</form> <!-- setting -->
+				<form v-if="pages.security.PasswordExpirationDays" @submit="updateSetting('PasswordExpirationDays', $event)" 
+					v-cloak class="setting-group form-horizontal">
+						<div :class="{'has-error': hasError=='PasswordExpirationDays'}" class="form-group">
+							<div class="col-9">
+								<label class="form-label" for="PasswordExpirationDays">Number of days until a user is required to change
+									their password. If negative, passwords will never expire. <em>Only impacts new passwords.</em></label>
+							</div>
+							<div class="input-group col-3">
+								<input v-model="settings.PasswordExpirationDays.value" class="form-input" type="number" 
+									id="PasswordExpirationDays" placeholder="Days until passwords expire">
+								<button type="submit" :class="{loading: isWaiting=='PasswordExpirationDays'}" 
+									class="btn btn-primary input-group-btn">
+									Change
+								</button>
+							</div>
+							<p v-if="hasError=='PasswordExpirationDays'" v-cloak class="form-input-hint">{{error}}</p>
+					</div>
+				</form> <!-- setting -->
+
+
+				<form v-if="pages.documents.AllowPublicDocuments" v-cloak class="setting-group">
+					<div class="form-group">
+						<label :class="{'is-error': hasError=='AllowPublicDocuments'}" class="form-switch">
+							<input v-model="settings.AllowPublicDocuments.value" @change="updateSetting('AllowPublicDocuments')" type="checkbox" 
+								:disabled="isWaiting=='AllowPublicDocuments'">
+							<i class="form-icon"></i> Allow documents to be published 
+							<span class="popover popover-right"><em>Publically*</em>
+								<div class="popover-container">
+									<div class="card">
+										<div class="card-body">
+											When active, any document without a group will be viewable without a login.
+										</div>
+									</div>
+								</div>
+							</span>
+						</label>
+						<p v-if="hasError=='AllowPublicDocuments'" v-cloak class="form-input-hint">{{error}}</p>
+					</div>
+				</form> <!-- setting -->
+
+				<form v-if="pages.web.RateLimit" @submit="updateSetting('RateLimit', $event)" 
+					v-cloak class="setting-group form-horizontal">
+						<div :class="{'has-error': hasError=='RateLimit'}" class="form-group">
+							<div class="col-8">
+								<label class="form-label" for="RateLimit">Number of requests per minute a unique user or ip address is 
+									allowed to make </label>
+								<small class="text-gray">Default: 2000</small>
+							</div>
+							<div class="input-group col-4">
+								<input v-model="settings.RateLimit.value" class="form-input" type="number" 
+									id="RateLimit" placeholder="Requests per minute">
+								<button type="submit" :class="{loading: isWaiting=='RateLimit'}" 
+									class="btn btn-primary input-group-btn">
+									Change
+								</button>
+							</div>
+							<p v-if="hasError=='RateLimit'" v-cloak class="form-input-hint">{{error}}</p>
+					</div>
+				</form> <!-- setting -->
+				<form v-if="pages.web.URL" @submit="updateSetting('URL', $event)" 
+					v-cloak class="setting-group form-horizontal">
+						<div :class="{'has-error': hasError=='URL'}" class="form-group">
+							<div class="col-4">
+								<label class="form-label" for="URL">URL of the Lex Library Instance</label>
+							</div>
+							<div class="input-group col-8">
+								<input v-model="settings.URL.value" class="form-input" type="text" id="URL" placeholder="Lex Library URL">
+								<button type="submit" :class="{loading: isWaiting=='URL'}" 
+									class="btn btn-primary input-group-btn">
+									Change
+								</button>
+							</div>
+							<p v-if="hasError=='URL'" v-cloak class="form-input-hint">{{error}}</p>
+					</div>
+				</form> <!-- setting -->
+
+
+				<form v-if="pages.misc.NonAdminIssueSubmission" v-cloak class="setting-group">
+					<div class="form-group">
+						<label :class="{'is-error': hasError=='NonAdminIssueSubmission'}" class="form-switch">
+							<input v-model="settings.NonAdminIssueSubmission.value" @change="updateSetting('NonAdminIssueSubmission')" 
+							type="checkbox" 
+								:disabled="isWaiting=='NonAdminIssueSubmission'">
+							<i class="form-icon"></i> Allow non-admin users to submit issues from the <a href="/about">about page</a>. 
+						</label>
+						<p v-if="hasError=='NonAdminIssueSubmission'" v-cloak class="form-input-hint">{{error}}</p>
 					</div>
 				</form> <!-- setting -->
 
