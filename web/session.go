@@ -112,10 +112,10 @@ func handleCSRF(w http.ResponseWriter, r *http.Request, s *app.Session) error {
 	}
 
 	// FIXME:
-	// err := s.CycleCSRF()
-	// if err == nil {
-	// 	return err
-	// }
+	err := s.CycleCSRF()
+	if err != nil {
+		return err
+	}
 
 	if w, ok := w.(*templateWriter); ok {
 		w.CSRFToken = s.CSRFToken
