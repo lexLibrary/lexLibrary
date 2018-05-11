@@ -36,6 +36,25 @@ type ctx struct {
 
 type llHandlerFunc func(http.ResponseWriter, *http.Request, ctx)
 
+// llPrePublicHandle skips session and CSRF handling for known public endpoints that don't need to check
+// sessions
+func llPrePublicHandle(w http.ResponseWriter, r *http.Request, p httprouter.Params, llFunc llHandlerFunc) {
+	standardHeaders(w)
+	if interrupted(w, r) {
+		return
+	}
+	c := ctx{
+		params: p,
+	}
+
+	left, err := requestLimit.Attempt(ipAddress(r))
+	rateLimitHeader(w, left)
+	if errHandled(err, w, r) {
+		return
+	}
+	llFunc(w, r, c)
+}
+
 func llPreHandle(w http.ResponseWriter, r *http.Request, p httprouter.Params, llFunc llHandlerFunc) {
 	standardHeaders(w)
 	if interrupted(w, r) {
@@ -235,6 +254,14 @@ func makeHandle(llFunc llHandlerFunc) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		writer := responseWriter(w, r)
 		llPreHandle(writer, r, p, llFunc)
+		_ = writer.Close()
+	}
+}
+
+func makePublicHandle(llFunc llHandlerFunc) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		writer := responseWriter(w, r)
+		llPrePublicHandle(writer, r, p, llFunc)
 		_ = writer.Close()
 	}
 }

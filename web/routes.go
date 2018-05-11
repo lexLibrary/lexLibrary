@@ -45,7 +45,7 @@ func setupRoutes() http.Handler {
 	rootHandler.PUT("/signup/password", makeHandle(passwordTest))
 	rootHandler.GET("/signup/username/:username", makeHandle(usernameTest))
 
-	rootHandler.POST("/session", makeHandle(sessionLogin))
+	rootHandler.POST("/session", makePublicHandle(sessionLogin))
 	rootHandler.DELETE("/session", makeHandle(sessionLogout))
 
 	// about
