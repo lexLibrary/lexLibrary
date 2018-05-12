@@ -210,49 +210,80 @@ func TestRegistrationToken(t *testing.T) {
 
 	t.Run("List", func(t *testing.T) {
 		reset(t)
-		count := 10
-		for i := 0; i < count; i++ {
+		valid := 10
+		for i := 0; i < valid; i++ {
 			_, err := admin.NewRegistrationToken(0, time.Time{}, nil)
 			if err != nil {
 				t.Fatalf("Error adding registration tokens: %s", err)
 			}
 		}
 
-		tokens, err := admin.RegistrationTokenList(0, 20)
+		invalid := 3
+		tkn, err := admin.NewRegistrationToken(0, time.Time{}, nil)
 		if err != nil {
-			t.Fatalf("Error getting registration token list: %s", err)
+			t.Fatalf("Error adding registration tokens: %s", err)
 		}
-
-		if len(tokens) != count {
-			t.Fatalf("Expected tokens length of %d got %d", count, len(tokens))
-		}
-
-		tokens, err = admin.RegistrationTokenList(0, 5)
+		_, err = data.NewQuery(`update registration_tokens set valid = {{FALSE}} where token = {{arg "token"}}`).
+			Exec(data.Arg("token", tkn.Token))
 		if err != nil {
-			t.Fatalf("Error getting registration token list: %s", err)
+			t.Fatalf("Error adding registration tokens: %s", err)
 		}
 
-		if len(tokens) != 5 {
-			t.Fatalf("Expected tokens length of %d got %d", 5, len(tokens))
-		}
-
-		tokens, err = admin.RegistrationTokenList(8, 10)
+		tkn, err = admin.NewRegistrationToken(0, time.Time{}, nil)
 		if err != nil {
-			t.Fatalf("Error getting registration token list: %s", err)
+			t.Fatalf("Error adding registration tokens: %s", err)
+		}
+		_, err = data.NewQuery(`update registration_tokens set {{limit}} = 0  where token = {{arg "token"}}`).
+			Exec(data.Arg("token", tkn.Token))
+		if err != nil {
+			t.Fatalf("Error invalidating token: %s", err)
 		}
 
-		if len(tokens) != 2 {
-			t.Fatalf("Expected tokens length of %d got %d", 2, len(tokens))
+		tkn, err = admin.NewRegistrationToken(0, time.Time{}, nil)
+		if err != nil {
+			t.Fatalf("Error adding registration tokens: %s", err)
+		}
+		_, err = data.NewQuery(`update registration_tokens set expires = {{arg "expires"}} where token = {{arg "token"}}`).
+			Exec(data.Arg("token", tkn.Token), data.Arg("expires", time.Now().Add(-1*time.Hour)))
+		if err != nil {
+			t.Fatalf("Error invalidating token: %s", err)
 		}
 
-		t.Run("Total", func(t *testing.T) {
-			total, err := admin.RegistrationTokenListTotal()
+		tests := []struct {
+			valid  bool
+			offset int
+			limit  int
+
+			total int
+			len   int
+		}{
+			{false, 0, 20, valid + invalid, valid + invalid},
+			{false, 0, 5, valid + invalid, 5},
+			{true, 0, 20, valid, valid},
+			{true, 0, 5, valid, 5},
+		}
+
+		for _, test := range tests {
+			tokens, total, err := admin.RegistrationTokenList(test.valid, test.offset, test.limit)
 			if err != nil {
-				t.Fatalf("Error getting token list total: %s", err)
+				t.Fatalf("Error getting registration token list: %s", err)
 			}
-			if total != count {
-				t.Fatalf("Expected tokens total of %d got %d", count, total)
+
+			if len(tokens) != test.len {
+				t.Fatalf("Invalid result length. Expected %d, got %d", test.len, len(tokens))
 			}
-		})
+
+			if total != test.total {
+				t.Fatalf("Expected token list total to be %d, got %d", test.total, total)
+			}
+			if test.valid {
+				for i := range tokens {
+					if !tokens[i].Valid || tokens[i].Expires.Time.Before(time.Now()) || tokens[i].Limit == 0 {
+						t.Fatalf("Expected all tokens to be valid. This one wasn't: %v", tokens[i])
+					}
+				}
+			}
+		}
+
 	})
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"golang.org/x/sync/errgroup"
 )
 
 // RegistrationToken is a temporary token that can be used to register new logins for Lex Library
@@ -66,22 +67,40 @@ var (
 				on t.token = g.token
 		where 	t.token = {{arg "token"}}
 	`)
-	sqlRegistrationTokenList = data.NewQuery(`
-		select	t.token,
-			t.{{limit}},
-			t.expires,
-			t.valid,
-			t.updated,
-			t.created,
-			t.creator
-		from 	registration_tokens t
+	sqlRegistrationTokenListValid = data.NewQuery(`
+		select	token,
+				{{limit}},
+				expires,
+				valid,
+				updated,
+				created,
+				creator
+		from 	registration_tokens
+		where valid = 1
+		and expires > {{NOW}}
+		and limit <> 0
 		{{if sqlserver}}
 			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
 		{{else}}
 			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
 		{{end}}
 	`)
-	sqlRegistrationTokenListTotal = data.NewQuery(`select	count(*) from 	registration_tokens`)
+	sqlRegistrationTokenList = data.NewQuery(`
+		select	token,
+			{{limit}},
+			expires,
+			valid,
+			updated,
+			created,
+			creator
+		from 	registration_tokens
+		{{if sqlserver}}
+			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+		{{else}}
+			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+		{{end}}
+	`)
+	sqlRegistrationTokenListTotal = data.NewQuery(`select	count(*) from registration_tokens`)
 
 	sqlRegistrationTokenDecrementLimit = data.NewQuery(`
 		update 	registration_tokens
@@ -136,43 +155,56 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 }
 
 // RegistrationTokenList returns a list of Registration Tokens
-func (a *Admin) RegistrationTokenList(offset, limit int) ([]*RegistrationToken, error) {
+func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) ([]*RegistrationToken, int, error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
 
 	var tokens []*RegistrationToken
-
-	rows, err := sqlRegistrationTokenList.Query(data.Arg("offset", offset), data.Arg("limit", limit))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		t := &RegistrationToken{}
-		err = rows.Scan(&t.Token,
-			&t.Limit,
-			&t.Expires,
-			&t.Valid,
-			&t.Updated,
-			&t.Created,
-			&t.creator,
-		)
-		if err != nil {
-			return nil, err
-		}
-		tokens = append(tokens, t)
-	}
-
-	return tokens, nil
-}
-
-// RegistrationTokenListTotal returns the total number of registration tokens
-func (a *Admin) RegistrationTokenListTotal() (int, error) {
 	total := 0
-	err := sqlRegistrationTokenListTotal.QueryRow().Scan(&total)
-	return total, err
+
+	var g errgroup.Group
+
+	g.Go(func() error {
+		qry := sqlRegistrationTokenList
+
+		if validOnly {
+			qry = sqlRegistrationTokenListValid
+		}
+		rows, err := qry.Query(data.Arg("offset", offset), data.Arg("limit", limit))
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			t := &RegistrationToken{}
+			err = rows.Scan(&t.Token,
+				&t.Limit,
+				&t.Expires,
+				&t.Valid,
+				&t.Updated,
+				&t.Created,
+				&t.creator,
+			)
+			if err != nil {
+				return err
+			}
+			tokens = append(tokens, t)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		return sqlRegistrationTokenListTotal.QueryRow().Scan(&total)
+	})
+
+	err := g.Wait()
+	if err != nil {
+		return nil, total, err
+	}
+
+	return tokens, total, nil
 }
 
 func (t *RegistrationToken) validate() error {
