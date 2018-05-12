@@ -66,6 +66,23 @@ var (
 				on t.token = g.token
 		where 	t.token = {{arg "token"}}
 	`)
+	sqlRegistrationTokenList = data.NewQuery(`
+		select	t.token,
+			t.{{limit}},
+			t.expires,
+			t.valid,
+			t.updated,
+			t.created,
+			t.creator
+		from 	registration_tokens t
+		{{if sqlserver}}
+			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+		{{else}}
+			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+		{{end}}
+	`)
+	sqlRegistrationTokenListTotal = data.NewQuery(`select	count(*) from 	registration_tokens`)
+
 	sqlRegistrationTokenDecrementLimit = data.NewQuery(`
 		update 	registration_tokens
 		set 	{{limit}} = {{limit}} - 1
@@ -116,6 +133,46 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 	}
 
 	return t, nil
+}
+
+// RegistrationTokenList returns a list of Registration Tokens
+func (a *Admin) RegistrationTokenList(offset, limit int) ([]*RegistrationToken, error) {
+	if limit == 0 || limit > maxRows {
+		limit = 10
+	}
+
+	var tokens []*RegistrationToken
+
+	rows, err := sqlRegistrationTokenList.Query(data.Arg("offset", offset), data.Arg("limit", limit))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		t := &RegistrationToken{}
+		err = rows.Scan(&t.Token,
+			&t.Limit,
+			&t.Expires,
+			&t.Valid,
+			&t.Updated,
+			&t.Created,
+			&t.creator,
+		)
+		if err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, t)
+	}
+
+	return tokens, nil
+}
+
+// RegistrationTokenListTotal returns the total number of registration tokens
+func (a *Admin) RegistrationTokenListTotal() (int, error) {
+	total := 0
+	err := sqlRegistrationTokenListTotal.QueryRow().Scan(&total)
+	return total, err
 }
 
 func (t *RegistrationToken) validate() error {

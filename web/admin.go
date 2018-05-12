@@ -8,6 +8,7 @@ import (
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 type adminPage struct {
@@ -127,18 +128,35 @@ func (a *adminPage) logs(w http.ResponseWriter, r *http.Request, parms httproute
 			var logs []*app.Log
 			total := 0
 			pgr := newPager(r.URL, 30)
-			if search != "" {
-				logs, total, err = app.LogSearch(search, pgr.Offset(), pgr.PageSize())
-				if errHandled(err, w, r) {
-					return
-				}
-			} else {
+			var g errgroup.Group
 
-				logs, total, err = app.LogGet(pgr.Offset(), pgr.PageSize())
-				if errHandled(err, w, r) {
-					return
-				}
+			if search != "" {
+				g.Go(func() error {
+					var err error
+					logs, err = app.LogSearch(search, pgr.Offset(), pgr.PageSize())
+					return err
+				})
+				g.Go(func() error {
+					var err error
+					total, err = app.LogSearchTotal(search)
+					return err
+				})
+			} else {
+				g.Go(func() error {
+					var err error
+					logs, err = app.LogGet(pgr.Offset(), pgr.PageSize())
+					return err
+				})
+				g.Go(func() error {
+					var err error
+					total, err = app.LogTotal()
+					return err
+				})
 			}
+			if errHandled(g.Wait(), w, r) {
+				return
+			}
+
 			pgr.SetTotal(total)
 			tData.Log.Pager = pgr
 			tData.Log.Logs = logs

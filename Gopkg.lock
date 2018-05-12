@@ -10,7 +10,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/denisenkom/go-mssqldb"
-  packages = [".","internal/cp"]
+  packages = [
+    ".",
+    "internal/cp"
+  ]
   revision = "e32faac87a2220f9342289f2c3b567d1424b8ec5"
 
 [[projects]]
@@ -40,7 +43,18 @@
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-  packages = [".","hcl/ast","hcl/parser","hcl/printer","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
+  packages = [
+    ".",
+    "hcl/ast",
+    "hcl/parser",
+    "hcl/printer",
+    "hcl/scanner",
+    "hcl/strconv",
+    "hcl/token",
+    "json/parser",
+    "json/scanner",
+    "json/token"
+  ]
   revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
@@ -52,7 +66,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/lib/pq"
-  packages = [".","oid"]
+  packages = [
+    ".",
+    "oid"
+  ]
   revision = "d34b9ff171c21ad295489235aec8b6626023cd04"
 
 [[projects]]
@@ -100,7 +117,10 @@
 [[projects]]
   branch = "go1"
   name = "github.com/rwcarlsen/goexif"
-  packages = ["exif","tiff"]
+  packages = [
+    "exif",
+    "tiff"
+  ]
   revision = "fb35d3c3290d09f3524b684b5d42d0063c227158"
 
 [[projects]]
@@ -123,7 +143,10 @@
 
 [[projects]]
   name = "github.com/spf13/afero"
-  packages = [".","mem"]
+  packages = [
+    ".",
+    "mem"
+  ]
   revision = "63644898a8da0bc22138abf860edaf5277b6102e"
   version = "v1.1.0"
 
@@ -154,7 +177,13 @@
 [[projects]]
   branch = "master"
   name = "github.com/tebeka/selenium"
-  packages = [".","chrome","firefox","internal/zip","log"]
+  packages = [
+    ".",
+    "chrome",
+    "firefox",
+    "internal/zip",
+    "log"
+  ]
   revision = "6a80d8bc1bcda5ef9c53bf3dba09a97109b02b1a"
 
 [[projects]]
@@ -166,20 +195,38 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["argon2","blake2b","md4"]
+  packages = [
+    "argon2",
+    "blake2b",
+    "md4"
+  ]
   revision = "2b6c08872f4b66da917bb4ce98df4f0307330f78"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/image"
-  packages = ["bmp","tiff","tiff/lzw"]
+  packages = [
+    "bmp",
+    "tiff",
+    "tiff/lzw"
+  ]
   revision = "f315e440302883054d0c2bd85486878cb4f8572c"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["idna","lex/httplex"]
+  packages = [
+    "context",
+    "idna",
+    "lex/httplex"
+  ]
   revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sync"
+  packages = ["errgroup"]
+  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
 
 [[projects]]
   branch = "master"
@@ -189,7 +236,22 @@
 
 [[projects]]
   name = "golang.org/x/text"
-  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable"
+  ]
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
@@ -202,6 +264,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "af512a6a6515afc065358fb2456cc58c2498d509b3f620d06502975d3b8d5aed"
+  inputs-digest = "e55f71d7e99665d9124a3333c968484641b249929161f1d5ad5756e240dc4058"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -207,4 +207,52 @@ func TestRegistrationToken(t *testing.T) {
 		}
 
 	})
+
+	t.Run("List", func(t *testing.T) {
+		reset(t)
+		count := 10
+		for i := 0; i < count; i++ {
+			_, err := admin.NewRegistrationToken(0, time.Time{}, nil)
+			if err != nil {
+				t.Fatalf("Error adding registration tokens: %s", err)
+			}
+		}
+
+		tokens, err := admin.RegistrationTokenList(0, 20)
+		if err != nil {
+			t.Fatalf("Error getting registration token list: %s", err)
+		}
+
+		if len(tokens) != count {
+			t.Fatalf("Expected tokens length of %d got %d", count, len(tokens))
+		}
+
+		tokens, err = admin.RegistrationTokenList(0, 5)
+		if err != nil {
+			t.Fatalf("Error getting registration token list: %s", err)
+		}
+
+		if len(tokens) != 5 {
+			t.Fatalf("Expected tokens length of %d got %d", 5, len(tokens))
+		}
+
+		tokens, err = admin.RegistrationTokenList(8, 10)
+		if err != nil {
+			t.Fatalf("Error getting registration token list: %s", err)
+		}
+
+		if len(tokens) != 2 {
+			t.Fatalf("Expected tokens length of %d got %d", 2, len(tokens))
+		}
+
+		t.Run("Total", func(t *testing.T) {
+			total, err := admin.RegistrationTokenListTotal()
+			if err != nil {
+				t.Fatalf("Error getting token list total: %s", err)
+			}
+			if total != count {
+				t.Fatalf("Expected tokens total of %d got %d", count, total)
+			}
+		})
+	})
 }

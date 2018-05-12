@@ -30,6 +30,7 @@ var sqlLogGet = data.NewQuery(`
 `)
 
 var sqlLogTotal = data.NewQuery(`select count(*) from logs`)
+var sqlLogTotalSince = data.NewQuery(`select count(*) from logs where occurred >= {{arg "occurred"}}`)
 
 // Performance of this search will be poor, and I may just remove this functionality altogether
 // but it's an admin only thing, so maybe it's worth keeping around.  There is no nice way to do case-insensitve
@@ -74,7 +75,7 @@ func LogError(lerr error) data.ID {
 }
 
 // LogGet retrieves logs from the error log in the database
-func LogGet(offset, limit int) ([]*Log, int, error) {
+func LogGet(offset, limit int) ([]*Log, error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
@@ -83,7 +84,7 @@ func LogGet(offset, limit int) ([]*Log, int, error) {
 
 	rows, err := sqlLogGet.Query(data.Arg("offset", offset), data.Arg("limit", limit))
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -91,18 +92,25 @@ func LogGet(offset, limit int) ([]*Log, int, error) {
 		log := &Log{}
 		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		logs = append(logs, log)
 	}
+	return logs, nil
+}
 
+// LogTotal returns the total number of logs in the database
+func LogTotal() (int, error) {
 	total := 0
-	err = sqlLogTotal.QueryRow().Scan(&total)
-	if err != nil {
-		return nil, 0, err
-	}
+	err := sqlLogTotal.QueryRow().Scan(&total)
+	return total, err
+}
 
-	return logs, total, nil
+// LogTotalSince returns the number of logs since the passed in date
+func LogTotalSince(date time.Time) (int, error) {
+	total := 0
+	err := sqlLogTotalSince.QueryRow(data.Arg("occurred", date)).Scan(&total)
+	return total, err
 }
 
 // LogGetByID retrieves logs from the error log in the database for the given ID
@@ -118,7 +126,7 @@ func LogGetByID(id data.ID) (*Log, error) {
 }
 
 // LogSearch retrieves logs from the error log in the database that contain the search value in it's message
-func LogSearch(search string, offset, limit int) ([]*Log, int, error) {
+func LogSearch(search string, offset, limit int) ([]*Log, error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
@@ -129,7 +137,7 @@ func LogSearch(search string, offset, limit int) ([]*Log, int, error) {
 		data.Arg("offset", offset),
 		data.Arg("limit", limit))
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -137,22 +145,22 @@ func LogSearch(search string, offset, limit int) ([]*Log, int, error) {
 		log := &Log{}
 		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		logs = append(logs, log)
 	}
 
+	return logs, nil
+}
+
+// LogSearchTotal returns the total number of logs that match the given search value
+func LogSearchTotal(search string) (int, error) {
 	total := 0
-	err = sqlLogSearchTotal.QueryRow(data.Arg("search", "%"+search+"%")).Scan(&total)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return logs, total, nil
+	err := sqlLogSearchTotal.QueryRow(data.Arg("search", "%"+search+"%")).Scan(&total)
+	return total, err
 }
 
-type logWriter struct {
-}
+type logWriter struct{}
 
 // Write implements io.Writer by writing the bytes to the Log table
 // Each call to write generates a new entry in the database
