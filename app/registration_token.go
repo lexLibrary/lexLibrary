@@ -84,7 +84,7 @@ var (
 		}
 		if validOnly {
 			qry += `
-				where valid = 1
+				where valid = {{TRUE}}
 				and (expires > {{NOW}} or expires is null)
 				and {{limit}} <> 0
 			`
