@@ -3,6 +3,7 @@
 package app_test
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -261,29 +262,38 @@ func TestRegistrationToken(t *testing.T) {
 			{false, 0, 5, valid + invalid, 5},
 			{true, 0, 20, valid, valid},
 			{true, 0, 5, valid, 5},
+			{false, 5, 5, valid + invalid, 5},
+			{false, 10, 5, valid + invalid, 3},
+			{false, 8, 5, valid + invalid, 5},
+			{true, 5, 5, valid, 5},
+			{true, 10, 5, valid, 0},
+			{true, 8, 5, valid, 2},
 		}
 
-		for _, test := range tests {
-			tokens, total, err := admin.RegistrationTokenList(test.valid, test.offset, test.limit)
-			if err != nil {
-				t.Fatalf("Error getting registration token list: %s", err)
-			}
+		for i, test := range tests {
+			t.Run("test-"+strconv.Itoa(i), func(t *testing.T) {
+				tokens, total, err := admin.RegistrationTokenList(test.valid, test.offset, test.limit)
+				if err != nil {
+					t.Fatalf("Error getting registration token list: %s", err)
+				}
 
-			if len(tokens) != test.len {
-				t.Fatalf("Invalid result length. Expected %d, got %d", test.len, len(tokens))
-			}
+				if len(tokens) != test.len {
+					t.Fatalf("Invalid result length. Expected %d, got %d", test.len, len(tokens))
+				}
 
-			if total != test.total {
-				t.Fatalf("Expected token list total to be %d, got %d", test.total, total)
-			}
-			if test.valid {
-				for i := range tokens {
-					if !tokens[i].Valid || tokens[i].Expires.Time.Before(time.Now()) || tokens[i].Limit == 0 {
-						t.Fatalf("Expected all tokens to be valid. This one wasn't: %v", tokens[i])
+				if total != test.total {
+					t.Fatalf("Expected token list total to be %d, got %d", test.total, total)
+				}
+				if test.valid {
+					for i := range tokens {
+						if !tokens[i].Valid ||
+							(tokens[i].Expires.Valid && tokens[i].Expires.Time.Before(time.Now())) ||
+							tokens[i].Limit == 0 {
+							t.Fatalf("Expected all tokens to be valid. This one wasn't: %v", tokens[i])
+						}
 					}
 				}
-			}
+			})
 		}
-
 	})
 }

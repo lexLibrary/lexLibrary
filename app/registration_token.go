@@ -67,41 +67,40 @@ var (
 				on t.token = g.token
 		where 	t.token = {{arg "token"}}
 	`)
-	sqlRegistrationTokenListValid = data.NewQuery(`
-		select	token,
-				{{limit}},
-				expires,
-				valid,
-				updated,
-				created,
-				creator
-		from 	registration_tokens
-		where valid = 1
-		and expires > {{NOW}}
-		and limit <> 0
-		{{if sqlserver}}
-			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
-		{{else}}
-			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-		{{end}}
-	`)
-	sqlRegistrationTokenList = data.NewQuery(`
-		select	token,
-			{{limit}},
-			expires,
-			valid,
-			updated,
-			created,
-			creator
-		from 	registration_tokens
-		{{if sqlserver}}
-			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
-		{{else}}
-			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-		{{end}}
-	`)
-	sqlRegistrationTokenListTotal = data.NewQuery(`select	count(*) from registration_tokens`)
 
+	sqlRegistrationTokenList = func(validOnly, total bool) *data.Query {
+		qry := `
+			select	token,
+					{{limit}},
+					expires,
+					valid,
+					updated,
+					created,
+					creator
+			from 	registration_tokens
+		`
+		if total {
+			qry = `select count(*) from registration_tokens`
+		}
+		if validOnly {
+			qry += `
+				where valid = 1
+				and (expires > {{NOW}} or expires is null)
+				and {{limit}} <> 0
+			`
+		}
+		if !total {
+			qry += `
+				order by created desc
+				{{if sqlserver}}
+					OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+				{{else}}
+					LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+				{{end}}
+			`
+		}
+		return data.NewQuery(qry)
+	}
 	sqlRegistrationTokenDecrementLimit = data.NewQuery(`
 		update 	registration_tokens
 		set 	{{limit}} = {{limit}} - 1
@@ -166,12 +165,7 @@ func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) ([]*Reg
 	var g errgroup.Group
 
 	g.Go(func() error {
-		qry := sqlRegistrationTokenList
-
-		if validOnly {
-			qry = sqlRegistrationTokenListValid
-		}
-		rows, err := qry.Query(data.Arg("offset", offset), data.Arg("limit", limit))
+		rows, err := sqlRegistrationTokenList(validOnly, false).Query(data.Arg("offset", offset), data.Arg("limit", limit))
 		if err != nil {
 			return err
 		}
@@ -196,7 +190,7 @@ func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) ([]*Reg
 	})
 
 	g.Go(func() error {
-		return sqlRegistrationTokenListTotal.QueryRow().Scan(&total)
+		return sqlRegistrationTokenList(validOnly, true).QueryRow().Scan(&total)
 	})
 
 	err := g.Wait()
