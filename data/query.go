@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
-	"strings"
 	"text/template"
 	"time"
 
@@ -15,15 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-var queryBuildQueue []*Query
-
 // Query is a templated query that can run across
 // multiple database backends
 type Query struct {
-	statement string
-	built     bool
-	args      []string
-	tx        *sql.Tx
+	template *template.Template
+	args     []string
+	tx       *sql.Tx
+	data     interface{}
 }
 
 // Argument is a wrapper around sql.NamedArg so that a data behavior can be unified across all database backends
@@ -44,21 +41,6 @@ func Arg(name string, value interface{}) Argument {
 	}
 
 	return Argument(sql.Named(name, value))
-}
-
-// NewQuery creates a new query from the template passed in
-func NewQuery(tmpl string) *Query {
-	q := &Query{
-		statement: tmpl,
-	}
-
-	if db != nil {
-		q.buildTemplate()
-	} else {
-		queryBuildQueue = append(queryBuildQueue, q)
-	}
-
-	return q
 }
 
 func (q *Query) orderedArgs(args []Argument) []interface{} {
@@ -82,10 +64,10 @@ func (q *Query) orderedArgs(args []Argument) []interface{} {
 	return ordered
 }
 
-func (q *Query) buildTemplate() {
-	if db == nil {
-		panic("Can't build query templates before the database type is set")
-	}
+// NewQuery creates a new query from the template passed in
+func NewQuery(tmpl string) *Query {
+	q := &Query{}
+
 	funcs := template.FuncMap{
 		"arg": func(name string) string {
 			// Args must be named and must be unique, and must use sql.Named
@@ -197,59 +179,96 @@ func (q *Query) buildTemplate() {
 		},
 	}
 
-	buff := bytes.NewBuffer([]byte{})
-	tmpl, err := template.New("").Funcs(funcs).Parse(q.statement)
+	t, err := template.New("").Funcs(funcs).Parse(tmpl)
 	if err != nil {
-		panic(fmt.Errorf("Error parsing query template '%s': %s", q.statement, err))
+		panic(fmt.Errorf("Error parsing query template '%s': %s", tmpl, err))
 	}
-	err = tmpl.Execute(buff, nil)
-	if err != nil {
-		panic(fmt.Errorf("Error building query template'%s': %s", q.statement, err))
-	}
+	q.template = t
+	return q
+}
 
-	q.statement = strings.TrimSpace(buff.String())
-	q.built = true
+func (q *Query) execTemplate(args ...Argument) (string, error) {
+	var b bytes.Buffer
+
+	err := q.template.Execute(&b, struct {
+		Args []Argument
+		Data interface{}
+	}{
+		Args: args,
+		Data: q.data,
+	})
+
+	if err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}
+
+func (q *Query) Data(data interface{}) *Query {
+	nq := q.copy()
+	nq.data = data
+	return nq
 }
 
 // Exec executes a templated query without returning any rows
 func (q *Query) Exec(args ...Argument) (sql.Result, error) {
-	if !q.built {
-		q.buildTemplate()
+	statement, err := q.execTemplate(args...)
+	if err != nil {
+		return nil, err
 	}
 	if q.tx != nil {
-		return q.tx.Exec(q.statement, q.orderedArgs(args)...)
+		return q.tx.Exec(statement, q.orderedArgs(args)...)
 	}
-	return db.Exec(q.statement, q.orderedArgs(args)...)
+	return db.Exec(statement, q.orderedArgs(args)...)
 }
 
 // Query executes a templated query that returns rows
 func (q *Query) Query(args ...Argument) (*sql.Rows, error) {
-	if !q.built {
-		q.buildTemplate()
+	statement, err := q.execTemplate(args...)
+	if err != nil {
+		return nil, err
 	}
+
 	if q.tx != nil {
-		return q.tx.Query(q.statement, q.orderedArgs(args)...)
+		return q.tx.Query(statement, q.orderedArgs(args)...)
 	}
-	return db.Query(q.statement, q.orderedArgs(args)...)
+	return db.Query(statement, q.orderedArgs(args)...)
+}
+
+// Row is a wrapper around sql.Row so I can pass in an template execution error if one occurred
+type Row struct {
+	err error
+	row *sql.Row
+}
+
+// Scan wraps the normal sql.Row.Scan function
+func (r *Row) Scan(dest ...interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
+	return r.row.Scan(dest...)
 }
 
 // QueryRow executes a templated query that returns a single row
-func (q *Query) QueryRow(args ...Argument) *sql.Row {
-	if !q.built {
-		q.buildTemplate()
+func (q *Query) QueryRow(args ...Argument) *Row {
+	statement, err := q.execTemplate(args...)
+	if err != nil {
+		return &Row{
+			err: err,
+		}
 	}
+
 	if q.tx != nil {
-		return q.tx.QueryRow(q.statement, q.orderedArgs(args)...)
+		return &Row{row: q.tx.QueryRow(statement, q.orderedArgs(args)...)}
 	}
-	return db.QueryRow(q.statement, q.orderedArgs(args)...)
+	return &Row{row: db.QueryRow(statement, q.orderedArgs(args)...)}
 }
 
 func (q *Query) copy() *Query {
 	return &Query{
-		statement: q.statement,
-		args:      q.args,
-		built:     q.built,
-		tx:        q.tx,
+		template: q.template,
+		args:     q.args,
+		tx:       q.tx,
 	}
 }
 
@@ -265,15 +284,21 @@ func (q *Query) Tx(tx *sql.Tx) *Query {
 }
 
 // Statement returns the complied query template
-func (q *Query) Statement() string {
-	if !q.built {
-		q.buildTemplate()
+func (q *Query) Statement(args ...Argument) (string, error) {
+	statement, err := q.execTemplate(args...)
+	if err != nil {
+		return "", err
 	}
-	return q.statement
+
+	return statement, nil
 }
 
 func (q *Query) String() string {
-	return q.Statement()
+	statement, err := q.Statement()
+	if err != nil {
+		return fmt.Sprintf("Query could not be executed: %s", err)
+	}
+	return statement
 }
 
 // BeginTx begins a transaction on the database
@@ -377,11 +402,4 @@ func (q *Query) Debug(args ...Argument) string {
 // DebugPrint prints out the debug query to the screen
 func (q *Query) DebugPrint(args ...Argument) {
 	fmt.Println(q.Debug(args...))
-}
-
-func prepareQueries() error {
-	for i := range queryBuildQueue {
-		queryBuildQueue[i].buildTemplate()
-	}
-	return nil
 }

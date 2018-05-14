@@ -99,11 +99,6 @@ func Init(cfg Config) error {
 		return err
 	}
 
-	err = prepareQueries()
-	if err != nil {
-		return err
-	}
-
 	if cfg.MaxConnectionLifetime != "" {
 		lifetime, err := time.ParseDuration(cfg.MaxConnectionLifetime)
 		if err == nil {

@@ -48,7 +48,11 @@ func ensureSchemaTable() error {
 			return errors.Wrap(err, "Creating schema_versions table")
 		}
 
-		_, err := schemaVersionInsert.Exec(Arg("version", 0), Arg("script", schemaVersions[0].Statement()))
+		statement, err := schemaVersions[0].Statement()
+		if err != nil {
+			return err
+		}
+		_, err = schemaVersionInsert.Exec(Arg("version", 0), Arg("script", statement))
 		if err != nil {
 			return errors.Wrap(err, "Inserting first schema version")
 		}
@@ -62,7 +66,11 @@ func ensureSchemaVersion() error {
 	dbVer := 0
 	err := db.QueryRow(`select max(version) from schema_versions`).Scan(&dbVer)
 	if err == sql.ErrNoRows {
-		_, err := schemaVersionInsert.Exec(Arg("version", 0), Arg("script", schemaVersions[0].Statement()))
+		statement, err := schemaVersions[0].Statement()
+		if err != nil {
+			return err
+		}
+		_, err = schemaVersionInsert.Exec(Arg("version", 0), Arg("script", statement))
 		if err != nil {
 			return errors.Wrap(err, "Inserting first schema version")
 		}
@@ -83,7 +91,11 @@ func ensureSchemaVersion() error {
 			return errors.Wrapf(err, "Updating schema to version %d", dbVer)
 		}
 
-		_, err = schemaVersionInsert.Exec(Arg("version", dbVer), Arg("script", schemaVersions[dbVer].Statement()))
+		statement, err := schemaVersions[dbVer].Statement()
+		if err != nil {
+			return err
+		}
+		_, err = schemaVersionInsert.Exec(Arg("version", dbVer), Arg("script", statement))
 		if err != nil {
 			return errors.Wrapf(err, "Inserting schema version %d", dbVer)
 		}
