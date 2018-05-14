@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"golang.org/x/sync/errgroup"
 )
 
 // Log is a logged error message in the database
@@ -75,35 +76,40 @@ func LogError(lerr error) data.ID {
 }
 
 // LogGet retrieves logs from the error log in the database
-func LogGet(offset, limit int) ([]*Log, error) {
+func LogGet(offset, limit int) (logs []*Log, total int, err error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
 
-	var logs []*Log
+	var g errgroup.Group
 
-	rows, err := sqlLogGet.Query(data.Arg("offset", offset), data.Arg("limit", limit))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		log := &Log{}
-		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
+	g.Go(func() error {
+		rows, err := sqlLogGet.Query(data.Arg("offset", offset), data.Arg("limit", limit))
 		if err != nil {
-			return nil, err
+			return err
 		}
-		logs = append(logs, log)
-	}
-	return logs, nil
-}
+		defer rows.Close()
 
-// LogTotal returns the total number of logs in the database
-func LogTotal() (int, error) {
-	total := 0
-	err := sqlLogTotal.QueryRow().Scan(&total)
-	return total, err
+		for rows.Next() {
+			log := &Log{}
+			err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
+			if err != nil {
+				return err
+			}
+			logs = append(logs, log)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		return sqlLogTotal.QueryRow().Scan(&total)
+	})
+
+	err = g.Wait()
+	if err != nil {
+		return nil, total, err
+	}
+
+	return logs, total, nil
 }
 
 // LogTotalSince returns the number of logs since the passed in date
@@ -126,38 +132,41 @@ func LogGetByID(id data.ID) (*Log, error) {
 }
 
 // LogSearch retrieves logs from the error log in the database that contain the search value in it's message
-func LogSearch(search string, offset, limit int) ([]*Log, error) {
+func LogSearch(search string, offset, limit int) (logs []*Log, total int, err error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
-	var logs []*Log
 
-	rows, err := sqlLogSearch.Query(
-		data.Arg("search", "%"+search+"%"),
-		data.Arg("offset", offset),
-		data.Arg("limit", limit))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		log := &Log{}
-		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
+	var g errgroup.Group
+	g.Go(func() error {
+		rows, err := sqlLogSearch.Query(
+			data.Arg("search", "%"+search+"%"),
+			data.Arg("offset", offset),
+			data.Arg("limit", limit))
 		if err != nil {
-			return nil, err
+			return err
 		}
-		logs = append(logs, log)
+		defer rows.Close()
+
+		for rows.Next() {
+			log := &Log{}
+			err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
+			if err != nil {
+				return err
+			}
+			logs = append(logs, log)
+		}
+		return nil
+	})
+	g.Go(func() error {
+		return sqlLogSearchTotal.QueryRow(data.Arg("search", "%"+search+"%")).Scan(&total)
+	})
+	err = g.Wait()
+	if err != nil {
+		return nil, total, err
 	}
 
-	return logs, nil
-}
-
-// LogSearchTotal returns the total number of logs that match the given search value
-func LogSearchTotal(search string) (int, error) {
-	total := 0
-	err := sqlLogSearchTotal.QueryRow(data.Arg("search", "%"+search+"%")).Scan(&total)
-	return total, err
+	return logs, total, nil
 }
 
 type logWriter struct{}

@@ -268,6 +268,9 @@ func TestRegistrationToken(t *testing.T) {
 			{true, 5, 5, valid, 5},
 			{true, 10, 5, valid, 0},
 			{true, 8, 5, valid, 2},
+			{true, 0, 0, valid, 10},
+			{false, 0, 0, valid + invalid, 10},
+			{false, 0, 10001, valid + invalid, 10},
 		}
 
 		for i, test := range tests {

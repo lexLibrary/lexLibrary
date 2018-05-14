@@ -154,18 +154,16 @@ func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []dat
 }
 
 // RegistrationTokenList returns a list of Registration Tokens
-func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) ([]*RegistrationToken, int, error) {
+func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) (tokens []*RegistrationToken, total int, err error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
 
-	var tokens []*RegistrationToken
-	total := 0
-
 	var g errgroup.Group
 
 	g.Go(func() error {
-		rows, err := sqlRegistrationTokenList(validOnly, false).Query(data.Arg("offset", offset), data.Arg("limit", limit))
+		rows, err := sqlRegistrationTokenList(validOnly, false).
+			Query(data.Arg("offset", offset), data.Arg("limit", limit))
 		if err != nil {
 			return err
 		}
@@ -193,7 +191,7 @@ func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) ([]*Reg
 		return sqlRegistrationTokenList(validOnly, true).QueryRow().Scan(&total)
 	})
 
-	err := g.Wait()
+	err = g.Wait()
 	if err != nil {
 		return nil, total, err
 	}
@@ -255,6 +253,7 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 	return nil
 }
 
+// Creator returns the creator of the registration token
 func (t *RegistrationToken) Creator() (*PublicProfile, error) {
 	return publicProfileGet(t.creator)
 }
