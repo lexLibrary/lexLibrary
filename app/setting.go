@@ -220,7 +220,11 @@ func (s *Setting) convertValue(value interface{}) (interface{}, error) {
 		case int:
 			return int(value), nil
 		case string:
-			return strconv.Atoi(value)
+			i, err := strconv.Atoi(value)
+			if err != nil {
+				return nil, ErrSettingInvalidValue
+			}
+			return i, nil
 		default:
 			return nil, ErrSettingInvalidValue
 		}

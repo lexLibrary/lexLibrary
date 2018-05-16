@@ -132,7 +132,17 @@ func TestSetting(t *testing.T) {
 			t.Fatalf("Invalid error returned for Not Found id. Expected %v, got %v", app.ErrSettingNotFound, err)
 		}
 	})
+	t.Run("Set Int setting with invalid type", func(t *testing.T) {
+		err := admin.AsAdmin().SetSetting("PasswordMinLength", "")
+		if err == nil {
+			t.Fatalf("No error returned from a bad Set setting id")
+		}
 
+		if err != app.ErrSettingInvalidValue {
+			t.Fatalf("Invalid error returned for bad setting value. Expected %v, got %v",
+				app.ErrSettingNotFound, err)
+		}
+	})
 	t.Run("Bad setting format in database", func(t *testing.T) {
 		_, err := data.NewQuery("update settings set value = 'garbage' where id = 'AllowPublicDocuments'").Exec()
 		if err != nil {

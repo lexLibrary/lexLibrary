@@ -24,7 +24,12 @@ type adminData struct {
 		Pager pager
 		Entry *app.Log
 	}
-	Settings []app.Setting
+	Settings     []app.Setting
+	Registration struct {
+		Tokens []*app.RegistrationToken
+		Pager  pager
+		All    bool
+	}
 }
 
 func (a *adminPage) data(s *app.Session) (*adminData, error) {
@@ -159,7 +164,21 @@ func (a *adminPage) registration(w http.ResponseWriter, r *http.Request, parms h
 			return
 		}
 
+		var tokens []*app.RegistrationToken
 		tData.Tab = "registration"
+		pgr := newPager(r.URL, 20)
+		_, ok := r.URL.Query()["all"]
+		tData.Registration.All = ok
+
+		tokens, total, err := tData.User.AsAdmin().RegistrationTokenList(!tData.Registration.All,
+			pgr.Offset(), pgr.PageSize())
+		if errHandled(err, w, r) {
+			return
+		}
+		pgr.SetTotal(total)
+		tData.Registration.Pager = pgr
+		tData.Registration.Tokens = tokens
+
 		err = w.(*templateWriter).execute(tData)
 
 		if err != nil {

@@ -172,4 +172,14 @@ var schemaVersions = []*Query{
 			PRIMARY KEY(token, group_id)
 		)
 	`),
+	NewQuery(`
+		create table registration_token_users (
+			token {{varchar 32}} NOT NULL REFERENCES registration_tokens(token),
+			user_id {{id}} NOT NULL REFERENCES users(id),
+			PRIMARY KEY(token, user_id)
+		)
+	`),
+	NewQuery(`
+		alter table registration_tokens add column description {{text}}
+	`),
 }

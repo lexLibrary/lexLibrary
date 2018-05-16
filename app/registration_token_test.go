@@ -26,12 +26,12 @@ func TestRegistrationToken(t *testing.T) {
 	t.Run("New", func(t *testing.T) {
 		reset(t)
 
-		_, err := admin.NewRegistrationToken(0, time.Now().AddDate(0, 0, -10), nil)
+		_, err := admin.NewRegistrationToken("test", 0, time.Now().AddDate(0, 0, -10), nil)
 		if !app.IsFail(err) {
 			t.Fatalf("Generating token with old expire date didn't fail")
 		}
 
-		_, err = admin.NewRegistrationToken(0, time.Time{}, []data.ID{data.NewID()})
+		_, err = admin.NewRegistrationToken("test", 0, time.Time{}, []data.ID{data.NewID()})
 		if !app.IsFail(err) {
 			t.Fatalf("Generating a token with an invalid groupID did not fail")
 		}
@@ -46,17 +46,20 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Error creating group for testing")
 		}
 
-		_, err = admin.NewRegistrationToken(0, time.Time{}, []data.ID{group.ID, group2.ID, data.NewID()})
+		_, err = admin.NewRegistrationToken("test", 0, time.Time{}, []data.ID{group.ID, group2.ID, data.NewID()})
 		if !app.IsFail(err) {
 			t.Fatalf("Generating a token with at least one invalid groupID did not fail: %s", err)
 		}
 
-		token, err := admin.NewRegistrationToken(0, time.Time{}, nil)
+		token, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
 		if err != nil {
 			t.Fatalf("Generating registration token failed: %s", err)
 		}
 		if token.Token == "" {
 			t.Fatalf("Invalid token: %s", token.Token)
+		}
+		if token.Description != "test" {
+			t.Fatalf("Token description is incorrect. Expected %s, got %s", "test", token.Description)
 		}
 
 		if token.Expires.Valid || !token.Expires.Time.IsZero() {
@@ -81,7 +84,7 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatal("Registering user with invalid token did not fail")
 		}
 
-		token, err := admin.NewRegistrationToken(0, time.Time{}, nil)
+		token, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
 		if err != nil {
 			t.Fatalf("Generating registration token failed: %s", err)
 		}
@@ -111,7 +114,7 @@ func TestRegistrationToken(t *testing.T) {
 	t.Run("Limit", func(t *testing.T) {
 		reset(t)
 
-		token, err := admin.NewRegistrationToken(3, time.Time{}, nil)
+		token, err := admin.NewRegistrationToken("test", 3, time.Time{}, nil)
 		if err != nil {
 			t.Fatalf("Generating registration token failed: %s", err)
 		}
@@ -139,7 +142,7 @@ func TestRegistrationToken(t *testing.T) {
 
 	t.Run("Expiration", func(t *testing.T) {
 		reset(t)
-		token, err := admin.NewRegistrationToken(0, time.Now().Add(2*time.Second), nil)
+		token, err := admin.NewRegistrationToken("test", 0, time.Now().Add(2*time.Second), nil)
 		if err != nil {
 			t.Fatalf("Generating registration token failed: %s", err)
 		}
@@ -169,7 +172,7 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Error adding a new group: %s", err)
 		}
 
-		token, err := admin.NewRegistrationToken(0, time.Time{}, []data.ID{g.ID, g2.ID})
+		token, err := admin.NewRegistrationToken("test", 0, time.Time{}, []data.ID{g.ID, g2.ID})
 		if err != nil {
 			t.Fatalf("Generating registration token failed: %s", err)
 		}
@@ -213,14 +216,14 @@ func TestRegistrationToken(t *testing.T) {
 		reset(t)
 		valid := 10
 		for i := 0; i < valid; i++ {
-			_, err := admin.NewRegistrationToken(0, time.Time{}, nil)
+			_, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
 			if err != nil {
 				t.Fatalf("Error adding registration tokens: %s", err)
 			}
 		}
 
 		invalid := 3
-		tkn, err := admin.NewRegistrationToken(0, time.Time{}, nil)
+		tkn, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
 		if err != nil {
 			t.Fatalf("Error adding registration tokens: %s", err)
 		}
@@ -230,7 +233,7 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Error adding registration tokens: %s", err)
 		}
 
-		tkn, err = admin.NewRegistrationToken(0, time.Time{}, nil)
+		tkn, err = admin.NewRegistrationToken("test", 0, time.Time{}, nil)
 		if err != nil {
 			t.Fatalf("Error adding registration tokens: %s", err)
 		}
@@ -240,7 +243,7 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Error invalidating token: %s", err)
 		}
 
-		tkn, err = admin.NewRegistrationToken(0, time.Time{}, nil)
+		tkn, err = admin.NewRegistrationToken("test", 0, time.Time{}, nil)
 		if err != nil {
 			t.Fatalf("Error adding registration tokens: %s", err)
 		}

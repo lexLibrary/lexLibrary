@@ -4,6 +4,7 @@ package app
 
 import (
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -12,10 +13,11 @@ import (
 
 // RegistrationToken is a temporary token that can be used to register new logins for Lex Library
 type RegistrationToken struct {
-	Token   string        `json:"token"`
-	Limit   int           `json:"limit"`   // number of times this token can be used
-	Expires data.NullTime `json:"expires"` // when this token expires and is no longer valid
-	Groups  []data.ID     `json:"groups"`  // users registered by this token will be members of these groups
+	Token       string        `json:"token"`
+	Description string        `json:"description"`
+	Limit       int           `json:"limit"`   // number of times this token can be used
+	Expires     data.NullTime `json:"expires"` // when this token expires and is no longer valid
+	Groups      []data.ID     `json:"groups"`  // users registered by this token will be members of these groups
 
 	Valid   bool      `json:"valid"`
 	Updated time.Time `json:"updated,omitempty"`
@@ -28,6 +30,7 @@ var (
 	sqlRegistrationTokenInsert = data.NewQuery(`
 		insert into registration_tokens (
 			token,
+			description,
 			{{limit}},
 			expires,
 			valid,
@@ -36,6 +39,7 @@ var (
 			creator
 		) values (
 			{{arg "token"}},
+			{{arg "description"}},
 			{{arg "limit"}},
 			{{arg "expires"}},
 			{{arg "valid"}},
@@ -55,6 +59,7 @@ var (
 	`)
 	sqlRegistrationTokenGet = data.NewQuery(`
 		select	t.token,
+			t.description,
 			t.{{limit}},
 			t.expires,
 			t.valid,
@@ -71,12 +76,13 @@ var (
 	sqlRegistrationTokenList = func(validOnly, total bool) *data.Query {
 		qry := `
 			select	token,
-					{{limit}},
-					expires,
-					valid,
-					updated,
-					created,
-					creator
+				description,
+				{{limit}},
+				expires,
+				valid,
+				updated,
+				created,
+				creator
 			from 	registration_tokens
 		`
 		if total {
@@ -107,28 +113,41 @@ var (
 		where 	token = {{arg "token"}}
 		and 	{{limit}} > 0
 	`)
+
+	sqlRegistrationTokenInsertUser = data.NewQuery(`
+		insert into registration_token_users (
+			token,
+			user_id
+		) values (
+			{{arg "token"}},
+			{{arg "user_id"}}
+		)
+	`)
 )
 
-var errRegistrationTokenInvalid = NewFailure("This registration URL has expired or is no longer valid.  Please contact your adminstrator for a new URL.")
+var errRegistrationTokenInvalid = NewFailure("This registration URL has expired or is no longer valid. " +
+	"Please contact your adminstrator for a new URL.")
 
 // NewRegistrationToken generates a new token that can be used to register new users on private instances of Lex Library
 // if limit == 0 there is no limit on the number of times the token can be used
 // if expires.IsZero() then the token doesn't expire
 // the user is automatically made a member of any groups specified in []groups
-func (a *Admin) NewRegistrationToken(limit uint, expires time.Time, groups []data.ID) (*RegistrationToken, error) {
+func (a *Admin) NewRegistrationToken(description string, limit uint, expires time.Time,
+	groups []data.ID) (*RegistrationToken, error) {
 	setLimit := -1
 
 	if limit != 0 {
 		setLimit = int(limit)
 	}
 	t := &RegistrationToken{
-		Token:   Random(128),
-		Limit:   setLimit,
-		Groups:  groups,
-		Valid:   true,
-		Updated: time.Now(),
-		Created: time.Now(),
-		creator: a.User.ID,
+		Token:       Random(128),
+		Description: description,
+		Limit:       setLimit,
+		Groups:      groups,
+		Valid:       true,
+		Updated:     time.Now(),
+		Created:     time.Now(),
+		creator:     a.User.ID,
 	}
 
 	if !expires.IsZero() {
@@ -172,6 +191,7 @@ func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) (tokens
 		for rows.Next() {
 			t := &RegistrationToken{}
 			err = rows.Scan(&t.Token,
+				&t.Description,
 				&t.Limit,
 				&t.Expires,
 				&t.Valid,
@@ -200,6 +220,9 @@ func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) (tokens
 }
 
 func (t *RegistrationToken) validate() error {
+	if strings.TrimSpace(t.Description) == "" {
+		return NewFailure("A description is required")
+	}
 	if t.Expires.Valid && t.Expires.Time.Before(time.Now()) {
 		return NewFailure("Expires must be a date in the future")
 	}
@@ -229,6 +252,7 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 
 	_, err := sqlRegistrationTokenInsert.Tx(tx).Exec(
 		data.Arg("token", t.Token),
+		data.Arg("description", t.Description),
 		data.Arg("limit", t.Limit),
 		data.Arg("expires", t.Expires),
 		data.Arg("valid", t.Valid),
@@ -311,7 +335,12 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 				return NewFailure("Cannot add an invalid user to a group")
 			}
 		}
-		return nil
+		_, err = sqlRegistrationTokenInsertUser.Tx(tx).Exec(
+			data.Arg("token", t.Token),
+			data.Arg("user_id", u.ID),
+		)
+
+		return err
 	})
 
 	return u, err
@@ -334,6 +363,7 @@ func registrationTokenGet(token string) (*RegistrationToken, error) {
 
 		err = rows.Scan(
 			&t.Token,
+			&t.Description,
 			&t.Limit,
 			&t.Expires,
 			&t.Valid,

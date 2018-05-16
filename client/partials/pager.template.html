@@ -1,6 +1,6 @@
 [[define "pager"]]
 	[[if gt .Pages 1]]
-	<ul class="pagination">
+	<ul class="pagination flex-centered">
 		<li class="page-item [[if eq .Previous -1]]disabled[[end]]">
 			<a href="[[.Link .Previous]]" [[if eq .Previous -1]]tabindex="-1"[[end]]>Previous</a>
 		</li>

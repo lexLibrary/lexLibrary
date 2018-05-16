@@ -23,3 +23,6 @@
 @include padding-variant(12, $unit-12);
 @include padding-variant(16, $unit-16);
 
+.flex-centered {
+	justify-content: center;
+}

@@ -260,5 +260,50 @@ func TestAdmin(t *testing.T) {
 	}
 
 	// Settings
+	uri.Path = "/admin/settings"
+
+	addPage()
+	err = seq.Get(uri.String()).
+		Find("#settings").Count(1).
+		Find(".menu").Count(1).
+		Find("ul.menu > li.menu-item > a.active").Count(1).Text().Contains("Security").
+		Find("h3").Text().Contains("Security").
+		Find("#PasswordMinLength").Clear().SendKeys("-30").
+		Find("#PasswordMinLength + button.btn-primary").Click().
+		Find(".form-group.has-error > .form-input-hint").Count(1).
+		Find("#PasswordMinLength").Clear().SendKeys("30").
+		Find("#PasswordMinLength + button.btn-primary").Click().
+		Find(".form-group.has-error > .form-input-hint").Count(0).
+		Find("#PasswordRequireNumber").Click().
+		Find(".form-group.has-error > .form-input-hint").Count(0).
+		Find("ul.menu > li:nth-child(4).menu-item > a").Text().Contains("Documents").Click().
+		Find("ul.menu > li.menu-item > a.active").Count(1).Text().Contains("Documents").
+		Find("h3").Text().Contains("Documents").
+		Find("#AllowPublicDocuments").Click().
+		Find(".form-group.has-error > .form-input-hint").Count(0).
+		Find("ul.menu > li:nth-child(5).menu-item > a").Text().Contains("Web Server").Click().
+		Find("ul.menu > li.menu-item > a.active").Count(1).Text().Contains("Web Server").
+		Find("h3").Text().Contains("Web Server").
+		Find("#RateLimit").Clear().SendKeys("10000").
+		Find("#RateLimit + button.btn-primary").Click().
+		Find(".form-group.has-error > .form-input-hint").Count(0).
+		Find("ul.menu > li:nth-child(6).menu-item > a").Text().Contains("Misc").Click().
+		Find("ul.menu > li.menu-item > a.active").Count(1).Text().Contains("Misc").
+		Find("h3").Text().Contains("Misc").
+		Find("#NonAdminIssueSubmission").Click().
+		Find(".form-group.has-error > .form-input-hint").Count(0).
+		Find("#settingSearch").Clear().SendKeys("rate").
+		Find("h3").Text().Contains("Searching").
+		Find("ul.menu > li.menu-item > a.active").Count(2).Any().Text().Contains("Security").
+		Find("ul.menu > li.menu-item > a.active").Count(2).Any().Text().Contains("Web Server").
+		Find(".columns > .column > form.setting-group").Count(2).
+		Find("#settingSearch").Clear().SendKeys("shouldn't match on anything").
+		Find(".columns > .column > form.setting-group").Count(0).
+		End()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Registration
 }

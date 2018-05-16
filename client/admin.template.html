@@ -193,7 +193,7 @@
 
 
 [[define "settings"]]
-<section id="settings" class="pt-2">
+<section id="settings" class="pt-8">
 	<div class="container grid-lg">
 		<div class="columns">
 			<div class="column col-3">
@@ -251,9 +251,9 @@
 
 				<form v-if="pages.security.PasswordRequireNumber" v-cloak class="setting-group">
 					<div class="form-group">
-						<label :class="{'is-error': hasError=='PasswordRequireNumber'}" class="form-switch">
+						<label :class="{'is-error': hasError=='PasswordRequireNumber'}" class="form-switch" id="PasswordRequireNumber">
 							<input v-model="settings.PasswordRequireNumber.value" @change="updateSetting('PasswordRequireNumber')" 
-							type="checkbox" :disabled="isWaiting=='PasswordRequireNumber'">
+							 type="checkbox" :disabled="isWaiting=='PasswordRequireNumber'">
 							<i class="form-icon"></i> Require that all new passwords have at least one number
 						</label>
 						<p v-if="hasError=='PasswordRequireNumber'" v-cloak class="form-input-hint">{{error}}</p>
@@ -261,10 +261,9 @@
 				</form> <!-- setting -->
 				<form v-if="pages.security.PasswordRequireSpecial" v-cloak class="setting-group">
 					<div class="form-group">
-						<label :class="{'is-error': hasError=='PasswordRequireSpecial'}" class="form-switch">
+						<label :class="{'is-error': hasError=='PasswordRequireSpecial'}" class="form-switch" id="PasswordRequireSpecial">
 							<input v-model="settings.PasswordRequireSpecial.value" @change="updateSetting('PasswordRequireSpecial')" 
-							type="checkbox" 
-								:disabled="isWaiting=='PasswordRequireSpecial'">
+							type="checkbox"	:disabled="isWaiting=='PasswordRequireSpecial'">
 							<i class="form-icon"></i> Require that all new passwords have at least one special character
 						</label>
 						<p v-if="hasError=='PasswordRequireSpecial'" v-cloak class="form-input-hint">{{error}}</p>
@@ -272,10 +271,10 @@
 				</form> <!-- setting -->
 				<form v-if="pages.security.PasswordRequireMixedCase" v-cloak class="setting-group">
 					<div class="form-group">
-						<label :class="{'is-error': hasError=='PasswordRequireMixedCase'}" class="form-switch">
+						<label :class="{'is-error': hasError=='PasswordRequireMixedCase'}" class="form-switch" 
+							id="PasswordRequireMixedCase">
 							<input v-model="settings.PasswordRequireMixedCase.value" @change="updateSetting('PasswordRequireMixedCase')" 
-							type="checkbox" 
-								:disabled="isWaiting=='PasswordRequireMixedCase'">
+							type="checkbox" :disabled="isWaiting=='PasswordRequireMixedCase'">
 							<i class="form-icon"></i> Require that all new passwords have at least one upper and one lower case letter
 						</label>
 						<p v-if="hasError=='PasswordRequireMixedCase'" v-cloak class="form-input-hint">{{error}}</p>
@@ -283,7 +282,7 @@
 				</form> <!-- setting -->
 				<form v-if="pages.security.BadPasswordCheck" v-cloak class="setting-group">
 					<div class="form-group">
-						<label :class="{'is-error': hasError=='BadPasswordCheck'}" class="form-switch">
+						<label :class="{'is-error': hasError=='BadPasswordCheck'}" class="form-switch" id="BadPasswordCheck">
 							<input v-model="settings.BadPasswordCheck.value" @change="updateSetting('BadPasswordCheck')" type="checkbox" 
 								:disabled="isWaiting=='BadPasswordCheck'">
 							<i class="form-icon"></i> Require that all new passwords aren't in a list of the most common passwords
@@ -311,9 +310,9 @@
 				</form> <!-- setting -->
 				<form v-if="pages.security.AllowPublicSignups" v-cloak class="setting-group">
 					<div class="form-group">
-						<label :class="{'is-error': hasError=='AllowPublicSignups'}" class="form-switch">
-							<input v-model="settings.AllowPublicSignups.value" @change="updateSetting('AllowPublicSignups')" type="checkbox" 
-								:disabled="isWaiting=='AllowPublicSignups'">
+						<label :class="{'is-error': hasError=='AllowPublicSignups'}" class="form-switch" id="AllowPublicSignups">
+							<input v-model="settings.AllowPublicSignups.value" @change="updateSetting('AllowPublicSignups')" 
+							type="checkbox" :disabled="isWaiting=='AllowPublicSignups'">
 							<i class="form-icon"></i>Allow anyone to create a login for Lex Library.  If not set, logins can <em>only</em>
 							be created from <a href="/admin/registration">Registration Links</a>.
 						</label>
@@ -342,9 +341,9 @@
 
 				<form v-if="pages.documents.AllowPublicDocuments" v-cloak class="setting-group">
 					<div class="form-group">
-						<label :class="{'is-error': hasError=='AllowPublicDocuments'}" class="form-switch">
-							<input v-model="settings.AllowPublicDocuments.value" @change="updateSetting('AllowPublicDocuments')" type="checkbox" 
-								:disabled="isWaiting=='AllowPublicDocuments'">
+						<label :class="{'is-error': hasError=='AllowPublicDocuments'}" class="form-switch" id="AllowPublicDocuments">
+							<input v-model="settings.AllowPublicDocuments.value" @change="updateSetting('AllowPublicDocuments')" 
+							type="checkbox" :disabled="isWaiting=='AllowPublicDocuments'">
 							<i class="form-icon"></i> Allow documents to be published 
 							<span class="popover popover-right"><em>Publically*</em>
 								<div class="popover-container">
@@ -399,10 +398,10 @@
 
 				<form v-if="pages.misc.NonAdminIssueSubmission" v-cloak class="setting-group">
 					<div class="form-group">
-						<label :class="{'is-error': hasError=='NonAdminIssueSubmission'}" class="form-switch">
+						<label :class="{'is-error': hasError=='NonAdminIssueSubmission'}" class="form-switch" 
+							id="NonAdminIssueSubmission">
 							<input v-model="settings.NonAdminIssueSubmission.value" @change="updateSetting('NonAdminIssueSubmission')" 
-							type="checkbox" 
-								:disabled="isWaiting=='NonAdminIssueSubmission'">
+							type="checkbox" :disabled="isWaiting=='NonAdminIssueSubmission'">
 							<i class="form-icon"></i> Allow non-admin users to submit issues from the <a href="/about">about page</a>. 
 						</label>
 						<p v-if="hasError=='NonAdminIssueSubmission'" v-cloak class="form-input-hint">{{error}}</p>
@@ -418,7 +417,7 @@
 
 [[define "logs"]]
 	[[with .Log]]
-	<section class="logs section">
+	<section class="logs pt-8">
 		[[if .Entry]]
 			[[with .Entry]]
 				<h4>Log Entry from [[time .Occurred]] <small class="text-gray">([[.ID]])</small></h4>
@@ -459,6 +458,36 @@
 	</section>
 	[[end]]
 [[end]]
+
 [[define "registration"]]
-<p>Registration</p>
+	[[with .Registration]]
+	<section class="registration pt-8">
+		<button class="float-right btn btn-lg btn-primary">New</button>
+		<div class="flex-centered">
+			<div class="btn-group">
+				<a href="/admin/registration" class="btn btn-lg [[if not .All]]active[[end]]">Active</a>
+				<a href="/admin/registration?all" class="btn btn-lg [[if .All]]active[[end]]">All</a>
+			</div>
+		</div>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Token</th>
+					<th>Created Date</th>
+					<th>Creator</th>
+				</tr>
+			</thead>
+			<tbody>
+				[[range .Tokens]]
+					<tr>
+						<td>[[.Token]]</td>
+						<td>[[time .Created]]</td>
+						<td>[[.Creator]]</td>
+					</tr>
+				[[end]]
+			</tbody>
+		</table>
+		[[template "pager" .Pager]]
+	</section>
+	[[end]]
 [[end]]
