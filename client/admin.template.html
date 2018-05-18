@@ -12,9 +12,9 @@
 		<h1>Administration</h1>
 		<ul class="tab tab-block">
 			<li class='tab-item [[if eq .Tab "overview"]]active[[end]]'><a href="/admin">Overview</a></li>
-			<li class='tab-item [[if eq .Tab "settings"]]active[[end]]'><a href="/admin/settings">Settings</a></li>
-			<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
 			<li class='tab-item [[if eq .Tab "registration"]]active[[end]]'><a href="/admin/registration">Registration</a></li>
+			<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
+			<li class='tab-item [[if eq .Tab "settings"]]active[[end]]'><a href="/admin/settings">Settings</a></li>
 		</ul>
 		<div id="admin">
 			[[if eq .Tab "overview"]]
@@ -139,14 +139,20 @@
 			</div>
 		</div> <!-- card -->
 		<div class="card">
+			[[with .WebConfig]]
 			<div class="card-header">
 				<div class="card-title h5">Web Configuration</div>
-				<div class="card-subtitle text-gray">Values are set by configuration or environment variable.</div>
+				[[if ne .Location ""]]
+				<div class="card-subtitle text-gray">
+					Values are set in the <span class="label" title="[[.Location]]">configuration file</span>.
+				</div>
+				[[else]]
+					<div class="card-subtitle text-gray">Values are defaults or set environment variable.</div>
+				[[end]]
 			</div>
 			<div class="card-body">
 				<table class="overview table">
 					<tbody>
-						[[with .WebConfig]]
 						<tr><td>Read Timeout</td><td>[[.ReadTimeout]]</td></tr>
 						<tr><td>Write Timeout</td><td>[[.WriteTimeout]]</td></tr>
 						<tr><td>Max Header Bytes</td><td>[[.MaxHeaderBytes]]</td></tr>
@@ -155,20 +161,26 @@
 						<tr><td>Key File</td><td title="[[.KeyFile]]">[[.KeyFile]]</td></tr>
 						<tr><td>Max Upload Memory (MB)</td><td>[[.MaxUploadMemoryMB]]</td></tr>
 						<tr><td>Port</td><td>[[.Port]]</td></tr>
-						[[end]]
 					</tbody>
 				</table>
 			</div>
+			[[end]]
 		</div> <!-- card -->
 		<div class="card">
+			[[with .Overview.Config]]
 			<div class="card-header">
 				<div class="card-title h5">Data Configuration</div>
-				<div class="card-subtitle text-gray">Values are set by configuration or environment variable.</div>
+				[[if ne .Location ""]]
+				<div class="card-subtitle text-gray">
+					Values are set in the <span class="label" title="[[.Location]]">configuration file</span>.
+				</div>
+				[[else]]
+					<div class="card-subtitle text-gray">Values are defaults or set environment variable.</div>
+				[[end]]
 			</div>
 			<div class="card-body">
 				<table class="overview table">
 					<tbody>
-						[[with .Overview.Config]]
 						[[if eq .DatabaseType "sqlite"]]
 						<tr><td>Data File</td><td title="[[.DatabaseFile]]">[[.DatabaseFile]]</td></tr>
 						[[end]]
@@ -180,12 +192,11 @@
 						<tr><td>Max Idle Connections</td><td>[[.MaxIdleConnections]]</td></tr>
 						<tr><td>Max Open Connections</td><td>[[.MaxOpenConnections]]</td></tr>
 						<tr><td>Max Connection Lifetime</td><td>[[.MaxConnectionLifetime]]</td></tr>
-						[[end]]
 					</tbody>
 				</table>
 			</div>
+			[[end]]
 		</div> <!-- card -->
-
 
 	</div> <!-- card-columns -->
 </section>
@@ -497,72 +508,66 @@
 [[end]]
 
 [[define "new registration"]]
-<div id="newRegistration" class="container grid-sm pt-8">
+<div id="newRegistration" class="container grid-xs pt-8">
 	<div class="columns">
 		<div class="column">
 			<div v-if="error" v-cloak class="toast toast-error">
 				<button @click="error=null"class="btn btn-clear float-right"></button>
 				{{error}}
 			</div>
-			<form class="form-horizontal">
+			<form @submit="submit" class="form-horizontal">
 				<div class="form-group">
-					<div class="col-3 col-sm-12">
+					<div class="col-3">
 						<label class="form-label" for="tokenDescription">Description</label>
 					</div>
-					<div class="col-9 col-sm-12">
+					<div class="col-9">
 						<input class="form-input" type="text" id="tokenDescription" placeholder="Description">
 					</div>
 				</div>
 				<div class="form-group">
-					<div class="col-7 col-sm-10 col-ml-auto">
+					<div class="col-9">
 						<label class="form-switch">
 							<input v-model="hasLimit" type="checkbox">
 							<i class="form-icon"></i> Limit the number of users created
 						</label>
 					</div>
-					<div class="col-2 col-sm-2">
+					<div class="col-3">
 						<input v-model="limit" :disabled="!hasLimit" class="form-input" type="number" id="tokenLimit" placeholder="1">
 					</div>
 				</div>
 				<div class="form-group">
-					<div class="col-5 col-sm-10 col-ml-auto">
+					<div class="col-7">
 						<label class="form-switch">
 							<input v-model="hasExpiration" type="checkbox">
 							<i class="form-icon"></i> Valid until a specific date
 						</label>
 					</div>
-					<div class="col-4 col-sm-2">
+					<div class="col-5">
 						<input v-model="expires" :disabled="!hasExpiration" class="form-input" type="date" id="tokenExpiration" 
 							placeholder="mm/dd/yyyy">
 					</div>
 				</div>
 				<div class="form-group">
 					<label class="form-label" for="groupSearch">
-						When registered, users become members of the following groups:
+						When registering with this link, users become members of the following groups:
 					</label>
-					<div v-for="group in groups" v-cloak class="chips p-2">
-						<span class="chip">
-							{{group.name}}<a href="#" class="btn btn-clear" aria-label="Close" role="button"></a>
+					<div v-cloak class="chips m-2">
+						<span v-for="group in groups" class="chip">
+							{{group.name}}<a @click="removeGroup(group, $event)" href="" class="btn btn-clear" aria-label="Close" 
+								role="button"></a>
 						</span>
 					</div>
-					<div :class="{'active': showGroupSearch}" class="col-8 col-sm-10 dropdown">
-						<div :class="{'has-icon-right': searchLoading}">
-							<input v-model="groupSearch" @keydown="search" @focus="groupFocus=true" @blur="groupFocus=false" 
-								class="form-input" type="text" id="groupSearch" 
-								placeholder="Enter a group name to search">
-							<i v-if="searchLoading" v-cloak class="form-icon loading"></i>
-						</div>
-						<ul v-cloak class="menu">
-							<li v-for="group in groupSearchResult" class="menu-item"><a href="#">{{group.name}}</a></li>
-							<li class="divider"></li>
-							<li v-if="!exactMatch" class="menu-item">
-								<a @click="createGroup" href="">Create group <strong>{{groupSearch}}</strong></a>
-							</li>
-						</ul>
+				</div>
+				<div class="form-group">
+					<div class="col-3 ">
+						<label class="form-label" for="groupSearch">Group Name</label>
+					</div>
+					<div class="col-9">
+						<group-search @select="addGroup" @error="error=$event" class="w-100"></group-search>
 					</div>
 				</div>
 				<div class="text-right">
-					<button type="submit" class="btn btn-primary">Create URL</button>
+					<button type="submit" @click="submit" class="btn btn-primary">Create URL</button>
 				</div>
 			</form>
 		</div> <!-- column -->

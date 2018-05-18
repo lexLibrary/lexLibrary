@@ -30,6 +30,10 @@ func settingUpdate(w http.ResponseWriter, r *http.Request, c ctx) {
 	if errHandled(err, w, r) {
 		return
 	}
+	admin, err := u.Admin()
+	if errHandled(err, w, r) {
+		return
+	}
 
 	if input.ID == nil {
 		if input.Settings == nil {
@@ -37,7 +41,7 @@ func settingUpdate(w http.ResponseWriter, r *http.Request, c ctx) {
 			return
 		}
 
-		if errHandled(u.AsAdmin().SetMultipleSettings(input.Settings), w, r) {
+		if errHandled(admin.SetMultipleSettings(input.Settings), w, r) {
 			return
 		}
 
@@ -45,7 +49,7 @@ func settingUpdate(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	if errHandled(u.AsAdmin().SetSetting(*input.ID, input.Value), w, r) {
+	if errHandled(admin.SetSetting(*input.ID, input.Value), w, r) {
 		return
 	}
 
@@ -72,13 +76,17 @@ func settingSetDefault(w http.ResponseWriter, r *http.Request, c ctx) {
 	if errHandled(err, w, r) {
 		return
 	}
+	admin, err := u.Admin()
+	if errHandled(err, w, r) {
+		return
+	}
 
 	setting, err := app.SettingDefault(*input.ID)
 	if errHandled(err, w, r) {
 		return
 	}
 
-	if errHandled(u.AsAdmin().SetSetting(*input.ID, setting.Value), w, r) {
+	if errHandled(admin.SetSetting(*input.ID, setting.Value), w, r) {
 		return
 	}
 

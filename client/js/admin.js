@@ -4,9 +4,8 @@ import * as xhr from './lib/xhr';
 import {
     payload
 } from './lib/data';
-import {
-    debounce
-} from './lib/util';
+
+import group_search from './components/group_search';
 
 var logVM = new Vue({
     el: document.getElementById('logSearch'),
@@ -175,54 +174,36 @@ var newRegistrationVM = new Vue({
             limit: 0,
             hasExpiration: false,
             expires: null,
-            groupFocus: false,
-            groupSearch: '',
-            groupSearchResult: null,
             error: null,
             groups: [],
-            searchLoading: false,
         };
     },
-    computed: {
-        showGroupSearch: function() {
-            return (this.groupFocus && this.groupSearch);
+    components: {
+        'group-search': group_search,
+    },
+    computed: {},
+    methods: {
+        submit: function(e) {
+            e.preventDefault();
         },
-        exactMatch: function() {
-            for (let i in this.groupSearchResult) {
-                if (i == this.groupSearch) {
-                    return true;
+        addGroup: function(group) {
+            for (let i in this.groups) {
+                if (this.groups[i].name == group.name) {
+                    return;
                 }
             }
-            return false;
+            this.groups.push(group);
         },
-    },
-    methods: {
-        search: debounce(function() {
-            if (!this.groupSearch) {
-                return;
+        removeGroup: function(group, e) {
+            if (e) {
+                e.preventDefault();
             }
-            this.searchLoading = true;
-            xhr.get('/groups?search=' + this.groupSearch)
-                .then((result) => {
-                    this.searchLoading = false;
-                    this.groupSearchResult = result.response;
-                })
-                .catch((err) => {
-                    this.searchLoading = false;
-                    this.error = err.response;
-                });
-        }, 500),
-        createGroup: function(e) {
-            e.preventDefault();
-            xhr.post("/groups", {
-                    name: this.groupSearch
-                })
-                .then((result) => {
-					this.groupSearchResult.push(result.response);
-                })
-                .catch((err) => {
-                    this.error = err.response;
-                });
+            for (let i in this.groups) {
+                if (this.groups[i].name == group.name) {
+                    this.groups.splice(i, 1);
+                    return;
+                }
+            }
         },
     },
 });

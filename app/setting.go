@@ -39,12 +39,10 @@ var (
 
 // Settings returns all of the settings in Lex Library.  If a setting is not set in the database
 // the default for that setting is returned
-func Settings(who *User) ([]Setting, error) {
-	if who == nil || !who.Admin {
-		return nil, Unauthorized("You must be an administrator to view settings")
-	}
+func (a *Admin) Settings() ([]Setting, error) {
 	return settings()
 }
+
 func settings() ([]Setting, error) {
 
 	settings := make([]Setting, len(settingDefaults))

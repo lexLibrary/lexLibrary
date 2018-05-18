@@ -53,6 +53,8 @@ type Config struct {
 	MaxIdleConnections    int
 	MaxOpenConnections    int
 	MaxConnectionLifetime string
+
+	Location string // location of the config file
 }
 
 // DefaultConfig returns the default configuration for the data layer

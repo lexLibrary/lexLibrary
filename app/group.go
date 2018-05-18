@@ -205,7 +205,7 @@ func (g *Group) scan(record scanner) error {
 func (u *User) GroupSearch(namePart string) ([]*Group, error) {
 	var groups []*Group
 
-	search := strings.ToLower(namePart) + "%" // trailing matches only for now
+	search := "%" + strings.ToLower(namePart) + "%" // trailing matches only for now
 
 	rows, err := sqlGroupSearch.Query(data.Arg("name", search), data.Arg("limit", maxRows))
 	if err != nil {
@@ -284,7 +284,7 @@ func (g *Group) Admin(who *User) (*GroupAdmin, error) {
 	}
 
 	// site admins have built in group admin permissions
-	if who.Admin {
+	if who.IsAdmin() {
 		return &GroupAdmin{
 			user:  who,
 			group: g,

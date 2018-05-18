@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/lexLibrary/lexLibrary/app"
 )
 
 func setupRoutes() http.Handler {
@@ -108,6 +109,8 @@ func setupRoutes() http.Handler {
 	rootHandler.POST("/groups", makeHandle(groupCreate))
 
 	// rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), rootTemplate)
+	rootHandler.POST(app.RegistrationTokenPath, makeHandle(registrationCreate))
+	rootHandler.PUT(app.RegistrationTokenPath, makeHandle(registrationUpdate))
 
 	return rootHandler
 }

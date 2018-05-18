@@ -33,8 +33,14 @@ type PublicProfile struct {
 	ID       data.ID `json:"id"`
 	Username string  `json:"username"`
 	Name     string  `json:"name"`
-	Admin    bool    `json:"admin"`
 	Active   bool    `json:"active"` // whether or not the user is active and can log in
+
+	admin bool
+}
+
+// IsAdmin returns whether or not the user is an admin
+func (p *PublicProfile) IsAdmin() bool {
+	return p.admin
 }
 
 // AuthType determines the authentication method for a given user
@@ -235,7 +241,7 @@ func (u *PublicProfile) scan(record scanner) error {
 		&u.Username,
 		&u.Name,
 		&u.Active,
-		&u.Admin,
+		&u.admin,
 	)
 	if err == sql.ErrNoRows {
 		return ErrUserNotFound
@@ -256,7 +262,7 @@ func (u *User) scan(record scanner) error {
 		&u.Version,
 		&u.Updated,
 		&u.Created,
-		&u.Admin,
+		&u.admin,
 		&u.profileImage,
 		&u.profileImageDraft,
 	)
@@ -392,7 +398,7 @@ func (u *User) setAdmin(admin bool, version int) error {
 	if err != nil {
 		return err
 	}
-	u.Admin = admin
+	u.admin = admin
 	return nil
 }
 
@@ -469,9 +475,12 @@ func (u *User) SetPassword(oldPassword, newPassword string, version int) error {
 	})
 }
 
-// AsAdmin returns the Admin context for this user
-func (u *User) AsAdmin() *Admin {
-	return &Admin{u}
+// Admin returns the Admin context for this user, or an error if the user is not an admin
+func (u *User) Admin() (*Admin, error) {
+	if u == nil || !u.admin {
+		return nil, ErrNotAdmin
+	}
+	return &Admin{u}, nil
 }
 
 // ProfileImage returns the user's profile image

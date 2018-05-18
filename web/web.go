@@ -27,6 +27,8 @@ type Config struct {
 	KeyFile           string
 	MaxUploadMemoryMB int
 	Port              int
+
+	Location string // location of the config file
 }
 
 // DefaultConfig returns the default configuration for the web layer

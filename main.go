@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -76,6 +77,8 @@ func main() {
 	}
 	viper.SetConfigFile(flagConfigFile)
 
+	cfgLocation := ""
+
 	err := viper.ReadInConfig()
 	if err != nil {
 		if os.IsNotExist(err) && flagConfigFile == defaultConfigFile {
@@ -84,13 +87,22 @@ func main() {
 			log.Fatal(err)
 		}
 	} else {
-		log.Printf("Found and loaded config file %s\n", viper.ConfigFileUsed())
+		abs, err := filepath.Abs(viper.ConfigFileUsed())
+		if err != nil {
+			log.Printf("Could not get Absolute path of config file, using relative. ERR:  %s\n", err)
+		} else {
+			cfgLocation = abs
+		}
+		log.Printf("Found and loaded config file %s\n", cfgLocation)
 	}
 
 	err = viper.Unmarshal(&cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	cfg.Data.Location = cfgLocation
+	cfg.Web.Location = cfgLocation
 
 	if flagDevMode {
 		log.Println("Starting in Development mode")

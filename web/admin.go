@@ -16,6 +16,7 @@ type adminPage struct {
 
 type adminData struct {
 	User      *app.User
+	Admin     *app.Admin
 	Tab       string
 	Overview  *app.Overview
 	WebConfig Config
@@ -42,13 +43,14 @@ func (a *adminPage) data(s *app.Session) (*adminData, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if !u.Admin {
-		return nil, app.Unauthorized("You do not have access to this page")
+	admin, err := u.Admin()
+	if err != nil {
+		return nil, err
 	}
 
 	return &adminData{
-		User: u,
+		User:  u,
+		Admin: admin,
 	}, nil
 
 }
@@ -62,7 +64,7 @@ func (a *adminPage) overview(w http.ResponseWriter, r *http.Request, parms httpr
 
 		tData.Tab = "overview"
 		tData.WebConfig = currentConfig
-		overview, err := tData.User.AsAdmin().Overview()
+		overview, err := tData.Admin.Overview()
 		if errHandled(err, w, r) {
 			return
 		}
@@ -86,7 +88,7 @@ func (a *adminPage) settings(w http.ResponseWriter, r *http.Request, parms httpr
 		}
 
 		tData.Tab = "settings"
-		settings, err := app.Settings(tData.User)
+		settings, err := tData.Admin.Settings()
 		if errHandled(err, w, r) {
 			return
 		}
@@ -171,7 +173,7 @@ func (a *adminPage) registration(w http.ResponseWriter, r *http.Request, parms h
 		_, ok := r.URL.Query()["all"]
 		tData.Registration.All = ok
 
-		tokens, total, err := tData.User.AsAdmin().RegistrationTokenList(!tData.Registration.All,
+		tokens, total, err := tData.Admin.RegistrationTokenList(!tData.Registration.All,
 			pgr.Offset(), pgr.PageSize())
 		if errHandled(err, w, r) {
 			return
