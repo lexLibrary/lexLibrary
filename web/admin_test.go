@@ -54,7 +54,7 @@ func TestAdmin(t *testing.T) {
 		Find(".logs > table.table > tbody > tr > td > a.float-right").Text().Contains("View").Click().
 		Find("h4").Text().Contains("Log Entry from").
 		Find("h4 > small").Text().Contains(errID.String()).
-		Find(".logs.section > p").Text().Contains(errMessage).
+		Find("section.logs > p").Text().Contains(errMessage).
 		End()
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +71,7 @@ func TestAdmin(t *testing.T) {
 		Find(".input-group > button.btn.btn-primary").Click().
 		Find("h4").Text().Contains("Log Entry from").
 		Find("h4 > small").Text().Contains(errID.String()).
-		Find(".logs.section > p").Text().Contains(errMessage).
+		Find("section.logs > p").Text().Contains(errMessage).
 		End()
 	if err != nil {
 		t.Fatal(err)

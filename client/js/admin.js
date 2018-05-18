@@ -4,12 +4,15 @@ import * as xhr from './lib/xhr';
 import {
     payload
 } from './lib/data';
+import {
+    debounce
+} from './lib/util';
 
 var logVM = new Vue({
-    el: document.getElementById("logSearch"),
+    el: document.getElementById('logSearch'),
     data: function() {
         return {
-            searchValue: "",
+            searchValue: '',
         };
     },
     methods: {
@@ -23,12 +26,12 @@ var logVM = new Vue({
 
 
 var settingsVM = new Vue({
-    el: document.getElementById("settings"),
+    el: document.getElementById('settings'),
     data: function() {
         return {
             settings: function() {
                 let settings = {};
-                let p = payload("settingsPayload");
+                let p = payload('settingsPayload');
                 for (let i in p) {
                     settings[p[i].id] = {
                         id: p[i].id,
@@ -63,7 +66,7 @@ var settingsVM = new Vue({
             error: null,
             hasError: '',
             isWaiting: '',
-            search: "",
+            search: '',
             currentPage: 'security',
         };
     },
@@ -103,15 +106,15 @@ var settingsVM = new Vue({
     },
     watch: {
         search: function(val) {
-            if (val == "") {
+            if (val == '') {
                 this.setPage(this.currentPage);
                 return;
             }
 
             for (let p in this.pages) {
                 for (let s in this.pages[p]) {
-                    if (s.toLowerCase().indexOf(val.toLowerCase()) != -1 || 
-						this.settings[s].description.toLowerCase().indexOf(val.toLowerCase()) != -1) {
+                    if (s.toLowerCase().indexOf(val.toLowerCase()) != -1 ||
+                        this.settings[s].description.toLowerCase().indexOf(val.toLowerCase()) != -1) {
                         this.pages[p][s] = true;
                     } else {
                         this.pages[p][s] = false;
@@ -145,7 +148,7 @@ var settingsVM = new Vue({
                 e.preventDefault();
             }
             this.isWaiting = setting;
-            xhr.put("/setting", {
+            xhr.put('/setting', {
                     id: setting,
                     value: this.settings[setting].value,
                 })
@@ -157,6 +160,67 @@ var settingsVM = new Vue({
                 .catch((err) => {
                     this.isWaiting = '';
                     this.hasError = setting;
+                    this.error = err.response;
+                });
+        },
+    },
+});
+
+var newRegistrationVM = new Vue({
+    el: document.getElementById('newRegistration'),
+    data: function() {
+        return {
+            description: '',
+            hasLimit: false,
+            limit: 0,
+            hasExpiration: false,
+            expires: null,
+            groupFocus: false,
+            groupSearch: '',
+            groupSearchResult: null,
+            error: null,
+            groups: [],
+            searchLoading: false,
+        };
+    },
+    computed: {
+        showGroupSearch: function() {
+            return (this.groupFocus && this.groupSearch);
+        },
+        exactMatch: function() {
+            for (let i in this.groupSearchResult) {
+                if (i == this.groupSearch) {
+                    return true;
+                }
+            }
+            return false;
+        },
+    },
+    methods: {
+        search: debounce(function() {
+            if (!this.groupSearch) {
+                return;
+            }
+            this.searchLoading = true;
+            xhr.get('/groups?search=' + this.groupSearch)
+                .then((result) => {
+                    this.searchLoading = false;
+                    this.groupSearchResult = result.response;
+                })
+                .catch((err) => {
+                    this.searchLoading = false;
+                    this.error = err.response;
+                });
+        }, 500),
+        createGroup: function(e) {
+            e.preventDefault();
+            xhr.post("/groups", {
+                    name: this.groupSearch
+                })
+                .then((result) => {
+					this.groupSearchResult.push(result.response);
+                })
+                .catch((err) => {
                     this.error = err.response;
                 });
         },

@@ -4,12 +4,18 @@ package app
 
 import (
 	"database/sql"
+	"fmt"
+	"net/url"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
+
+const RegistrationTokenPath = "/registration"
 
 // RegistrationToken is a temporary token that can be used to register new logins for Lex Library
 type RegistrationToken struct {
@@ -17,7 +23,7 @@ type RegistrationToken struct {
 	Description string        `json:"description"`
 	Limit       int           `json:"limit"`   // number of times this token can be used
 	Expires     data.NullTime `json:"expires"` // when this token expires and is no longer valid
-	Groups      []data.ID     `json:"groups"`  // users registered by this token will be members of these groups
+	groups      []data.ID     `json:"groups"`  // users registered by this token will be members of these groups
 
 	Valid   bool      `json:"valid"`
 	Updated time.Time `json:"updated,omitempty"`
@@ -70,7 +76,7 @@ var (
 		from 	registration_tokens t
 			left outer join registration_token_groups g 
 				on t.token = g.token
-		where 	t.token = {{arg "token"}}
+		where 	t.token = {{arg "token"}}		
 	`)
 
 	sqlRegistrationTokenList = func(validOnly, total bool) *data.Query {
@@ -123,6 +129,26 @@ var (
 			{{arg "user_id"}}
 		)
 	`)
+
+	sqlRegistrationTokenGroups = data.NewQuery(`
+		select	g.id,
+			g.name, 
+			g.version,
+			g.updated, 
+			g.created
+		from 	groups g,
+			registration_token_groups t
+		where 	g.id = t.group_id
+		and 	t.token = {{arg "token"}}
+	`)
+
+	sqlRegistrationTokenUsers = data.NewQuery(fmt.Sprintf(`
+		select	%s
+		from 	users u,
+			registration_token_users t
+		where 	u.id = t.user_id
+		and 	t.token = {{arg "token"}}
+	`, userPublicColumns))
 )
 
 var errRegistrationTokenInvalid = NewFailure("This registration URL has expired or is no longer valid. " +
@@ -143,7 +169,7 @@ func (a *Admin) NewRegistrationToken(description string, limit uint, expires tim
 		Token:       Random(128),
 		Description: description,
 		Limit:       setLimit,
-		Groups:      groups,
+		groups:      groups,
 		Valid:       true,
 		Updated:     time.Now(),
 		Created:     time.Now(),
@@ -226,8 +252,8 @@ func (t *RegistrationToken) validate() error {
 	if t.Expires.Valid && t.Expires.Time.Before(time.Now()) {
 		return NewFailure("Expires must be a date in the future")
 	}
-	if len(t.Groups) != 0 {
-		query, args := sqlGroupsFromIDs(t.Groups, true)
+	if len(t.groups) != 0 {
+		query, args := sqlGroupsFromIDs(t.groups, true)
 		groupCount := 0
 		err := query.QueryRow(args...).Scan(&groupCount)
 		if err == sql.ErrNoRows {
@@ -237,7 +263,7 @@ func (t *RegistrationToken) validate() error {
 			return err
 		}
 
-		if groupCount != len(t.Groups) {
+		if groupCount != len(t.groups) {
 			// one or more groups were not found
 			return NewFailure("One or more of the groups are invalid")
 		}
@@ -264,10 +290,10 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 		return err
 	}
 
-	for i := range t.Groups {
+	for i := range t.groups {
 		_, err = sqlRegistrationTokenGroupInsert.Tx(tx).Exec(
 			data.Arg("token", t.Token),
-			data.Arg("group_id", t.Groups[i]),
+			data.Arg("group_id", t.groups[i]),
 		)
 		if err != nil {
 			return err
@@ -315,9 +341,9 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 			return err
 		}
 
-		for i := range t.Groups {
+		for i := range t.groups {
 			result, err := sqlGroupInsertMember.Tx(tx).Exec(
-				data.Arg("group_id", t.Groups[i]),
+				data.Arg("group_id", t.groups[i]),
 				data.Arg("user_id", u.ID),
 				data.Arg("admin", false),
 			)
@@ -377,7 +403,7 @@ func registrationTokenGet(token string) (*RegistrationToken, error) {
 		}
 
 		if !groupID.IsNil() {
-			t.Groups = append(t.Groups, groupID)
+			t.groups = append(t.groups, groupID)
 		}
 	}
 
@@ -407,3 +433,52 @@ func (t *RegistrationToken) decrementLimit(tx *sql.Tx) error {
 }
 
 //TODO: SetValid by admin
+
+// Groups returns the groups associated with this registration token, if any
+func (t *RegistrationToken) Groups() ([]*Group, error) {
+	var groups []*Group
+	rows, err := sqlRegistrationTokenGroups.Query(data.Arg("token", t.Token))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		g := &Group{}
+		err = g.scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		groups = append(groups, g)
+	}
+	return groups, nil
+}
+
+// Users returns the users registered with this given registration token
+func (t *RegistrationToken) Users() ([]*PublicProfile, error) {
+	var users []*PublicProfile
+	rows, err := sqlRegistrationTokenUsers.Query(data.Arg("token", t.Token))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		u := &PublicProfile{}
+		err = u.scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}
+
+func (t *RegistrationToken) URL() (string, error) {
+	u, err := url.Parse(SettingMust("URL").String())
+	if err != nil {
+		return "", errors.Wrap(err, "URL Setting is an invalid URL")
+	}
+	u.Path = path.Join(RegistrationTokenPath, t.Token)
+	return u.String(), nil
+}

@@ -85,23 +85,23 @@ export
 
 function get(url) {
     //TODO: overload with option for passing in query parm as an object?
-    return send('GET', url);
+    return send('GET', encodeURI(url));
 }
 
 export
 
 function put(url, data, progress) {
-    return send('PUT', url, data, progress);
+    return send('PUT', encodeURI(url), data, progress);
 }
 
 export
 
 function post(url, data, progress) {
-    return send('POST', url, data, progress);
+    return send('POST', encodeURI(url), data, progress);
 }
 
 export
 
 function del(url, data, progress) {
-    return send('DELETE', url, data);
+    return send('DELETE', encodeURI(url), data);
 }

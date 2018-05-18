@@ -102,5 +102,12 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/admin/logs", admin.logs)
 	rootHandler.GET("/admin/logs/:id", admin.logs)
 	rootHandler.GET("/admin/registration", admin.registration)
+	rootHandler.GET("/admin/registration/new", admin.registrationNew)
+
+	rootHandler.GET("/groups", makeHandle(groupGet))
+	rootHandler.POST("/groups", makeHandle(groupCreate))
+
+	// rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), rootTemplate)
+
 	return rootHandler
 }

@@ -2,7 +2,10 @@
 
 package app
 
-import "strings"
+import (
+	"net/url"
+	"strings"
+)
 
 // settingDefaults are the default settings that Lex Library starts with.  If a setting is not overridden in the database
 // then the default values here are used
@@ -105,6 +108,10 @@ var settingDefaults = []Setting{
 			if !strings.HasPrefix(value.(string), "http://") &&
 				!strings.HasPrefix(value.(string), "https://") {
 				return NewFailure("The URL must start with http:// or https://")
+			}
+			_, err := url.Parse(value.(string))
+			if err != nil {
+				return NewFailureFromErr(err)
 			}
 			return nil
 		},

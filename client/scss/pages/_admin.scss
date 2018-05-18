@@ -28,3 +28,19 @@
 		white-space: nowrap;
 	}
 }
+
+.registration > .table {
+	table-layout: fixed;
+	.date {
+		width: 180px;
+	}
+	.creator {
+		width: 100px;
+	}
+	td {
+		overflow-x: hidden;
+		overflow-y: auto;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}

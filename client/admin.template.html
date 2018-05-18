@@ -461,33 +461,111 @@
 
 [[define "registration"]]
 	[[with .Registration]]
-	<section class="registration pt-8">
-		<button class="float-right btn btn-lg btn-primary">New</button>
-		<div class="flex-centered">
-			<div class="btn-group">
-				<a href="/admin/registration" class="btn btn-lg [[if not .All]]active[[end]]">Active</a>
-				<a href="/admin/registration?all" class="btn btn-lg [[if .All]]active[[end]]">All</a>
+		[[if .New]]
+			[[template "new registration" .]]
+		[[else]]
+		<section class="registration pt-8">
+			<a href="/admin/registration/new" class="float-right btn btn-lg btn-primary">New</a>
+			<div class="flex-centered">
+				<div class="btn-group">
+					<a href="/admin/registration" class="btn btn-lg [[if not .All]]active[[end]]">Active</a>
+					<a href="/admin/registration?all" class="btn btn-lg [[if .All]]active[[end]]">All</a>
+				</div>
 			</div>
-		</div>
-		<table class="table">
-			<thead>
-				<tr>
-					<th>Token</th>
-					<th>Created Date</th>
-					<th>Creator</th>
-				</tr>
-			</thead>
-			<tbody>
-				[[range .Tokens]]
+			<table class="table">
+				<thead>
 					<tr>
-						<td>[[.Token]]</td>
-						<td>[[time .Created]]</td>
-						<td>[[.Creator]]</td>
+						<th>Description</th>
+						<th class="date">Created Date</th>
+						<th class="creator">Creator</th>
 					</tr>
-				[[end]]
-			</tbody>
-		</table>
-		[[template "pager" .Pager]]
-	</section>
+				</thead>
+				<tbody>
+					[[range .Tokens]]
+						<tr>
+							<td>[[.Description]]</td>
+							<td>[[time .Created]]</td>
+							<td>[[.Creator]]</td>
+						</tr>
+					[[end]]
+				</tbody>
+			</table>
+			[[template "pager" .Pager]]
+		</section>
+		[[end]]
 	[[end]]
+[[end]]
+
+[[define "new registration"]]
+<div id="newRegistration" class="container grid-sm pt-8">
+	<div class="columns">
+		<div class="column">
+			<div v-if="error" v-cloak class="toast toast-error">
+				<button @click="error=null"class="btn btn-clear float-right"></button>
+				{{error}}
+			</div>
+			<form class="form-horizontal">
+				<div class="form-group">
+					<div class="col-3 col-sm-12">
+						<label class="form-label" for="tokenDescription">Description</label>
+					</div>
+					<div class="col-9 col-sm-12">
+						<input class="form-input" type="text" id="tokenDescription" placeholder="Description">
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-7 col-sm-10 col-ml-auto">
+						<label class="form-switch">
+							<input v-model="hasLimit" type="checkbox">
+							<i class="form-icon"></i> Limit the number of users created
+						</label>
+					</div>
+					<div class="col-2 col-sm-2">
+						<input v-model="limit" :disabled="!hasLimit" class="form-input" type="number" id="tokenLimit" placeholder="1">
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-5 col-sm-10 col-ml-auto">
+						<label class="form-switch">
+							<input v-model="hasExpiration" type="checkbox">
+							<i class="form-icon"></i> Valid until a specific date
+						</label>
+					</div>
+					<div class="col-4 col-sm-2">
+						<input v-model="expires" :disabled="!hasExpiration" class="form-input" type="date" id="tokenExpiration" 
+							placeholder="mm/dd/yyyy">
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="form-label" for="groupSearch">
+						When registered, users become members of the following groups:
+					</label>
+					<div v-for="group in groups" v-cloak class="chips p-2">
+						<span class="chip">
+							{{group.name}}<a href="#" class="btn btn-clear" aria-label="Close" role="button"></a>
+						</span>
+					</div>
+					<div :class="{'active': showGroupSearch}" class="col-8 col-sm-10 dropdown">
+						<div :class="{'has-icon-right': searchLoading}">
+							<input v-model="groupSearch" @keydown="search" @focus="groupFocus=true" @blur="groupFocus=false" 
+								class="form-input" type="text" id="groupSearch" 
+								placeholder="Enter a group name to search">
+							<i v-if="searchLoading" v-cloak class="form-icon loading"></i>
+						</div>
+						<ul v-cloak class="menu">
+							<li v-for="group in groupSearchResult" class="menu-item"><a href="#">{{group.name}}</a></li>
+							<li class="divider"></li>
+							<li v-if="!exactMatch" class="menu-item">
+								<a @click="createGroup" href="">Create group <strong>{{groupSearch}}</strong></a>
+							</li>
+						</ul>
+					</div>
+				</div>
+				<div class="text-right">
+					<button type="submit" class="btn btn-primary">Create URL</button>
+				</div>
+			</form>
+		</div> <!-- column -->
+	</div> <!-- columns -->
+</div>
 [[end]]

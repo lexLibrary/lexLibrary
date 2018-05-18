@@ -5,6 +5,8 @@ package app_test
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
@@ -50,6 +52,10 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Adding a new group with an existing group's name didn't fail")
 		}
 
+		_, err = user.NewGroup(strings.ToUpper(g.Name))
+		if err == nil {
+			t.Fatalf("Adding a new group with an existing group's case insensitive name didn't fail")
+		}
 	})
 	t.Run("Admin", func(t *testing.T) {
 		reset(t)
@@ -170,7 +176,7 @@ func TestGroup(t *testing.T) {
 
 		isAdmin := false
 		getMember := data.NewQuery(`select admin from user_to_groups 
-		where group_id = {{arg "group_id"}} and user_id = {{arg "user_id"}}`)
+			where group_id = {{arg "group_id"}} and user_id = {{arg "user_id"}}`)
 
 		err = getMember.QueryRow(data.Arg("user_id", other.ID), data.Arg("group_id", g.ID)).Scan(&isAdmin)
 		if err != nil {
@@ -201,5 +207,62 @@ func TestGroup(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error updating group member: %s", err)
 		}
+	})
+
+	t.Run("GroupSearch", func(t *testing.T) {
+		groups := []string{
+			"Group One",
+			"Group Two",
+			"Another Group",
+			"a Matching group name",
+			"Something else",
+		}
+
+		tests := []struct {
+			search  string
+			results []string
+		}{
+			{"Group", []string{"Group One", "Group Two"}},
+			{"group", []string{"Group One", "Group Two"}},
+			{"a", []string{"Another Group", "a Matching group name"}},
+			{"A", []string{"Another Group", "a Matching group name"}},
+			{"Som", []string{"Something else"}},
+		}
+
+		for i := range groups {
+			_, err := user.NewGroup(groups[i])
+			if err != nil {
+				t.Fatalf("Error creating group %s ERROR: %s", groups[i], err)
+			}
+		}
+
+		for i, test := range tests {
+			t.Run(strconv.Itoa(i), func(t *testing.T) {
+				groups, err := user.GroupSearch(test.search)
+				if err != nil {
+					t.Fatalf("Error running group search: %s", err)
+				}
+
+				if len(groups) != len(test.results) {
+					t.Fatalf("Incorrect group search result length. Expected %d, got %d",
+						len(test.results), len(groups))
+				}
+
+				for _, result := range test.results {
+					found := false
+					for _, group := range groups {
+						if group.Name == result {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Fatalf("Result '%s' was not found in group search results for "+
+							"test '%s'", result, test.search)
+					}
+				}
+			})
+		}
+
 	})
 }

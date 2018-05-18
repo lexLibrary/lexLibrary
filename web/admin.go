@@ -26,6 +26,7 @@ type adminData struct {
 	}
 	Settings     []app.Setting
 	Registration struct {
+		New    bool
 		Tokens []*app.RegistrationToken
 		Pager  pager
 		All    bool
@@ -178,6 +179,26 @@ func (a *adminPage) registration(w http.ResponseWriter, r *http.Request, parms h
 		pgr.SetTotal(total)
 		tData.Registration.Pager = pgr
 		tData.Registration.Tokens = tokens
+
+		err = w.(*templateWriter).execute(tData)
+
+		if err != nil {
+			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
+		}
+	}
+	a.ServeHTTP(w, r, parms)
+}
+
+func (a *adminPage) registrationNew(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
+
+	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+		tData, err := a.data(c.session)
+		if errHandled(err, w, r) {
+			return
+		}
+
+		tData.Tab = "registration"
+		tData.Registration.New = true
 
 		err = w.(*templateWriter).execute(tData)
 

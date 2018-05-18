@@ -92,30 +92,30 @@ var (
 		)
 	`)
 
-	userPublicColumns  = "id, username, name, active, admin"
-	userPrivateColumns = `id, 
-		username, 
-		name, 
-		auth_type, 
-		password, 
-		password_version, 
-		password_expiration, 
-		active, 
-		version, 
-		updated, 
-		created, 
-		admin, 
-		profile_image_id,
-		profile_image_draft_id`
+	userPublicColumns  = "u.id, u.username, u.name, u.active, u.admin"
+	userPrivateColumns = `u.id, 
+		u.username, 
+		u.name, 
+		u.auth_type, 
+		u.password, 
+		u.password_version, 
+		u.password_expiration, 
+		u.active, 
+		u.version, 
+		u.updated, 
+		u.created, 
+		u.admin, 
+		u.profile_image_id,
+		u.profile_image_draft_id`
 
 	sqlUserFromUsername = data.NewQuery(
-		fmt.Sprintf(`select %s from users where username = {{arg "username"}}`, userPrivateColumns))
+		fmt.Sprintf(`select %s from users u where username = {{arg "username"}}`, userPrivateColumns))
 	sqlUserFromID = data.NewQuery(
-		fmt.Sprintf(`select %s from users where id = {{arg "id"}}`, userPrivateColumns))
+		fmt.Sprintf(`select %s from users u where id = {{arg "id"}}`, userPrivateColumns))
 	sqlUserPublicProfileFromUsername = data.NewQuery(
-		fmt.Sprintf(`select %s from users where username = {{arg "username"}}`, userPublicColumns))
+		fmt.Sprintf(`select %s from users u where username = {{arg "username"}}`, userPublicColumns))
 	sqlUserPublicProfileFromID = data.NewQuery(
-		fmt.Sprintf(`select %s from users where id = {{arg "id"}}`, userPublicColumns))
+		fmt.Sprintf(`select %s from users u where id = {{arg "id"}}`, userPublicColumns))
 
 	sqlUserUpdate = func(columns ...string) *data.Query {
 		updates := ""
@@ -210,41 +210,41 @@ func userNew(tx *sql.Tx, username, password string) (*User, error) {
 // UserGet retrieves the publically viewable user profile information based from the passed in username
 // app internal code should use un-exported funcs that contain the full User record
 func UserGet(username string) (*PublicProfile, error) {
-	return publicProfileFromRow(sqlUserPublicProfileFromUsername.
-		QueryRow(data.Arg("username", strings.ToLower(username))))
-}
-
-func publicProfileGet(id data.ID) (*PublicProfile, error) {
-	return publicProfileFromRow(sqlUserPublicProfileFromID.
-		QueryRow(data.Arg("id", id)))
-}
-
-func publicProfileFromRow(row *sql.Row) (*PublicProfile, error) {
 	u := &PublicProfile{}
-
-	err := row.
-		Scan(
-			&u.ID,
-			&u.Username,
-			&u.Name,
-			&u.Active,
-			&u.Admin,
-		)
-	if err == sql.ErrNoRows {
-		return nil, ErrUserNotFound
-	}
-
+	err := u.scan(sqlUserPublicProfileFromUsername.
+		QueryRow(data.Arg("username", strings.ToLower(username))))
 	if err != nil {
 		return nil, err
 	}
-
 	return u, nil
 }
 
-func userFromUsername(tx *sql.Tx, username string) (*User, error) {
-	u := &User{}
+func publicProfileGet(id data.ID) (*PublicProfile, error) {
+	u := &PublicProfile{}
+	err := u.scan(sqlUserPublicProfileFromID.
+		QueryRow(data.Arg("id", id)))
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
 
-	err := sqlUserFromUsername.Tx(tx).QueryRow(data.Arg("username", strings.ToLower(username))).Scan(
+func (u *PublicProfile) scan(record scanner) error {
+	err := record.Scan(
+		&u.ID,
+		&u.Username,
+		&u.Name,
+		&u.Active,
+		&u.Admin,
+	)
+	if err == sql.ErrNoRows {
+		return ErrUserNotFound
+	}
+	return err
+}
+
+func (u *User) scan(record scanner) error {
+	err := record.Scan(
 		&u.ID,
 		&u.Username,
 		&u.Name,
@@ -262,9 +262,16 @@ func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, ErrUserNotFound
+		return ErrUserNotFound
 	}
 
+	return err
+}
+
+func userFromUsername(tx *sql.Tx, username string) (*User, error) {
+	u := &User{}
+
+	err := u.scan(sqlUserFromUsername.Tx(tx).QueryRow(data.Arg("username", strings.ToLower(username))))
 	if err != nil {
 		return nil, err
 	}
@@ -274,25 +281,7 @@ func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 
 func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
 	u := &User{}
-	err := sqlUserFromID.Tx(tx).QueryRow(data.Arg("id", id)).Scan(
-		&u.ID,
-		&u.Username,
-		&u.Name,
-		&u.AuthType,
-		&u.password,
-		&u.passwordVersion,
-		&u.PasswordExpiration,
-		&u.Active,
-		&u.Version,
-		&u.Updated,
-		&u.Created,
-		&u.Admin,
-		&u.profileImage,
-		&u.profileImageDraft,
-	)
-	if err == sql.ErrNoRows {
-		return nil, ErrUserNotFound
-	}
+	err := u.scan(sqlUserFromID.Tx(tx).QueryRow(data.Arg("id", id)))
 	if err != nil {
 		return nil, err
 	}

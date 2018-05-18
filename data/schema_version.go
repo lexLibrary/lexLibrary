@@ -180,6 +180,12 @@ var schemaVersions = []*Query{
 		)
 	`),
 	NewQuery(`
-		alter table registration_tokens add column description {{text}}
+		alter table registration_tokens add description {{text}}
+	`),
+	NewQuery(`
+		alter table groups add name_search {{varchar 64}}
+	`),
+	NewQuery(`
+		create index i_name_search on groups (name_search)
 	`),
 }

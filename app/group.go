@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -35,12 +36,14 @@ var (
 		insert into groups (
 			id,
 			name, 
+			name_search,
 			version,
 			updated, 
 			created
 		) values (
 			{{arg "id"}}, 
 			{{arg "name"}}, 
+			{{arg "name_search"}}, 
 			{{arg "version"}}, 
 			{{arg "updated"}}, 
 			{{arg "created"}}
@@ -60,8 +63,20 @@ var (
 	sqlGroupFromName = data.NewQuery(`
 		select id, name, version, updated, created 
 		from groups 
-		where name = {{arg "name"}}
+		where name_search = {{arg "name"}}
 	`)
+	sqlGroupSearch = data.NewQuery(`
+		select id, name, version, updated, created 
+		from groups 
+		where name_search like {{arg "name"}}
+		order by name_search
+		{{if sqlserver}}
+			OFFSET 0 ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+		{{else}}
+			LIMIT {{arg "limit"}}
+		{{end}}
+	`)
+
 	sqlGroupsFromIDs = func(ids []data.ID, countOnly bool) (*data.Query, []data.Argument) {
 		in := ""
 		args := make([]data.Argument, len(ids))
@@ -92,6 +107,7 @@ var (
 	`)
 	sqlGroupUpdate = data.NewQuery(`
 		update groups set name = {{arg "name"}},
+			name_search = {{arg "name_search"}},
 			updated = {{NOW}}, 
 			version = version + 1 
 		where id = {{arg "id"}} 
@@ -141,7 +157,7 @@ func (u *User) NewGroup(name string) (*Group, error) {
 		return nil, err
 	}
 
-	_, err = GroupFromName(name)
+	_, err = u.GroupFromName(name)
 	if err == nil {
 		return nil, NewFailure("A group already exists with the name %s. Please choose another.", name)
 	}
@@ -171,11 +187,8 @@ func (u *User) NewGroup(name string) (*Group, error) {
 	return g, nil
 }
 
-// GroupFromName returns a group based on the passed in name
-func GroupFromName(name string) (*Group, error) {
-	g := &Group{}
-
-	err := sqlGroupFromName.QueryRow(data.Arg("name", name)).Scan(
+func (g *Group) scan(record scanner) error {
+	err := record.Scan(
 		&g.ID,
 		&g.Name,
 		&g.Version,
@@ -183,8 +196,40 @@ func GroupFromName(name string) (*Group, error) {
 		&g.Created,
 	)
 	if err == sql.ErrNoRows {
-		return nil, ErrGroupNotFound
+		return ErrGroupNotFound
 	}
+	return err
+}
+
+// GroupSearch returns a list of groups that start with the name part
+func (u *User) GroupSearch(namePart string) ([]*Group, error) {
+	var groups []*Group
+
+	search := strings.ToLower(namePart) + "%" // trailing matches only for now
+
+	rows, err := sqlGroupSearch.Query(data.Arg("name", search), data.Arg("limit", maxRows))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		g := &Group{}
+		err = g.scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		groups = append(groups, g)
+	}
+
+	return groups, nil
+}
+
+// GroupFromName returns a group based on the passed in name
+func (u *User) GroupFromName(name string) (*Group, error) {
+	g := &Group{}
+
+	err := g.scan(sqlGroupFromName.QueryRow(data.Arg("name", strings.ToLower(name))))
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +251,7 @@ func (g *Group) insert(tx *sql.Tx) error {
 	_, err := sqlGroupInsert.Tx(tx).Exec(
 		data.Arg("id", g.ID),
 		data.Arg("name", g.Name),
+		data.Arg("name_search", strings.ToLower(g.Name)),
 		data.Arg("version", g.Version),
 		data.Arg("updated", g.Updated),
 		data.Arg("created", g.Created),
@@ -276,6 +322,7 @@ func (ga *GroupAdmin) SetName(name string, version int) error {
 	return ga.group.update(func() (sql.Result, error) {
 		return sqlGroupUpdate.Exec(
 			data.Arg("name", name),
+			data.Arg("name_search", strings.ToLower(name)),
 			data.Arg("id", ga.group.ID),
 			data.Arg("version", version),
 		)

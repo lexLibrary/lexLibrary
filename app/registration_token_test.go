@@ -70,10 +70,6 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Invalid null limit value. Expected %d got %d", -1, token.Limit)
 		}
 
-		if len(token.Groups) != 0 {
-			t.Fatalf("Invalid empty group list. Expected len %d, got %d", 0, len(token.Groups))
-		}
-
 	})
 
 	t.Run("Register User From Token", func(t *testing.T) {
@@ -90,7 +86,7 @@ func TestRegistrationToken(t *testing.T) {
 		}
 		_, err = app.RegisterUserFromToken(admin.User.Username, "newuserPassword", token.Token)
 		if !app.IsFail(err) {
-			t.Fatal("Registering user with an existing username didn't fail")
+			t.Fatal("Registering user with an existing username didn't fail: ", err)
 		}
 
 		newUsername := "newuser"
@@ -207,6 +203,47 @@ func TestRegistrationToken(t *testing.T) {
 		for i := range ids {
 			if ids[i] != g.ID && ids[i] != g2.ID {
 				t.Fatalf("Group ID not found in user's membership. ID: %s ", ids[i])
+			}
+		}
+
+		groups, err := token.Groups()
+		if err != nil {
+			t.Fatalf("Error getting token groups: %s", err)
+		}
+
+		for i := range groups {
+			if groups[i].ID != g.ID && groups[i].ID != g2.ID {
+				t.Fatalf("Group not found in token's groups. ID: %s ", groups[i].ID)
+			}
+		}
+	})
+
+	t.Run("Users", func(t *testing.T) {
+		reset(t)
+
+		token, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
+		if err != nil {
+			t.Fatalf("Generating registration token failed: %s", err)
+		}
+
+		u1, err := app.RegisterUserFromToken("firstuser", "newuserPassword", token.Token)
+		if err != nil {
+			t.Fatalf("Error registering new user from token: %s", err)
+		}
+
+		u2, err := app.RegisterUserFromToken("seconduser", "newuserPassword", token.Token)
+		if err != nil {
+			t.Fatalf("Error registering new user from token: %s", err)
+		}
+
+		users, err := token.Users()
+		if err != nil {
+			t.Fatalf("Error getting users from token: %s", err)
+		}
+
+		for i := range users {
+			if users[i].ID != u1.ID && users[i].ID != u2.ID {
+				t.Fatalf("User not found in token's user list. ID: %s ", users[i].ID)
 			}
 		}
 

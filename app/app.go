@@ -33,3 +33,8 @@ func Init() error {
 
 	return err
 }
+
+// scanner is used to allow row and rows to scan into application types
+type scanner interface {
+	Scan(dest ...interface{}) error
+}
