@@ -9,13 +9,13 @@ import group_search from './components/group_search';
 
 var logVM = new Vue({
     el: document.getElementById('logSearch'),
-    data: function() {
+    data: function () {
         return {
             searchValue: '',
         };
     },
     methods: {
-        'search': function(e) {
+        'search': function (e) {
             e.preventDefault();
             window.location = '/admin/logs?search=' + this.searchValue;
         },
@@ -26,9 +26,9 @@ var logVM = new Vue({
 
 var settingsVM = new Vue({
     el: document.getElementById('settings'),
-    data: function() {
+    data: function () {
         return {
-            settings: function() {
+            settings: function () {
                 let settings = {};
                 let p = payload('settingsPayload');
                 for (let i in p) {
@@ -70,7 +70,7 @@ var settingsVM = new Vue({
         };
     },
     computed: {
-        securityActive: function() {
+        securityActive: function () {
             for (let i in this.pages.security) {
                 if (this.pages.security[i]) {
                     return true;
@@ -78,7 +78,7 @@ var settingsVM = new Vue({
             }
             return false;
         },
-        documentsActive: function() {
+        documentsActive: function () {
             for (let i in this.pages.documents) {
                 if (this.pages.documents[i]) {
                     return true;
@@ -86,7 +86,7 @@ var settingsVM = new Vue({
             }
             return false;
         },
-        webActive: function() {
+        webActive: function () {
             for (let i in this.pages.web) {
                 if (this.pages.web[i]) {
                     return true;
@@ -94,7 +94,7 @@ var settingsVM = new Vue({
             }
             return false;
         },
-        miscActive: function() {
+        miscActive: function () {
             for (let i in this.pages.misc) {
                 if (this.pages.misc[i]) {
                     return true;
@@ -104,7 +104,7 @@ var settingsVM = new Vue({
         },
     },
     watch: {
-        search: function(val) {
+        search: function (val) {
             if (val == '') {
                 this.setPage(this.currentPage);
                 return;
@@ -124,7 +124,7 @@ var settingsVM = new Vue({
         }
     },
     methods: {
-        'setPage': function(page, e) {
+        'setPage': function (page, e) {
             if (e) {
                 e.preventDefault();
             }
@@ -142,15 +142,15 @@ var settingsVM = new Vue({
             this.currentPage = page;
             this.search = '';
         },
-        'updateSetting': function(setting, e) {
+        'updateSetting': function (setting, e) {
             if (e) {
                 e.preventDefault();
             }
             this.isWaiting = setting;
             xhr.put('/setting', {
-                    id: setting,
-                    value: this.settings[setting].value,
-                })
+                id: setting,
+                value: this.settings[setting].value,
+            })
                 .then(() => {
                     this.isWaiting = '';
                     this.hasError = '';
@@ -167,13 +167,16 @@ var settingsVM = new Vue({
 
 var newRegistrationVM = new Vue({
     el: document.getElementById('newRegistration'),
-    data: function() {
+    data: function () {
         return {
             description: '',
+            descriptionErr: null,
             hasLimit: false,
             limit: 0,
+            limitErr: 0,
             hasExpiration: false,
             expires: null,
+            expireErr: null,
             error: null,
             groups: [],
         };
@@ -183,10 +186,52 @@ var newRegistrationVM = new Vue({
     },
     computed: {},
     methods: {
-        submit: function(e) {
+        submit: function (e) {
             e.preventDefault();
+            let hasError = false;
+            this.descriptionErr = null;
+            this.limitErr = null;
+            this.expireErr = null;
+
+            if (!this.description) {
+                hasError = true;
+                this.descriptionErr = "A description is required";
+            }
+            if (!this.hasLimit) {
+                this.limit = 0;
+            }
+
+            if (!this.hasExpiration) {
+                this.expires = null;
+            }
+
+            if (this.limit < 0) {
+                hasError = true;
+                this.limitErr = "Limit must be greater than 0";
+            }
+
+            let groups = [];
+            for (let i in this.groups) {
+                groups.push(this.groups[i].id);
+            }
+
+            if (hasError) {
+                return;
+            }
+            xhr.post('/registration', {
+                description: this.description,
+                limit: this.limit,
+                expires: this.expires,
+                groups,
+            })
+                .then(() => {
+                    window.location = '/admin/registration';
+                })
+                .catch((err) => {
+                    this.error = err.response;
+                });
         },
-        addGroup: function(group) {
+        addGroup: function (group) {
             for (let i in this.groups) {
                 if (this.groups[i].name == group.name) {
                     return;
@@ -194,7 +239,7 @@ var newRegistrationVM = new Vue({
             }
             this.groups.push(group);
         },
-        removeGroup: function(group, e) {
+        removeGroup: function (group, e) {
             if (e) {
                 e.preventDefault();
             }
