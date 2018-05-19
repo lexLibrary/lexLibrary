@@ -40,7 +40,7 @@ func resetDB(t *testing.T) {
 	truncateTable(t, "registration_tokens")
 }
 
-func resetAdmin(t *testing.T, username, password string) *app.User {
+func resetAdmin(t *testing.T, username, password string) *app.Admin {
 	t.Helper()
 	resetDB(t)
 
@@ -48,8 +48,12 @@ func resetAdmin(t *testing.T, username, password string) *app.User {
 	if err != nil {
 		t.Fatalf("Error setting up admin user: %s", err)
 	}
+	admin, err := u.Admin()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	return u
+	return admin
 }
 
 func truncateTable(t *testing.T, table string) {

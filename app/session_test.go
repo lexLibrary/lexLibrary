@@ -14,9 +14,11 @@ func TestSession(t *testing.T) {
 	username := "testusername"
 	password := "ODSjflaksjd$hiasfd323"
 	var u *app.User
+	var admin *app.Admin
 
 	reset := func(t *testing.T) {
-		u = resetAdmin(t, username, password)
+		admin = resetAdmin(t, username, password)
+		u = admin.User()
 	}
 
 	t.Run("New", func(t *testing.T) {
@@ -161,7 +163,7 @@ func TestSession(t *testing.T) {
 			t.Fatalf("Logging in with short password was not a login failure: %s", err)
 		}
 
-		err = u.AsAdmin().SetUserActive(u, false, u.Version)
+		err = admin.SetUserActive(u, false, u.Version)
 		if err != nil {
 			t.Fatalf("Error inactivating user: %s", err)
 		}

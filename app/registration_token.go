@@ -23,7 +23,7 @@ type RegistrationToken struct {
 	Description string        `json:"description"`
 	Limit       int           `json:"limit"`   // number of times this token can be used
 	Expires     data.NullTime `json:"expires"` // when this token expires and is no longer valid
-	groups      []data.ID     `json:"groups"`  // users registered by this token will be members of these groups
+	groups      []data.ID
 
 	Valid   bool      `json:"valid"`
 	Updated time.Time `json:"updated,omitempty"`
@@ -173,7 +173,7 @@ func (a *Admin) NewRegistrationToken(description string, limit uint, expires tim
 		Valid:       true,
 		Updated:     time.Now(),
 		Created:     time.Now(),
-		creator:     a.User.ID,
+		creator:     a.User().ID,
 	}
 
 	if !expires.IsZero() {

@@ -15,13 +15,13 @@ import (
 )
 
 func TestUser(t *testing.T) {
-	var admin *app.User
+	var admin *app.Admin
 	reset := func(t *testing.T) {
 		t.Helper()
 
 		admin = resetAdmin(t, "admin", "adminpassword")
 
-		err := admin.AsAdmin().SetSetting("AllowPublicSignups", true)
+		err := admin.SetSetting("AllowPublicSignups", true)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
@@ -189,7 +189,7 @@ func TestUser(t *testing.T) {
 
 	t.Run("Common Password", func(t *testing.T) {
 		reset(t)
-		err := admin.AsAdmin().SetSetting("BadPasswordCheck", true)
+		err := admin.SetSetting("BadPasswordCheck", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -204,12 +204,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Special", func(t *testing.T) {
 		reset(t)
-		err := admin.AsAdmin().SetSetting("PasswordRequireSpecial", true)
+		err := admin.SetSetting("PasswordRequireSpecial", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = admin.AsAdmin().SetSetting("BadPasswordCheck", false)
+		err = admin.SetSetting("BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -231,12 +231,12 @@ func TestUser(t *testing.T) {
 
 	t.Run("Password Number", func(t *testing.T) {
 		reset(t)
-		err := admin.AsAdmin().SetSetting("PasswordRequireNumber", true)
+		err := admin.SetSetting("PasswordRequireNumber", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = admin.AsAdmin().SetSetting("BadPasswordCheck", false)
+		err = admin.SetSetting("BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -257,12 +257,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Mixed Case", func(t *testing.T) {
 		reset(t)
-		err := admin.AsAdmin().SetSetting("PasswordRequireMixedCase", true)
+		err := admin.SetSetting("PasswordRequireMixedCase", true)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = admin.AsAdmin().SetSetting("BadPasswordCheck", false)
+		err = admin.SetSetting("BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -292,12 +292,12 @@ func TestUser(t *testing.T) {
 	})
 	t.Run("Password Length", func(t *testing.T) {
 		reset(t)
-		err := admin.AsAdmin().SetSetting("PasswordMinLength", 8)
+		err := admin.SetSetting("PasswordMinLength", 8)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
 
-		err = admin.AsAdmin().SetSetting("BadPasswordCheck", false)
+		err = admin.SetSetting("BadPasswordCheck", false)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -316,7 +316,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user: %s", err)
 		}
 
-		err = admin.AsAdmin().SetSetting("PasswordMinLength", 50)
+		err = admin.SetSetting("PasswordMinLength", 50)
 		if err != nil {
 			t.Fatalf("Error updating setting")
 		}
@@ -340,17 +340,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user for SetActive testing")
 		}
 
-		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
-		if err != nil {
-			t.Fatalf("Error adding other user for SetActive testing")
-		}
-
-		err = other.AsAdmin().SetUserActive(u, false, u.Version)
-		if err == nil {
-			t.Fatalf("Setting active from other user did not fail")
-		}
-
-		err = admin.AsAdmin().SetUserActive(u, false, u.Version)
+		err = admin.SetUserActive(u, false, u.Version)
 		if err != nil {
 			t.Fatalf("Error setting active to false: %s", err)
 		}
@@ -417,32 +407,23 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user for SetAdmin testing")
 		}
 
-		other, err := app.UserNew("othertestuser", "reallygoodlongpassword")
-		if err != nil {
-			t.Fatalf("Error adding other user for SetAdmin testing")
-		}
-
-		err = other.AsAdmin().SetUserAdmin(u, true, u.Version)
-		if err == nil {
-			t.Fatalf("Setting admin from other user did not fail")
-		}
-
-		err = u.AsAdmin().SetUserAdmin(u, true, u.Version)
-		if err == nil {
-			t.Fatalf("Setting admin from non-admin self did not fail")
-		}
-
-		other.Admin = true // this seems like cheating
-
-		err = other.AsAdmin().SetUserAdmin(u, true, u.Version)
+		err = admin.SetUserAdmin(u, true, u.Version)
 		if err != nil {
 			t.Fatalf("Error setting admin by another admin: %s", err)
+		}
+		u, err = u.Latest()
+		if err != nil {
+			t.Fatalf("Error getting latest user: %s", err)
+		}
+
+		if !u.IsAdmin() {
+			t.Fatal("user was not updated to admin")
 		}
 	})
 
 	t.Run("Public Signups Disabled", func(t *testing.T) {
 		reset(t)
-		err := admin.AsAdmin().SetSetting("AllowPublicSignups", false)
+		err := admin.SetSetting("AllowPublicSignups", false)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
@@ -750,7 +731,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user for SetName testing")
 		}
 
-		err = u.SetUsername(admin.Username, u.Version)
+		err = u.SetUsername(admin.User().Username, u.Version)
 		if err == nil {
 			t.Fatalf("Setting username to existing user's username didn't fail")
 		}

@@ -15,12 +15,13 @@ import (
 
 func TestGroup(t *testing.T) {
 
-	var admin *app.User
+	var admin *app.Admin
 	var user *app.User
 	reset := func(t *testing.T) {
 		t.Helper()
 		admin = resetAdmin(t, "admin", "newuserpassword")
-		err := admin.AsAdmin().SetSetting("AllowPublicSignups", true)
+
+		err := admin.SetSetting("AllowPublicSignups", true)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
 		}
@@ -59,7 +60,7 @@ func TestGroup(t *testing.T) {
 	})
 	t.Run("Admin", func(t *testing.T) {
 		reset(t)
-		g, err := admin.NewGroup("New group")
+		g, err := admin.User().NewGroup("New group")
 		if err != nil {
 			t.Fatalf("Error creating group: %s", err)
 		}
@@ -74,7 +75,7 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Getting admin from a non member user did not fail")
 		}
 
-		ga, err := g.Admin(admin)
+		ga, err := g.Admin(admin.User())
 		if err != nil {
 			t.Fatalf("Error getting group admin: %s", err)
 		}
@@ -89,12 +90,12 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Getting admin from a non admin member did not fail")
 		}
 
-		err = ga.SetMember(admin.ID, false)
+		err = ga.SetMember(admin.User().ID, false)
 		if err != nil {
 			t.Fatalf("Error removing admin from group: %s", err)
 		}
 
-		_, err = g.Admin(admin)
+		_, err = g.Admin(admin.User())
 		if err != nil {
 			t.Fatalf("Site admin did not have implicit admin permissions on groups: %s", err)
 		}
@@ -210,6 +211,7 @@ func TestGroup(t *testing.T) {
 	})
 
 	t.Run("GroupSearch", func(t *testing.T) {
+		reset(t)
 		groups := []string{
 			"Group One",
 			"Group Two",
@@ -222,8 +224,8 @@ func TestGroup(t *testing.T) {
 			search  string
 			results []string
 		}{
-			{"Group", []string{"Group One", "Group Two"}},
-			{"group", []string{"Group One", "Group Two"}},
+			{"Group", []string{"Group One", "Group Two", "Another Group", "a Matching group name"}},
+			{"group", []string{"Group One", "Group Two", "Another Group", "a Matching group name"}},
 			{"a", []string{"Another Group", "a Matching group name"}},
 			{"A", []string{"Another Group", "a Matching group name"}},
 			{"Som", []string{"Something else"}},

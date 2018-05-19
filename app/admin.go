@@ -8,7 +8,7 @@ import (
 
 // Admin is a wrapper around User that only provides access to admin level functions
 type Admin struct {
-	User *User
+	user *User
 }
 
 // ErrNotAdmin is returned when an admin activity is attempted by a non-admin user
@@ -22,6 +22,11 @@ var ErrNotAdmin = Unauthorized("This functionality is reserved for administrator
 // Setting will look for a setting that has the passed in id
 func (a *Admin) Setting(id string) (Setting, error) {
 	return settingGet(id)
+}
+
+// User returns the underlying user for the admin
+func (a *Admin) User() *User {
+	return a.user
 }
 
 // SetSetting updates a settings value

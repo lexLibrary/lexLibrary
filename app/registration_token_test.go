@@ -16,7 +16,7 @@ func TestRegistrationToken(t *testing.T) {
 	reset := func(t *testing.T) {
 		t.Helper()
 
-		admin = resetAdmin(t, "admin", "newuserpassword").AsAdmin()
+		admin = resetAdmin(t, "admin", "newuserpassword")
 		err := admin.SetSetting("AllowPublicSignups", true)
 		if err != nil {
 			t.Fatalf("Error allowing public signups for testing: %s", err)
@@ -36,12 +36,12 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Generating a token with an invalid groupID did not fail")
 		}
 
-		group, err := admin.User.NewGroup("New Test Group")
+		group, err := admin.User().NewGroup("New Test Group")
 		if err != nil {
 			t.Fatalf("Error creating group for testing")
 		}
 
-		group2, err := admin.User.NewGroup("New Test Group2")
+		group2, err := admin.User().NewGroup("New Test Group2")
 		if err != nil {
 			t.Fatalf("Error creating group for testing")
 		}
@@ -84,7 +84,7 @@ func TestRegistrationToken(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Generating registration token failed: %s", err)
 		}
-		_, err = app.RegisterUserFromToken(admin.User.Username, "newuserPassword", token.Token)
+		_, err = app.RegisterUserFromToken(admin.User().Username, "newuserPassword", token.Token)
 		if !app.IsFail(err) {
 			t.Fatal("Registering user with an existing username didn't fail: ", err)
 		}
@@ -158,12 +158,12 @@ func TestRegistrationToken(t *testing.T) {
 
 	t.Run("Groups", func(t *testing.T) {
 		reset(t)
-		g, err := admin.User.NewGroup("Test Group 1")
+		g, err := admin.User().NewGroup("Test Group 1")
 		if err != nil {
 			t.Fatalf("Error adding a new group: %s", err)
 		}
 
-		g2, err := admin.User.NewGroup("Test Group 2")
+		g2, err := admin.User().NewGroup("Test Group 2")
 		if err != nil {
 			t.Fatalf("Error adding a new group: %s", err)
 		}

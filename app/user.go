@@ -308,7 +308,7 @@ func (u *User) insert(tx *sql.Tx) error {
 		data.Arg("version", u.Version),
 		data.Arg("updated", u.Updated),
 		data.Arg("created", u.Created),
-		data.Arg("admin", u.Admin),
+		data.Arg("admin", u.admin),
 	)
 
 	return err
