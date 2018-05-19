@@ -25,7 +25,10 @@ func TestSignup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error setting up admin user: %s", err)
 	}
-	admin := user.AsAdmin()
+	admin, err := user.Admin()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	err = admin.SetSetting("AllowPublicSignups", false)
 	if err != nil {
@@ -55,7 +58,7 @@ func TestSignup(t *testing.T) {
 		Get(uri.String()).
 		Find("#submit").Click().
 		Find(".has-error > .form-input-hint").Count(2).Any().Text().Contains("A username is required").
-		Find("#inputUsername").SendKeys(admin.User.Username).
+		Find("#inputUsername").SendKeys(admin.User().Username).
 		Find("#submit").Click().
 		Find(".has-error > .form-input-hint").Any().Text().Contains("This username is already taken").
 		Find("#inputUsername").SendKeys("testusername").

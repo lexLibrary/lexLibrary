@@ -25,7 +25,10 @@ func TestLogin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error setting up admin user: %s", err)
 	}
-	admin := user.AsAdmin()
+	admin, err := user.Admin()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	err = admin.SetSetting("AllowPublicSignups", true)
 	if err != nil {

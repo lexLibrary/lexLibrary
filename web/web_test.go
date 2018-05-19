@@ -165,7 +165,10 @@ func createUserAndLogin(username, password string, isAdmin bool) error {
 	if err != nil {
 		return errors.Wrap(err, "Error setting up admin user")
 	}
-	admin := user.AsAdmin()
+	admin, err := user.Admin()
+	if err != nil {
+		return err
+	}
 
 	err = admin.SetSetting("AllowPublicSignups", true)
 	if err != nil {
