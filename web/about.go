@@ -8,7 +8,6 @@ import (
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/mssola/user_agent"
-	"github.com/pkg/errors"
 )
 
 type attribute struct {
@@ -42,7 +41,7 @@ func aboutTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	browserName, browserVersion := ua.Browser()
 	engineName, engineVersion := ua.Engine()
 
-	err = w.(*templateWriter).execute(struct {
+	w.(*templateWriter).execute(struct {
 		User        *app.User
 		Version     string
 		BuildDate   string
@@ -64,10 +63,6 @@ func aboutTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 			Platform:     ua.Platform(),
 		},
 	})
-
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing about template: %s"))
-	}
 }
 
 var attribution = []attribute{

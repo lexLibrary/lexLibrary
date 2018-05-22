@@ -164,3 +164,14 @@ func userUpdatePassword(w http.ResponseWriter, r *http.Request, c ctx) {
 
 	respond(w, success(nil))
 }
+
+func userGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
+	username := c.params.ByName("username")
+
+	u, err := app.UserGet(username)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	serveImage(w, r, u.ProfileImage())
+}

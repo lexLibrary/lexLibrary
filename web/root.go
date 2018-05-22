@@ -17,9 +17,9 @@ func rootTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 		}
 	}
 
-	errHandled(w.(*templateWriter).execute(struct {
+	w.(*templateWriter).execute(struct {
 		User *app.User
 	}{
 		User: u,
-	}), w, r)
+	})
 }

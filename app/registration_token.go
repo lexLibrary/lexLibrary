@@ -372,6 +372,9 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 	return u, err
 }
 
+func (a *Admin) RegistrationToken(token string) (*RegistrationToken, error) {
+	return registrationTokenGet(token)
+}
 func registrationTokenGet(token string) (*RegistrationToken, error) {
 	t := &RegistrationToken{}
 	rows, err := sqlRegistrationTokenGet.Query(data.Arg("token", token))

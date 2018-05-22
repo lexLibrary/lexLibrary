@@ -1,0 +1,9 @@
+[[define "avatar"]]
+<a href="/user/[[.Username]]" class="tooltip tooltip-top" data-tooltip="[[.DisplayName]]">
+	<figure class="avatar" data-initial="[[.DisplayInitials]]">
+		[[if .ProfileImage]]
+			<img src="/user/[[.Username]]/image?thumb" alt="[[.DisplayName]]">
+		[[end]]
+	</figure>
+</a>
+[[end]]

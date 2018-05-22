@@ -24,16 +24,16 @@ type User struct {
 
 	password          []byte
 	passwordVersion   int
-	profileImage      data.ID
 	profileImageDraft data.ID
 }
 
 // PublicProfile is the publically viewable user information copied from a private user record
 type PublicProfile struct {
-	ID       data.ID `json:"id"`
-	Username string  `json:"username"`
-	Name     string  `json:"name"`
-	Active   bool    `json:"active"` // whether or not the user is active and can log in
+	ID           data.ID `json:"id"`
+	Username     string  `json:"username"`
+	Name         string  `json:"name"`
+	Active       bool    `json:"active"` // whether or not the user is active and can log in
+	profileImage data.ID
 
 	admin bool
 }
@@ -98,7 +98,7 @@ var (
 		)
 	`)
 
-	userPublicColumns  = "u.id, u.username, u.name, u.active, u.admin"
+	userPublicColumns  = "u.id, u.username, u.name, u.active, u.profile_image_id, u.admin"
 	userPrivateColumns = `u.id, 
 		u.username, 
 		u.name, 
@@ -241,6 +241,7 @@ func (u *PublicProfile) scan(record scanner) error {
 		&u.Username,
 		&u.Name,
 		&u.Active,
+		&u.profileImage,
 		&u.admin,
 	)
 	if err == sql.ErrNoRows {
@@ -484,7 +485,7 @@ func (u *User) Admin() (*Admin, error) {
 }
 
 // ProfileImage returns the user's profile image
-func (u *User) ProfileImage() *Image {
+func (u *PublicProfile) ProfileImage() *Image {
 	return imageGet(u.profileImage)
 }
 
@@ -607,7 +608,7 @@ func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 }
 
 // DisplayName is the name displayed.  If no name is set then the username is displayed
-func (u *User) DisplayName() string {
+func (u *PublicProfile) DisplayName() string {
 	if u.Name != "" {
 		return u.Name
 	}
@@ -615,7 +616,7 @@ func (u *User) DisplayName() string {
 }
 
 // DisplayInitials is two characters that display if no profile image is set
-func (u *User) DisplayInitials() string {
+func (u *PublicProfile) DisplayInitials() string {
 	initials := strings.Split(u.DisplayName(), " ")
 	if len(initials) == 1 {
 		if len(initials[0]) == 1 {

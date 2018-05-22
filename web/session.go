@@ -36,13 +36,9 @@ func loginTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-	err := w.(*templateWriter).execute(map[string]bool{
+	w.(*templateWriter).execute(map[string]bool{
 		"AllowSignup": app.SettingMust("AllowPublicSignups").Bool(),
 	})
-
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing login template: %s"))
-	}
 }
 
 func signupTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
@@ -56,11 +52,7 @@ func signupTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 		notFound(w, r)
 		return
 	}
-	err := w.(*templateWriter).execute(nil)
-
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Executing signup template: %s"))
-	}
+	w.(*templateWriter).execute(nil)
 }
 
 // get a session from the request

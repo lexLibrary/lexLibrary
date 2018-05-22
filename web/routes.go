@@ -61,12 +61,13 @@ func setupRoutes() http.Handler {
 
 	// user
 	rootHandler.POST("/user", makeHandle(userCreate))
+	rootHandler.GET("/user/:username/image", makeNoZipHandle(profileGetImage))
 
 	// profile
 	rootHandler.PUT("/profile/password", makeHandle(userUpdatePassword))
 	rootHandler.PUT("/profile/name", makeHandle(profileUpdateName))
 	rootHandler.PUT("/profile/username", makeHandle(profileUpdateUsername))
-	rootHandler.GET("/profile/image", makeHandle(profileGetImage))
+	rootHandler.GET("/profile/image", makeNoZipHandle(profileGetImage))
 	rootHandler.POST("/profile/image", makeHandle(profileUploadImage))
 	rootHandler.PUT("/profile/image", makeHandle(profileCropImage))
 
@@ -103,12 +104,13 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/admin/logs", admin.logs)
 	rootHandler.GET("/admin/logs/:id", admin.logs)
 	rootHandler.GET("/admin/registration", admin.registration)
-	rootHandler.GET("/admin/registration/new", admin.registrationNew)
+	rootHandler.GET("/admin/newregistration", admin.registrationNew)
+	rootHandler.GET("/admin/registration/:token", admin.registrationGet)
 
 	rootHandler.GET("/groups", makeHandle(groupGet))
 	rootHandler.POST("/groups", makeHandle(groupCreate))
 
-	// rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), rootTemplate)
+	// rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), template)
 	rootHandler.POST(app.RegistrationTokenPath, makeHandle(registrationCreate))
 	rootHandler.PUT(app.RegistrationTokenPath, makeHandle(registrationUpdate))
 

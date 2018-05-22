@@ -2,17 +2,21 @@
 package web
 
 import (
+	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"html/template"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/files"
 	"github.com/pkg/errors"
 )
@@ -135,6 +139,7 @@ type templateHandler struct {
 	handler       llHandlerFunc
 	templateFiles []string
 	template      *template.Template
+	once          sync.Once
 }
 
 // template writers are passed into the http handler call
@@ -147,9 +152,12 @@ type templateWriter struct {
 }
 
 func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	if devMode || t.template == nil {
+	if devMode {
 		t.loadTemplates()
+	} else {
+		t.once.Do(func() { t.loadTemplates() })
 	}
+
 	writer := responseWriter(w, r)
 	w = writer
 
@@ -175,17 +183,34 @@ func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p htt
 	}
 }
 
-func (t *templateWriter) execute(data interface{}) error {
-	return t.template.Funcs(map[string]interface{}{
+func (t *templateWriter) execute(tdata interface{}) {
+	// have to execute into a separate buffer, otherwise the partially executed template will show up
+	// with the error page template
+	var b bytes.Buffer
+	err := t.template.Funcs(map[string]interface{}{
 		"csrfToken": func() string {
 			return t.CSRFToken
 		},
-	}).Execute(t, data)
-}
+	}).Execute(&b, tdata)
 
-// func (t *templateWriter) executeTemplate(name string, data interface{}) error {
-// 	return t.template.ExecuteTemplate(t, name, data)
-// }
+	if err != nil {
+		errID := app.LogError(err)
+		t.WriteHeader(http.StatusBadRequest)
+		err = errorHandler.template.Execute(t, struct {
+			ErrorID data.ID
+		}{
+			ErrorID: errID,
+		})
+		if err != nil {
+			app.LogError(errors.Wrap(err, "Writing error page template"))
+		}
+	} else {
+		_, err = io.Copy(t, &b)
+		if err != nil {
+			app.LogError(errors.Wrap(err, "Copying template data to template writer"))
+		}
+	}
+}
 
 func (t *templateHandler) loadTemplates() {
 	tmpl := ""
@@ -240,16 +265,6 @@ func (t *templateHandler) loadTemplates() {
 	}).Delims("[[", "]]").Parse(tmpl))
 }
 
-//emptyTemplate is a template handler for templates that don't need to write any data or do any processing,
-// just show a compiled template
-// func emptyTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
-// 	err := w.(*templateWriter).execute(nil)
-
-// 	if err != nil {
-// 		app.LogError(errors.Wrap(err, "Executing template: %s"))
-// 	}
-// }
-
 func makeHandle(llFunc llHandlerFunc) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		writer := responseWriter(w, r)
@@ -267,8 +282,8 @@ func makePublicHandle(llFunc llHandlerFunc) httprouter.Handle {
 }
 
 // for use with pre-compressed data / images
-// func makeNoZipHandle(llFunc llHandlerFunc) httprouter.Handle {
-// 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-// 		llPreHandle(w, r, p, llFunc)
-// 	}
-// }
+func makeNoZipHandle(llFunc llHandlerFunc) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		llPreHandle(w, r, p, llFunc)
+	}
+}

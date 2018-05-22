@@ -474,9 +474,11 @@
 	[[with .Registration]]
 		[[if .New]]
 			[[template "new registration" .]]
+		[[else if .Single]]
+			[[template "single registration" .Single]]
 		[[else]]
-		<section class="registration pt-8">
-			<a href="/admin/registration/new" class="float-right btn btn-lg btn-primary">New</a>
+		<section class="registration container grid-lg pt-8">
+			<a href="/admin/newregistration" class="float-right btn btn-lg btn-primary">New</a>
 			<div class="flex-centered">
 				<div class="btn-group">
 					<a href="/admin/registration" class="btn btn-lg [[if not .All]]active[[end]]">Active</a>
@@ -488,15 +490,15 @@
 					<tr>
 						<th>Description</th>
 						<th class="date">Created Date</th>
-						<th class="creator">Creator</th>
+						<th class="creator text-right">Creator</th>
 					</tr>
 				</thead>
 				<tbody>
 					[[range .Tokens]]
 						<tr>
-							<td>[[.Description]]</td>
+							<td><a href="/admin/registration/[[.Token]]">[[.Description]]</a></td>
 							<td>[[time .Created]]</td>
-							<td>[[.Creator]]</td>
+							<td class="text-right">[[template "avatar" .Creator]]</td>
 						</tr>
 					[[end]]
 				</tbody>
@@ -521,11 +523,11 @@
 						<label class="form-label" for="tokenDescription">Description</label>
 					</div>
 					<div class="col-9">
-						<input class="form-input" type="text" id="tokenDescription" placeholder="Description">
+						<input v-model="description" class="form-input" type="text" id="tokenDescription" placeholder="Description">
 						<p v-if="descriptionErr" v-cloak class="form-input-hint">{{descriptionErr}}</p>
 					</div>
 				</div>
-				<div class="form-group"> <!-- start err add errors-->
+				<div :class="{'has-error': limitErr}" class="form-group">
 					<div class="col-9">
 						<label class="form-switch">
 							<input v-model="hasLimit" type="checkbox">
@@ -535,8 +537,9 @@
 					<div class="col-3">
 						<input v-model="limit" :disabled="!hasLimit" class="form-input" type="number" id="tokenLimit" placeholder="1">
 					</div>
+					<p v-if="limitErr" v-cloak class="form-input-hint">{{limitErr}}</p>
 				</div>
-				<div class="form-group">
+				<div :class="{'has-error': expireErr}" class="form-group">
 					<div class="col-7">
 						<label class="form-switch">
 							<input v-model="hasExpiration" type="checkbox">
@@ -546,6 +549,7 @@
 					<div class="col-5">
 						<input v-model="expires" :disabled="!hasExpiration" class="form-input" type="date" id="tokenExpiration" 
 							placeholder="mm/dd/yyyy">
+						<p v-if="expireErr" v-cloak class="form-input-hint">{{expireErr}}</p>
 					</div>
 				</div>
 				<div class="form-group">
@@ -574,4 +578,10 @@
 		</div> <!-- column -->
 	</div> <!-- columns -->
 </div>
+[[end]]
+
+[[define "single registration"]]
+<div class="container grid-xs pt-8">
+</div>
+[[.Token]]
 [[end]]

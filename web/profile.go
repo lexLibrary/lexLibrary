@@ -6,7 +6,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
-	"github.com/pkg/errors"
 )
 
 type profilePage struct {
@@ -68,11 +67,7 @@ func (p *profilePage) documents(w http.ResponseWriter, r *http.Request, parms ht
 		}
 
 		tData.Tab = "documents"
-		err = w.(*templateWriter).execute(tData)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-		}
+		w.(*templateWriter).execute(tData)
 	}
 	p.ServeHTTP(w, r, parms)
 }
@@ -86,11 +81,7 @@ func (p *profilePage) readLater(w http.ResponseWriter, r *http.Request, parms ht
 		}
 
 		tData.Tab = "readLater"
-		err = w.(*templateWriter).execute(tData)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-		}
+		w.(*templateWriter).execute(tData)
 	}
 	p.ServeHTTP(w, r, parms)
 
@@ -105,11 +96,7 @@ func (p *profilePage) comments(w http.ResponseWriter, r *http.Request, parms htt
 		}
 
 		tData.Tab = "comments"
-		err = w.(*templateWriter).execute(tData)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-		}
+		w.(*templateWriter).execute(tData)
 	}
 	p.ServeHTTP(w, r, parms)
 
@@ -124,11 +111,7 @@ func (p *profilePage) history(w http.ResponseWriter, r *http.Request, parms http
 		}
 
 		tData.Tab = "history"
-		err = w.(*templateWriter).execute(tData)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-		}
+		w.(*templateWriter).execute(tData)
 	}
 	p.ServeHTTP(w, r, parms)
 
@@ -164,11 +147,7 @@ func (p *profileEditPage) root(w http.ResponseWriter, r *http.Request, parms htt
 		}
 		p.data.Tab = "profile"
 
-		err = w.(*templateWriter).execute(p.data)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-		}
+		w.(*templateWriter).execute(p.data)
 	}
 	p.ServeHTTP(w, r, parms)
 }
@@ -181,11 +160,7 @@ func (p *profileEditPage) account(w http.ResponseWriter, r *http.Request, parms 
 		}
 		p.data.Tab = "account"
 
-		err = w.(*templateWriter).execute(p.data)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing profile template: %s"))
-		}
+		w.(*templateWriter).execute(p.data)
 	}
 	p.ServeHTTP(w, r, parms)
 }

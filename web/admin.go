@@ -7,7 +7,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
-	"github.com/pkg/errors"
 )
 
 type adminPage struct {
@@ -31,6 +30,7 @@ type adminData struct {
 		Tokens []*app.RegistrationToken
 		Pager  pager
 		All    bool
+		Single *app.RegistrationToken
 	}
 }
 
@@ -70,11 +70,7 @@ func (a *adminPage) overview(w http.ResponseWriter, r *http.Request, parms httpr
 		}
 
 		tData.Overview = overview
-		err = w.(*templateWriter).execute(tData)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
-		}
+		w.(*templateWriter).execute(tData)
 	}
 	a.ServeHTTP(w, r, parms)
 }
@@ -93,11 +89,7 @@ func (a *adminPage) settings(w http.ResponseWriter, r *http.Request, parms httpr
 			return
 		}
 		tData.Settings = settings
-		err = w.(*templateWriter).execute(tData)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
-		}
+		w.(*templateWriter).execute(tData)
 	}
 	a.ServeHTTP(w, r, parms)
 }
@@ -150,11 +142,7 @@ func (a *adminPage) logs(w http.ResponseWriter, r *http.Request, parms httproute
 			tData.Log.Logs = logs
 
 		}
-		err = w.(*templateWriter).execute(tData)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
-		}
+		w.(*templateWriter).execute(tData)
 	}
 	a.ServeHTTP(w, r, parms)
 }
@@ -182,11 +170,7 @@ func (a *adminPage) registration(w http.ResponseWriter, r *http.Request, parms h
 		tData.Registration.Pager = pgr
 		tData.Registration.Tokens = tokens
 
-		err = w.(*templateWriter).execute(tData)
-
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
-		}
+		w.(*templateWriter).execute(tData)
 	}
 	a.ServeHTTP(w, r, parms)
 }
@@ -202,11 +186,27 @@ func (a *adminPage) registrationNew(w http.ResponseWriter, r *http.Request, parm
 		tData.Tab = "registration"
 		tData.Registration.New = true
 
-		err = w.(*templateWriter).execute(tData)
+		w.(*templateWriter).execute(tData)
+	}
+	a.ServeHTTP(w, r, parms)
+}
 
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Executing admin template: %s"))
+func (a *adminPage) registrationGet(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
+
+	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+		tData, err := a.data(c.session)
+		if errHandled(err, w, r) {
+			return
 		}
+
+		tData.Tab = "registration"
+		token, err := tData.Admin.RegistrationToken(c.params.ByName("token"))
+		if errHandled(err, w, r) {
+			return
+		}
+		tData.Registration.Single = token
+
+		w.(*templateWriter).execute(tData)
 	}
 	a.ServeHTTP(w, r, parms)
 }
