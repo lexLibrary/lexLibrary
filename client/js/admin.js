@@ -209,7 +209,6 @@ var newRegistrationVM = new Vue({
 
             let expires = null;
 
-
             if (this.hasExpiration) {
                 if (!this.expires) {
                     hasError = true;
@@ -224,9 +223,13 @@ var newRegistrationVM = new Vue({
                             hasError = true;
                             this.expireErr = "Date must be after today";
                         } else {
-                            expires = new Date(expires).toISOString();
+                            let now = new Date();
+                            expires = new Date(expires);
+                            expires.setUTCHours(now.getUTCHours());
+                            expires.setUTCMinutes(now.getUTCMinutes());
+                            expires.setUTCSeconds(now.getUTCSeconds());
+                            expires = expires.toISOString();
                         }
-
                     }
                 }
             }
@@ -270,6 +273,44 @@ var newRegistrationVM = new Vue({
                     return;
                 }
             }
+        },
+    },
+});
+
+
+var singleRegistrationVM = new Vue({
+    el: document.getElementById('singleRegistration'),
+    data: function() {
+        return {
+            error: null,
+            copied: false,
+        };
+    },
+    computed: {},
+    watch: {
+        copied: function(value) {
+            if (value) {
+                setTimeout(() => {
+                    this.copied = false;
+                }, 2000);
+            }
+        },
+    },
+    methods: {
+        invalidate: function(token) {
+            xhr.del(`/registration/${token}`)
+                .then(() => {
+                    location.reload(true);
+                })
+                .catch((err) => {
+                    this.error = err.response;
+                });
+        },
+        copy: function(e) {
+            var copyText = document.getElementById('registrationUrl');
+            copyText.select();
+            this.copied = document.execCommand("copy");
+            window.getSelection().removeAllRanges();
         },
     },
 });

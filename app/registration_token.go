@@ -25,11 +25,13 @@ type RegistrationToken struct {
 	Expires     data.NullTime `json:"expires"` // when this token expires and is no longer valid
 	groups      []data.ID
 
-	Valid   bool      `json:"valid"`
 	Updated time.Time `json:"updated,omitempty"`
 	Created time.Time `json:"created,omitempty"`
 
+	valid   bool
 	creator data.ID
+
+	creatorCache *PublicProfile
 }
 
 var (
@@ -149,6 +151,12 @@ var (
 		where 	u.id = t.user_id
 		and 	t.token = {{arg "token"}}
 	`, userPublicColumns))
+
+	sqlRegistrationTokenValid = data.NewQuery(`
+		update 	registration_tokens
+		set 	valid = {{arg "valid"}}
+		where 	token = {{arg "token"}}
+	`)
 )
 
 var errRegistrationTokenInvalid = NewFailure("This registration URL has expired or is no longer valid. " +
@@ -170,7 +178,7 @@ func (a *Admin) NewRegistrationToken(description string, limit uint, expires tim
 		Description: description,
 		Limit:       setLimit,
 		groups:      groups,
-		Valid:       true,
+		valid:       true,
 		Updated:     time.Now(),
 		Created:     time.Now(),
 		creator:     a.User().ID,
@@ -220,7 +228,7 @@ func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) (tokens
 				&t.Description,
 				&t.Limit,
 				&t.Expires,
-				&t.Valid,
+				&t.valid,
 				&t.Updated,
 				&t.Created,
 				&t.creator,
@@ -281,7 +289,7 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 		data.Arg("description", t.Description),
 		data.Arg("limit", t.Limit),
 		data.Arg("expires", t.Expires),
-		data.Arg("valid", t.Valid),
+		data.Arg("valid", t.valid),
 		data.Arg("updated", t.Updated),
 		data.Arg("created", t.Created),
 		data.Arg("creator", t.creator),
@@ -305,7 +313,31 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 
 // Creator returns the creator of the registration token
 func (t *RegistrationToken) Creator() (*PublicProfile, error) {
-	return publicProfileGet(t.creator)
+	if t.creatorCache != nil {
+		return t.creatorCache, nil
+	}
+	creator, err := publicProfileGet(t.creator)
+	if err != nil {
+		return nil, err
+	}
+	t.creatorCache = creator
+	return creator, nil
+}
+
+// Valid returns whether or not the token is valid, hasn't expired and has any registrations left
+func (t *RegistrationToken) Valid() bool {
+	if !t.valid {
+		return false
+	}
+
+	if t.Expires.Valid && t.Expires.Time.Before(time.Now()) && !t.Expires.Time.IsZero() {
+		return false
+	}
+
+	if t.Limit == 0 {
+		return false
+	}
+	return true
 }
 
 // RegisterUserFromToken creates a new user if the passed in token is valid
@@ -315,15 +347,7 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 		return nil, err
 	}
 
-	if !t.Valid {
-		return nil, errRegistrationTokenInvalid
-	}
-
-	if t.Expires.Valid && t.Expires.Time.Before(time.Now()) && !t.Expires.Time.IsZero() {
-		return nil, errRegistrationTokenInvalid
-	}
-
-	if t.Limit == 0 {
+	if !t.Valid() {
 		return nil, errRegistrationTokenInvalid
 	}
 
@@ -375,6 +399,7 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 func (a *Admin) RegistrationToken(token string) (*RegistrationToken, error) {
 	return registrationTokenGet(token)
 }
+
 func registrationTokenGet(token string) (*RegistrationToken, error) {
 	t := &RegistrationToken{}
 	rows, err := sqlRegistrationTokenGet.Query(data.Arg("token", token))
@@ -395,7 +420,7 @@ func registrationTokenGet(token string) (*RegistrationToken, error) {
 			&t.Description,
 			&t.Limit,
 			&t.Expires,
-			&t.Valid,
+			&t.valid,
 			&t.Updated,
 			&t.Created,
 			&t.creator,
@@ -435,7 +460,19 @@ func (t *RegistrationToken) decrementLimit(tx *sql.Tx) error {
 	return nil
 }
 
-//TODO: SetValid by admin
+// Invalidate sets a registration token's valid status to false
+func (t *RegistrationToken) Invalidate() error {
+	result, err := sqlRegistrationTokenValid.Exec(data.Arg("token", t.Token), data.Arg("valid", false))
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errRegistrationTokenInvalid
+	}
+
+	return nil
+}
 
 // Groups returns the groups associated with this registration token, if any
 func (t *RegistrationToken) Groups() ([]*Group, error) {

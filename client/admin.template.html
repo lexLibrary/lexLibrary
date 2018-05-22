@@ -495,7 +495,7 @@
 				</thead>
 				<tbody>
 					[[range .Tokens]]
-						<tr>
+						<tr class="[[if not .Valid]]secondary[[end]]">
 							<td><a href="/admin/registration/[[.Token]]">[[.Description]]</a></td>
 							<td>[[time .Created]]</td>
 							<td class="text-right">[[template "avatar" .Creator]]</td>
@@ -513,6 +513,11 @@
 <div id="newRegistration" class="container grid-xs pt-8">
 	<div class="columns">
 		<div class="column">
+			<h3>Create a Registration URL</h3>
+			<h6 class="text-gray">Registration URLs allow new users to sign up for this Lex Library instance when
+			public signups are not allowed</h6>
+
+
 			<div v-if="error" v-cloak class="toast toast-error">
 				<button @click="error=null"class="btn btn-clear float-right"></button>
 				{{error}}
@@ -581,7 +586,65 @@
 [[end]]
 
 [[define "single registration"]]
-<div class="container grid-xs pt-8">
+<div id="singleRegistration" class="container grid-md pt-8">
+	<div v-if="error" v-cloak class="mb-4 toast toast-error">
+		<button @click="error=null"class="btn btn-clear float-right"></button>
+		{{error}}
+	</div>
+
+	<div class="columns">
+		<div class="column col-8">
+			<h4>[[.Description]]</h4>
+			<p class="text-gray">Send this URL to whoever needs a login for Lex Library</p>
+		</div> <!-- column -->
+		<div class="column col-4">
+			<div class="tile tile-centered">
+				<div class="tile-icon">[[template "avatar" .Creator]]</div>
+				<div class="tile-content">
+					<div class="tile-title">Created by [[.Creator.DisplayName]]</div>
+					[[if .Expires.Valid]]
+						<div class="tile-subtitle text-gray" title="[[time .Expires.Time]]">Expires [[since .Expires.Time]]</div>
+					[[end]]
+					[[if ge .Limit 0]]
+						<div class="tile-subtitle text-gray">[[plural .Limit "Registration" ""]] Left</div>
+					[[end]]
+					<div class="tile-subtitle text-gray">Created on [[time .Created]]</div>
+				</div>
+			</div>
+		</div> <!-- column -->
+	</div> <!-- columns -->
+
+	[[if .Valid]]
+		<div class="columns pt-8">
+			<div class="column">
+				<div class="input-group">
+					<button @click.stop.prevent="copy" class="input-group-btn btn btn-primary btn-lg">Copy</button>
+					<input class="form-input input-lg" type="text" readonly id="registrationUrl" value="[[.URL]]">
+				</div>
+			</div>
+			<div class="column col-1">
+				<button @click="invalidate('[[.Token]]')" class="btn btn-error btn-lg">
+					<i class="icon icon-delete"></i> Remove
+				</button>
+			</div>
+		</div>
+		<p :class="{'show': copied}" class="fade text-gray">Copied to the clipboard</p>
+	[[end]]
+	<h5>Groups</h5>
+	[[range .Groups]]
+	<span class="chip"><a href="/group/[[.ID]]">[[.Name]]</a></span>
+	[[end]]
+	<h5 class="pt-4">Users Registered with this URL</h5>
+	[[range .Users]]
+	<div class="tile tile-centered">
+		<div class="tile-icon">
+			[[template "avatar" .]]
+		</div>
+		<div class="tile-content">
+			<p class="tile-title">[[.DisplayName]]</p>
+			<p class="tile-subtitle text-gray" title="[[time .Created]]">Created [[since .Created]]</p>
+		</div>
+	</div>
+	[[end]]
 </div>
-[[.Token]]
 [[end]]

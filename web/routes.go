@@ -4,6 +4,7 @@ package web
 
 import (
 	"net/http"
+	"path"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
@@ -61,7 +62,7 @@ func setupRoutes() http.Handler {
 
 	// user
 	rootHandler.POST("/user", makeHandle(userCreate))
-	rootHandler.GET("/user/:username/image", makeNoZipHandle(profileGetImage))
+	rootHandler.GET("/user/:username/image", makeNoZipHandle(userGetImage))
 
 	// profile
 	rootHandler.PUT("/profile/password", makeHandle(userUpdatePassword))
@@ -110,9 +111,12 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/groups", makeHandle(groupGet))
 	rootHandler.POST("/groups", makeHandle(groupCreate))
 
-	// rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), template)
+	rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), templateHandler{
+		handler:       registrationTemplate,
+		templateFiles: []string{"signup.template.html"},
+	}.ServeHTTP)
 	rootHandler.POST(app.RegistrationTokenPath, makeHandle(registrationCreate))
-	rootHandler.PUT(app.RegistrationTokenPath, makeHandle(registrationUpdate))
-
+	rootHandler.DELETE(path.Join(app.RegistrationTokenPath, ":token"), makeHandle(registrationDelete))
+	rootHandler.POST("/user/:token", makeHandle(userCreate))
 	return rootHandler
 }

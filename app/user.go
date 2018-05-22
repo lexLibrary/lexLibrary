@@ -20,7 +20,6 @@ type User struct {
 	PasswordExpiration data.NullTime `json:"passwordExpiration"`
 	Version            int           `json:"version"` // version of this record starting with 0
 	Updated            time.Time     `json:"updated,omitempty"`
-	Created            time.Time     `json:"created,omitempty"`
 
 	password          []byte
 	passwordVersion   int
@@ -29,10 +28,11 @@ type User struct {
 
 // PublicProfile is the publically viewable user information copied from a private user record
 type PublicProfile struct {
-	ID           data.ID `json:"id"`
-	Username     string  `json:"username"`
-	Name         string  `json:"name"`
-	Active       bool    `json:"active"` // whether or not the user is active and can log in
+	ID           data.ID   `json:"id"`
+	Username     string    `json:"username"`
+	Name         string    `json:"name"`
+	Active       bool      `json:"active"` // whether or not the user is active and can log in
+	Created      time.Time `json:"created,omitempty"`
 	profileImage data.ID
 
 	admin bool
@@ -98,7 +98,7 @@ var (
 		)
 	`)
 
-	userPublicColumns  = "u.id, u.username, u.name, u.active, u.profile_image_id, u.admin"
+	userPublicColumns  = "u.id, u.username, u.name, u.active, u.profile_image_id, u.admin, u.created"
 	userPrivateColumns = `u.id, 
 		u.username, 
 		u.name, 
@@ -161,10 +161,10 @@ func userNew(tx *sql.Tx, username, password string) (*User, error) {
 			ID:       data.NewID(),
 			Username: strings.ToLower(username),
 			Active:   true,
+			Created:  time.Now(),
 		},
 		AuthType: AuthTypePassword,
 		Version:  0,
-		Created:  time.Now(),
 		Updated:  time.Now(),
 	}
 
@@ -243,6 +243,7 @@ func (u *PublicProfile) scan(record scanner) error {
 		&u.Active,
 		&u.profileImage,
 		&u.admin,
+		&u.Created,
 	)
 	if err == sql.ErrNoRows {
 		return ErrUserNotFound

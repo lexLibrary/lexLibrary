@@ -249,6 +249,25 @@ func TestRegistrationToken(t *testing.T) {
 
 	})
 
+	t.Run("Valid", func(t *testing.T) {
+		reset(t)
+
+		token, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
+		if err != nil {
+			t.Fatalf("Generating registration token failed: %s", err)
+		}
+		err = token.SetValid(false)
+		if err != nil {
+			t.Fatalf("Error Setting token to invalid: %s", err)
+		}
+
+		_, err = app.RegisterUserFromToken("newuser", "newuserpassword", token.Token)
+		if !app.IsFail(err) {
+			t.Fatalf("Registering a user with an invalid token did not fail: %s", err)
+		}
+
+	})
+
 	t.Run("List", func(t *testing.T) {
 		reset(t)
 		valid := 10

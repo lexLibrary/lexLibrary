@@ -14,6 +14,7 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize/english"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/lexLibrary/lexLibrary/data"
@@ -259,6 +260,8 @@ func (t *templateHandler) loadTemplates() {
 		"relTime": humanize.RelTime,
 		"bytes":   humanize.Bytes,
 		"since":   humanize.Time,
+		"plural":  english.Plural,
+		"series":  english.WordSeries,
 		"duration": func(d time.Duration) string {
 			return humanize.RelTime(time.Now().Add(-1*d), time.Now(), "", "")
 		},

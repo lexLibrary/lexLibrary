@@ -14,3 +14,5 @@ $sizes: map-merge((
   100: 100%,
   auto: auto
 ), $sizes);
+
+$transition-fade:             opacity .2s linear !default;

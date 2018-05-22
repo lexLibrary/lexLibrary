@@ -14,8 +14,14 @@ type registrationInput struct {
 	Limit       uint
 	Expires     time.Time
 	Groups      []data.ID
+}
 
-	Valid bool
+func registrationTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
+	w.(*templateWriter).execute(struct {
+		Token string
+	}{
+		Token: c.params.ByName("token"),
+	})
 }
 
 func registrationCreate(w http.ResponseWriter, r *http.Request, c ctx) {
@@ -24,11 +30,7 @@ func registrationCreate(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	u, err := c.session.User()
-	if errHandled(err, w, r) {
-		return
-	}
-	admin, err := u.Admin()
+	a, err := c.session.Admin()
 	if errHandled(err, w, r) {
 		return
 	}
@@ -39,7 +41,7 @@ func registrationCreate(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	token, err := admin.NewRegistrationToken(input.Description, input.Limit, input.Expires, input.Groups)
+	token, err := a.NewRegistrationToken(input.Description, input.Limit, input.Expires, input.Groups)
 	if errHandled(err, w, r) {
 		return
 	}
@@ -47,9 +49,25 @@ func registrationCreate(w http.ResponseWriter, r *http.Request, c ctx) {
 	respond(w, created(token))
 }
 
-func registrationUpdate(w http.ResponseWriter, r *http.Request, c ctx) {
+func registrationDelete(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session == nil {
 		unauthorized(w, r)
 		return
 	}
+
+	a, err := c.session.Admin()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	token, err := a.RegistrationToken(c.params.ByName("token"))
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if errHandled(token.Invalidate(), w, r) {
+		return
+	}
+
+	respond(w, success(nil))
 }

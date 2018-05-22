@@ -23,7 +23,7 @@ var vm = new Vue({
         },
     },
     methods: {
-        signup: function(e) {
+        signup: function(token, e) {
             e.preventDefault();
             if (this.usernameErr || this.passwordErr || this.password2Err) {
                 return;
@@ -47,13 +47,12 @@ var vm = new Vue({
                     password: this.password
                 })
                 .then(() => {
-                    xhr.post(`/user/`, {
+                    xhr.post(`/user/${token}`, {
                             username: this.username,
                             password: this.password,
                         })
                         .then((result) => {
                             //TODO: redirect to profile page?
-							//  
                             window.location = '/';
                         })
                         .catch((err) => {
@@ -78,7 +77,6 @@ var vm = new Vue({
                     this.usernameErr = `This username is already taken`;
                 })
                 .catch((err) => {
-					console.log(err);
                     if (err.request.status != 404) {
                         this.usernameErr = err.response;
                     }

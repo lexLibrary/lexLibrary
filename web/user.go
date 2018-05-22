@@ -60,8 +60,15 @@ func userCreate(w http.ResponseWriter, r *http.Request, c ctx) {
 			return
 		}
 	}
+	token := c.params.ByName("token")
 
-	u, err := app.UserNew(*input.Username, *input.Password)
+	var u *app.User
+
+	if token == "" {
+		u, err = app.UserNew(*input.Username, *input.Password)
+	} else {
+		u, err = app.RegisterUserFromToken(*input.Username, *input.Password, token)
+	}
 	if errHandled(err, w, r) {
 		return
 	}

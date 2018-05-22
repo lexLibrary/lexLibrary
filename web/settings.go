@@ -26,11 +26,7 @@ func settingUpdate(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	u, err := c.session.User()
-	if errHandled(err, w, r) {
-		return
-	}
-	admin, err := u.Admin()
+	admin, err := c.session.Admin()
 	if errHandled(err, w, r) {
 		return
 	}
@@ -72,11 +68,8 @@ func settingSetDefault(w http.ResponseWriter, r *http.Request, c ctx) {
 		errHandled(app.NewFailure("ID must be set"), w, r)
 		return
 	}
-	u, err := c.session.User()
-	if errHandled(err, w, r) {
-		return
-	}
-	admin, err := u.Admin()
+
+	admin, err := c.session.Admin()
 	if errHandled(err, w, r) {
 		return
 	}

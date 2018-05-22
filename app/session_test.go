@@ -223,4 +223,17 @@ func TestSession(t *testing.T) {
 		}
 
 	})
+	t.Run("Admin", func(t *testing.T) {
+		reset(t)
+
+		s, err := app.SessionNew(u, time.Time{}, "", "")
+		if err != nil {
+			t.Fatalf("Error adding new session: %s", err)
+		}
+
+		_, err = s.Admin()
+		if err != nil {
+			t.Fatalf("Error getting admin from session: %s", err)
+		}
+	})
 }

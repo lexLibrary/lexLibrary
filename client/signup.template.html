@@ -14,7 +14,7 @@
 			<h1 class="text-center">Join Lex Library</h1>
 			<div class="card">
 				<div class="card-body">
-					<form @submit="signup">
+					<form @submit="signup('[[.Token]]', $event)">
 						<div :class="{'has-error': usernameErr}" class="form-group">
 							<label class="form-label" for="inputUsername">Username</label>
 							<input v-model="username" v-focus @blur="validateUsername" @keydown="usernameErr=null" type="text" 

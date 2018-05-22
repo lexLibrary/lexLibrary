@@ -217,6 +217,15 @@ func (s *Session) User() (*User, error) {
 	return u, nil
 }
 
+// Admin returns an admin instance for the user.  Short cut for calling session.User() and user.Admin()
+func (s *Session) Admin() (*Admin, error) {
+	u, err := s.User()
+	if err != nil {
+		return nil, err
+	}
+	return u.Admin()
+}
+
 // CycleCSRF will generate a new CRSF token if it is too old, and update the session with it
 // allows CSRF token to change more than once per session if need be
 func (s *Session) CycleCSRF() error {
