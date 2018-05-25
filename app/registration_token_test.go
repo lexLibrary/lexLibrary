@@ -3,6 +3,7 @@
 package app_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -34,6 +35,11 @@ func TestRegistrationToken(t *testing.T) {
 		_, err = admin.NewRegistrationToken("test", 0, time.Time{}, []data.ID{data.NewID()})
 		if !app.IsFail(err) {
 			t.Fatalf("Generating a token with an invalid groupID did not fail")
+		}
+
+		_, err = admin.NewRegistrationToken("", 0, time.Time{}, []data.ID{data.NewID()})
+		if !app.IsFail(err) {
+			t.Fatalf("Generating a token with an invalid description did not fail")
 		}
 
 		group, err := admin.User().NewGroup("New Test Group")
@@ -256,7 +262,7 @@ func TestRegistrationToken(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Generating registration token failed: %s", err)
 		}
-		err = token.SetValid(false)
+		err = token.Invalidate()
 		if err != nil {
 			t.Fatalf("Error Setting token to invalid: %s", err)
 		}
@@ -348,14 +354,89 @@ func TestRegistrationToken(t *testing.T) {
 				}
 				if test.valid {
 					for i := range tokens {
-						if !tokens[i].Valid ||
-							(tokens[i].Expires.Valid && tokens[i].Expires.Time.Before(time.Now())) ||
-							tokens[i].Limit == 0 {
-							t.Fatalf("Expected all tokens to be valid. This one wasn't: %v", tokens[i])
+						if !tokens[i].Valid() {
+							t.Fatalf("Expected all tokens to be valid. This one wasn't: %v",
+								tokens[i])
 						}
 					}
 				}
 			})
+		}
+	})
+
+	t.Run("Creator", func(t *testing.T) {
+		reset(t)
+
+		token, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
+		if err != nil {
+			t.Fatalf("Generating registration token failed: %s", err)
+		}
+
+		creator, err := token.Creator()
+		if err != nil {
+			t.Fatalf("Error getting registration token creator: %s", err)
+		}
+
+		if creator.ID != admin.User().ID {
+			t.Fatalf("Registration token creator is incorrect. Expected ID %s, got %s", admin.User().ID,
+				creator.ID)
+		}
+
+		// test cache
+
+		creator, err = token.Creator()
+		if err != nil {
+			t.Fatalf("Error getting cached registration token creator: %s", err)
+		}
+
+		if creator.ID != admin.User().ID {
+			t.Fatalf("Cached Registration token creator is incorrect. Expected ID %s, got %s", admin.User().ID,
+				creator.ID)
+		}
+
+	})
+
+	t.Run("Get", func(t *testing.T) {
+		reset(t)
+
+		token, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
+		if err != nil {
+			t.Fatalf("Generating registration token failed: %s", err)
+		}
+
+		other, err := admin.RegistrationToken(token.Token)
+		if err != nil {
+			t.Fatalf("Error getting registration token: %s", err)
+		}
+
+		if other.Token != token.Token {
+			t.Fatalf("Retrieved token doesn't match. Expected %s, got %s", token.Token, other.Token)
+		}
+
+	})
+
+	t.Run("URL", func(t *testing.T) {
+		reset(t)
+		uri := "http://testurl.com"
+		err := admin.SetSetting("URL", uri)
+		if err != nil {
+			t.Fatalf("Error setting URL setting: %s", err)
+		}
+
+		token, err := admin.NewRegistrationToken("test", 0, time.Time{}, nil)
+		if err != nil {
+			t.Fatalf("Generating registration token failed: %s", err)
+		}
+
+		tokenURL := fmt.Sprintf("%s%s/%s", uri, app.RegistrationTokenPath, token.Token)
+
+		otherURL, err := token.URL()
+		if err != nil {
+			t.Fatalf("Error getting token URL: %s", err)
+		}
+
+		if tokenURL != otherURL {
+			t.Fatalf("Token URL is incorrect. Expected %s, got %s", tokenURL, otherURL)
 		}
 	})
 }

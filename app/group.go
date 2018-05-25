@@ -27,10 +27,6 @@ type GroupAdmin struct {
 	group *Group
 }
 
-const (
-	groupMaxNameLength = 64
-)
-
 var (
 	sqlGroupInsert = data.NewQuery(`
 		insert into groups (
@@ -238,11 +234,9 @@ func (u *User) GroupFromName(name string) (*Group, error) {
 }
 
 func (g *Group) validate() error {
-	if g.Name == "" {
-		return NewFailure("A group name is required")
-	}
-	if len(g.Name) > groupMaxNameLength {
-		return NewFailure("A group name must be less than %d characters", groupMaxNameLength)
+	err := data.FieldValidate("group.name", g.Name)
+	if err != nil {
+		return NewFailureFromErr(err)
 	}
 	return nil
 }

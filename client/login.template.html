@@ -15,7 +15,8 @@
 	<div class="columns">
 		<div class="column">
 			[[if .Unauthorized]]
-				<h1 class="text-center">Please Log In to Continue</h1>
+				<h1 class="text-center">Your User Does Not Have Access</h1>
+				<h4 class="text-center text-gray">Please log in with another user</h4>
 			[[else]]
 				<h1 class="text-center">Log In to Lex Library</h1>
 			[[end]]
@@ -24,7 +25,8 @@
 					<form @submit="login">
 						<div :class="{'has-error': error}" class="form-group">
 							<label class="form-label" for="inputUsername">Username</label>
-							<input v-model="username" v-focus type="text" class="form-input" id="inputUsername" placeholder="Enter username">
+							<input v-model="username" v-focus type="text" class="form-input" id="inputUsername" 
+								maxlength="[[fieldMax `user.username`]]" placeholder="Enter username">
 							<p v-if="error" v-cloak class="form-input-hint">{{error}}</p>
 						</div>
 						<div class="form-group">
@@ -69,8 +71,8 @@
 							<p v-if="passwordErr" v-cloak class="form-input-hint">{{passwordErr}}</p>
 						</div>
 						<div :class="{'has-error': password2Err}"	class="form-group">
-							<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"	type="password" class="form-input" 
-									id="inputPassword2" placeholder="Enter password again">
+							<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"	type="password" 
+							 class="form-input" id="inputPassword2" placeholder="Enter password again">
 							<p v-if="password2Err" v-cloak class="form-input-hint">{{password2Err}}</p>
 						</div>
 					</div>

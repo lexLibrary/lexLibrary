@@ -264,9 +264,6 @@ func (t *RegistrationToken) validate() error {
 		query, args := sqlGroupsFromIDs(t.groups, true)
 		groupCount := 0
 		err := query.QueryRow(args...).Scan(&groupCount)
-		if err == sql.ErrNoRows {
-			return NewFailure("One or more of the groups are invalid")
-		}
 		if err != nil {
 			return err
 		}

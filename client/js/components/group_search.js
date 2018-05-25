@@ -7,23 +7,28 @@ import {
 
 export default {
     template: `
-	<div :class="{'active': showSearch}" class="dropdown">
+	<div id="groupSearch" :class="{'active': showSearch}" class="dropdown">
 		<div :class="{'has-icon-right': loading}">
 			<input v-model="searchValue" @keydown="search" @focus="focus=true" @blur="focus=false" class="form-input" 
-				type="text" autocomplete="off" id="groupSearch" placeholder="Enter a group name to search">
+				type="text" :maxlength="maxlength" autocomplete="off" placeholder="Enter a group name to search">
 			<i v-if="loading" v-cloak class="form-icon loading"></i>
 		</div>
 		<ul v-cloak class="menu">
 			<li v-for="group in result" class="menu-item">
-				<a @click="addGroup(group, $event)" href="">{{group.start}}<strong>{{group.middle}}</strong>{{group.end}}</a>
+				<a @click="addGroup(group, $event)" href="">
+					{{group.start}}<strong>{{group.middle}}</strong>{{group.end}}
+				</a>
 			</li>
-			<li v-if="showAddGroup"class="divider"></li>
+			<li v-if="showAddGroup" class="divider"></li>
 			<li v-if="showAddGroup" class="menu-item">
 				<a @click="createGroup" href="">Create group <strong>{{searchValue}}</strong></a>
 			</li>
 		</ul>
 	</div>
 	`,
+    props: [
+        "maxlength",
+    ],
     data: function() {
         return {
             focus: false,

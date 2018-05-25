@@ -265,6 +265,9 @@ func (t *templateHandler) loadTemplates() {
 		"duration": func(d time.Duration) string {
 			return humanize.RelTime(time.Now().Add(-1*d), time.Now(), "", "")
 		},
+		"fieldMax": func(field string) int {
+			return data.FieldLimit(field).Max()
+		},
 	}).Delims("[[", "]]").Parse(tmpl))
 }
 

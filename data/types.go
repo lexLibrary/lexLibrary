@@ -19,7 +19,17 @@ func textColumn() string {
 	}
 }
 
-func varcharColumn(size int) string {
+func varcharColumn(fieldOrSize interface{}) string {
+	var size int
+	switch val := fieldOrSize.(type) {
+	case string:
+		size = FieldLimit(val).Max()
+	case int:
+		size = val
+	default:
+		panic("Unsupported varchar value")
+	}
+
 	// case sensitive unicode with size limits
 	switch dbType {
 	case postgres, cockroachdb, mysql, mariadb:

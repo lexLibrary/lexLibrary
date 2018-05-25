@@ -77,7 +77,7 @@ func TestProfile(t *testing.T) {
 		Find("#inputUsername").Clear().SendKeys("ts").
 		Find("#changeUsername > button.btn").Click().
 		Find("#changeUsername > .has-error > .form-input-hint").
-		Text().Contains("A username must be more than").
+		Text().Contains("username must be greater than").
 		Find("#inputUsername").SendKeys("newusername").
 		Find("#changeUsername > button.btn").Click().
 		Find("#changeUsername > .has-error > .form-input-hint").Count(0).

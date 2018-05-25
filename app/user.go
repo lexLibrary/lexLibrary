@@ -51,10 +51,6 @@ const (
 
 // user constants
 const (
-	UserMaxNameLength = 64 // This is pretty arbitrary but there should probably be some limit
-	usernameMinLength = 3
-
-	// images
 	userImageWidth  = 300
 	userImageHeight = 300
 	userIconWidth   = 64
@@ -320,17 +316,18 @@ func (u *User) validate() error {
 	if u.Username == "" {
 		return NewFailure("A username is required")
 	}
+	err := data.FieldValidate("user.name", u.Name)
+	if err != nil {
+		return NewFailureFromErr(err)
+	}
 
-	if len(u.Username) < usernameMinLength {
-		return NewFailure("A username must be more than %d characters", usernameMinLength)
+	err = data.FieldValidate("user.username", u.Username)
+	if err != nil {
+		return NewFailureFromErr(err)
 	}
 
 	if !urlify(u.Username).is() {
 		return NewFailure("A username can only contain letters, numbers and dashes")
-	}
-
-	if len(u.Name) > UserMaxNameLength {
-		return NewFailure("Name must be less than %d characters", UserMaxNameLength)
 	}
 
 	if u.AuthType != AuthTypePassword {

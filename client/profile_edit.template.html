@@ -42,7 +42,8 @@
 							<form id="changeName" @sumbit="changeName">
 								<div :class="{'has-error': nameErr}" class="form-group">
 									<label class="form-label" for="inputName">Name</label>
-									<input v-model="user.name" type="text" class="form-input" id="inputName" placeholder="Enter a name">
+									<input v-model="user.name" type="text" class="form-input" id="inputName" 
+										maxlength="[[fieldMax `user.name`]]" placeholder="Enter a name">
 									<p v-if="nameErr" v-cloak class="form-input-hint">{{nameErr}}</p>
 								</div>
 								<button type="submit" :class="{'loading': nameLoading}" class="btn btn-primary" @click="changeName">
@@ -76,7 +77,8 @@
 						<form id="changePassword" @sumbit="changePassword">
 							<div :class="{'has-error': password.old.err}" class="form-group">
 								<label class="form-label" for="inputPasswordOld">Current Password</label>
-								<input v-model="password.old.val" type="password" class="form-input" id="inputPasswordOld" placeholder="Enter your current password">
+								<input v-model="password.old.val" type="password" class="form-input" id="inputPasswordOld" 
+									placeholder="Enter your current password">
 								<p v-if="password.old.err" v-cloak class="form-input-hint">{{password.old.err}}</p>
 							</div>
 							<div :class="{'has-error': password.new.err}" class="form-group">
@@ -105,7 +107,8 @@
 						<form id="changeUsername" @sumbit="changeUsername">
 							<div :class="{'has-error': usernameErr}" class="form-group">
 								<label class="form-label" for="inputUsername">Username</label>
-								<input v-model="user.username" type="text" class="form-input" id="inputUsername" placeholder="Enter a username">
+								<input v-model="user.username" type="text" class="form-input" id="inputUsername" 
+								maxlength="[[fieldMax `user.username`]]" placeholder="Enter a username">
 								<p v-if="usernameErr" v-cloak class="form-input-hint">{{usernameErr}}</p>
 							</div>
 							<button type="submit" :class="{'loading': usernameLoading}" class="btn btn-primary" @click="changeUsername">

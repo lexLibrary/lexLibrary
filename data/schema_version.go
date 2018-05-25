@@ -72,8 +72,8 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create table users (
 			id {{id}} PRIMARY KEY NOT NULL,
-			username {{varchar 64}} NOT NULL,
-			name {{text}},
+			username {{varchar "user.username"}} NOT NULL,
+			name {{varchar "user.name"}},
 			auth_type {{text}} NOT NULL,
 			password {{bytes}},
 			password_version {{int}},
@@ -137,7 +137,7 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create table groups (
 			id {{id}} PRIMARY KEY NOT NULL,
-			name {{varchar 64}} UNIQUE NOT NULL,
+			name {{varchar "group.name"}} UNIQUE NOT NULL,
 			version {{int}} NOT NULL,
 			updated {{datetime}} NOT NULL,
 			created {{datetime}} NOT NULL
@@ -183,7 +183,7 @@ var schemaVersions = []*Query{
 		alter table registration_tokens add description {{text}}
 	`),
 	NewQuery(`
-		alter table groups add name_search {{varchar 64}}
+		alter table groups add name_search {{varchar "group.name"}}
 	`),
 	NewQuery(`
 		create index i_name_search on groups (name_search)

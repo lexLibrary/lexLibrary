@@ -6,10 +6,6 @@ export LLBROWSER="firefox"
 export LLHOST="$(/sbin/ip route|awk '/docker0/ { print $9 }')"
 export LLWEBDRIVERURL="http://localhost:4444/wd/hub"
 
-cd ..
-sh ./build.sh
-cd ./web
-
 DOCKERNAME="lex_library_web_test_$LLBROWSER"
 
 if [ "$LLBROWSER" == "firefox" ]

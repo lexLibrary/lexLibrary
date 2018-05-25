@@ -203,4 +203,11 @@ var attribution = []attribute{
 		LicenseType: "Apache 2.0",
 		LicenseURL:  "https://github.com/moby/moby/blob/master/LICENSE",
 	},
+	attribute{
+		Name:        "Go Humanize",
+		URL:         "https://github.com/dustin/go-humanize",
+		Author:      "Dustin Sallings",
+		LicenseType: "MIT",
+		LicenseURL:  "https://github.com/dustin/go-humanize/blob/master/LICENSE",
+	},
 }

@@ -175,6 +175,11 @@ func createUserAndLogin(username, password string, isAdmin bool) error {
 		return errors.Wrap(err, "Error allowing public signups for testing")
 	}
 
+	err = admin.SetSetting("URL", llURL.String())
+	if err != nil {
+		return errors.Wrap(err, "Error setting URL for testing")
+	}
+
 	err = driver.DeleteAllCookies()
 	if err != nil {
 		return errors.Wrap(err, "Error clearing all cookies for testing")
