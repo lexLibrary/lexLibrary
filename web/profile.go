@@ -9,7 +9,7 @@ import (
 )
 
 type profilePage struct {
-	templateHandler
+	*templateHandler
 }
 
 type profileData struct {

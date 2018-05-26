@@ -27,22 +27,22 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/js/*file", serveStatic("js/", true))
 
 	// root
-	rootHandler.GET("/", templateHandler{
+	rootHandler.GET("/", (&templateHandler{
 		handler:       rootTemplate,
 		templateFiles: []string{"index.template.html"},
-	}.ServeHTTP)
+	}).ServeHTTP)
 
 	// login / signup
-	rootHandler.GET("/login", templateHandler{
+	rootHandler.GET("/login", (&templateHandler{
 		handler:       loginTemplate,
 		templateFiles: []string{"login.template.html"},
-	}.ServeHTTP)
+	}).ServeHTTP)
 
 	rootHandler.PUT("/expiredpassword", makeHandle(userUpdatePassword))
-	rootHandler.GET("/signup", templateHandler{
+	rootHandler.GET("/signup", (&templateHandler{
 		handler:       signupTemplate,
 		templateFiles: []string{"signup.template.html"},
-	}.ServeHTTP)
+	}).ServeHTTP)
 
 	rootHandler.PUT("/signup/password", makeHandle(passwordTest))
 	rootHandler.GET("/signup/username/:username", makeHandle(usernameTest))
@@ -51,10 +51,10 @@ func setupRoutes() http.Handler {
 	rootHandler.DELETE("/session", makeHandle(sessionLogout))
 
 	// about
-	rootHandler.GET("/about", templateHandler{
+	rootHandler.GET("/about", (&templateHandler{
 		handler:       aboutTemplate,
 		templateFiles: []string{"about.template.html"},
-	}.ServeHTTP)
+	}).ServeHTTP)
 
 	// settings
 	rootHandler.PUT("/setting", makeHandle(settingUpdate))
@@ -73,7 +73,7 @@ func setupRoutes() http.Handler {
 	rootHandler.PUT("/profile/image", makeHandle(profileCropImage))
 
 	profile := &profilePage{
-		templateHandler: templateHandler{
+		templateHandler: &templateHandler{
 			templateFiles: []string{"profile.template.html"},
 		},
 	}
@@ -95,7 +95,7 @@ func setupRoutes() http.Handler {
 
 	// admin
 	admin := &adminPage{
-		templateHandler: templateHandler{
+		templateHandler: &templateHandler{
 			templateFiles: []string{"admin.template.html"},
 		},
 	}
@@ -111,10 +111,10 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/groups", makeHandle(groupGet))
 	rootHandler.POST("/groups", makeHandle(groupCreate))
 
-	rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), templateHandler{
+	rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), (&templateHandler{
 		handler:       registrationTemplate,
 		templateFiles: []string{"signup.template.html"},
-	}.ServeHTTP)
+	}).ServeHTTP)
 	rootHandler.POST(app.RegistrationTokenPath, makeHandle(registrationCreate))
 	rootHandler.DELETE(path.Join(app.RegistrationTokenPath, ":token"), makeHandle(registrationDelete))
 	rootHandler.POST("/user/:token", makeHandle(userCreate))

@@ -323,7 +323,7 @@ func TestAdmin(t *testing.T) {
 			Find("#newRegistration").Count(1).
 			Find("form  button[type='submit']").Click().
 			Find(".form-group.has-error  .form-input-hint").Text().Contains("A description is required").
-			Find("#tokenDescription").Clear().SendKeys("test description").
+			Find("#tokenDescription").Clear().SendKeys("test with limit").
 			Find("#tokenLimit input[type='number']").Disabled().
 			Find("#tokenLimit .form-switch").Click().
 			Find("#tokenLimit input[type='number']").Enabled().
@@ -443,6 +443,7 @@ func TestAdmin(t *testing.T) {
 		err = seq.Get(uri.String()).
 			Find(".registration > .table > tbody > tr > td:nth-child(1) > a").Count(1).Click().
 			Find("#singleRegistration .tile-title").Text().Contains("Created by "+username).
+			Find("#singleRegistration .tile-content .tile-subtitle.text-gray").Any().Text().Contains("5 Registrations Left").
 			Find("#singleRegistration .input-group > input").
 			Test("get token url", func(e selenium.WebElement) error {
 				u, err := e.GetAttribute("value")
@@ -459,10 +460,13 @@ func TestAdmin(t *testing.T) {
 			Find("#submit").Click().
 			Find(".form-input-hint").Count(0).
 			And().Get(uri.String()).
-			Find("#inputUsername").SendKeys(testUsername).
-			Find("#inputPassword").SendKeys(testUsername).
+			Find("#inputUsername").SendKeys(username).
+			Find("#inputPassword").SendKeys(password).
 			Find(".btn.btn-primary.btn-block").Click().
-			// Find(".registration > .table > tbody > tr > td:nth-child(1) > a").Count(1).Click().
+			Find(".registration > .table > tbody > tr > td:nth-child(1) > a").Count(1).Click().
+			Find("#singleRegistration .tile-content .tile-subtitle.text-gray").Any().Text().Contains("4 Registrations Left").
+			Find(".registration-users > .tile").Count(1).
+			FindChildren(".tile-content > .tile-title").Text().Contains(testUsername).
 			End()
 
 		if err != nil {

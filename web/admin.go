@@ -10,7 +10,7 @@ import (
 )
 
 type adminPage struct {
-	templateHandler
+	*templateHandler
 }
 
 type adminData struct {

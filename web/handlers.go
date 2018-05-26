@@ -152,7 +152,7 @@ type templateWriter struct {
 	CSRFToken string
 }
 
-func (t templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	if devMode {
 		t.loadTemplates()
 	} else {
