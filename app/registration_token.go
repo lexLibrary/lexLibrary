@@ -460,6 +460,9 @@ func (t *RegistrationToken) decrementLimit(tx *sql.Tx) error {
 // Invalidate sets a registration token's valid status to false
 func (t *RegistrationToken) Invalidate() error {
 	result, err := sqlRegistrationTokenValid.Exec(data.Arg("token", t.Token), data.Arg("valid", false))
+	if err != nil {
+		return err
+	}
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return err

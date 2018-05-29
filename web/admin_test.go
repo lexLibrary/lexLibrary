@@ -278,7 +278,7 @@ func TestAdmin(t *testing.T) {
 			Find("#PasswordMinLength").Clear().SendKeys("-30").
 			Find("#PasswordMinLength + button.btn-primary").Click().
 			Find(".form-group.has-error > .form-input-hint").Count(1).
-			Find("#PasswordMinLength").Clear().SendKeys("30").
+			Find("#PasswordMinLength").Clear().SendKeys("12").
 			Find("#PasswordMinLength + button.btn-primary").Click().
 			Find(".form-group.has-error > .form-input-hint").Count(0).
 			Find("#PasswordRequireNumber").Click().
@@ -437,7 +437,7 @@ func TestAdmin(t *testing.T) {
 		tokenUrl := ""
 
 		testUsername := "registered"
-		testPassword := "registeredPassword"
+		testPassword := "registeredPasswordThatHasANumber4"
 
 		// test registration link
 		err = seq.Get(uri.String()).
