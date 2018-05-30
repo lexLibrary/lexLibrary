@@ -370,7 +370,7 @@ func TestAdmin(t *testing.T) {
 			Find("#groupSearch > div > input").Clear().SendKeys("new group").Wait(500 * time.Millisecond).
 			Find("#groupSearch > ul.menu > li.menu-item").Count(1).Text().Contains("new group").
 			Find("#groupSearch > div > input").Clear().SendKeys("group").Wait(500 * time.Millisecond).
-			Find("#groupSearch > ul.menu > li.menu-item").Count(3).
+			Find("#groupSearch > ul.menu > li.menu-item").Count(3).Eventually().
 			All().Text().Contains("group").
 			Any().
 			Text().Contains("new group").
