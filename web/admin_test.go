@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
 	"github.com/tebeka/selenium"
@@ -355,31 +354,39 @@ func TestAdmin(t *testing.T) {
 			Text().Contains("Create group test group name").
 			Find("#groupSearch > ul.menu > li > a").Click().
 			Find("#newRegistration  .chips > .chip").Count(1).Text().Contains("test group name").
-			Find("#groupSearch > div > input").Clear().SendKeys("test").Wait(500 * time.Millisecond).
+			Find("#groupSearch > div > input").Clear().SendKeys("test").
+			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li.menu-item").Count(2).Any().
 			Text().Contains("test group name").
 			Find("#groupSearch > ul.menu > li:nth-last-child(1)").Text().Contains("test").Click().
 			Find("#newRegistration  .chips > .chip").Count(2).All().Text().Contains("test").
 			Find("#newRegistration  .chips > span:nth-child(1).chip > a.btn-clear").Click().
 			Find("#newRegistration  .chips > .chip").Count(1).Text().Equals("test").
-			Find("#groupSearch > div > input").Clear().SendKeys("new group").Wait(500 * time.Millisecond).
+			Find("#groupSearch > div > input").Clear().SendKeys("new group").
+			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li:nth-last-child(1)").Click().
 			Find("#newRegistration  .chips > .chip").Count(2).
-			Find("#groupSearch > div > input").Clear().SendKeys("test").Wait(500 * time.Millisecond).
+			Find("#groupSearch > div > input").Clear().SendKeys("test").
+			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li.menu-item").Count(2).All().Text().Contains("test").
-			Find("#groupSearch > div > input").Clear().SendKeys("new group").Wait(500 * time.Millisecond).
+			Find("#groupSearch > div > input").Clear().
+			Find("#groupSearch > div > input").Clear().SendKeys("new group").
+			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li.menu-item").Count(1).Text().Contains("new group").
-			Find("#groupSearch > div > input").Clear().SendKeys("group").Wait(500 * time.Millisecond).
-			Find("#groupSearch > ul.menu > li.menu-item").Count(3).Eventually().
-			All().Text().Contains("group").
+			Find("#groupSearch > div > input").Clear().SendKeys("group").
+			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
+			And().Screenshot("/out/test.png").
+			Find("#groupSearch > ul.menu > li.menu-item").Count(3).All().Text().Contains("group").
 			Any().
 			Text().Contains("new group").
 			Text().Contains("test group name").
 			Text().Contains("Create group group").
 			Find("#groupSearch > ul.menu > li:nth-child(1).menu-item").Click().
-			Find("#groupSearch > div > input").Clear().SendKeys("group").Wait(500 * time.Millisecond).
+			Find("#groupSearch > div > input").Clear().SendKeys("group").
+			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li:nth-child(2).menu-item").Click().
-			Find("#groupSearch > div > input").Clear().SendKeys("group").Wait(500 * time.Millisecond).
+			Find("#groupSearch > div > input").Clear().SendKeys("group").
+			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li:nth-child(3).menu-item").Click().
 			Find("#newRegistration  .chips > .chip").Count(4).
 			Find("form  button[type='submit']").Click().
@@ -474,5 +481,4 @@ func TestAdmin(t *testing.T) {
 		}
 
 	})
-
 }

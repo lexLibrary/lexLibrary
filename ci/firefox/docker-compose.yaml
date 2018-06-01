@@ -12,6 +12,7 @@ services:
       - webdriver
     volumes:
       - ../..:/in:ro
+      - ../..:/out
     environment:
       LLTEST: 'true'
       LLDATABASE: 'sqlite'
