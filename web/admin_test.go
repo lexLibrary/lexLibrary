@@ -366,16 +366,14 @@ func TestAdmin(t *testing.T) {
 			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li:nth-last-child(1)").Click().
 			Find("#newRegistration  .chips > .chip").Count(2).
-			Find("#groupSearch > div > input").Clear().SendKeys("test").
+			Find("#groupSearch > div > input").Clear().SendKeys("test" + selenium.TabKey).
 			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li.menu-item").Count(2).All().Text().Contains("test").
-			Find("#groupSearch > div > input").Clear().
-			Find("#groupSearch > div > input").Clear().SendKeys("new group").
+			Find("#groupSearch > div > input").Clear().SendKeys("new group" + selenium.TabKey).
 			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
 			Find("#groupSearch > ul.menu > li.menu-item").Count(1).Text().Contains("new group").
 			Find("#groupSearch > div > input").Clear().SendKeys("group").
 			Find("#groupSearch > div > .loading").Count(1).Eventually().Count(0).Eventually().
-			And().Screenshot("/out/test.png").
 			Find("#groupSearch > ul.menu > li.menu-item").Count(3).All().Text().Contains("group").
 			Any().
 			Text().Contains("new group").
