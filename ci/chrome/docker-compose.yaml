@@ -2,10 +2,9 @@ version: '3'
 services:
   webdriver:
     image: selenium/standalone-chrome:3.0
+    shm_size: '2gb'
     logging:
         driver: "none"
-    volumes:
-      - /dev/shm:/dev/shm
   tests:
     build: "../build"
     ports:
@@ -14,13 +13,14 @@ services:
       - webdriver
     volumes:
       - ../..:/in:ro
+      - ../..:/out
     environment:
       LLTEST: 'true'
       LLDATABASE: 'sqlite'
       LLPORT: 8080
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
-      LLDEBUGONERR: "true"
+      LLERRSCREENPATH: "/out/"
       GOPATH: /go
       LLBROWSER: 'chrome'
     command: 

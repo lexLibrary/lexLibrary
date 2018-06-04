@@ -335,10 +335,10 @@ func TestAdmin(t *testing.T) {
 			Find("#tokenExpiration input[type='date']").Enabled().
 			Find("form  button[type='submit']").Click().
 			Find(".form-group.has-error  .form-input-hint").Text().Contains("Please specify a date").
-			Find("#tokenExpiration input[type='date']").Click().SendKeys("1900-01-01").
+			Find("#tokenExpiration input[type='date']").SendKeys(dateInput(time.Now().AddDate(-1, 0, 0))).
 			Find("form  button[type='submit']").Click().
 			Find(".form-group.has-error  .form-input-hint").Text().Contains("Date must be after today").
-			Find("#tokenExpiration input[type='date']").SendKeys("2100-01-01").
+			Find("#tokenExpiration input[type='date']").SendKeys(dateInput(time.Now().AddDate(1, 0, 0))).
 			Find("form  button[type='submit']").Click().
 			Find(".form-group.has-error  .form-input-hint").Count(0).
 			End()

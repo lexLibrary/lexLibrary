@@ -5,11 +5,12 @@ package web
 import (
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
 )
 
-func serveImage(w http.ResponseWriter, r *http.Request, image *app.Image) {
+func serveImage(w http.ResponseWriter, r *http.Request, image *app.Image, cache bool) {
 	if image == nil {
 		notFound(w, r)
 		return
@@ -41,5 +42,11 @@ func serveImage(w http.ResponseWriter, r *http.Request, image *app.Image) {
 		}
 	}
 
-	http.ServeContent(w, r, image.Name, image.ModTime, rs)
+	var modTime time.Time
+	if cache {
+		// allow client to cache image based on last modified time
+		modTime = image.ModTime
+	}
+
+	http.ServeContent(w, r, image.Name, modTime, rs)
 }

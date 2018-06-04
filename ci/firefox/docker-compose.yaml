@@ -2,23 +2,23 @@ version: '3'
 services:
   webdriver:
     image: selenium/standalone-firefox:3.11
+    shm_size: '2gb'
     logging:
         driver: "none"
-    volumes:
-      - /dev/shm:/dev/shm
   tests:
     build: "../build"
     links:
       - webdriver
     volumes:
       - ../..:/in:ro
+      - ../..:/out
     environment:
       LLTEST: 'true'
       LLDATABASE: 'sqlite'
       LLPORT: 8080
       LLHOST: "tests"
       LLWEBDRIVERURL: "http://webdriver:4444/wd/hub"
-      LLDEBUGONERR: "true"
+      LLERRSCREENPATH: "/out/"
       GOPATH: /go
       LLBROWSER: 'firefox'
     command: 

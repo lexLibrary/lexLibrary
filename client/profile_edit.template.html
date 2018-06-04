@@ -7,8 +7,9 @@
 </head>
 
 <body>
+<div class="page-container">
 [[template "nav" .]]
-<section class="section">
+<section class="page-content section">
 
 <div class="container grid-lg">
 	<div class="columns">
@@ -39,6 +40,11 @@
 					<h3>Update Profile</h3>
 					<div class="columns">
 						<div class="column">
+							<div v-if="error" v-cloak class="toast toast-error">
+								<button @click="error=null"class="btn btn-clear float-right"></button>
+								{{error}}
+							</div>
+
 							<form id="changeName" @sumbit="changeName">
 								<div :class="{'has-error': nameErr}" class="form-group">
 									<label class="form-label" for="inputName">Name</label>
@@ -57,6 +63,10 @@
 								<figure class="avatar avatar-full" data-initial="[[.User.DisplayInitials]]">
 									[[if .User.ProfileImage]]
 										<img src="/profile/image" alt="[[.User.DisplayName]]">
+										<button @click="removeImage" data-tooltip="Remove Profile Image"
+											class="tooltip tooltip-top profile-image-remove btn btn-error btn-action btn-lg">
+											<i class="icon icon-delete"></i>
+										</button>
 									[[end]]
 								</figure>
 								<div>
@@ -155,6 +165,8 @@
 [[end]]
 
 </section>
+[[template "footer" .]]
+</div> <!-- page-container -->
 </body>
 <script type="application/json" id="payload">[[.User]]</script>
 <script src="/js/vue.js"></script>

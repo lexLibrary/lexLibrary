@@ -721,6 +721,7 @@ func TestUser(t *testing.T) {
 		}
 
 	})
+
 	t.Run("Set Username", func(t *testing.T) {
 		reset(t)
 		username := "testuser"
@@ -750,6 +751,44 @@ func TestUser(t *testing.T) {
 		_, err = app.Login(newUsername, password)
 		if err != nil {
 			t.Fatalf("Error logging in with new username: %s", err)
+		}
+
+	})
+	t.Run("Remove Profile Image", func(t *testing.T) {
+		reset(t)
+
+		u, err := app.UserNew("testuser", "testuserpassword")
+		if err != nil {
+			t.Fatalf("Error adding user")
+		}
+		upload := getImageUpload(t, 5000, 5000)
+
+		err = u.UploadProfileImageDraft(upload, u.Version)
+		if err != nil {
+			t.Fatalf("Error uploading profile image draft: %s", err)
+		}
+
+		err = u.SetProfileImageFromDraft(-1, 0, 100, 100)
+		if err != nil {
+			t.Fatalf("Error setting profile image: %s", err)
+		}
+
+		u, err = u.Latest()
+		if err != nil {
+			t.Fatalf("Error refreshing user: %s", err)
+		}
+
+		err = u.RemoveProfileImage()
+		if err != nil {
+			t.Fatalf("Error removing profile image: %s", err)
+		}
+		u, err = u.Latest()
+		if err != nil {
+			t.Fatalf("Error refreshing user: %s", err)
+		}
+
+		if u.ProfileImage() != nil {
+			t.Fatalf("User's profile image was not removed")
 		}
 
 	})

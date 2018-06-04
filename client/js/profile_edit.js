@@ -13,7 +13,7 @@ let Croppie = croppie.default.Croppie;
 
 
 var vm = new Vue({
-    el: 'body > .section',
+    el: '.page-content',
     components: {
         'file-input': file_input,
     },
@@ -46,6 +46,7 @@ var vm = new Vue({
             },
             usernameErr: null,
             usernameLoading: false,
+            error: null,
         };
     },
     computed: {
@@ -129,6 +130,17 @@ var vm = new Vue({
                 },
             });
         },
+        'removeImage': function(e) {
+            e.preventDefault();
+
+            xhr.del('/profile/image')
+                .then(() => {
+                    location.reload(true);
+                })
+                .catch((err) => {
+this.error = err.response;
+                });
+        },
         'changePassword': function(e) {
             e.preventDefault();
             this.password.old.err = null;
@@ -145,7 +157,7 @@ var vm = new Vue({
             }
             if (this.password.new.val !== this.password.confirm.val) {
                 this.password.confirm.err = 'Passwords do not match';
-				return;
+                return;
             }
             this.password.loading = true;
             xhr.put('/profile/password', {

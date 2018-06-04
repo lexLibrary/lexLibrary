@@ -71,6 +71,7 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/profile/image", makeNoZipHandle(profileGetImage))
 	rootHandler.POST("/profile/image", makeHandle(profileUploadImage))
 	rootHandler.PUT("/profile/image", makeHandle(profileCropImage))
+	rootHandler.DELETE("/profile/image", makeHandle(profileRemoveImage))
 
 	profile := &profilePage{
 		templateHandler: &templateHandler{

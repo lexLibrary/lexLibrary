@@ -1,9 +1,9 @@
 [[define "nav"]]
-<header class="container grid-xl navbar mt-2">
-	<section class="navbar-section">
+<header class="container grid-xl navbar pt-2">
+	<div class="navbar-section">
 		<a href="/" class="navbar-brand mr-2">Lex Library</a>
-	</section>
-	<section class="navbar-section">
+	</div>
+	<div class="navbar-section">
 		[[if .User]]
 		<a href="/profile">
 			<figure class="avatar" data-initial="[[.User.DisplayInitials]]">
@@ -15,6 +15,6 @@
 		[[else]]
 			<a class="btn btn-link" href="/login?return=%2F">Log In</a>
 		[[end]]
-	</section>
+	</div>
 </header>
 [[end]]

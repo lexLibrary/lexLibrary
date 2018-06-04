@@ -660,3 +660,26 @@ func (u *User) SetUsername(username string, version int) error {
 		)
 	})
 }
+
+// RemoveProfileImage removes the user's current profile image
+func (u *User) RemoveProfileImage() error {
+	if u.profileImage.IsNil() {
+		return nil
+	}
+
+	return data.BeginTx(func(tx *sql.Tx) error {
+		err := imageDelete(tx, u.profileImage)
+		if err != nil {
+			return err
+		}
+
+		return u.update(func() (sql.Result, error) {
+			return sqlUserUpdateProfileImage.Tx(tx).Exec(
+				data.Arg("profile_image_id", nil),
+				data.Arg("profile_image_draft_id", nil),
+				data.Arg("id", u.ID),
+				data.Arg("version", u.Version),
+			)
+		})
+	})
+}

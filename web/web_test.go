@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -24,12 +25,13 @@ const (
 
 var driver selenium.WebDriver
 var llURL *url.URL
+var browser string
 
 func newSequence() *sequence.Sequence {
-	if os.Getenv("LLDEBUGONERR") == "true" {
+	errScreenPath := os.Getenv("LLERRSCREENPATH")
+	if errScreenPath != "" {
 		return sequence.Start(driver).OnError(func(err sequence.Error, s *sequence.Sequence) {
-			s.Debug().
-				Screenshot(fmt.Sprintf("SequenceError-[%s].png", err.Stage))
+			s.Screenshot(filepath.Join(errScreenPath, fmt.Sprintf("SequenceError-[%s].png", err.Stage)))
 		})
 	}
 	return sequence.Start(driver)
@@ -103,7 +105,7 @@ func TestMain(m *testing.M) {
 }
 
 func startWebDriver() (selenium.WebDriver, error) {
-	browser := os.Getenv("LLBROWSER")
+	browser = os.Getenv("LLBROWSER")
 	webDriverURL := "http://localhost:4444/wd/hub"
 	if os.Getenv("LLWEBDRIVERURL") != "" {
 		webDriverURL = os.Getenv("LLWEBDRIVERURL")
@@ -213,4 +215,11 @@ func createUserAndLogin(username, password string, isAdmin bool) error {
 		Find(".has-error > .form-input-hint").Count(0).
 		And().URL().Path("/").Eventually().
 		End()
+}
+
+func dateInput(date time.Time) string {
+	if browser == "chrome" {
+		return date.Format("01022006")
+	}
+	return date.Format("2006-01-02")
 }

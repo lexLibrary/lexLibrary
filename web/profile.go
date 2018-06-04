@@ -30,11 +30,11 @@ func profileGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
 	}
 
 	if _, ok := r.URL.Query()["draft"]; ok {
-		serveImage(w, r, u.ProfileImageDraft())
+		serveImage(w, r, u.ProfileImageDraft(), false)
 		return
 	}
 
-	serveImage(w, r, u.ProfileImage())
+	serveImage(w, r, u.ProfileImage(), false)
 }
 
 func (p *profilePage) data(s *app.Session) (*profileData, error) {
@@ -283,6 +283,24 @@ func profileCropImage(w http.ResponseWriter, r *http.Request, c ctx) {
 	}
 
 	if errHandled(u.SetProfileImageFromDraft(input.X0, input.Y0, input.X1, input.Y1), w, r) {
+		return
+	}
+
+	respond(w, success(nil))
+}
+
+func profileRemoveImage(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	if errHandled(u.RemoveProfileImage(), w, r) {
 		return
 	}
 

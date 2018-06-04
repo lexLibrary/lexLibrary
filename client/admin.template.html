@@ -7,26 +7,29 @@
 </head>
 
 <body>
-	[[template "nav" .]]
-	<div class="container grid-xl">
-		<h1>Administration</h1>
-		<ul class="tab tab-block">
-			<li class='tab-item [[if eq .Tab "overview"]]active[[end]]'><a href="/admin">Overview</a></li>
-			<li class='tab-item [[if eq .Tab "registration"]]active[[end]]'><a href="/admin/registration">Registration</a></li>
-			<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
-			<li class='tab-item [[if eq .Tab "settings"]]active[[end]]'><a href="/admin/settings">Settings</a></li>
-		</ul>
-		<div id="admin">
-			[[if eq .Tab "overview"]]
-				[[template "overview" .]]
-			[[else if eq .Tab "settings"]]
-				[[template "settings" .]]
-			[[else if eq .Tab "logs"]]
-				[[template "logs" .]]
-			[[else if eq .Tab "registration"]]
-				[[template "registration" .]]
-			[[end]]
+	<div class="page-container">
+		[[template "nav" .]]
+		<div class="page-content container grid-xl">
+			<h1>Administration</h1>
+			<ul class="tab tab-block">
+				<li class='tab-item [[if eq .Tab "overview"]]active[[end]]'><a href="/admin">Overview</a></li>
+				<li class='tab-item [[if eq .Tab "registration"]]active[[end]]'><a href="/admin/registration">Registration</a></li>
+				<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
+				<li class='tab-item [[if eq .Tab "settings"]]active[[end]]'><a href="/admin/settings">Settings</a></li>
+			</ul>
+			<div id="admin">
+				[[if eq .Tab "overview"]]
+					[[template "overview" .]]
+				[[else if eq .Tab "settings"]]
+					[[template "settings" .]]
+				[[else if eq .Tab "logs"]]
+					[[template "logs" .]]
+				[[else if eq .Tab "registration"]]
+					[[template "registration" .]]
+				[[end]]
+			</div>
 		</div>
+		[[template "footer" .]]
 	</div>
 </body>
 <script type="application/json" id="settingsPayload">[[.Settings]]</script>
@@ -637,9 +640,9 @@
 		<span class="chip"><a href="/group/[[.ID]]">[[.Name]]</a></span>
 	[[end]]
 	<h5 class="pt-4">Users Registered with this URL</h5>
-	<div class="registration-users">
+	<div class="tile-row">
 		[[range .Users]]
-			<div class="tile tile-centered pr-4 pb-4">
+			<div class="tile tile-centered">
 				<div class="tile-icon">
 					[[template "avatar" .]]
 				</div>

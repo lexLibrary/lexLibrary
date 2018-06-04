@@ -180,5 +180,5 @@ func userGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	serveImage(w, r, u.ProfileImage())
+	serveImage(w, r, u.ProfileImage(), false)
 }

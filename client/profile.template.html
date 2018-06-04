@@ -7,20 +7,22 @@
 </head>
 
 <body>
-<div id="main">
+<div id="main" class="page-container">
 
-<div class="container grid-xl mt-2">
-	<header class="navbar">
-		<section class="navbar-section">
-			<a href="/" class="navbar-brand mr-2">Lex Library</a>
-		</section>
-		<section class="navbar-section">
-			<a href="#" @click="logout">Logout</a>
-		</section>
-	</header>
-</div>
+<header class="container grid-xl navbar pt-2">
+	<section class="navbar-section">
+		<a href="/" class="navbar-brand mr-2">Lex Library</a>
+	</section>
+	<section class="navbar-section">
+		[[if .User]]
+			<a @click="logout" class="btn btn-link" href="">Logout</a>
+		[[else]]
+			<a class="btn btn-link" href="/login?return=%2F">Log In</a>
+		[[end]]
+	</section>
+</header>
 
-<div class="container grid-md">
+<div class="page-content container grid-md">
 	<div class="columns">
 			<div class="profile column text-center">
 				<div class="card">
@@ -28,7 +30,8 @@
 						<a class="profile-edit" href="/profile/edit">Settings</a>
 						<div class="profile-avatar">
 							<a href="/profile/edit">
-								<figure class="avatar avatar-full tooltip tooltip-bottom" data-tooltip="Set your profile image" data-initial="[[.User.DisplayInitials]]">
+								<figure class="avatar avatar-full tooltip tooltip-bottom" data-tooltip="Set your profile image" 
+									data-initial="[[.User.DisplayInitials]]">
 									[[if .User.ProfileImage]]
 										<prog-image src="/profile/image" alt="[[.User.DisplayName]]">
 									[[end]]
@@ -73,8 +76,9 @@
 				</div>
 			</div>
 	</div>
-</div>
-</div>
+</div> <!-- page-content -->
+[[template "footer" .]]
+</div> <!-- page-container -->
 </body>
 
 <script src="/js/vue.js"></script>

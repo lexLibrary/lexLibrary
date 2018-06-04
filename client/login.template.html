@@ -11,7 +11,8 @@
 </head>
 
 <body>
-<div id="login" class="section container grid-xs">
+<div class="page-container">
+<div id="login" class="page-content section container grid-xs">
 	<div class="columns">
 		<div class="column">
 			[[if .Unauthorized]]
@@ -85,7 +86,9 @@
 		</div>
 	</div> <!-- modal -->
 
-</div>
+</div> <!-- page-content -->
+[[template "footer" .]]
+</div> <!-- page-container -->
 </body>
 <script src="/js/vue.js"></script>
 <script src="/js/login.js"></script>

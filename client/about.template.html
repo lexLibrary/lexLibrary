@@ -7,91 +7,39 @@
 </head>
 
 <body>
-	[[template "nav" .]]
-	<div id="main" class="container grid-lg">
-		<h2>Lex Library</h2>
-		<a v-if="runtime" v-cloak @click="showModal=true" class="btn btn-link float-right">Report an issue</a>
-		<h4>Version: [[.Version]] <small>([[.BuildDate]])</small></h4>
-		<hr>
-		<div id="attribution">
-			<h5>Credits and Attribution</h5>
-			<p>Lex Library is built on open-source software and creative commons resources. These contributions 
-			are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
-			would not be possible.</p>
-			<p><em>Thank you</em></p>
-			<div class="card-columns pt-4">
-				[[range .Attribution]]
-				<div class="card">
-					<div class="card-header">
-						<div class="card-title h5"><a href="[[.URL]]" target="_blank">[[.Name]]</a></div>
-						<div class="card-subtitle text-gray">([[.LicenseType]])</div>
+	<div class="page-container">
+		[[template "nav" .]]
+		<div id="main" class="page-content container grid-lg">
+			<h2>Lex Library</h2>
+			<a v-if="runtime" v-cloak @click="showModal=true" class="btn btn-link float-right">Report an issue</a>
+			<h4>Version: [[.Version]] <small>([[.BuildDate]])</small></h4>
+			<p>The latest news and updates on Lex Library can be found at 
+				<a href="https://www.lexlibrary.io">LexLibrary.io</a>
+			</p>
+			<hr>
+			<div id="attribution">
+				<h5>Credits and Attribution</h5>
+				<p>Lex Library is built on open-source software and creative commons resources. These contributions 
+				are the culmination of many hours of work freely and generously given to the world.	Without them, Lex Library
+				would not be possible.</p>
+				<p><em>Thank you</em></p>
+				<div class="card-columns pt-4">
+					[[range .Attribution]]
+					<div class="card">
+						<div class="card-header">
+							<div class="card-title h5"><a href="[[.URL]]" target="_blank">[[.Name]]</a></div>
+							<div class="card-subtitle text-gray">([[.LicenseType]])</div>
+						</div>
+						<div class="card-body">
+							[[.Author]]
+						</div>
 					</div>
-					<div class="card-body">
-						[[.Author]]
-					</div>
-				</div>
-				[[end]]
-			</div> <!--card-columns-->
-		</div><!--attribution-->
-
-		<div :class="{'active': showModal}" class="modal">
-			<div @click="showModal=false" class="modal-overlay"></div>
-			<div class="modal-container">
-				<header class="modal-header">
-					<a @click="showModal=false" class="btn btn-clear float-right" aria-label="Close"></a>
-					<div class="modal-title h5">Submit an Issue</div>
-				</header>
-				<section class="modal-body">
-					<div class="container">
-						<form class="form-horizontal">
-							<div class="form-group">
-								<div class="col-3 col-sm-12">
-									<label class="form-label">Issue Type</label>
-								</div>
-								<div class="col-4 col-sm-6">
-									<select v-model="label" class="form-select">
-										<option value="bug">Bug Report</option>
-										<option value="performance">Performance Issue</option>
-										<option value="enhancement">Feature Request</option>
-									</select>
-								</div>
-							</div> <!-- type form-group -->
-							<div class="form-group">
-								<div class="col-3 col-sm-12">
-									<label class="form-label">Subject</label>
-								</div>
-								<div class="col-9 col-sm-12">
-									<input v-model="subject" class="form-input" type="text" placeholder="Write a few words describing the issue">
-								</div>
-							</div> <!-- subject form-group -->
-							<div class="form-group">
-								<div class="col-9 col-sm-12 col-ml-auto">
-									<p v-if="label==='bug'" class="form-input-hint">Describe in detail the steps needed to replicate the issue, including
-										what result was expected and what result occurred.</p>
-									<p v-if="label==='enhancement'" class="form-input-hint">Describe in detail a single feature that you think will 
-										improve Lex Library.</p>
-									<p v-if="label==='performance'" class="form-input-hint">Describe in detail what actions where taken that resulted in
-										poor performance.</p>
-								</div>
-							</div> <!-- help form-group -->
-							<div class="form-group">
-								<div class="col-3 col-sm-12">
-									<label class="form-label">Description</label>
-								</div>
-								<div class="col-9 col-sm-12">
-									<textarea v-model="description" class="form-input" rows="10" placeholder="Describe the issue in detail">
-									</textarea>
-								</div>
-							</div> <!-- description form-group -->
-						</form>
-					</div> <!-- container -->
-				</section>
-				<footer class="modal-footer">
-					<a :href="issueURL" target="_blank" class="btn btn-primary">Preview on Github</a>
-				</footer>
-			</div>
-		</div> <!-- modal -->
-
+					[[end]]
+				</div> <!--card-columns-->
+			</div><!--attribution-->
+			[[template "modal"]]
+		</div>
+		[[template "footer" .]]
 	</div>
 </body>
 
@@ -102,3 +50,64 @@
 <script src="/js/vue.js"></script>
 <script src="/js/about.js"></script>
 </html>
+
+
+[[define "modal"]]
+<div :class="{'active': showModal}" class="modal">
+	<div @click="showModal=false" class="modal-overlay"></div>
+	<div class="modal-container">
+		<header class="modal-header">
+			<a @click="showModal=false" class="btn btn-clear float-right" aria-label="Close"></a>
+			<div class="modal-title h5">Submit an Issue</div>
+		</header>
+		<section class="modal-body">
+			<div class="container">
+				<form class="form-horizontal">
+					<div class="form-group">
+						<div class="col-3 col-sm-12">
+							<label class="form-label">Issue Type</label>
+						</div>
+						<div class="col-4 col-sm-6">
+							<select v-model="label" class="form-select">
+								<option value="bug">Bug Report</option>
+								<option value="performance">Performance Issue</option>
+								<option value="enhancement">Feature Request</option>
+							</select>
+						</div>
+					</div> <!-- type form-group -->
+					<div class="form-group">
+						<div class="col-3 col-sm-12">
+							<label class="form-label">Subject</label>
+						</div>
+						<div class="col-9 col-sm-12">
+							<input v-model="subject" class="form-input" type="text" placeholder="Write a few words describing the issue">
+						</div>
+					</div> <!-- subject form-group -->
+					<div class="form-group">
+						<div class="col-9 col-sm-12 col-ml-auto">
+							<p v-if="label==='bug'" class="form-input-hint">Describe in detail the steps needed to replicate the issue, including
+								what result was expected and what result occurred.</p>
+							<p v-if="label==='enhancement'" class="form-input-hint">Describe in detail a single feature that you think will 
+								improve Lex Library.</p>
+							<p v-if="label==='performance'" class="form-input-hint">Describe in detail what actions where taken that resulted in
+								poor performance.</p>
+						</div>
+					</div> <!-- help form-group -->
+					<div class="form-group">
+						<div class="col-3 col-sm-12">
+							<label class="form-label">Description</label>
+						</div>
+						<div class="col-9 col-sm-12">
+							<textarea v-model="description" class="form-input" rows="10" placeholder="Describe the issue in detail">
+							</textarea>
+						</div>
+					</div> <!-- description form-group -->
+				</form>
+			</div> <!-- container -->
+		</section>
+		<footer class="modal-footer">
+			<a :href="issueURL" target="_blank" class="btn btn-primary">Preview on Github</a>
+		</footer>
+	</div>
+</div> <!-- modal -->
+[[end]]

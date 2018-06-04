@@ -16,3 +16,53 @@ $section-padding-large: 18rem 1.5rem !default;
 		}
 	}
 }
+
+
+// Standard page layout with footer
+html {
+	height: 100%;
+}
+body {
+	height: 100%;
+}
+
+.navbar .navbar-brand {
+	font-size: $unit-5;
+}
+
+.page-footer {
+	font-size: $unit-3;
+	text-align: center;
+	width: 100%;
+	position: absolute;
+	bottom: 0;
+	height: 60px;
+}
+
+.page-footer-links {
+    display: flex;
+    list-style: none;
+    li {
+        margin-right: $unit-8;
+    }
+}
+
+
+.page-container {
+	position: relative;
+	min-height: 100%;
+}
+
+.page-content {
+	padding-bottom: 60px;
+}
+
+
+.tile-row {
+	display: flex;
+	flex-flow: row wrap;
+	.tile {
+		padding-right: $unit-6;
+		padding-bottom: $unit-6;
+	}
+}
