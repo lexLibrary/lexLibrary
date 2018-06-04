@@ -469,7 +469,7 @@ func TestAdmin(t *testing.T) {
 			Find(".btn.btn-primary.btn-block").Click().
 			Find(".registration > .table > tbody > tr > td:nth-child(1) > a").Count(1).Click().
 			Find("#singleRegistration .tile-content .tile-subtitle.text-gray").Any().Text().Contains("4 Registrations Left").
-			Find(".registration-users > .tile").Count(1).
+			Find(".tile-row > .tile").Count(1).
 			FindChildren(".tile-content > .tile-title").Text().Contains(testUsername).
 			End()
 
