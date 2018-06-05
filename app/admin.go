@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -75,7 +76,7 @@ var (
 	sqlInstanceStats = data.NewQuery(`
 		select users.num, sessions.num, documents.num, errorsTotal.num, errorsSinceStart.num
 		from
-		(select count(*) as num from users) as users,
+		(select count(*) as num from users where active = {{TRUE}}) as users,
 		(select count(*) as num from sessions where expires > {{NOW}} and valid = {{TRUE}}) as sessions,
 		(select 0 as num) as documents, 
 		(select count(*) num from logs) as errorsTotal,
@@ -86,6 +87,17 @@ var (
 	sqlInstanceInit = data.NewQuery(`
 		select occurred from schema_versions where version = 0
 	`)
+
+	sqlUsersAll      = data.NewQuery(fmt.Sprintf(`select %s from users`, userPublicColumns))
+	sqlUsersActive   = data.NewQuery(fmt.Sprintf(`select %s from users where active = {{TRUE}}`, userPublicColumns))
+	sqlUsersLoggedIn = data.NewQuery(fmt.Sprintf(`
+		select 	%s 
+		from 	users u,
+			sessions s
+		where 	u.id = s.user_id
+		and 	s.expires > {{NOW}} 
+		and 	s.valid = {{TRUE}}
+	`, userPublicColumns))
 )
 
 // Overview returns statistics on the current instance
@@ -131,4 +143,65 @@ func (a *Admin) Overview() (*Overview, error) {
 	o.System = systemInfo()
 
 	return o, nil
+}
+
+// UsersAll returns a list of all of the current users in Lex Library
+func (a *Admin) UsersAll() ([]*PublicProfile, error) {
+	var users []*PublicProfile
+	rows, err := sqlUsersAll.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		u := &PublicProfile{}
+		err = u.scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}
+
+// UsersActive returns only the currently Active users in Lex Library
+func (a *Admin) UsersActive() ([]*PublicProfile, error) {
+	var users []*PublicProfile
+	rows, err := sqlUsersActive.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		u := &PublicProfile{}
+		err = u.scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+
+}
+
+// UsersLoggedIn returns a list of all of the currently loggedin users
+func (a *Admin) UsersLoggedIn() ([]*PublicProfile, error) {
+	var users []*PublicProfile
+	rows, err := sqlUsersLoggedIn.Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		u := &PublicProfile{}
+		err = u.scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
 }

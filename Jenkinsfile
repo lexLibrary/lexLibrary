@@ -140,7 +140,7 @@ pipeline {
             deleteDir()
         }
         failure {
-            archiveArtifacts artifacts: './SequenceError*.png'
+            archiveArtifacts artifacts: '*.png'
         }
     }
      options {
