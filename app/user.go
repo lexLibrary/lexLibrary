@@ -668,12 +668,7 @@ func (u *User) RemoveProfileImage() error {
 	}
 
 	return data.BeginTx(func(tx *sql.Tx) error {
-		err := imageDelete(tx, u.profileImage)
-		if err != nil {
-			return err
-		}
-
-		return u.update(func() (sql.Result, error) {
+		err := u.update(func() (sql.Result, error) {
 			return sqlUserUpdateProfileImage.Tx(tx).Exec(
 				data.Arg("profile_image_id", nil),
 				data.Arg("profile_image_draft_id", nil),
@@ -681,5 +676,10 @@ func (u *User) RemoveProfileImage() error {
 				data.Arg("version", u.Version),
 			)
 		})
+		if err != nil {
+			return err
+		}
+
+		return imageDelete(tx, u.profileImage)
 	})
 }

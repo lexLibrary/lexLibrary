@@ -126,7 +126,7 @@ func setSession(w http.ResponseWriter, r *http.Request, u *app.User, rememberMe 
 		expires = time.Now().AddDate(0, 0, app.SettingMust("RememberSessionDays").Int())
 	}
 
-	s, err := app.SessionNew(u, expires, ipAddress(r), r.UserAgent())
+	s, err := u.NewSession(expires, ipAddress(r), r.UserAgent())
 	if err != nil {
 		return nil, err
 	}

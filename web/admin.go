@@ -32,6 +32,7 @@ type adminData struct {
 		All    bool
 		Single *app.RegistrationToken
 	}
+	Users []*app.PublicProfile
 }
 
 func (a *adminPage) data(s *app.Session) (*adminData, error) {
@@ -205,6 +206,22 @@ func (a *adminPage) registrationGet(w http.ResponseWriter, r *http.Request, parm
 			return
 		}
 		tData.Registration.Single = token
+
+		w.(*templateWriter).execute(tData)
+	}
+	a.ServeHTTP(w, r, parms)
+}
+
+func (a *adminPage) users(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
+
+	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+		tData, err := a.data(c.session)
+		if errHandled(err, w, r) {
+			return
+		}
+
+		tData.Tab = "users"
+		// qry := r.URL.Query()
 
 		w.(*templateWriter).execute(tData)
 	}

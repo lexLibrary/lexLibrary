@@ -447,7 +447,8 @@ func TestAdmin(t *testing.T) {
 		err = seq.Get(uri.String()).
 			Find(".registration > .table > tbody > tr > td:nth-child(1) > a").Count(1).Click().
 			Find("#singleRegistration .tile-title").Text().Contains("Created by "+username).
-			Find("#singleRegistration .tile-content .tile-subtitle.text-gray").Any().Text().Contains("5 Registrations Left").
+			Find("#singleRegistration .tile-content .tile-subtitle.text-gray").
+			Any().Text().Contains("5 Registrations Left").
 			Find("#singleRegistration .input-group > input").
 			Test("get token url", func(e selenium.WebElement) error {
 				u, err := e.GetAttribute("value")
@@ -468,7 +469,8 @@ func TestAdmin(t *testing.T) {
 			Find("#inputPassword").SendKeys(password).
 			Find(".btn.btn-primary.btn-block").Click().
 			Find(".registration > .table > tbody > tr > td:nth-child(1) > a").Count(1).Click().
-			Find("#singleRegistration .tile-content .tile-subtitle.text-gray").Any().Text().Contains("4 Registrations Left").
+			Find("#singleRegistration .tile-content .tile-subtitle.text-gray").
+			Any().Text().Contains("4 Registrations Left").
 			Find(".tile-row > .tile").Count(1).
 			FindChildren(".tile-content > .tile-title").Text().Contains(testUsername).
 			End()

@@ -116,14 +116,14 @@ func Login(username string, password string) (*User, error) {
 }
 
 // SessionNew generates a new session for the passed in user
-func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Session, error) {
+func (u *User) NewSession(expires time.Time, ipAddress, userAgent string) (*Session, error) {
 	if expires.IsZero() {
 		expires = time.Now().AddDate(0, 0, 3)
 	}
 
 	s := &Session{
 		ID:        Random(128),
-		UserID:    user.ID,
+		UserID:    u.ID,
 		CSRFToken: Random(256),
 		CSRFDate:  time.Now(),
 		Valid:     true,
@@ -139,7 +139,7 @@ func SessionNew(user *User, expires time.Time, ipAddress, userAgent string) (*Se
 	if err != nil {
 		return nil, err
 	}
-	s.user = user
+	s.user = u
 
 	return s, nil
 }
