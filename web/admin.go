@@ -32,7 +32,13 @@ type adminData struct {
 		All    bool
 		Single *app.RegistrationToken
 	}
-	Users []*app.PublicProfile
+	Users struct {
+		Active   bool
+		LoggedIn bool
+		All      bool
+		Users    []*app.InstanceUser
+		Pager    pager
+	}
 }
 
 func (a *adminPage) data(s *app.Session) (*adminData, error) {
@@ -156,7 +162,6 @@ func (a *adminPage) registration(w http.ResponseWriter, r *http.Request, parms h
 			return
 		}
 
-		var tokens []*app.RegistrationToken
 		tData.Tab = "registration"
 		pgr := newPager(r.URL, 20)
 		_, ok := r.URL.Query()["all"]
@@ -221,7 +226,21 @@ func (a *adminPage) users(w http.ResponseWriter, r *http.Request, parms httprout
 		}
 
 		tData.Tab = "users"
-		// qry := r.URL.Query()
+		qry := r.URL.Query()
+		pgr := newPager(r.URL, 20)
+
+		_, tData.Users.Active = qry["active"]
+		_, tData.Users.LoggedIn = qry["loggedin"]
+		tData.Users.All = (!tData.Users.Active && !tData.Users.LoggedIn)
+
+		users, total, err := tData.Admin.InstanceUsers(tData.Users.Active, tData.Users.LoggedIn,
+			pgr.Offset(), pgr.PageSize())
+		if errHandled(err, w, r) {
+			return
+		}
+		pgr.SetTotal(total)
+		tData.Users.Pager = pgr
+		tData.Users.Users = users
 
 		w.(*templateWriter).execute(tData)
 	}

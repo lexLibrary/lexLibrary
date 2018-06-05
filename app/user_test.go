@@ -479,7 +479,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user")
 		}
 
-		oldSession, err := app.SessionNew(u, time.Now().AddDate(0, 0, 10), "", "")
+		oldSession, err := u.NewSession(time.Now().AddDate(0, 0, 10), "", "")
 		if err != nil {
 			t.Fatalf("Error creating new session: %s", err)
 		}
@@ -510,7 +510,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user")
 		}
 
-		oldSession, err := app.SessionNew(u, time.Now().AddDate(0, 0, 10), "", "")
+		oldSession, err := u.NewSession(time.Now().AddDate(0, 0, 10), "", "")
 		if err != nil {
 			t.Fatalf("Error creating new session: %s", err)
 		}

@@ -360,8 +360,8 @@ func (q *Query) Debug(args ...Argument) string {
 			}
 
 			val := fmt.Sprintf("%-"+strconv.Itoa(lengths[i])+"s", str)
-			if i != len(columns)-1 {
-				// don't trim last column
+			// don't trim last column
+			if i != len(columns)-1 && len(str) > padding {
 				val = val[:lengths[i]-3] + "..."
 			}
 			result += val

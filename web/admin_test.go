@@ -30,7 +30,7 @@ func TestAdmin(t *testing.T) {
 	t.Run("Overview", func(t *testing.T) {
 		err = seq.Get(uri.String()).
 			Find(".tab > .tab-item.active").Count(1).Text().Contains("Overview").
-			Find(".overview.table").Count(6).
+			Find(".admin-overview.table").Count(6).
 			Find(".card > .card-header > .card-title").Any().Text().Contains("Instance Information").
 			Find(".card > .card-header > .card-title").Any().Text().Contains("Data Usage").
 			Find(".card > .card-header > .card-title").Any().Text().Contains("System Information").
@@ -52,11 +52,11 @@ func TestAdmin(t *testing.T) {
 		err = seq.
 			Find(".tab > .tab-item > a[href='/admin/logs']").Click().
 			Find(".tab > .tab-item.active").Count(1).Text().Contains("Logs").
-			Find(".logs > table.table > tbody > tr").Text().Contains(errMessage).
-			Find(".logs > table.table > tbody > tr > td > a.float-right").Text().Contains("View").Click().
+			Find(".admin-logs > table.table > tbody > tr").Text().Contains(errMessage).
+			Find(".admin-logs > table.table > tbody > tr > td > a.float-right").Text().Contains("View").Click().
 			Find("h4").Text().Contains("Log Entry from").
 			Find("h4 > small").Text().Contains(errID.String()).
-			Find("section.logs > p").Text().Contains(errMessage).
+			Find("section.admin-logs > p").Text().Contains(errMessage).
 			End()
 		if err != nil {
 			t.Fatal(err)
@@ -65,15 +65,15 @@ func TestAdmin(t *testing.T) {
 		// searching
 		app.LogError(fmt.Errorf("other error"))
 		err = seq.Back().Refresh().
-			Find(".logs > table.table > tbody > tr").Count(2).
+			Find(".admin-logs > table.table > tbody > tr").Count(2).
 			Find(".input-group > input.input[type='text']").SendKeys(strings.ToUpper(errMessage)).
 			Find(".input-group > button.btn.btn-primary").Click().
-			Find(".logs > table.table > tbody > tr").Count(1).Text().Contains(errMessage).
+			Find(".admin-logs > table.table > tbody > tr").Count(1).Text().Contains(errMessage).
 			Find(".input-group > input.input[type='text']").SendKeys(errID.String()).
 			Find(".input-group > button.btn.btn-primary").Click().
 			Find("h4").Text().Contains("Log Entry from").
 			Find("h4 > small").Text().Contains(errID.String()).
-			Find("section.logs > p").Text().Contains(errMessage).
+			Find("section.admin-logs > p").Text().Contains(errMessage).
 			End()
 		if err != nil {
 			t.Fatal(err)
@@ -101,7 +101,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -114,7 +114,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -127,7 +127,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -140,7 +140,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -153,7 +153,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -167,7 +167,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -181,7 +181,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -195,7 +195,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -209,7 +209,7 @@ func TestAdmin(t *testing.T) {
 
 		addPage()
 		err = seq.Get(uri.String()).
-			Find(".logs > table.table > tbody > tr").Count(30).
+			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
@@ -247,7 +247,7 @@ func TestAdmin(t *testing.T) {
 			}).
 			Find("ul.pagination > li.page-item.active").Text().Contains("10").
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Next").
-			Find(".logs > table.table > tbody > tr").Count(2).
+			Find(".admin-logs > table.table > tbody > tr").Count(2).
 			Find("ul.pagination > li:nth-child(1).page-item").Text().Contains("Previous").Click().And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver,
@@ -307,7 +307,20 @@ func TestAdmin(t *testing.T) {
 			Find("#settingSearch").Clear().SendKeys("shouldn't match on anything").
 			Find(".columns > .column > form.setting-group").Count(0).
 			End()
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 
+	t.Run("Users", func(t *testing.T) {
+		uri.Path = "/admin/"
+
+		err = seq.Get(uri.String()).
+			Find(".tab > .tab-item > a[href='/admin/users?active']").Click().
+			Find(".admin-users").Count(1).
+			Find(".btn-group > .active").Text().Equals("Active Only").
+			//TODO: Finish tests
+			End()
 		if err != nil {
 			t.Fatal(err)
 		}

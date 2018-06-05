@@ -26,7 +26,7 @@ func TestSession(t *testing.T) {
 		expires := time.Time{}
 		ipAddress := "127.0.0.1"
 		userAgent := "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:57.0) Gecko/20100101 Firefox/57.0"
-		s, err := app.SessionNew(u, expires, ipAddress, userAgent)
+		s, err := u.NewSession(expires, ipAddress, userAgent)
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
 		}
@@ -48,7 +48,7 @@ func TestSession(t *testing.T) {
 
 	t.Run("Logout", func(t *testing.T) {
 		reset(t)
-		s, err := app.SessionNew(u, time.Time{}, "127.0.0.1", "")
+		s, err := u.NewSession(time.Time{}, "127.0.0.1", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
 		}
@@ -73,7 +73,7 @@ func TestSession(t *testing.T) {
 
 	t.Run("User", func(t *testing.T) {
 		reset(t)
-		s, err := app.SessionNew(u, time.Time{}, "127.0.0.1", "")
+		s, err := u.NewSession(time.Time{}, "127.0.0.1", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
 		}
@@ -96,7 +96,7 @@ func TestSession(t *testing.T) {
 	})
 	t.Run("Cycle CSRF", func(t *testing.T) {
 		reset(t)
-		s, err := app.SessionNew(u, time.Time{}, "127.0.0.1", "")
+		s, err := u.NewSession(time.Time{}, "127.0.0.1", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
 		}
@@ -177,7 +177,7 @@ func TestSession(t *testing.T) {
 
 	t.Run("Get", func(t *testing.T) {
 		reset(t)
-		s, err := app.SessionNew(u, time.Now().AddDate(0, 0, 1), "", "")
+		s, err := u.NewSession(time.Now().AddDate(0, 0, 1), "", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
 		}
@@ -226,7 +226,7 @@ func TestSession(t *testing.T) {
 	t.Run("Admin", func(t *testing.T) {
 		reset(t)
 
-		s, err := app.SessionNew(u, time.Time{}, "", "")
+		s, err := u.NewSession(time.Time{}, "", "")
 		if err != nil {
 			t.Fatalf("Error adding new session: %s", err)
 		}

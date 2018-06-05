@@ -1,9 +1,11 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
+	"golang.org/x/sync/errgroup"
 )
 
 // Admin is a wrapper around User that only provides access to admin level functions
@@ -87,16 +89,44 @@ var (
 		select occurred from schema_versions where version = 0
 	`)
 
-	// sqlInstanceUsers = func(active, loggedIn bool) data.Query {
-	// 	qry := fmt.Sprintf(`
-	// 		select 	%s
-	// 		from 	users u,
-	// 			sessions s
-	// 		where 	u.id = s.user_id
-	// 		and 	s.expires > {{NOW}}
-	// 		and 	s.valid = {{TRUE}}
-	// 	`, userPublicColumns)
-	// }
+	sqlInstanceUsers = func(active, loggedIn, total bool) *data.Query {
+		columns := userPublicColumns + ", s.created"
+		if total {
+			columns = "count(*)"
+		}
+
+		criteria := ""
+		if loggedIn {
+			criteria = "and s.expires > {{NOW}} and s.valid = {{TRUE}} "
+		}
+		if active {
+			criteria += "and u.active = {{TRUE}}"
+		}
+
+		qry := fmt.Sprintf(`
+			select 	%s
+			from 	users u
+				left outer join sessions s
+					on u.id = s.user_id
+			where 	(s.created = (
+				select 	max(created)
+				from 	sessions s2
+				where s2.user_id = s.user_id
+			) or s.created is null)
+			%s
+			order by u.created desc
+		`, columns, criteria)
+		if !total {
+			qry += `
+				{{if sqlserver}}
+					OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+				{{else}}
+					LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+				{{end}}
+			`
+		}
+		return data.NewQuery(qry)
+	}
 )
 
 // Overview returns statistics on the current instance
@@ -146,25 +176,56 @@ func (a *Admin) Overview() (*Overview, error) {
 
 type InstanceUser struct {
 	PublicProfile
-	LastLogin time.Time
+	LastLogin data.NullTime
 }
 
 // InstanceUsers returns a list of all of the current users in Lex Library
-// func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, limit, offset int) ([]*PublicProfile, error) {
-// 	var users []*PublicProfile
-// 	rows, err := sqlUsersAll.Query()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer rows.Close()
+func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (users []*InstanceUser, total int, err error) {
+	if limit == 0 || limit > maxRows {
+		limit = 10
+	}
 
-// 	for rows.Next() {
-// 		u := &PublicProfile{}
-// 		err = u.scan(rows)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		users = append(users, u)
-// 	}
-// 	return users, nil
-// }
+	var g errgroup.Group
+
+	g.Go(func() error {
+		rows, err := sqlInstanceUsers(activeOnly, loggedIn, false).Query(
+			data.Arg("limit", limit),
+			data.Arg("offset", offset),
+		)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			u := &InstanceUser{}
+			err = rows.Scan(
+				&u.ID,
+				&u.Username,
+				&u.Name,
+				&u.Active,
+				&u.profileImage,
+				&u.admin,
+				&u.Created,
+				&u.LastLogin,
+			)
+
+			if err != nil {
+				return err
+			}
+			users = append(users, u)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		return sqlInstanceUsers(activeOnly, loggedIn, true).QueryRow().Scan(&total)
+	})
+
+	err = g.Wait()
+	if err != nil {
+		return nil, total, err
+	}
+
+	return users, total, nil
+}

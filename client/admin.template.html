@@ -13,7 +13,7 @@
 			<h1>Administration</h1>
 			<ul class="tab tab-block">
 				<li class='tab-item [[if eq .Tab "overview"]]active[[end]]'><a href="/admin">Overview</a></li>
-				<li class='tab-item [[if eq .Tab "users"]]active[[end]]'><a href="/admin/users">Users</a></li>
+				<li class='tab-item [[if eq .Tab "users"]]active[[end]]'><a href="/admin/users?active">Users</a></li>
 				<li class='tab-item [[if eq .Tab "registration"]]active[[end]]'><a href="/admin/registration">Registration</a></li>
 				<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
 				<li class='tab-item [[if eq .Tab "settings"]]active[[end]]'><a href="/admin/settings">Settings</a></li>
@@ -67,7 +67,7 @@
 			</div>
 			<div class="card-body">
 				[[with .Overview.Instance]]
-				<table class="overview table">
+				<table class="admin-overview table">
 					<tbody>
 						<tr><td>Version</td><td>[[.Version]]</td></tr>
 						<tr><td>Build Date</td><td title="[[time .BuildDate]]">[[time .BuildDate]]</td></tr>
@@ -90,7 +90,7 @@
 				[[end]]
 			</div>
 			<div class="card-body">
-				<table class="overview table">
+				<table class="admin-overview table">
 					<tbody>
 						[[with .Overview.Instance.Size]]
 						<tr><td>Database Size</td><td>[[bytes .Data]]</td></tr>
@@ -109,7 +109,7 @@
 			</div>
 			<div class="card-body">
 				[[with .Overview.System]]
-				<table class="overview table">
+				<table class="admin-overview table">
 					<tbody>
 						<tr><td>Uptime</td><td>[[duration .Uptime]]</td></tr>
 						<tr><td>Total RAM</td><td>[[bytes .Totalram]]</td></tr>
@@ -131,7 +131,7 @@
 			</div>
 			<div class="card-body">
 				[[with .Overview.Runtime]]
-				<table class="overview table">
+				<table class="admin-overview table">
 					<tbody>
 						<tr><td>OS</td><td>[[.OS]]</td></tr>
 						<tr><td>Go Version</td><td>[[.GoVer]]</td></tr>
@@ -157,7 +157,7 @@
 				[[end]]
 			</div>
 			<div class="card-body">
-				<table class="overview table">
+				<table class="admin-overview table">
 					<tbody>
 						<tr><td>Read Timeout</td><td>[[.ReadTimeout]]</td></tr>
 						<tr><td>Write Timeout</td><td>[[.WriteTimeout]]</td></tr>
@@ -185,7 +185,7 @@
 				[[end]]
 			</div>
 			<div class="card-body">
-				<table class="overview table">
+				<table class="admin-overview table">
 					<tbody>
 						[[if eq .DatabaseType "sqlite"]]
 						<tr><td>Data File</td><td title="[[.DatabaseFile]]">[[.DatabaseFile]]</td></tr>
@@ -434,7 +434,7 @@
 
 [[define "logs"]]
 	[[with .Log]]
-	<section class="logs pt-8">
+	<section class="admin-logs pt-8">
 		[[if .Entry]]
 			[[with .Entry]]
 				<h4>Log Entry from [[time .Occurred]] <small class="text-gray">([[.ID]])</small></h4>
@@ -661,17 +661,54 @@
 
 
 [[define "users"]]
-<div class="tile-row">
-	[[range .Users]]
-		<div class="tile tile-centered">
-			<div class="tile-icon">
-				[[template "avatar" .]]
-			</div>
-			<div class="tile-content">
-				<p class="tile-title">[[.DisplayName]]</p>
-				<p class="tile-subtitle text-gray" title="[[time .Created]]">Created [[since .Created]]</p>
+	[[with .Users]]
+	<section class="admin-users container grid-lg pt-8">
+		<div class="flex-centered">
+			<div class="btn-group">
+				<a href="/admin/users?active" class="btn btn-lg [[if .Active]]active[[end]]">Active Only</a>
+				<a href="/admin/users?loggedin" class="btn btn-lg [[if .LoggedIn]]active[[end]]">Logged In</a>
+				<a href="/admin/users" class="btn btn-lg [[if .All]]active[[end]]">All</a>
 			</div>
 		</div>
+
+		<table class="table">
+			<thead>
+				<tr>
+					<th class="avatar-column"></th>
+					<th>Name</th>
+					<th class="date">Created Date</th>
+					<th class="date">Last Login</th>
+				</tr>
+			</thead>
+			<tbody>
+				[[range .Users]]
+					<tr class="[[if not .Active]]secondary[[end]]">
+						<td><a href="/user/[[.Username]]">[[template "avatar" .]]</a></td>
+						<td>[[.DisplayName]]</td>
+						<td>[[time .Created]]</td>
+						<td>[[time .LastLogin.Time]]</td>
+					</tr>
+				[[end]]
+			</tbody>
+		</table>
+
+<!-- <div class="tile-row"> -->
+<!-- 	[[range .Users]] -->
+<!-- 		<div class="tile tile-centered"> -->
+<!-- 			<div class="tile-icon"> -->
+<!-- 				[[template "avatar" .]] -->
+<!-- 			</div> -->
+<!-- 			<div class="tile-content"> -->
+<!-- 				<p class="tile-title">[[.DisplayName]]</p> -->
+<!-- 				<p class="tile-subtitle text-gray" title="[[time .Created]]">Created [[since .Created]]</p> -->
+<!-- 				[[if .LastLogin.Valid]] -->
+<!-- 				<p class="tile-subtitle text-gray" title="[[time .LastLogin.Time]]">Last Login [[since .LastLogin.Time]]</p> -->
+<!-- 				[[end]] -->
+<!-- 			</div> -->
+<!-- 		</div> -->
+<!-- 	[[end]] -->
+<!-- </div> -->
+		[[template "pager" .Pager]]
+		</section>
 	[[end]]
-</div>
 [[end]]

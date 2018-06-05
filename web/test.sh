@@ -1,8 +1,8 @@
 #!/bin/bash
 export LLTEST="true"
 export LLPORT="8070"
-# export LLBROWSER="firefox"
-export LLBROWSER="chrome"
+export LLBROWSER="firefox"
+# export LLBROWSER="chrome"
 export LLHOST="$(/sbin/ip route|awk '/docker0/ { print $9 }')"
 export LLWEBDRIVERURL="http://localhost:4444/wd/hub"
 

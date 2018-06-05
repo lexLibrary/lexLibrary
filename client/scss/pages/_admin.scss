@@ -1,7 +1,7 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 // Admin page specific CSS
 
-.overview.table  {
+.admin-overview.table  {
 	table-layout: fixed;
 	td {
 		padding: $unit-1;	
@@ -13,7 +13,7 @@
 	}
 }
 
-.logs > .table {
+.admin-logs > .table {
 	table-layout: fixed;
 	.date {
 		width: 180px;
@@ -29,12 +29,12 @@
 	}
 }
 
-.registration > .table {
+.admin-users > .table {
 	table-layout: fixed;
 	.date {
 		width: 180px;
 	}
-	.creator {
+	.avatar-column {
 		width: 80px;
 	}
 }
