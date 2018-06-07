@@ -103,6 +103,8 @@ var (
 			criteria += "and u.active = {{TRUE}}"
 		}
 
+		// NOTE: CockroachDB doesn't support sub queries like this yet:
+		// https://github.com/cockroachdb/cockroach/issues/3288
 		qry := fmt.Sprintf(`
 			select 	%s
 			from 	users u
