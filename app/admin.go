@@ -109,15 +109,15 @@ var (
 				left outer join sessions s
 					on u.id = s.user_id
 			where 	(s.created = (
-				select 	max(created)
+				select 	max(s2.created)
 				from 	sessions s2
 				where s2.user_id = s.user_id
 			) or s.created is null)
 			%s
-			order by u.created desc
 		`, columns, criteria)
 		if !total {
 			qry += `
+				order by u.created desc
 				{{if sqlserver}}
 					OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
 				{{else}}

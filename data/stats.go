@@ -80,7 +80,7 @@ func Size() (SizeStats, error) {
 
 		stats.Data = dbSize - tableSize
 		stats.Image = tableSize
-	case mysql:
+	case mysql, mariadb:
 		var dbSize, tableSize uint64
 		rows, err := mysqlSize.Query(Arg("table", "images"))
 		if err != nil {

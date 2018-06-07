@@ -495,7 +495,7 @@
 				<thead>
 					<tr>
 						<th>Description</th>
-						<th class="date">Created Date</th>
+						<th class="date">Created</th>
 						<th class="creator text-right">Creator</th>
 					</tr>
 				</thead>
@@ -676,8 +676,9 @@
 				<tr>
 					<th class="avatar-column"></th>
 					<th>Name</th>
-					<th class="date">Created Date</th>
+					<th class="date">Created</th>
 					<th class="date">Last Login</th>
+					<th class="active"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -687,27 +688,18 @@
 						<td>[[.DisplayName]]</td>
 						<td>[[time .Created]]</td>
 						<td>[[time .LastLogin.Time]]</td>
+						<td>
+							<div class="form-group">
+								<label class="form-switch">
+									<input type="checkbox" [[if.Active]]checked[[end]]>
+									<i class="form-icon"></i> Active
+								</label>
+							</div>
+						</td>
 					</tr>
 				[[end]]
 			</tbody>
 		</table>
-
-<!-- <div class="tile-row"> -->
-<!-- 	[[range .Users]] -->
-<!-- 		<div class="tile tile-centered"> -->
-<!-- 			<div class="tile-icon"> -->
-<!-- 				[[template "avatar" .]] -->
-<!-- 			</div> -->
-<!-- 			<div class="tile-content"> -->
-<!-- 				<p class="tile-title">[[.DisplayName]]</p> -->
-<!-- 				<p class="tile-subtitle text-gray" title="[[time .Created]]">Created [[since .Created]]</p> -->
-<!-- 				[[if .LastLogin.Valid]] -->
-<!-- 				<p class="tile-subtitle text-gray" title="[[time .LastLogin.Time]]">Last Login [[since .LastLogin.Time]]</p> -->
-<!-- 				[[end]] -->
-<!-- 			</div> -->
-<!-- 		</div> -->
-<!-- 	[[end]] -->
-<!-- </div> -->
 		[[template "pager" .Pager]]
 		</section>
 	[[end]]
