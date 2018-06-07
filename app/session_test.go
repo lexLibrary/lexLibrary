@@ -163,7 +163,7 @@ func TestSession(t *testing.T) {
 			t.Fatalf("Logging in with short password was not a login failure: %s", err)
 		}
 
-		err = admin.SetUserActive(u, false, u.Version)
+		err = admin.SetUserActive(u.Username, false)
 		if err != nil {
 			t.Fatalf("Error inactivating user: %s", err)
 		}

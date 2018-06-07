@@ -66,9 +66,15 @@ var (
 	`)
 	sqlImageDelete = data.NewQuery(`delete from images where id = {{arg "id"}}`)
 
-	sqlImageGetFull        = data.NewQuery(`select name, version, content_type, data, updated from images where id = {{arg "id"}}`)
-	sqlImageGetThumb       = data.NewQuery(`select name, version, content_type, thumb, updated from images where id = {{arg "id"}}`)
-	sqlImageGetPlaceholder = data.NewQuery(`select name, version, content_type, placeholder, updated from images where id = {{arg "id"}}`)
+	sqlImageGetFull = data.NewQuery(`
+		select name, version, content_type, data, updated from images where id = {{arg "id"}}
+	`)
+	sqlImageGetThumb = data.NewQuery(`
+		select name, version, content_type, thumb, updated from images where id = {{arg "id"}}
+	`)
+	sqlImageGetPlaceholder = data.NewQuery(`
+		select name, version, content_type, placeholder, updated from images where id = {{arg "id"}}
+	`)
 
 	sqlImageUpdate = data.NewQuery(`
 		update images
@@ -108,7 +114,7 @@ func (i *Image) Placeholder() (io.ReadSeeker, error) {
 	return i.fromRow(sqlImageGetPlaceholder.QueryRow(data.Arg("id", i.ID)))
 }
 
-func (i *Image) fromRow(row *sql.Row) (io.ReadSeeker, error) {
+func (i *Image) fromRow(row *data.Row) (io.ReadSeeker, error) {
 	var b []byte
 	err := row.Scan(
 		&i.Name,

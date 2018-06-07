@@ -109,10 +109,13 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/admin/registration", admin.registration)
 	rootHandler.GET("/admin/newregistration", admin.registrationNew)
 	rootHandler.GET("/admin/registration/:token", admin.registrationGet)
+	rootHandler.PUT("/admin/user/:username/", makeHandle(adminUserUpdate))
 
+	// groups
 	rootHandler.GET("/groups", makeHandle(groupGet))
 	rootHandler.POST("/groups", makeHandle(groupCreate))
 
+	// registration tokens
 	rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), (&templateHandler{
 		handler:       registrationTemplate,
 		templateFiles: []string{"signup.template.html"},
@@ -120,5 +123,6 @@ func setupRoutes() http.Handler {
 	rootHandler.POST(app.RegistrationTokenPath, makeHandle(registrationCreate))
 	rootHandler.DELETE(path.Join(app.RegistrationTokenPath, ":token"), makeHandle(registrationDelete))
 	rootHandler.POST("/user/:token", makeHandle(userCreate))
+
 	return rootHandler
 }

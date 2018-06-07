@@ -340,9 +340,14 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user for SetActive testing")
 		}
 
-		err = admin.SetUserActive(u, false, u.Version)
+		err = admin.SetUserActive(u.Username, false)
 		if err != nil {
 			t.Fatalf("Error setting active to false: %s", err)
+		}
+
+		err = u.Refresh()
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if u.Active {
@@ -407,11 +412,11 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error adding user for SetAdmin testing")
 		}
 
-		err = admin.SetUserAdmin(u, true, u.Version)
+		err = admin.SetUserAdmin(u.Username, true)
 		if err != nil {
 			t.Fatalf("Error setting admin by another admin: %s", err)
 		}
-		u, err = u.Latest()
+		err = u.Refresh()
 		if err != nil {
 			t.Fatalf("Error getting latest user: %s", err)
 		}
@@ -664,7 +669,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error setting profile image: %s", err)
 		}
 
-		u, err = u.Latest()
+		err = u.Refresh()
 		if err != nil {
 			t.Fatalf("Error refreshing user: %s", err)
 		}
@@ -773,7 +778,7 @@ func TestUser(t *testing.T) {
 			t.Fatalf("Error setting profile image: %s", err)
 		}
 
-		u, err = u.Latest()
+		err = u.Refresh()
 		if err != nil {
 			t.Fatalf("Error refreshing user: %s", err)
 		}
@@ -782,7 +787,7 @@ func TestUser(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error removing profile image: %s", err)
 		}
-		u, err = u.Latest()
+		err = u.Refresh()
 		if err != nil {
 			t.Fatalf("Error refreshing user: %s", err)
 		}

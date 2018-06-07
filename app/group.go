@@ -27,6 +27,13 @@ type GroupAdmin struct {
 	group *Group
 }
 
+// var sqlGroup = struct {
+// 	insert,
+// 	groupInsert,
+// 	groupByName,
+// 	groupSearch *data.Query
+// }{}
+
 var (
 	sqlGroupInsert = data.NewQuery(`
 		insert into groups (

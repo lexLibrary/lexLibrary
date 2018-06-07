@@ -314,3 +314,27 @@ var singleRegistrationVM = new Vue({
         },
     },
 });
+
+
+var users = new Vue({
+    el: document.getElementById('users'),
+    data: function() {
+        return {
+			error: null,
+		};
+    },
+    computed: {},
+    methods: {
+        setActive: function(username, active) {
+            xhr.put(`/admin/user/${username}`, {
+                    active,
+                })
+                .then(() => {
+                    location.reload(true);
+                })
+                .catch((err) => {
+                    this.error = err.response;
+                });
+        },
+    },
+});

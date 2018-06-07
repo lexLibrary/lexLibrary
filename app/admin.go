@@ -16,65 +16,17 @@ type Admin struct {
 // ErrNotAdmin is returned when an admin activity is attempted by a non-admin user
 var ErrNotAdmin = Unauthorized("This functionality is reserved for administrators only")
 
-// The methods defined here should simply be wrappers around the actual code doing the inserts / updates / deletes
+// The methods defined here should mostly be wrappers around the actual code doing the inserts / updates / deletes
 // The idea is you can come to the admin source file to see all of the funcitonality an admin can perform, but to see
 // the detail of what is actually being performed you should goto the proper source file for the functionality: settings
 // users, etc
 
-// Setting will look for a setting that has the passed in id
-func (a *Admin) Setting(id string) (Setting, error) {
-	return settingGet(id)
-}
-
-// User returns the underlying user for the admin
-func (a *Admin) User() *User {
-	return a.user
-}
-
-// SetSetting updates a settings value
-func (a *Admin) SetSetting(id string, value interface{}) error {
-	return settingSet(nil, id, value)
-}
-
-// SetMultipleSettings sets multiple settings in the same transaction
-func (a *Admin) SetMultipleSettings(settings map[string]interface{}) error {
-	return settingSetMultiple(settings)
-}
-
-// SetUserActive sets the active status of the given user
-func (a *Admin) SetUserActive(u *User, active bool, version int) error {
-	return u.setActive(active, version)
-}
-
-// SetUserAdmin sets if a user is an Administrator or not
-func (a *Admin) SetUserAdmin(u *User, admin bool, version int) error {
-	return u.setAdmin(admin, version)
-}
-
-// Overview is a collection of statistics and information about the LL instance
-type Overview struct {
-	Instance struct {
-		Users     int
-		Documents int
-		Sessions  int
-		Size      struct {
-			data.SizeStats
-		}
-		Uptime           time.Duration
-		FirstLaunch      time.Time
-		Version          string
-		BuildDate        time.Time
-		ErrorsTotal      int
-		ErrorsSinceStart int
-	}
-	System  sysInfo
-	Runtime RuntimeInfo
-
-	data.Config
-}
-
-var (
-	sqlInstanceStats = data.NewQuery(`
+var sqlAdmin = struct {
+	stats,
+	init *data.Query
+	users func(bool, bool, bool) *data.Query
+}{
+	stats: data.NewQuery(`
 		select users.num, sessions.num, documents.num, errorsTotal.num, errorsSinceStart.num
 		from
 		(select count(*) as num from users where active = {{TRUE}}) as users,
@@ -84,14 +36,13 @@ var (
 		(select count(*) num 
 			from logs where occurred >= {{arg "start"}}
 		) as errorsSinceStart
-	`)
-	sqlInstanceInit = data.NewQuery(`
+	`),
+	init: data.NewQuery(`
 		select occurred from schema_versions where version = 0
-	`)
-
-	sqlInstanceUsers = func(active, loggedIn, total bool) *data.Query {
+	`),
+	users: func(active, loggedIn, count bool) *data.Query {
 		columns := userPublicColumns + ", s.created"
-		if total {
+		if count {
 			columns = "count(*)"
 		}
 
@@ -117,19 +68,81 @@ var (
 			) or s.created is null)
 			%s
 		`, columns, criteria)
-		if !total {
+		if !count {
 			qry += `
-				order by u.created desc
-				{{if sqlserver}}
-					OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
-				{{else}}
-					LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-				{{end}}
-			`
+			order by u.created desc
+			{{if sqlserver}}
+				OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+			{{else}}
+				LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+			{{end}}
+		`
 		}
 		return data.NewQuery(qry)
+	},
+}
+
+// Setting will look for a setting that has the passed in id
+func (a *Admin) Setting(id string) (Setting, error) {
+	return settingGet(id)
+}
+
+// User returns the underlying user for the admin
+func (a *Admin) User() *User {
+	return a.user
+}
+
+// SetSetting updates a settings value
+func (a *Admin) SetSetting(id string, value interface{}) error {
+	return settingSet(nil, id, value)
+}
+
+// SetMultipleSettings sets multiple settings in the same transaction
+func (a *Admin) SetMultipleSettings(settings map[string]interface{}) error {
+	return settingSetMultiple(settings)
+}
+
+// SetUserActive sets the active status of the given user
+func (a *Admin) SetUserActive(username string, active bool) error {
+	u, err := userFromUsername(nil, username)
+	if err != nil {
+		return err
 	}
-)
+
+	return u.setActive(active, u.Version)
+}
+
+// SetUserAdmin sets if a user is an Administrator or not
+func (a *Admin) SetUserAdmin(username string, admin bool) error {
+	u, err := userFromUsername(nil, username)
+	if err != nil {
+		return err
+	}
+
+	return u.setAdmin(admin, u.Version)
+}
+
+// Overview is a collection of statistics and information about the LL instance
+type Overview struct {
+	Instance struct {
+		Users     int
+		Documents int
+		Sessions  int
+		Size      struct {
+			data.SizeStats
+		}
+		Uptime           time.Duration
+		FirstLaunch      time.Time
+		Version          string
+		BuildDate        time.Time
+		ErrorsTotal      int
+		ErrorsSinceStart int
+	}
+	System  sysInfo
+	Runtime RuntimeInfo
+
+	data.Config
+}
 
 // Overview returns statistics on the current instance
 func (a *Admin) Overview() (*Overview, error) {
@@ -139,7 +152,7 @@ func (a *Admin) Overview() (*Overview, error) {
 	o.Config.DatabaseURL = "" // hide to prevent showing db password
 
 	// Instance Stats
-	err := sqlInstanceStats.QueryRow(data.Arg("start", initTime)).Scan(
+	err := sqlAdmin.stats.QueryRow(data.Arg("start", initTime)).Scan(
 		&o.Instance.Users,
 		&o.Instance.Sessions,
 		&o.Instance.Documents,
@@ -153,7 +166,7 @@ func (a *Admin) Overview() (*Overview, error) {
 	o.Instance.Uptime = time.Since(initTime)
 
 	var firstLaunch time.Time
-	err = sqlInstanceInit.QueryRow().Scan(&firstLaunch)
+	err = sqlAdmin.init.QueryRow().Scan(&firstLaunch)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +195,7 @@ type InstanceUser struct {
 }
 
 // InstanceUsers returns a list of all of the current users in Lex Library
-func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (users []*InstanceUser, total int, err error) {
+func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (users []*InstanceUser, count int, err error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
@@ -190,7 +203,7 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (use
 	var g errgroup.Group
 
 	g.Go(func() error {
-		rows, err := sqlInstanceUsers(activeOnly, loggedIn, false).Query(
+		rows, err := sqlAdmin.users(activeOnly, loggedIn, false).Query(
 			data.Arg("limit", limit),
 			data.Arg("offset", offset),
 		)
@@ -221,13 +234,13 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (use
 	})
 
 	g.Go(func() error {
-		return sqlInstanceUsers(activeOnly, loggedIn, true).QueryRow().Scan(&total)
+		return sqlAdmin.users(activeOnly, loggedIn, true).QueryRow().Scan(&count)
 	})
 
 	err = g.Wait()
 	if err != nil {
-		return nil, total, err
+		return nil, count, err
 	}
 
-	return users, total, nil
+	return users, count, nil
 }

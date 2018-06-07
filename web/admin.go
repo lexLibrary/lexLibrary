@@ -246,3 +246,34 @@ func (a *adminPage) users(w http.ResponseWriter, r *http.Request, parms httprout
 	}
 	a.ServeHTTP(w, r, parms)
 }
+
+type adminUserInput struct {
+	Active *bool `json:"active"`
+	Admin  *bool `json:"admin"`
+}
+
+func adminUserUpdate(w http.ResponseWriter, r *http.Request, c ctx) {
+	input := &adminUserInput{}
+	if errHandled(parseInput(r, input), w, r) {
+		return
+	}
+
+	if c.session == nil {
+		errHandled(app.Unauthorized("You do not have access to this page"), w, r)
+		return
+	}
+
+	admin, err := c.session.Admin()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	username := c.params.ByName("username")
+
+	if input.Active != nil {
+		if errHandled(admin.SetUserActive(username, *input.Active), w, r) {
+			return
+		}
+	}
+
+}

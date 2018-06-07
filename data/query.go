@@ -21,7 +21,6 @@ var queryBuildQueue []*Query
 // multiple database backends
 type Query struct {
 	statement string
-	built     bool
 	args      []string
 	tx        *sql.Tx
 }
@@ -208,47 +207,87 @@ func (q *Query) buildTemplate() {
 	}
 
 	q.statement = strings.TrimSpace(buff.String())
-	q.built = true
 }
 
 // Exec executes a templated query without returning any rows
-func (q *Query) Exec(args ...Argument) (sql.Result, error) {
-	if !q.built {
+func (q *Query) Exec(args ...Argument) (result sql.Result, err error) {
+	if q.statement == "" {
 		q.buildTemplate()
 	}
+
 	if q.tx != nil {
-		return q.tx.Exec(q.statement, q.orderedArgs(args)...)
+		result, err = q.tx.Exec(q.statement, q.orderedArgs(args)...)
+	} else {
+		result, err = db.Exec(q.statement, q.orderedArgs(args)...)
 	}
-	return db.Exec(q.statement, q.orderedArgs(args)...)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Executing query: %s", q.Statement())
+	}
+	return result, nil
 }
 
 // Query executes a templated query that returns rows
-func (q *Query) Query(args ...Argument) (*sql.Rows, error) {
-	if !q.built {
+func (q *Query) Query(args ...Argument) (rows *sql.Rows, err error) {
+	if q.statement == "" {
 		q.buildTemplate()
 	}
+
 	if q.tx != nil {
-		return q.tx.Query(q.statement, q.orderedArgs(args)...)
+		rows, err = q.tx.Query(q.statement, q.orderedArgs(args)...)
+	} else {
+		rows, err = db.Query(q.statement, q.orderedArgs(args)...)
 	}
-	return db.Query(q.statement, q.orderedArgs(args)...)
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Executing query: %s", q.Statement())
+	}
+	return rows, nil
+}
+
+// Row wraps sql.Row so that custom errors can be passed through with query.QueryRow
+type Row struct {
+	row       *sql.Row
+	err       error
+	statement string
+}
+
+func (r *Row) Scan(dest ...interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
+	err := r.row.Scan(dest...)
+	if err == sql.ErrNoRows {
+		return err
+	}
+	if err != nil {
+		return errors.Wrapf(err, "Executing query: %s", r.statement)
+	}
+	return nil
 }
 
 // QueryRow executes a templated query that returns a single row
-func (q *Query) QueryRow(args ...Argument) *sql.Row {
-	if !q.built {
+func (q *Query) QueryRow(args ...Argument) *Row {
+	if q.statement == "" {
 		q.buildTemplate()
 	}
-	if q.tx != nil {
-		return q.tx.QueryRow(q.statement, q.orderedArgs(args)...)
+	r := &Row{
+		statement: q.Statement(),
 	}
-	return db.QueryRow(q.statement, q.orderedArgs(args)...)
+
+	if q.tx != nil {
+		r.row = q.tx.QueryRow(q.statement, q.orderedArgs(args)...)
+	} else {
+		r.row = db.QueryRow(q.statement, q.orderedArgs(args)...)
+	}
+
+	return r
 }
 
 func (q *Query) copy() *Query {
 	return &Query{
 		statement: q.statement,
 		args:      q.args,
-		built:     q.built,
 		tx:        q.tx,
 	}
 }
@@ -266,7 +305,7 @@ func (q *Query) Tx(tx *sql.Tx) *Query {
 
 // Statement returns the complied query template
 func (q *Query) Statement() string {
-	if !q.built {
+	if q.statement == "" {
 		q.buildTemplate()
 	}
 	return q.statement
@@ -289,7 +328,8 @@ func BeginTx(trnFunc func(tx *sql.Tx) error) error {
 	if err != nil {
 		rErr := tx.Rollback()
 		if rErr != nil {
-			return errors.Errorf("Error rolling back transaction.  Rollback error %s, Original error %s", rErr, err)
+			return errors.Errorf("Error rolling back transaction.  Rollback error %s, Original error %s",
+				rErr, err)
 		}
 		return err
 	}

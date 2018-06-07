@@ -63,8 +63,39 @@ var ErrUserNotFound = NotFound("User Not found")
 // ErrUserConflict is when a user is updating an older version of a user record
 var ErrUserConflict = Conflict("You are not editing the most current version of this user. Please refresh and try again")
 
-var (
-	sqlUserInsert = data.NewQuery(`
+const (
+	userPublicColumns  = "u.id, u.username, u.name, u.active, u.profile_image_id, u.admin, u.created"
+	userPrivateColumns = `u.id, 
+		u.username, 
+		u.name, 
+		u.auth_type, 
+		u.password, 
+		u.password_version, 
+		u.password_expiration, 
+		u.active, 
+		u.version, 
+		u.updated, 
+		u.created, 
+		u.admin, 
+		u.profile_image_id,
+		u.profile_image_draft_id`
+)
+
+var sqlUser = struct {
+	insert,
+	byUsername,
+	byID,
+	publicProfileByUsername,
+	publicProfileByID,
+	updateActive,
+	updateAdmin,
+	updatePassword,
+	updateName,
+	updateProfileImage,
+	updateProfileDraftImage,
+	updateUsername *data.Query
+}{
+	insert: data.NewQuery(`
 		insert into users (
 			id,
 			username, 
@@ -92,54 +123,36 @@ var (
 			{{arg "created"}},
 			{{arg "admin"}}
 		)
-	`)
+	`),
+	byUsername: data.NewQuery(
+		fmt.Sprintf(`select %s from users u where username = {{arg "username"}}`, userPrivateColumns)),
+	byID: data.NewQuery(
+		fmt.Sprintf(`select %s from users u where id = {{arg "id"}}`, userPrivateColumns)),
+	publicProfileByUsername: data.NewQuery(
+		fmt.Sprintf(`select %s from users u where username = {{arg "username"}}`, userPublicColumns)),
+	publicProfileByID: data.NewQuery(
+		fmt.Sprintf(`select %s from users u where id = {{arg "id"}}`, userPublicColumns)),
+	updateActive:            sqlUserUpdate("active"),
+	updateAdmin:             sqlUserUpdate("admin"),
+	updatePassword:          sqlUserUpdate("password", "password_version", "password_expiration"),
+	updateName:              sqlUserUpdate("name"),
+	updateProfileImage:      sqlUserUpdate("profile_image_id", "profile_image_draft_id"),
+	updateProfileDraftImage: sqlUserUpdate("profile_image_draft_id"),
+	updateUsername:          sqlUserUpdate("username"),
+}
 
-	userPublicColumns  = "u.id, u.username, u.name, u.active, u.profile_image_id, u.admin, u.created"
-	userPrivateColumns = `u.id, 
-		u.username, 
-		u.name, 
-		u.auth_type, 
-		u.password, 
-		u.password_version, 
-		u.password_expiration, 
-		u.active, 
-		u.version, 
-		u.updated, 
-		u.created, 
-		u.admin, 
-		u.profile_image_id,
-		u.profile_image_draft_id`
-
-	sqlUserFromUsername = data.NewQuery(
-		fmt.Sprintf(`select %s from users u where username = {{arg "username"}}`, userPrivateColumns))
-	sqlUserFromID = data.NewQuery(
-		fmt.Sprintf(`select %s from users u where id = {{arg "id"}}`, userPrivateColumns))
-	sqlUserPublicProfileFromUsername = data.NewQuery(
-		fmt.Sprintf(`select %s from users u where username = {{arg "username"}}`, userPublicColumns))
-	sqlUserPublicProfileFromID = data.NewQuery(
-		fmt.Sprintf(`select %s from users u where id = {{arg "id"}}`, userPublicColumns))
-
-	sqlUserUpdate = func(columns ...string) *data.Query {
-		updates := ""
-		for i := range columns {
-			updates += fmt.Sprintf(`%s = {{arg "%s"}},`, columns[i], columns[i])
-		}
-		return data.NewQuery(fmt.Sprintf(`
+var sqlUserUpdate = func(columns ...string) *data.Query {
+	updates := ""
+	for i := range columns {
+		updates += fmt.Sprintf(`%s = {{arg "%s"}},`, columns[i], columns[i])
+	}
+	return data.NewQuery(fmt.Sprintf(`
 		update users set %s
 			updated = {{NOW}}, 
 			version = version + 1 
 		where id = {{arg "id"}} 
 		and version = {{arg "version"}}`, updates))
-	}
-
-	sqlUserUpdateActive            = sqlUserUpdate("active")
-	sqlUserUpdateAdmin             = sqlUserUpdate("admin")
-	sqlUserUpdatePassword          = sqlUserUpdate("password", "password_version", "password_expiration")
-	sqlUserUpdateName              = sqlUserUpdate("name")
-	sqlUserUpdateProfileImage      = sqlUserUpdate("profile_image_id", "profile_image_draft_id")
-	sqlUserUpdateProfileDraftImage = sqlUserUpdate("profile_image_draft_id")
-	sqlUserUpdateUsername          = sqlUserUpdate("username")
-)
+}
 
 // UserNew creates a new user, from the sign up page
 // returns unauthorized if public signups are disabled
@@ -213,7 +226,7 @@ func userNew(tx *sql.Tx, username, password string) (*User, error) {
 // app internal code should use un-exported funcs that contain the full User record
 func UserGet(username string) (*PublicProfile, error) {
 	u := &PublicProfile{}
-	err := u.scan(sqlUserPublicProfileFromUsername.
+	err := u.scan(sqlUser.publicProfileByUsername.
 		QueryRow(data.Arg("username", strings.ToLower(username))))
 	if err != nil {
 		return nil, err
@@ -223,8 +236,7 @@ func UserGet(username string) (*PublicProfile, error) {
 
 func publicProfileGet(id data.ID) (*PublicProfile, error) {
 	u := &PublicProfile{}
-	err := u.scan(sqlUserPublicProfileFromID.
-		QueryRow(data.Arg("id", id)))
+	err := u.scan(sqlUser.publicProfileByID.QueryRow(data.Arg("id", id)))
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +287,7 @@ func (u *User) scan(record scanner) error {
 func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 	u := &User{}
 
-	err := u.scan(sqlUserFromUsername.Tx(tx).QueryRow(data.Arg("username", strings.ToLower(username))))
+	err := u.scan(sqlUser.byUsername.Tx(tx).QueryRow(data.Arg("username", strings.ToLower(username))))
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +297,7 @@ func userFromUsername(tx *sql.Tx, username string) (*User, error) {
 
 func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
 	u := &User{}
-	err := u.scan(sqlUserFromID.Tx(tx).QueryRow(data.Arg("id", id)))
+	err := u.scan(sqlUser.byID.Tx(tx).QueryRow(data.Arg("id", id)))
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +306,7 @@ func userFromID(tx *sql.Tx, id data.ID) (*User, error) {
 }
 
 func (u *User) insert(tx *sql.Tx) error {
-	_, err := sqlUserInsert.Tx(tx).Exec(
+	_, err := sqlUser.insert.Tx(tx).Exec(
 		data.Arg("id", u.ID),
 		data.Arg("username", u.Username),
 		data.Arg("name", u.Name),
@@ -357,7 +369,7 @@ func (u *User) update(update func() (sql.Result, error)) error {
 // setActive sets the active status of the given user
 func (u *User) setActive(active bool, version int) error {
 	err := u.update(func() (sql.Result, error) {
-		return sqlUserUpdateActive.Exec(data.Arg("active", active), data.Arg("id", u.ID),
+		return sqlUser.updateActive.Exec(data.Arg("active", active), data.Arg("id", u.ID),
 			data.Arg("version", version))
 	})
 	if err != nil {
@@ -377,7 +389,7 @@ func (u *User) SetName(name string, version int) error {
 			return nil, err
 		}
 
-		return sqlUserUpdateName.Exec(
+		return sqlUser.updateName.Exec(
 			data.Arg("name", u.Name),
 			data.Arg("id", u.ID),
 			data.Arg("version", version),
@@ -388,7 +400,7 @@ func (u *User) SetName(name string, version int) error {
 // setAdmin sets if a user is an Administrator or not
 func (u *User) setAdmin(admin bool, version int) error {
 	err := u.update(func() (sql.Result, error) {
-		return sqlUserUpdateAdmin.Exec(
+		return sqlUser.updateAdmin.Exec(
 			data.Arg("admin", admin),
 			data.Arg("id", u.ID),
 			data.Arg("version", version),
@@ -449,7 +461,7 @@ func (u *User) SetPassword(oldPassword, newPassword string, version int) error {
 
 		// update password, version and expiration
 		err = u.update(func() (sql.Result, error) {
-			return sqlUserUpdatePassword.Exec(
+			return sqlUser.updatePassword.Exec(
 				data.Arg("password", hash),
 				data.Arg("password_version", passVer),
 				data.Arg("password_expiration", expires),
@@ -508,7 +520,7 @@ func (u *User) UploadProfileImageDraft(upload Upload, version int) error {
 		}
 
 		err = u.update(func() (sql.Result, error) {
-			return sqlUserUpdateProfileDraftImage.Tx(tx).Exec(
+			return sqlUser.updateProfileDraftImage.Tx(tx).Exec(
 				data.Arg("profile_image_draft_id", i.id),
 				data.Arg("id", u.ID),
 				data.Arg("version", version),
@@ -595,7 +607,7 @@ func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 		}
 
 		return u.update(func() (sql.Result, error) {
-			return sqlUserUpdateProfileImage.Tx(tx).Exec(
+			return sqlUser.updateProfileImage.Tx(tx).Exec(
 				data.Arg("profile_image_id", u.profileImageDraft),
 				data.Arg("profile_image_draft_id", nil),
 				data.Arg("id", u.ID),
@@ -625,9 +637,9 @@ func (u *PublicProfile) DisplayInitials() string {
 	return strings.ToUpper(string([]rune(initials[0])[0]) + string([]rune(initials[len(initials)-1])[0]))
 }
 
-// Latest gets the latest version of user
-func (u *User) Latest() (*User, error) {
-	return userFromID(nil, u.ID)
+// Refresh gets the latest version of user
+func (u *User) Refresh() error {
+	return u.scan(sqlUser.byID.QueryRow(data.Arg("id", u.ID)))
 }
 
 // SetUsername updates the user's current username
@@ -653,7 +665,7 @@ func (u *User) SetUsername(username string, version int) error {
 	}
 
 	return u.update(func() (sql.Result, error) {
-		return sqlUserUpdateUsername.Exec(
+		return sqlUser.updateUsername.Exec(
 			data.Arg("username", u.Username),
 			data.Arg("id", u.ID),
 			data.Arg("version", version),
@@ -669,7 +681,7 @@ func (u *User) RemoveProfileImage() error {
 
 	return data.BeginTx(func(tx *sql.Tx) error {
 		err := u.update(func() (sql.Result, error) {
-			return sqlUserUpdateProfileImage.Tx(tx).Exec(
+			return sqlUser.updateProfileImage.Tx(tx).Exec(
 				data.Arg("profile_image_id", nil),
 				data.Arg("profile_image_draft_id", nil),
 				data.Arg("id", u.ID),

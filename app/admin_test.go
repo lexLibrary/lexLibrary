@@ -48,7 +48,7 @@ func TestAdmin(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = admin.SetUserActive(inactive, false, inactive.Version)
+		err = admin.SetUserActive(inactive.Username, false)
 		if err != nil {
 			t.Fatal(err)
 		}
