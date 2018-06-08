@@ -62,7 +62,7 @@ func (a *adminPage) data(s *app.Session) (*adminData, error) {
 
 }
 
-func (a *adminPage) overview(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
+func (a *adminPage) overview() httprouter.Handle {
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
@@ -79,11 +79,10 @@ func (a *adminPage) overview(w http.ResponseWriter, r *http.Request, parms httpr
 		tData.Overview = overview
 		w.(*templateWriter).execute(tData)
 	}
-	a.ServeHTTP(w, r, parms)
+	return a.ServeHTTP
 }
 
-func (a *adminPage) settings(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (a *adminPage) settings() httprouter.Handle {
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
@@ -98,11 +97,10 @@ func (a *adminPage) settings(w http.ResponseWriter, r *http.Request, parms httpr
 		tData.Settings = settings
 		w.(*templateWriter).execute(tData)
 	}
-	a.ServeHTTP(w, r, parms)
+	return a.ServeHTTP
 }
 
-func (a *adminPage) logs(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (a *adminPage) logs() httprouter.Handle {
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
@@ -151,11 +149,10 @@ func (a *adminPage) logs(w http.ResponseWriter, r *http.Request, parms httproute
 		}
 		w.(*templateWriter).execute(tData)
 	}
-	a.ServeHTTP(w, r, parms)
+	return a.ServeHTTP
 }
 
-func (a *adminPage) registration(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (a *adminPage) registration() httprouter.Handle {
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
@@ -178,11 +175,10 @@ func (a *adminPage) registration(w http.ResponseWriter, r *http.Request, parms h
 
 		w.(*templateWriter).execute(tData)
 	}
-	a.ServeHTTP(w, r, parms)
+	return a.ServeHTTP
 }
 
-func (a *adminPage) registrationNew(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (a *adminPage) registrationNew() httprouter.Handle {
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
@@ -194,11 +190,10 @@ func (a *adminPage) registrationNew(w http.ResponseWriter, r *http.Request, parm
 
 		w.(*templateWriter).execute(tData)
 	}
-	a.ServeHTTP(w, r, parms)
+	return a.ServeHTTP
 }
 
-func (a *adminPage) registrationGet(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (a *adminPage) registrationGet() httprouter.Handle {
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
@@ -214,11 +209,10 @@ func (a *adminPage) registrationGet(w http.ResponseWriter, r *http.Request, parm
 
 		w.(*templateWriter).execute(tData)
 	}
-	a.ServeHTTP(w, r, parms)
+	return a.ServeHTTP
 }
 
-func (a *adminPage) users(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (a *adminPage) users() httprouter.Handle {
 	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
@@ -244,7 +238,7 @@ func (a *adminPage) users(w http.ResponseWriter, r *http.Request, parms httprout
 
 		w.(*templateWriter).execute(tData)
 	}
-	a.ServeHTTP(w, r, parms)
+	return a.ServeHTTP
 }
 
 type adminUserInput struct {

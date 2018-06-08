@@ -58,8 +58,7 @@ func (p *profilePage) data(s *app.Session) (*profileData, error) {
 	}, nil
 }
 
-func (p *profilePage) documents(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (p *profilePage) documents() httprouter.Handle {
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := p.data(c.session)
 		if errHandled(err, w, r) {
@@ -69,11 +68,10 @@ func (p *profilePage) documents(w http.ResponseWriter, r *http.Request, parms ht
 		tData.Tab = "documents"
 		w.(*templateWriter).execute(tData)
 	}
-	p.ServeHTTP(w, r, parms)
+	return p.ServeHTTP
 }
 
-func (p *profilePage) readLater(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (p *profilePage) readLater() httprouter.Handle {
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := p.data(c.session)
 		if errHandled(err, w, r) {
@@ -83,12 +81,10 @@ func (p *profilePage) readLater(w http.ResponseWriter, r *http.Request, parms ht
 		tData.Tab = "readLater"
 		w.(*templateWriter).execute(tData)
 	}
-	p.ServeHTTP(w, r, parms)
-
+	return p.ServeHTTP
 }
 
-func (p *profilePage) comments(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (p *profilePage) comments() httprouter.Handle {
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := p.data(c.session)
 		if errHandled(err, w, r) {
@@ -98,12 +94,10 @@ func (p *profilePage) comments(w http.ResponseWriter, r *http.Request, parms htt
 		tData.Tab = "comments"
 		w.(*templateWriter).execute(tData)
 	}
-	p.ServeHTTP(w, r, parms)
-
+	return p.ServeHTTP
 }
 
-func (p *profilePage) history(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
-
+func (p *profilePage) history() httprouter.Handle {
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := p.data(c.session)
 		if errHandled(err, w, r) {
@@ -113,8 +107,7 @@ func (p *profilePage) history(w http.ResponseWriter, r *http.Request, parms http
 		tData.Tab = "history"
 		w.(*templateWriter).execute(tData)
 	}
-	p.ServeHTTP(w, r, parms)
-
+	return p.ServeHTTP
 }
 
 type profileEditPage struct {
@@ -139,7 +132,7 @@ func (p *profileEditPage) loadShared(s *app.Session) error {
 	return nil
 }
 
-func (p *profileEditPage) root(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
+func (p *profileEditPage) root() httprouter.Handle {
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		err := p.loadShared(c.session)
 		if errHandled(err, w, r) {
@@ -149,10 +142,10 @@ func (p *profileEditPage) root(w http.ResponseWriter, r *http.Request, parms htt
 
 		w.(*templateWriter).execute(p.data)
 	}
-	p.ServeHTTP(w, r, parms)
+	return p.ServeHTTP
 }
 
-func (p *profileEditPage) account(w http.ResponseWriter, r *http.Request, parms httprouter.Params) {
+func (p *profileEditPage) account() httprouter.Handle {
 	p.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
 		err := p.loadShared(c.session)
 		if errHandled(err, w, r) {
@@ -162,7 +155,7 @@ func (p *profileEditPage) account(w http.ResponseWriter, r *http.Request, parms 
 
 		w.(*templateWriter).execute(p.data)
 	}
-	p.ServeHTTP(w, r, parms)
+	return p.ServeHTTP
 }
 
 func profileUpdateName(w http.ResponseWriter, r *http.Request, c ctx) {

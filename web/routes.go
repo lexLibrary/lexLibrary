@@ -79,11 +79,11 @@ func setupRoutes() http.Handler {
 		},
 	}
 
-	rootHandler.GET("/profile/", profile.documents)
-	rootHandler.GET("/profile/readLater", profile.readLater)
-	rootHandler.GET("/profile/history", profile.history)
-	rootHandler.GET("/profile/documents", profile.documents)
-	rootHandler.GET("/profile/comments", profile.comments)
+	rootHandler.GET("/profile/", profile.documents())
+	rootHandler.GET("/profile/readLater", profile.readLater())
+	rootHandler.GET("/profile/history", profile.history())
+	rootHandler.GET("/profile/documents", profile.documents())
+	rootHandler.GET("/profile/comments", profile.comments())
 
 	profileEdit := &profileEditPage{
 		templateHandler: templateHandler{
@@ -91,8 +91,8 @@ func setupRoutes() http.Handler {
 		},
 	}
 
-	rootHandler.GET("/profile/edit", profileEdit.root)
-	rootHandler.GET("/profile/edit/account", profileEdit.account)
+	rootHandler.GET("/profile/edit", profileEdit.root())
+	rootHandler.GET("/profile/edit/account", profileEdit.account())
 
 	// admin
 	admin := &adminPage{
@@ -101,14 +101,14 @@ func setupRoutes() http.Handler {
 		},
 	}
 
-	rootHandler.GET("/admin", admin.overview)
-	rootHandler.GET("/admin/settings", admin.settings)
-	rootHandler.GET("/admin/logs", admin.logs)
-	rootHandler.GET("/admin/logs/:id", admin.logs)
-	rootHandler.GET("/admin/users", admin.users)
-	rootHandler.GET("/admin/registration", admin.registration)
-	rootHandler.GET("/admin/newregistration", admin.registrationNew)
-	rootHandler.GET("/admin/registration/:token", admin.registrationGet)
+	rootHandler.GET("/admin", admin.overview())
+	rootHandler.GET("/admin/settings", admin.settings())
+	rootHandler.GET("/admin/logs", admin.logs())
+	rootHandler.GET("/admin/logs/:id", admin.logs())
+	rootHandler.GET("/admin/users", admin.users())
+	rootHandler.GET("/admin/registration", admin.registration())
+	rootHandler.GET("/admin/newregistration", admin.registrationNew())
+	rootHandler.GET("/admin/registration/:token", admin.registrationGet())
 	rootHandler.PUT("/admin/user/:username/", makeHandle(adminUserUpdate))
 
 	// groups
