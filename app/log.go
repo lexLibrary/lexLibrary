@@ -19,36 +19,43 @@ type Log struct {
 	Occurred time.Time `json:"occurred,omitempty"`
 }
 
-var sqlLogInsert = data.NewQuery(`insert into logs (id, occurred, message) 
-	values ({{arg "id"}}, {{arg "occurred"}}, {{arg "message"}})`)
-var sqlLogGet = data.NewQuery(`
-	select id, occurred, message from logs order by occurred desc 
-	{{if sqlserver}}
-		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
-	{{else}}
-		LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-	{{end}}
-`)
-
-var sqlLogTotal = data.NewQuery(`select count(*) from logs`)
-var sqlLogTotalSince = data.NewQuery(`select count(*) from logs where occurred >= {{arg "occurred"}}`)
-
-// Performance of this search will be poor, and I may just remove this functionality altogether
-// but it's an admin only thing, so maybe it's worth keeping around.  There is no nice way to do case-insensitve
-// columns across all of the databases, unless I drop support for TiDB, Cockroach.  It might be
-// worth it if other features require case insensitivity, but I think we can get by without it.
-var sqlLogSearch = data.NewQuery(`
-	select id, occurred, message from logs 
-	where lower(message) like lower({{arg "search"}}) order by occurred desc 
-	{{if sqlserver}}
-		OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
-	{{else}}
-		LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-	{{end}}
-`)
-
-var sqlLogSearchTotal = data.NewQuery(`select count(*) from logs where lower(message) like lower({{arg "search"}})`)
-var sqlLogGetByID = data.NewQuery(`select id, occurred, message from logs where id = {{arg "id"}}`)
+var sqlLog = struct {
+	insert,
+	get,
+	total,
+	totalSince,
+	search,
+	searchTotal,
+	byID *data.Query
+}{
+	insert: data.NewQuery(`insert into logs (id, occurred, message) 
+		values ({{arg "id"}}, {{arg "occurred"}}, {{arg "message"}})`),
+	get: data.NewQuery(`
+		select id, occurred, message from logs order by occurred desc 
+		{{if sqlserver}}
+			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+		{{else}}
+			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+		{{end}}
+	`),
+	total:      data.NewQuery(`select count(*) from logs`),
+	totalSince: data.NewQuery(`select count(*) from logs where occurred >= {{arg "occurred"}}`),
+	// Performance of this search will be poor, and I may just remove this functionality altogether
+	// but it's an admin only thing, so maybe it's worth keeping around.  There is no nice way to do case-insensitve
+	// columns across all of the databases, unless I drop support for TiDB, Cockroach.  It might be
+	// worth it if other features require case insensitivity, but I think we can get by without it.
+	search: data.NewQuery(`
+		select id, occurred, message from logs 
+		where lower(message) like lower({{arg "search"}}) order by occurred desc 
+		{{if sqlserver}}
+			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+		{{else}}
+			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+		{{end}}
+	`),
+	searchTotal: data.NewQuery(`select count(*) from logs where lower(message) like lower({{arg "search"}})`),
+	byID:        data.NewQuery(`select id, occurred, message from logs where id = {{arg "id"}}`),
+}
 
 // LogError logs an error to the logs table
 func LogError(lerr error) data.ID {
@@ -63,7 +70,7 @@ func LogError(lerr error) data.ID {
 		log.Printf("ERROR: %s", l.Message)
 	}
 
-	_, err := sqlLogInsert.Exec(
+	_, err := sqlLog.insert.Exec(
 		data.Arg("id", l.ID),
 		data.Arg("occurred", l.Occurred),
 		data.Arg("message", l.Message))
@@ -84,7 +91,7 @@ func LogGet(offset, limit int) (logs []*Log, total int, err error) {
 	var g errgroup.Group
 
 	g.Go(func() error {
-		rows, err := sqlLogGet.Query(data.Arg("offset", offset), data.Arg("limit", limit))
+		rows, err := sqlLog.get.Query(data.Arg("offset", offset), data.Arg("limit", limit))
 		if err != nil {
 			return err
 		}
@@ -101,7 +108,7 @@ func LogGet(offset, limit int) (logs []*Log, total int, err error) {
 		return nil
 	})
 	g.Go(func() error {
-		return sqlLogTotal.QueryRow().Scan(&total)
+		return sqlLog.total.QueryRow().Scan(&total)
 	})
 
 	err = g.Wait()
@@ -115,7 +122,7 @@ func LogGet(offset, limit int) (logs []*Log, total int, err error) {
 // LogTotalSince returns the number of logs since the passed in date
 func LogTotalSince(date time.Time) (int, error) {
 	total := 0
-	err := sqlLogTotalSince.QueryRow(data.Arg("occurred", date)).Scan(&total)
+	err := sqlLog.totalSince.QueryRow(data.Arg("occurred", date)).Scan(&total)
 	return total, err
 }
 
@@ -123,7 +130,7 @@ func LogTotalSince(date time.Time) (int, error) {
 func LogGetByID(id data.ID) (*Log, error) {
 	log := &Log{}
 
-	err := sqlLogGetByID.QueryRow(data.Arg("id", id)).Scan(&log.ID, &log.Occurred, &log.Message)
+	err := sqlLog.byID.QueryRow(data.Arg("id", id)).Scan(&log.ID, &log.Occurred, &log.Message)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +146,7 @@ func LogSearch(search string, offset, limit int) (logs []*Log, total int, err er
 
 	var g errgroup.Group
 	g.Go(func() error {
-		rows, err := sqlLogSearch.Query(
+		rows, err := sqlLog.search.Query(
 			data.Arg("search", "%"+search+"%"),
 			data.Arg("offset", offset),
 			data.Arg("limit", limit))
@@ -159,7 +166,7 @@ func LogSearch(search string, offset, limit int) (logs []*Log, total int, err er
 		return nil
 	})
 	g.Go(func() error {
-		return sqlLogSearchTotal.QueryRow(data.Arg("search", "%"+search+"%")).Scan(&total)
+		return sqlLog.searchTotal.QueryRow(data.Arg("search", "%"+search+"%")).Scan(&total)
 	})
 	err = g.Wait()
 	if err != nil {

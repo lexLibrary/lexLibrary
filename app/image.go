@@ -40,8 +40,15 @@ var (
 
 var imageValidContentTypes = []string{"image/gif", "image/jpeg", "image/png"}
 
-var (
-	sqlImageInsert = data.NewQuery(`
+var sqlImage = struct {
+	insert,
+	delete,
+	full,
+	thumb,
+	placeholder,
+	update *data.Query
+}{
+	insert: data.NewQuery(`
 		insert into images (
 			id, 
 			name,
@@ -63,20 +70,18 @@ var (
 			{{arg "updated"}},
 			{{arg "created"}}
 		)
-	`)
-	sqlImageDelete = data.NewQuery(`delete from images where id = {{arg "id"}}`)
-
-	sqlImageGetFull = data.NewQuery(`
+	`),
+	delete: data.NewQuery(`delete from images where id = {{arg "id"}}`),
+	full: data.NewQuery(`
 		select name, version, content_type, data, updated from images where id = {{arg "id"}}
-	`)
-	sqlImageGetThumb = data.NewQuery(`
+	`),
+	thumb: data.NewQuery(`
 		select name, version, content_type, thumb, updated from images where id = {{arg "id"}}
-	`)
-	sqlImageGetPlaceholder = data.NewQuery(`
+	`),
+	placeholder: data.NewQuery(`
 		select name, version, content_type, placeholder, updated from images where id = {{arg "id"}}
-	`)
-
-	sqlImageUpdate = data.NewQuery(`
+	`),
+	update: data.NewQuery(`
 		update images
 		set	data = {{arg "data"}},
 			thumb = {{arg "thumb"}},
@@ -85,8 +90,10 @@ var (
 			version = version + 1
 		where id = {{arg "id"}}
 		and version = {{arg "version"}}
-	`)
-)
+	`),
+}
+
+var ()
 
 // Image is a user uploaded image, either for a profile or for a document presented on the web
 // depending on how the image is looked up, it may be fullsize, thumbnail or a placeholder
@@ -100,18 +107,18 @@ type Image struct {
 
 // Full returns the full size image
 func (i *Image) Full() (io.ReadSeeker, error) {
-	return i.fromRow(sqlImageGetFull.QueryRow(data.Arg("id", i.ID)))
+	return i.fromRow(sqlImage.full.QueryRow(data.Arg("id", i.ID)))
 }
 
 // Thumb returns the image thumbnail
 func (i *Image) Thumb() (io.ReadSeeker, error) {
-	return i.fromRow(sqlImageGetThumb.QueryRow(data.Arg("id", i.ID)))
+	return i.fromRow(sqlImage.thumb.QueryRow(data.Arg("id", i.ID)))
 }
 
 // Placeholder returns the image placeholder which is shown while waiting for the
 // rest of the image to load
 func (i *Image) Placeholder() (io.ReadSeeker, error) {
-	return i.fromRow(sqlImageGetPlaceholder.QueryRow(data.Arg("id", i.ID)))
+	return i.fromRow(sqlImage.placeholder.QueryRow(data.Arg("id", i.ID)))
 }
 
 func (i *Image) fromRow(row *data.Row) (io.ReadSeeker, error) {
@@ -150,7 +157,7 @@ func (i *Image) raw() (*imageRaw, error) {
 		id: i.ID,
 	}
 
-	err := sqlImageGetFull.QueryRow(data.Arg("id", i.ID)).Scan(
+	err := sqlImage.full.QueryRow(data.Arg("id", i.ID)).Scan(
 		&raw.name,
 		&raw.version,
 		&raw.contentType,
@@ -236,7 +243,7 @@ func (i *imageRaw) insert(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	_, err = sqlImageInsert.Tx(tx).Exec(
+	_, err = sqlImage.insert.Tx(tx).Exec(
 		data.Arg("id", i.id),
 		data.Arg("name", i.name),
 		data.Arg("version", i.version),
@@ -255,7 +262,7 @@ func (i *imageRaw) update(tx *sql.Tx, version int) error {
 	if err != nil {
 		return err
 	}
-	r, err := sqlImageUpdate.Exec(
+	r, err := sqlImage.update.Exec(
 		data.Arg("data", i.data),
 		data.Arg("thumb", i.thumb),
 		data.Arg("placeholder", i.placeholder),
@@ -298,7 +305,7 @@ func (i *imageRaw) validate() error {
 }
 
 func imageDelete(tx *sql.Tx, id data.ID) error {
-	result, err := sqlImageDelete.Tx(tx).Exec(data.Arg("id", id))
+	result, err := sqlImage.delete.Tx(tx).Exec(data.Arg("id", id))
 	if err != nil {
 		return err
 	}

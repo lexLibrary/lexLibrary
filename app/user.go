@@ -366,18 +366,27 @@ func (u *User) update(update func() (sql.Result, error)) error {
 	return nil
 }
 
-// setActive sets the active status of the given user
+// setActive sets the active status of the given user, if user is inactivated, then any open sessions are invalidated
 func (u *User) setActive(active bool, version int) error {
-	err := u.update(func() (sql.Result, error) {
-		return sqlUser.updateActive.Exec(data.Arg("active", active), data.Arg("id", u.ID),
-			data.Arg("version", version))
-	})
-	if err != nil {
-		return err
-	}
+	return data.BeginTx(func(tx *sql.Tx) error {
+		err := u.update(func() (sql.Result, error) {
+			return sqlUser.updateActive.Exec(data.Arg("active", active), data.Arg("id", u.ID),
+				data.Arg("version", version))
+		})
+		if err != nil {
+			return err
+		}
 
-	u.Active = active
-	return nil
+		if !active {
+			_, err = sqlSession.invalidateAll.Exec(data.Arg("user_id", u.ID))
+			if err != nil {
+				return err
+			}
+		}
+
+		u.Active = active
+		return nil
+	})
 }
 
 // SetName sets the user's name
@@ -473,7 +482,7 @@ func (u *User) SetPassword(oldPassword, newPassword string, version int) error {
 			return err
 		}
 		// invalidate all sessions for user
-		_, err := sqlSessionInvalidateAll.Exec(
+		_, err := sqlSession.invalidateAll.Exec(
 			data.Arg("user_id", u.ID),
 		)
 		if err != nil {

@@ -34,8 +34,18 @@ type RegistrationToken struct {
 	creatorCache *PublicProfile
 }
 
-var (
-	sqlRegistrationTokenInsert = data.NewQuery(`
+var sqlRegistrationToken = struct {
+	insert,
+	get,
+	decrementLimit,
+	users,
+	groups,
+	insertUser,
+	updateValid,
+	groupInsert *data.Query
+	list func(validOnly, total bool) *data.Query
+}{
+	insert: data.NewQuery(`
 		insert into registration_tokens (
 			token,
 			description,
@@ -55,8 +65,8 @@ var (
 			{{arg "created"}},
 			{{arg "creator"}}
 		)
-	`)
-	sqlRegistrationTokenGroupInsert = data.NewQuery(`
+	`),
+	groupInsert: data.NewQuery(`
 		insert into registration_token_groups (
 			token,
 			group_id
@@ -64,8 +74,8 @@ var (
 			{{arg "token"}},
 			{{arg "group_id"}}
 		)
-	`)
-	sqlRegistrationTokenGet = data.NewQuery(`
+	`),
+	get: data.NewQuery(`
 		select	t.token,
 			t.description,
 			t.{{limit}},
@@ -79,9 +89,8 @@ var (
 			left outer join registration_token_groups g 
 				on t.token = g.token
 		where 	t.token = {{arg "token"}}		
-	`)
-
-	sqlRegistrationTokenList = func(validOnly, total bool) *data.Query {
+	`),
+	list: func(validOnly, total bool) *data.Query {
 		qry := `
 			select	token,
 				description,
@@ -114,15 +123,14 @@ var (
 			`
 		}
 		return data.NewQuery(qry)
-	}
-	sqlRegistrationTokenDecrementLimit = data.NewQuery(`
+	},
+	decrementLimit: data.NewQuery(`
 		update 	registration_tokens
 		set 	{{limit}} = {{limit}} - 1
 		where 	token = {{arg "token"}}
 		and 	{{limit}} > 0
-	`)
-
-	sqlRegistrationTokenInsertUser = data.NewQuery(`
+	`),
+	insertUser: data.NewQuery(`
 		insert into registration_token_users (
 			token,
 			user_id
@@ -130,9 +138,8 @@ var (
 			{{arg "token"}},
 			{{arg "user_id"}}
 		)
-	`)
-
-	sqlRegistrationTokenGroups = data.NewQuery(`
+	`),
+	groups: data.NewQuery(`
 		select	g.id,
 			g.name, 
 			g.version,
@@ -142,22 +149,20 @@ var (
 			registration_token_groups t
 		where 	g.id = t.group_id
 		and 	t.token = {{arg "token"}}
-	`)
-
-	sqlRegistrationTokenUsers = data.NewQuery(fmt.Sprintf(`
+	`),
+	users: data.NewQuery(fmt.Sprintf(`
 		select	%s
 		from 	users u,
 			registration_token_users t
 		where 	u.id = t.user_id
 		and 	t.token = {{arg "token"}}
-	`, userPublicColumns))
-
-	sqlRegistrationTokenValid = data.NewQuery(`
+	`, userPublicColumns)),
+	updateValid: data.NewQuery(`
 		update 	registration_tokens
 		set 	valid = {{arg "valid"}}
 		where 	token = {{arg "token"}}
-	`)
-)
+	`),
+}
 
 var errRegistrationTokenInvalid = NewFailure("This registration URL has expired or is no longer valid. " +
 	"Please contact your adminstrator for a new URL.")
@@ -215,7 +220,7 @@ func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) (tokens
 	var g errgroup.Group
 
 	g.Go(func() error {
-		rows, err := sqlRegistrationTokenList(validOnly, false).
+		rows, err := sqlRegistrationToken.list(validOnly, false).
 			Query(data.Arg("offset", offset), data.Arg("limit", limit))
 		if err != nil {
 			return err
@@ -242,7 +247,7 @@ func (a *Admin) RegistrationTokenList(validOnly bool, offset, limit int) (tokens
 	})
 
 	g.Go(func() error {
-		return sqlRegistrationTokenList(validOnly, true).QueryRow().Scan(&total)
+		return sqlRegistrationToken.list(validOnly, true).QueryRow().Scan(&total)
 	})
 
 	err = g.Wait()
@@ -261,7 +266,7 @@ func (t *RegistrationToken) validate() error {
 		return NewFailure("Expires must be a date in the future")
 	}
 	if len(t.groups) != 0 {
-		query, args := sqlGroupsFromIDs(t.groups, true)
+		query, args := sqlGroup.byIDs(t.groups, true)
 		groupCount := 0
 		err := query.QueryRow(args...).Scan(&groupCount)
 		if err != nil {
@@ -281,7 +286,7 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 		panic("A transaction is required for adding registration tokens")
 	}
 
-	_, err := sqlRegistrationTokenInsert.Tx(tx).Exec(
+	_, err := sqlRegistrationToken.insert.Tx(tx).Exec(
 		data.Arg("token", t.Token),
 		data.Arg("description", t.Description),
 		data.Arg("limit", t.Limit),
@@ -296,7 +301,7 @@ func (t *RegistrationToken) insert(tx *sql.Tx) error {
 	}
 
 	for i := range t.groups {
-		_, err = sqlRegistrationTokenGroupInsert.Tx(tx).Exec(
+		_, err = sqlRegistrationToken.groupInsert.Tx(tx).Exec(
 			data.Arg("token", t.Token),
 			data.Arg("group_id", t.groups[i]),
 		)
@@ -363,7 +368,7 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 		}
 
 		for i := range t.groups {
-			result, err := sqlGroupInsertMember.Tx(tx).Exec(
+			result, err := sqlGroup.insertMember.Tx(tx).Exec(
 				data.Arg("group_id", t.groups[i]),
 				data.Arg("user_id", u.ID),
 				data.Arg("admin", false),
@@ -382,7 +387,7 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 				return NewFailure("Cannot add an invalid user to a group")
 			}
 		}
-		_, err = sqlRegistrationTokenInsertUser.Tx(tx).Exec(
+		_, err = sqlRegistrationToken.insertUser.Tx(tx).Exec(
 			data.Arg("token", t.Token),
 			data.Arg("user_id", u.ID),
 		)
@@ -399,7 +404,7 @@ func (a *Admin) RegistrationToken(token string) (*RegistrationToken, error) {
 
 func registrationTokenGet(token string) (*RegistrationToken, error) {
 	t := &RegistrationToken{}
-	rows, err := sqlRegistrationTokenGet.Query(data.Arg("token", token))
+	rows, err := sqlRegistrationToken.get.Query(data.Arg("token", token))
 	if err != nil {
 		return nil, err
 	}
@@ -441,7 +446,7 @@ func registrationTokenGet(token string) (*RegistrationToken, error) {
 
 // decrementLimit decrements the available registration limit
 func (t *RegistrationToken) decrementLimit(tx *sql.Tx) error {
-	result, err := sqlRegistrationTokenDecrementLimit.Tx(tx).Exec(data.Arg("token", t.Token))
+	result, err := sqlRegistrationToken.decrementLimit.Tx(tx).Exec(data.Arg("token", t.Token))
 	if err != nil {
 		return err
 	}
@@ -459,7 +464,7 @@ func (t *RegistrationToken) decrementLimit(tx *sql.Tx) error {
 
 // Invalidate sets a registration token's valid status to false
 func (t *RegistrationToken) Invalidate() error {
-	result, err := sqlRegistrationTokenValid.Exec(data.Arg("token", t.Token), data.Arg("valid", false))
+	result, err := sqlRegistrationToken.updateValid.Exec(data.Arg("token", t.Token), data.Arg("valid", false))
 	if err != nil {
 		return err
 	}
@@ -477,7 +482,7 @@ func (t *RegistrationToken) Invalidate() error {
 // Groups returns the groups associated with this registration token, if any
 func (t *RegistrationToken) Groups() ([]*Group, error) {
 	var groups []*Group
-	rows, err := sqlRegistrationTokenGroups.Query(data.Arg("token", t.Token))
+	rows, err := sqlRegistrationToken.groups.Query(data.Arg("token", t.Token))
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +502,7 @@ func (t *RegistrationToken) Groups() ([]*Group, error) {
 // Users returns the users registered with this given registration token
 func (t *RegistrationToken) Users() ([]*PublicProfile, error) {
 	var users []*PublicProfile
-	rows, err := sqlRegistrationTokenUsers.Query(data.Arg("token", t.Token))
+	rows, err := sqlRegistrationToken.users.Query(data.Arg("token", t.Token))
 	if err != nil {
 		return nil, err
 	}

@@ -40,8 +40,14 @@ var (
 	ErrPasswordExpired = NewFailure("Your password has expired.  Please set a new one.")
 )
 
-var (
-	sqlSessionInsert = data.NewQuery(`insert into sessions (
+var sqlSession = struct {
+	insert,
+	updateValid,
+	updateCSRF,
+	invalidateAll,
+	get *data.Query
+}{
+	insert: data.NewQuery(`insert into sessions (
 		id,
 		user_id,
 		valid,
@@ -63,19 +69,21 @@ var (
 		{{arg "csrf_date"}},
 		{{arg "created"}},
 		{{arg "updated"}}
-	)`)
-	sqlSessionSetValid = data.NewQuery(`update sessions set valid = {{arg "valid"}} where id = {{arg "id"}}`)
-	sqlSessionSetCSRF  = data.NewQuery(`update sessions 
-		set csrf_token = {{arg "csrf_token"}}, csrf_date = {{arg "csrf_date"}} where id = {{arg "id"}}`)
-	sqlSessionGet = data.NewQuery(`select id, user_id, valid, expires, csrf_token, csrf_date 
-		from sessions where id = {{arg "id"}} and user_id = {{arg "user_id"}}`)
-	sqlSessionInvalidateAll = data.NewQuery(`
+	)`),
+	updateValid: data.NewQuery(`update sessions set valid = {{arg "valid"}} where id = {{arg "id"}}`),
+	updateCSRF: data.NewQuery(`update sessions 
+		set csrf_token = {{arg "csrf_token"}}, csrf_date = {{arg "csrf_date"}} where id = {{arg "id"}}`),
+	get: data.NewQuery(`select id, user_id, valid, expires, csrf_token, csrf_date 
+		from sessions where id = {{arg "id"}} and user_id = {{arg "user_id"}}`),
+	invalidateAll: data.NewQuery(`
 		update sessions set valid = {{FALSE}} 
 		where user_id = {{arg "user_id"}} 
 		and valid <> {{FALSE}}
 		and expires >= {{NOW}}
-	`)
-)
+	`),
+}
+
+var ()
 
 // Login logs a new user into Lex Library.
 func Login(username string, password string) (*User, error) {
@@ -147,7 +155,7 @@ func (u *User) NewSession(expires time.Time, ipAddress, userAgent string) (*Sess
 // SessionGet retrieves a session
 func SessionGet(userID data.ID, sessionID string) (*Session, error) {
 	s := &Session{}
-	err := sqlSessionGet.QueryRow(data.Arg("id", sessionID), data.Arg("user_id", userID)).
+	err := sqlSession.get.QueryRow(data.Arg("id", sessionID), data.Arg("user_id", userID)).
 		Scan(
 			&s.ID,
 			&s.UserID,
@@ -173,7 +181,7 @@ func SessionGet(userID data.ID, sessionID string) (*Session, error) {
 }
 
 func (s *Session) insert() error {
-	_, err := sqlSessionInsert.Exec(
+	_, err := sqlSession.insert.Exec(
 		data.Arg("id", s.ID),
 		data.Arg("user_id", s.UserID),
 		data.Arg("valid", s.Valid),
@@ -191,7 +199,7 @@ func (s *Session) insert() error {
 // Logout logs a session out
 func (s *Session) Logout() error {
 	s.Valid = false
-	_, err := sqlSessionSetValid.Exec(data.Arg("valid", s.Valid), data.Arg("id", s.ID))
+	_, err := sqlSession.updateValid.Exec(data.Arg("valid", s.Valid), data.Arg("id", s.ID))
 	return err
 }
 
@@ -235,7 +243,7 @@ func (s *Session) CycleCSRF() error {
 
 	s.CSRFToken = Random(256)
 	s.CSRFDate = time.Now()
-	_, err := sqlSessionSetCSRF.Exec(data.Arg("csrf_token", s.CSRFToken), data.Arg("csrf_date", s.CSRFDate),
+	_, err := sqlSession.updateCSRF.Exec(data.Arg("csrf_token", s.CSRFToken), data.Arg("csrf_date", s.CSRFDate),
 		data.Arg("id", s.ID))
 	return err
 }

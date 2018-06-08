@@ -29,13 +29,18 @@ var ErrSettingNotFound = NotFound("No setting can be found for the given id")
 // ErrSettingInvalidValue is returned when a setting is being set to a value that is invalid for the setting
 var ErrSettingInvalidValue = NewFailure("The setting cannot be set to this value")
 
-var (
-	sqlSettingsGet   = data.NewQuery("select id, value from settings")
-	sqlSettingGet    = data.NewQuery(`select value from settings where id = {{arg "id"}}`)
-	sqlSettingUpdate = data.NewQuery(`update settings set value = {{arg "value"}} where id = {{arg "id"}}`)
-	sqlSettingInsert = data.NewQuery(`insert into settings (id, description, value) 
-		values ({{arg "id"}}, {{arg "description"}}, {{arg "value"}})`)
-)
+var sqlSetting = struct {
+	get,
+	all,
+	update,
+	insert *data.Query
+}{
+	all:    data.NewQuery("select id, value from settings"),
+	get:    data.NewQuery(`select value from settings where id = {{arg "id"}}`),
+	update: data.NewQuery(`update settings set value = {{arg "value"}} where id = {{arg "id"}}`),
+	insert: data.NewQuery(`insert into settings (id, description, value) 
+		values ({{arg "id"}}, {{arg "description"}}, {{arg "value"}})`),
+}
 
 // Settings returns all of the settings in Lex Library.  If a setting is not set in the database
 // the default for that setting is returned
@@ -49,7 +54,7 @@ func settings() ([]Setting, error) {
 
 	copy(settings, settingDefaults)
 
-	rows, err := sqlSettingsGet.Query()
+	rows, err := sqlSetting.all.Query()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +91,7 @@ func settingGet(id string) (Setting, error) {
 		return Setting{}, err
 	}
 
-	err = sqlSettingGet.QueryRow(data.Arg("id", id)).Scan(&strValue)
+	err = sqlSetting.get.QueryRow(data.Arg("id", id)).Scan(&strValue)
 	if err == sql.ErrNoRows {
 		// nothing in the DB return the default setting value
 		return setting, nil
@@ -168,9 +173,9 @@ func settingSet(tx *sql.Tx, id string, value interface{}) error {
 
 	setting.Value = value
 	var tmp = ""
-	err = sqlSettingGet.Tx(tx).QueryRow(data.Arg("id", id)).Scan(&tmp)
+	err = sqlSetting.get.Tx(tx).QueryRow(data.Arg("id", id)).Scan(&tmp)
 	if err == sql.ErrNoRows {
-		_, err := sqlSettingInsert.Tx(tx).Exec(
+		_, err := sqlSetting.insert.Tx(tx).Exec(
 			data.Arg("id", id),
 			data.Arg("description", setting.Description),
 			data.Arg("value", strValue))
@@ -184,7 +189,7 @@ func settingSet(tx *sql.Tx, id string, value interface{}) error {
 		return err
 	}
 
-	_, err = sqlSettingUpdate.Tx(tx).Exec(data.Arg("id", id), data.Arg("value", value))
+	_, err = sqlSetting.update.Tx(tx).Exec(data.Arg("id", id), data.Arg("value", value))
 	if err != nil {
 		return errors.Wrapf(err, "Error updating setting %s", id)
 	}

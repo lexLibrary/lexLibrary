@@ -40,9 +40,9 @@ var sqlAdmin = struct {
 	init: data.NewQuery(`
 		select occurred from schema_versions where version = 0
 	`),
-	users: func(active, loggedIn, count bool) *data.Query {
+	users: func(active, loggedIn, total bool) *data.Query {
 		columns := userPublicColumns + ", s.created"
-		if count {
+		if total {
 			columns = "count(*)"
 		}
 
@@ -68,7 +68,7 @@ var sqlAdmin = struct {
 			) or s.created is null)
 			%s
 		`, columns, criteria)
-		if !count {
+		if !total {
 			qry += `
 			order by u.created desc
 			{{if sqlserver}}
@@ -195,7 +195,7 @@ type InstanceUser struct {
 }
 
 // InstanceUsers returns a list of all of the current users in Lex Library
-func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (users []*InstanceUser, count int, err error) {
+func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (users []*InstanceUser, total int, err error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
@@ -234,13 +234,13 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (use
 	})
 
 	g.Go(func() error {
-		return sqlAdmin.users(activeOnly, loggedIn, true).QueryRow().Scan(&count)
+		return sqlAdmin.users(activeOnly, loggedIn, true).QueryRow().Scan(&total)
 	})
 
 	err = g.Wait()
 	if err != nil {
-		return nil, count, err
+		return nil, total, err
 	}
 
-	return users, count, nil
+	return users, total, nil
 }
