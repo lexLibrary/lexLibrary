@@ -99,26 +99,29 @@ func TestAdmin(t *testing.T) {
 		tests := []struct {
 			activeOnly bool
 			loggedIn   bool
+			search     string
 			offset     int
 			limit      int
 
 			total  int
 			result []*app.User
 		}{
-			{true, false, 0, 100, 5, []*app.User{admin.User(), loggedIn, loggedOut, multipleSessions,
+			{true, false, "", 0, 100, 5, []*app.User{admin.User(), loggedIn, loggedOut, multipleSessions,
 				neverLoggedIn}},
-			{false, true, 0, 100, 2, []*app.User{loggedIn, multipleSessions}},
-			{true, true, 0, 100, 2, []*app.User{loggedIn, multipleSessions}},
-			{false, false, 0, 100, 6, []*app.User{admin.User(), loggedIn, loggedOut, multipleSessions,
+			{false, true, "", 0, 100, 2, []*app.User{loggedIn, multipleSessions}},
+			{true, true, "", 0, 100, 2, []*app.User{loggedIn, multipleSessions}},
+			{false, false, "", 0, 100, 6, []*app.User{admin.User(), loggedIn, loggedOut, multipleSessions,
 				inactive, neverLoggedIn}},
-			{false, false, 0, 2, 6, []*app.User{neverLoggedIn, multipleSessions}},
-			{false, false, 2, 2, 6, []*app.User{loggedOut, loggedIn}},
-			{false, false, 4, 2, 6, []*app.User{inactive, admin.User()}},
+			{false, false, "", 0, 2, 6, []*app.User{neverLoggedIn, multipleSessions}},
+			{false, false, "", 2, 2, 6, []*app.User{loggedOut, loggedIn}},
+			{false, false, "", 4, 2, 6, []*app.User{inactive, admin.User()}},
 		}
+
+		//TODO: Add user search testing
 
 		for i, test := range tests {
 			t.Run(fmt.Sprintf("Test %d", i), func(t *testing.T) {
-				users, total, err := admin.InstanceUsers(test.activeOnly, test.loggedIn, test.offset,
+				users, total, err := admin.InstanceUsers(test.activeOnly, test.loggedIn, test.search, test.offset,
 					test.limit)
 				if err != nil {
 					t.Fatal(err)

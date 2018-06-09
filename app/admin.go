@@ -214,12 +214,14 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, search string, offset, 
 		limit = 10
 	}
 
+	runSearch := search != ""
+
 	search = "%" + search + "%"
 
 	var g errgroup.Group
 
 	g.Go(func() error {
-		rows, err := sqlAdmin.users(activeOnly, loggedIn, search != "", false).Query(
+		rows, err := sqlAdmin.users(activeOnly, loggedIn, runSearch, false).Query(
 			data.Arg("limit", limit),
 			data.Arg("offset", offset),
 			data.Arg("usernameSearch", search),

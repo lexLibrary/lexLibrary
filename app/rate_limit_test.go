@@ -76,7 +76,7 @@ func TestRateDelay(t *testing.T) {
 
 	// free attempts
 	for i := 0; i <= int(rType.Limit); i++ {
-		err := rType.Attempt("testID")
+		_, err := rType.Attempt("testID")
 		if err != nil {
 			t.Fatalf("Error attempting rate delay withing limits: %s", err)
 		}
@@ -88,7 +88,7 @@ func TestRateDelay(t *testing.T) {
 
 	c := make(chan bool)
 	go func() {
-		_ = rType.Attempt("testID")
+		_, _ = rType.Attempt("testID")
 		c <- true
 	}()
 
@@ -103,13 +103,13 @@ func TestRateDelay(t *testing.T) {
 	// these requests will be delayed, but shouldn't error
 	for i := 0; i < max; i++ {
 		go func() {
-			_ = rType.Attempt("testID")
+			_, _ = rType.Attempt("testID")
 		}()
 	}
 
 	// sleep a bit to ensure that this attempt happens last
 	time.Sleep(1 * time.Millisecond)
-	err := rType.Attempt("testID")
+	_, err := rType.Attempt("testID")
 	if err != app.ErrTooManyRequests {
 		t.Fatalf("Rate delayed request past it's max delay didn't return an error")
 	}
