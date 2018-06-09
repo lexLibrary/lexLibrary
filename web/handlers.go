@@ -39,62 +39,69 @@ type ctx struct {
 	session *app.Session
 }
 
-type llHandlerFunc func(http.ResponseWriter, *http.Request, ctx)
+type llHandler func(http.ResponseWriter, *http.Request, ctx)
 
-// llPrePublicHandle skips session and CSRF handling for known public endpoints that don't need to check
-// sessions
-func llPrePublicHandle(w http.ResponseWriter, r *http.Request, p httprouter.Params, llFunc llHandlerFunc) {
-	standardHeaders(w)
-	if interrupted(w, r) {
-		return
-	}
-	c := ctx{
-		params: p,
-	}
-
-	left, err := requestLimit.Attempt(ipAddress(r))
-	rateLimitHeader(w, left)
-	if errHandled(err, w, r) {
-		return
-	}
-	llFunc(w, r, c)
+type handleMaker struct {
+	gzip    bool
+	session bool
+	limit   app.Attempter
 }
 
-func llPreHandle(w http.ResponseWriter, r *http.Request, p httprouter.Params, llFunc llHandlerFunc) {
-	standardHeaders(w)
-	if interrupted(w, r) {
-		return
-	}
-	s, err := session(r)
-	c := ctx{
-		params:  p,
-		session: s,
-	}
+func (h handleMaker) handle(llhandle llHandler) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		if h.gzip {
+			w = responseWriter(w, r)
+			defer func() {
+				err := w.(*gzipResponse).Close()
+				if err != nil {
+					app.LogError(errors.Wrap(err, "Closing gzip responseWriter"))
+				}
+			}()
+		}
+		standardHeaders(w)
+		if interrupted(w, r) {
+			return
+		}
+		c := ctx{
+			params: p,
+		}
 
-	if errHandled(err, w, r) {
-		return
-	}
-	if s != nil {
-		// If user is logged in, handle csrf token
-		if errHandled(handleCSRF(w, r, s), w, r) {
-			return
-		}
-		// if user is logged in rate-limit based on userkey not ip address
-		left, err := requestLimit.Attempt(s.UserID.String())
-		rateLimitHeader(w, left)
-		if errHandled(err, w, r) {
-			return
-		}
-	} else {
-		//if not logged in access, rate limit based on IP
-		left, err := requestLimit.Attempt(ipAddress(r))
-		rateLimitHeader(w, left)
-		if errHandled(err, w, r) {
-			return
-		}
-	}
+		if h.session {
+			s, err := session(r)
 
-	llFunc(w, r, c)
+			if errHandled(err, w, r) {
+				return
+			}
+			if s != nil {
+				// If user is logged in, handle csrf token
+				if errHandled(handleCSRF(w, r, s), w, r) {
+					return
+				}
+			}
+			c.session = s
+		}
+
+		if h.limit != nil {
+			if c.session != nil {
+				// if user is logged in rate-limit based on userkey not ip address
+				left, err := h.limit.Attempt(c.session.UserID.String())
+				rateHeader(w, left)
+				if errHandled(err, w, r) {
+					return
+				}
+			} else {
+				//if not logged in access, rate limit based on IP
+				left, err := h.limit.Attempt(ipAddress(r))
+				rateHeader(w, left)
+				if errHandled(err, w, r) {
+					return
+				}
+			}
+		}
+
+		llhandle(w, r, c)
+
+	}
 }
 
 // gzipResponse gzips the response data for any respones writers defined to use it
@@ -136,52 +143,52 @@ func responseWriter(w http.ResponseWriter, r *http.Request) *gzipResponse {
 	return &gzipResponse{zip: writer, ResponseWriter: w}
 }
 
-type templateHandler struct {
-	handler       llHandlerFunc
-	templateFiles []string
-	template      *template.Template
-	once          sync.Once
-}
-
 // template writers are passed into the http handler call
 // carrying the template with them:
 // 	err := w.(*templateWriter).execute("templateName", "templateData")
 type templateWriter struct {
 	http.ResponseWriter
 	template  *template.Template
-	CSRFToken string
+	csrfToken string
 }
 
-func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	if devMode {
-		t.loadTemplates()
-	} else {
-		t.once.Do(func() { t.loadTemplates() })
-	}
+type templateHandler struct {
+	templateFiles []string
+	template      *template.Template
+	handleMaker   *handleMaker
+	once          sync.Once
+}
 
-	writer := responseWriter(w, r)
-	w = writer
-
-	if r.Method == "GET" {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Content-Security-Policy", cspHeader)
-		llPreHandle(&templateWriter{
-			ResponseWriter: w,
-			template:       t.template,
-		}, r, p, t.handler)
-
-		err := writer.Close()
-		if err != nil {
-			app.LogError(errors.Wrap(err, "Closing Template writer"))
+func (t *templateHandler) handle(handle llHandler) httprouter.Handle {
+	if t.handleMaker == nil {
+		// most templates will need the "standard" handleMaker
+		t.handleMaker = &handleMaker{
+			gzip:    true,
+			session: true,
+			limit:   requestLimit,
 		}
-		return
 	}
-	//template handlers only respond to gets
-	notFound(w, r)
-	err := writer.Close()
-	if err != nil {
-		app.LogError(errors.Wrap(err, "Closing Template writer after non-GET template call"))
-	}
+	return t.handleMaker.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
+		if devMode {
+			t.loadTemplates()
+		} else {
+			t.once.Do(func() { t.loadTemplates() })
+		}
+
+		if r.Method == "GET" {
+			setTemplateHeaders(w)
+
+			handle(&templateWriter{
+				ResponseWriter: w,
+				template:       t.template,
+				csrfToken:      w.Header().Get("X-CSRFToken"),
+			}, r, c)
+
+			return
+		}
+		//template handlers only respond to gets
+		notFound(w, r)
+	})
 }
 
 func (t *templateWriter) execute(tdata interface{}) {
@@ -190,7 +197,7 @@ func (t *templateWriter) execute(tdata interface{}) {
 	var b bytes.Buffer
 	err := t.template.Funcs(map[string]interface{}{
 		"csrfToken": func() string {
-			return t.CSRFToken
+			return t.csrfToken
 		},
 	}).Execute(&b, tdata)
 
@@ -271,25 +278,7 @@ func (t *templateHandler) loadTemplates() {
 	}).Delims("[[", "]]").Parse(tmpl))
 }
 
-func makeHandle(llFunc llHandlerFunc) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		writer := responseWriter(w, r)
-		llPreHandle(writer, r, p, llFunc)
-		_ = writer.Close()
-	}
-}
-
-func makePublicHandle(llFunc llHandlerFunc) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		writer := responseWriter(w, r)
-		llPrePublicHandle(writer, r, p, llFunc)
-		_ = writer.Close()
-	}
-}
-
-// for use with pre-compressed data / images
-func makeNoZipHandle(llFunc llHandlerFunc) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		llPreHandle(w, r, p, llFunc)
-	}
+func setTemplateHeaders(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Security-Policy", cspHeader)
 }

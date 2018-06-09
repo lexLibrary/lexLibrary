@@ -3,18 +3,9 @@ package web
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/lexLibrary/lexLibrary/app"
 )
-
-var publicUserNewRateDelay = app.RateDelay{
-	Type:   "userNew",
-	Limit:  2,
-	Delay:  15 * time.Second,
-	Period: 15 * time.Minute,
-	Max:    1 * time.Minute,
-}
 
 type userInput struct {
 	Username *string `json:"username,omitempty"`
@@ -54,12 +45,6 @@ func userCreate(w http.ResponseWriter, r *http.Request, c ctx) {
 		input.Password = &empty
 	}
 
-	if c.session == nil {
-		// don't let public users create too many users quickly
-		if errHandled(publicUserNewRateDelay.Attempt(ipAddress(r)), w, r) {
-			return
-		}
-	}
 	token := c.params.ByName("token")
 
 	var u *app.User

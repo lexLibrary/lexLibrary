@@ -63,16 +63,18 @@
 								<figure class="avatar avatar-full" data-initial="[[.User.DisplayInitials]]">
 									[[if .User.ProfileImage]]
 										<img src="/profile/image" alt="[[.User.DisplayName]]">
-										<button @click="removeImage" data-tooltip="Remove Profile Image"
-											class="tooltip tooltip-top profile-image-remove btn btn-error btn-action btn-lg">
-											<i class="icon icon-delete"></i>
-										</button>
 									[[end]]
 								</figure>
-								<div>
+								<div class="relative">
 									<file-input accept="image/jpeg,image/gif,image/png" @change="uploadImage">
 										<button class="mt-2 btn">Select an Image</button>
 									</file-input>
+									[[if .User.ProfileImage]]
+										<button @click="removeImage" data-tooltip="Remove Profile Image"
+											class="profile-image-remove tooltip tooltip-top btn btn-error btn-action">
+											<i class="icon icon-delete"></i>
+										</button>
+									[[end]]
 								</div>
 							</div>
 						</div> <!-- column -->

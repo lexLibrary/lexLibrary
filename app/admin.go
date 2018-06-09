@@ -24,13 +24,19 @@ var ErrNotAdmin = Unauthorized("This functionality is reserved for administrator
 var sqlAdmin = struct {
 	stats,
 	init *data.Query
-	users func(bool, bool, bool) *data.Query
+	users func(bool, bool, bool, bool) *data.Query
 }{
 	stats: data.NewQuery(`
 		select users.num, sessions.num, documents.num, errorsTotal.num, errorsSinceStart.num
 		from
 		(select count(*) as num from users where active = {{TRUE}}) as users,
-		(select count(*) as num from sessions where expires > {{NOW}} and valid = {{TRUE}}) as sessions,
+		(
+			select count(*) as num from (
+				select count(*) from sessions 
+				where expires > {{NOW}} and valid = {{TRUE}} 
+				group by user_id
+			)
+		) as sessions,
 		(select 0 as num) as documents, 
 		(select count(*) num from logs) as errorsTotal,
 		(select count(*) num 
@@ -40,7 +46,7 @@ var sqlAdmin = struct {
 	init: data.NewQuery(`
 		select occurred from schema_versions where version = 0
 	`),
-	users: func(active, loggedIn, total bool) *data.Query {
+	users: func(active, loggedIn, search, total bool) *data.Query {
 		columns := userPublicColumns + ", s.created"
 		if total {
 			columns = "count(*)"
@@ -51,7 +57,14 @@ var sqlAdmin = struct {
 			criteria = "and s.expires > {{NOW}} and s.valid = {{TRUE}} "
 		}
 		if active {
-			criteria += "and u.active = {{TRUE}}"
+			criteria += "and u.active = {{TRUE}} "
+		}
+
+		if search {
+			criteria += `and (
+				username like {{arg "usernameSearch"}}
+				or lower(name) like {{arg "nameSearch"}} 	
+			)`
 		}
 
 		// NOTE: CockroachDB doesn't support sub queries like this yet:
@@ -195,17 +208,22 @@ type InstanceUser struct {
 }
 
 // InstanceUsers returns a list of all of the current users in Lex Library
-func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (users []*InstanceUser, total int, err error) {
+func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, search string, offset, limit int) (
+	users []*InstanceUser, total int, err error) {
 	if limit == 0 || limit > maxRows {
 		limit = 10
 	}
 
+	search = "%" + search + "%"
+
 	var g errgroup.Group
 
 	g.Go(func() error {
-		rows, err := sqlAdmin.users(activeOnly, loggedIn, false).Query(
+		rows, err := sqlAdmin.users(activeOnly, loggedIn, search != "", false).Query(
 			data.Arg("limit", limit),
 			data.Arg("offset", offset),
+			data.Arg("usernameSearch", search),
+			data.Arg("nameSearch", search),
 		)
 		if err != nil {
 			return err
@@ -234,7 +252,10 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, offset, limit int) (use
 	})
 
 	g.Go(func() error {
-		return sqlAdmin.users(activeOnly, loggedIn, true).QueryRow().Scan(&total)
+		return sqlAdmin.users(activeOnly, loggedIn, search != "", true).QueryRow(
+			data.Arg("usernameSearch", search),
+			data.Arg("nameSearch", search),
+		).Scan(&total)
 	})
 
 	err = g.Wait()

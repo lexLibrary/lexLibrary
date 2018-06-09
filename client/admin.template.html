@@ -49,7 +49,7 @@
 			<h3>[[.Overview.Instance.Users]]</h3>
 		</div>
 		<div class="column text-center">
-			<h5 class="title"><small>Active Sessions</small></h5>
+			<h5 class="title"><small>Logged In</small></h5>
 			<h3>[[.Overview.Instance.Sessions]]</h3>
 		</div>
 		<div class="column text-center">
@@ -665,7 +665,7 @@
 	<section id="users" class="admin-users container grid-lg pt-8">
 		<div class="flex-centered">
 			<div class="btn-group">
-				<a href="/admin/users?active" class="btn btn-lg [[if .Active]]active[[end]]">Active Only</a>
+				<a href="/admin/users?active" class="btn btn-lg [[if .Active]]active[[end]]">Active</a>
 				<a href="/admin/users?loggedin" class="btn btn-lg [[if .LoggedIn]]active[[end]]">Logged In</a>
 				<a href="/admin/users" class="btn btn-lg [[if .All]]active[[end]]">All</a>
 			</div>
@@ -675,7 +675,10 @@
 			<thead>
 				<tr>
 					<th class="avatar-column"></th>
-					<th>Name</th>
+					<th>
+						<input @keydown="search" class="form-input" type="text" id="userSearch" value="[[.Search]]" 
+							placeholder="Search Users">
+					</th>
 					<th class="date">Created</th>
 					<th class="date">Last Login</th>
 				</tr>
@@ -692,6 +695,6 @@
 			</tbody>
 		</table>
 		[[template "pager" .Pager]]
-		</section>
+	</section>
 	[[end]]
 [[end]]

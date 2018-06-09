@@ -36,6 +36,7 @@ type adminData struct {
 		Active   bool
 		LoggedIn bool
 		All      bool
+		Search   string
 		Users    []*app.InstanceUser
 		Pager    pager
 	}
@@ -63,7 +64,7 @@ func (a *adminPage) data(s *app.Session) (*adminData, error) {
 }
 
 func (a *adminPage) overview() httprouter.Handle {
-	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+	return a.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
@@ -78,12 +79,11 @@ func (a *adminPage) overview() httprouter.Handle {
 
 		tData.Overview = overview
 		w.(*templateWriter).execute(tData)
-	}
-	return a.ServeHTTP
+	})
 }
 
 func (a *adminPage) settings() httprouter.Handle {
-	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+	return a.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
@@ -96,12 +96,11 @@ func (a *adminPage) settings() httprouter.Handle {
 		}
 		tData.Settings = settings
 		w.(*templateWriter).execute(tData)
-	}
-	return a.ServeHTTP
+	})
 }
 
 func (a *adminPage) logs() httprouter.Handle {
-	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+	return a.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
@@ -148,12 +147,11 @@ func (a *adminPage) logs() httprouter.Handle {
 
 		}
 		w.(*templateWriter).execute(tData)
-	}
-	return a.ServeHTTP
+	})
 }
 
 func (a *adminPage) registration() httprouter.Handle {
-	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+	return a.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
@@ -174,12 +172,11 @@ func (a *adminPage) registration() httprouter.Handle {
 		tData.Registration.Tokens = tokens
 
 		w.(*templateWriter).execute(tData)
-	}
-	return a.ServeHTTP
+	})
 }
 
 func (a *adminPage) registrationNew() httprouter.Handle {
-	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+	return a.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
@@ -189,12 +186,11 @@ func (a *adminPage) registrationNew() httprouter.Handle {
 		tData.Registration.New = true
 
 		w.(*templateWriter).execute(tData)
-	}
-	return a.ServeHTTP
+	})
 }
 
 func (a *adminPage) registrationGet() httprouter.Handle {
-	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+	return a.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
@@ -208,12 +204,11 @@ func (a *adminPage) registrationGet() httprouter.Handle {
 		tData.Registration.Single = token
 
 		w.(*templateWriter).execute(tData)
-	}
-	return a.ServeHTTP
+	})
 }
 
 func (a *adminPage) users() httprouter.Handle {
-	a.handler = func(w http.ResponseWriter, r *http.Request, c ctx) {
+	return a.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := a.data(c.session)
 		if errHandled(err, w, r) {
 			return
@@ -225,10 +220,11 @@ func (a *adminPage) users() httprouter.Handle {
 
 		_, tData.Users.Active = qry["active"]
 		_, tData.Users.LoggedIn = qry["loggedin"]
+		tData.Users.Search = qry.Get("search")
 		tData.Users.All = (!tData.Users.Active && !tData.Users.LoggedIn)
 
 		users, total, err := tData.Admin.InstanceUsers(tData.Users.Active, tData.Users.LoggedIn,
-			pgr.Offset(), pgr.PageSize())
+			tData.Users.Search, pgr.Offset(), pgr.PageSize())
 		if errHandled(err, w, r) {
 			return
 		}
@@ -237,8 +233,7 @@ func (a *adminPage) users() httprouter.Handle {
 		tData.Users.Users = users
 
 		w.(*templateWriter).execute(tData)
-	}
-	return a.ServeHTTP
+	})
 }
 
 type adminUserInput struct {

@@ -6,6 +6,9 @@ import {
 } from './lib/data';
 
 import group_search from './components/group_search';
+import {
+    debounce
+} from './lib/util';
 
 var logVM = new Vue({
     el: document.getElementById('logSearch'),
@@ -315,26 +318,38 @@ var singleRegistrationVM = new Vue({
     },
 });
 
-
 var users = new Vue({
     el: document.getElementById('users'),
-    data: function() {
-        return {
-			error: null,
-		};
-    },
-    computed: {},
     methods: {
-        setActive: function(username, active) {
-            xhr.put(`/admin/user/${username}`, {
-                    active,
-                })
-                .then(() => {
-                    location.reload(true);
-                })
-                .catch((err) => {
-                    this.error = err.response;
-                });
-        },
+        search: debounce(function() {
+            let search = document.getElementById("userSearch");
+            if (!search || !search.value) {
+                return;
+            }
+            window.location = '/admin/users?search=' + search.value;
+        }, 200)
     },
 });
+
+// var user = new Vue({
+//     el: document.getElementById('users'),
+//     data: function() {
+//         return {
+// 			error: null,
+// 		};
+//     },
+//     computed: {},
+//     methods: {
+//         setActive: function(username, active) {
+//             xhr.put(`/admin/user/${username}`, {
+//                     active,
+//                 })
+//                 .then(() => {
+//                     location.reload(true);
+//                 })
+//                 .catch((err) => {
+//                     this.error = err.response;
+//                 });
+//         },
+//     },
+// });

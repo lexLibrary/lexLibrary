@@ -30,6 +30,8 @@ func firstRunHandler(w http.ResponseWriter, r *http.Request) {
 		if devMode {
 			firstRunTemplate.loadTemplates()
 		}
+		setTemplateHeaders(w)
+
 		errHandled(firstRunTemplate.template.Execute(w, nil), w, r)
 		return
 	}

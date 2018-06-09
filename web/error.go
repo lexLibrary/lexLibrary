@@ -69,7 +69,7 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 
 	accept := r.Header.Get("Accept")
 	if strings.Contains(accept, acceptHTML) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		setTemplateHeaders(w)
 		w.WriteHeader(status)
 		switch status {
 		case http.StatusNotFound:

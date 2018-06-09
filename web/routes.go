@@ -21,6 +21,24 @@ func setupRoutes() http.Handler {
 		PanicHandler:           panicHandler,
 	}
 
+	standard := handleMaker{
+		gzip:    true,
+		session: true,
+		limit:   requestLimit,
+	}
+
+	nozip := handleMaker{
+		gzip:    false,
+		session: true,
+		limit:   requestLimit,
+	}
+
+	createUser := handleMaker{
+		gzip:    true,
+		session: true,
+		limit:   publicUserNewRateDelay,
+	}
+
 	// static folders
 	rootHandler.GET("/images/*image", serveStatic("images/", false))
 	rootHandler.GET("/css/*file", serveStatic("css/", true))
@@ -28,50 +46,50 @@ func setupRoutes() http.Handler {
 
 	// root
 	rootHandler.GET("/", (&templateHandler{
-		handler:       rootTemplate,
 		templateFiles: []string{"index.template.html"},
-	}).ServeHTTP)
+	}).handle(rootTemplate))
 
 	// login / signup
 	rootHandler.GET("/login", (&templateHandler{
-		handler:       loginTemplate,
 		templateFiles: []string{"login.template.html"},
-	}).ServeHTTP)
+	}).handle(loginTemplate))
 
-	rootHandler.PUT("/expiredpassword", makeHandle(userUpdatePassword))
+	rootHandler.PUT("/expiredpassword", standard.handle(userUpdatePassword))
 	rootHandler.GET("/signup", (&templateHandler{
-		handler:       signupTemplate,
 		templateFiles: []string{"signup.template.html"},
-	}).ServeHTTP)
+	}).handle(signupTemplate))
 
-	rootHandler.PUT("/signup/password", makeHandle(passwordTest))
-	rootHandler.GET("/signup/username/:username", makeHandle(usernameTest))
+	rootHandler.PUT("/signup/password", standard.handle(passwordTest))
+	rootHandler.GET("/signup/username/:username", standard.handle(usernameTest))
 
-	rootHandler.POST("/session", makePublicHandle(sessionLogin))
-	rootHandler.DELETE("/session", makeHandle(sessionLogout))
+	rootHandler.POST("/session", handleMaker{
+		gzip:    true,
+		session: false, // need to post without CSRF because there is no session yet
+		limit:   logonRateDelay,
+	}.handle(sessionLogin))
+	rootHandler.DELETE("/session", standard.handle(sessionLogout))
 
 	// about
 	rootHandler.GET("/about", (&templateHandler{
-		handler:       aboutTemplate,
 		templateFiles: []string{"about.template.html"},
-	}).ServeHTTP)
+	}).handle(aboutTemplate))
 
 	// settings
-	rootHandler.PUT("/setting", makeHandle(settingUpdate))
-	rootHandler.DELETE("/setting", makeHandle(settingSetDefault))
+	rootHandler.PUT("/setting", standard.handle(settingUpdate))
+	rootHandler.DELETE("/setting", standard.handle(settingSetDefault))
 
 	// user
-	rootHandler.POST("/user", makeHandle(userCreate))
-	rootHandler.GET("/user/:username/image", makeNoZipHandle(userGetImage))
+	rootHandler.POST("/user", createUser.handle(userCreate))
+	rootHandler.GET("/user/:username/image", nozip.handle(userGetImage))
 
 	// profile
-	rootHandler.PUT("/profile/password", makeHandle(userUpdatePassword))
-	rootHandler.PUT("/profile/name", makeHandle(profileUpdateName))
-	rootHandler.PUT("/profile/username", makeHandle(profileUpdateUsername))
-	rootHandler.GET("/profile/image", makeNoZipHandle(profileGetImage))
-	rootHandler.POST("/profile/image", makeHandle(profileUploadImage))
-	rootHandler.PUT("/profile/image", makeHandle(profileCropImage))
-	rootHandler.DELETE("/profile/image", makeHandle(profileRemoveImage))
+	rootHandler.PUT("/profile/password", standard.handle(userUpdatePassword))
+	rootHandler.PUT("/profile/name", standard.handle(profileUpdateName))
+	rootHandler.PUT("/profile/username", standard.handle(profileUpdateUsername))
+	rootHandler.GET("/profile/image", nozip.handle(profileGetImage))
+	rootHandler.POST("/profile/image", standard.handle(profileUploadImage))
+	rootHandler.PUT("/profile/image", standard.handle(profileCropImage))
+	rootHandler.DELETE("/profile/image", standard.handle(profileRemoveImage))
 
 	profile := &profilePage{
 		templateHandler: &templateHandler{
@@ -109,20 +127,19 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/admin/registration", admin.registration())
 	rootHandler.GET("/admin/newregistration", admin.registrationNew())
 	rootHandler.GET("/admin/registration/:token", admin.registrationGet())
-	rootHandler.PUT("/admin/user/:username/", makeHandle(adminUserUpdate))
+	rootHandler.PUT("/admin/user/:username/", standard.handle(adminUserUpdate))
 
 	// groups
-	rootHandler.GET("/groups", makeHandle(groupGet))
-	rootHandler.POST("/groups", makeHandle(groupCreate))
+	rootHandler.GET("/groups", standard.handle(groupGet))
+	rootHandler.POST("/groups", standard.handle(groupCreate))
 
 	// registration tokens
 	rootHandler.GET(path.Join(app.RegistrationTokenPath, ":token"), (&templateHandler{
-		handler:       registrationTemplate,
 		templateFiles: []string{"signup.template.html"},
-	}).ServeHTTP)
-	rootHandler.POST(app.RegistrationTokenPath, makeHandle(registrationCreate))
-	rootHandler.DELETE(path.Join(app.RegistrationTokenPath, ":token"), makeHandle(registrationDelete))
-	rootHandler.POST("/user/:token", makeHandle(userCreate))
+	}).handle(registrationTemplate))
+	rootHandler.POST(app.RegistrationTokenPath, standard.handle(registrationCreate))
+	rootHandler.DELETE(path.Join(app.RegistrationTokenPath, ":token"), standard.handle(registrationDelete))
+	rootHandler.POST("/user/:token", createUser.handle(userCreate))
 
 	return rootHandler
 }

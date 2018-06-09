@@ -11,6 +11,10 @@ import (
 //TODO: This rate limiting is incorrect when used with multiple webservers
 //  Add clustering settings for lex library
 
+type Attempter interface {
+	Attempt(id string) (RateLeft, error)
+}
+
 type rateKey struct {
 	id       string
 	rateType string
@@ -67,26 +71,26 @@ func (rl *RateLimit) Attempt(id string) (RateLeft, error) {
 }
 
 // Attempt checks to see if a request is rate delayed. Will return an error if it is delayed the max amount
-func (rd *RateDelay) Attempt(id string) error {
+func (rd *RateDelay) Attempt(id string) (RateLeft, error) {
 	key := rateKey{id: id, rateType: rd.Type}
 	result, ok := key.find()
 	if ok {
 		if result.remaining() <= 0 && result.Reset.After(time.Now()) {
 			delay := rd.Delay * (time.Duration(-1*result.remaining()) + 1)
 			if delay >= rd.Max {
-				return ErrTooManyRequests
+				return *result, ErrTooManyRequests
 			}
 
 			result.decrement()
+			rtn := *result // copy current instance of result before sleeping
 			time.Sleep(delay)
-			return nil
+			return rtn, nil
 		}
 		result.decrement()
 
-		return nil
+		return *result, nil
 	}
-	key.add(rd.Limit, time.Now().Add(rd.Period))
-	return nil
+	return key.add(rd.Limit, time.Now().Add(rd.Period)), nil
 }
 
 func (rk *rateKey) find() (*RateLeft, bool) {

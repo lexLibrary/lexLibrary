@@ -21,15 +21,6 @@ type sessionInput struct {
 	RememberMe bool `json:"rememberMe,omitempty"`
 }
 
-// rate limit login attempts
-var logonDelay = app.RateDelay{
-	Type:   "login",
-	Limit:  10,
-	Delay:  5 * time.Second,
-	Period: 5 * time.Minute,
-	Max:    1 * time.Minute,
-}
-
 func loginTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	if c.session != nil {
 		// already logged in, redirect to home
@@ -103,14 +94,9 @@ func handleCSRF(w http.ResponseWriter, r *http.Request, s *app.Session) error {
 		return nil
 	}
 
-	// FIXME:
 	err := s.CycleCSRF()
 	if err != nil {
 		return err
-	}
-
-	if w, ok := w.(*templateWriter); ok {
-		w.CSRFToken = s.CSRFToken
 	}
 
 	//Get requests, put CSRF token in header
@@ -190,11 +176,6 @@ func sessionLogin(w http.ResponseWriter, r *http.Request, c ctx) {
 
 	if input.Password == nil {
 		errHandled(app.NewFailure("You must specify a password"), w, r)
-		return
-	}
-
-	// rate limit login requests
-	if errHandled(logonDelay.Attempt(ipAddress(r)), w, r) {
 		return
 	}
 
