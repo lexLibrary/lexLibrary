@@ -661,40 +661,92 @@
 
 
 [[define "users"]]
-	[[with .Users]]
-	<section id="users" class="admin-users container grid-lg pt-8">
-		<div class="flex-centered">
-			<div class="btn-group">
-				<a href="/admin/users?active" class="btn btn-lg [[if .Active]]active[[end]]">Active</a>
-				<a href="/admin/users?loggedin" class="btn btn-lg [[if .LoggedIn]]active[[end]]">Logged In</a>
-				<a href="/admin/users" class="btn btn-lg [[if .All]]active[[end]]">All</a>
-			</div>
-		</div>
+[[with .Users]]
+	[[with .User]]
+		<section id="user" class="admin-user container grid-lg pt-8">
+			<div class="columns">
+				<div class="column">
+					<a href="/user/[[.Username]]">
+						<figure class="avatar avatar-full" data-initial="[[.DisplayInitials]]">
+							[[if .ProfileImage]]
+								<p-image src="/user/[[.Username]]/image" alt="[[.DisplayName]]">
+							[[end]]
+						</figure>
+					</a>
+				</div>
+				<div class="column">
+					<div v-if="error" v-cloak class="toast toast-error">
+						<button @click="error=null"class="btn btn-clear float-right"></button>
+						{{error}}
+					</div>
+					<h4>[[.DisplayName]]
+						[[if not .Active]] 
+							<small><em>(inactive)</em></small>
+						[[else if .IsAdmin]]
+							<small>(admin)</small>
+						[[end]]
+					</h4>
+					<div class="text-gray">Created [[since .Created]] <small>([[time .Created]])</small></div>
+					[[if .LastLogin.Valid]]
+					<div class="text-gray">Last Login [[since .LastLogin.Time]] <small>([[time .LastLogin.Time]])</small></div>
+					[[end]]
+				
+					<div class="form-group">
+						<label class="form-switch">
+							<input @input="setActive('[[.Username]]', [[not .Active]])" type="checkbox" [[if .Active]]checked[[end]]>
+							<i class="form-icon"></i> Active
+						</label>
+					</div>
+					<div class="form-group">
+						<label @input="setAdmin('[[.Username]]', [[not .IsAdmin]])" class="form-switch">
+							<input type="checkbox" [[if .IsAdmin]]checked[[end]]>
+							<i class="form-icon"></i> Admin
+						</label>
+					</div>
 
-		<table class="table">
-			<thead>
-				<tr>
-					<th class="avatar-column"></th>
-					<th>
-						<input @keydown="search" class="form-input" type="text" id="userSearch" value="[[.Search]]" 
-							placeholder="Search Users">
-					</th>
-					<th class="date">Created</th>
-					<th class="date">Last Login</th>
-				</tr>
-			</thead>
-			<tbody>
-				[[range .Users]]
-					<tr class="[[if not .Active]]secondary[[end]]">
-						<td><a href="/user/[[.Username]]">[[template "avatar" .]]</a></td>
-						<td>[[.DisplayName]] [[if .IsAdmin]]<strong>(admin)</strong>[[end]]</td>
-						<td>[[time .Created]]</td>
-						<td>[[time .LastLogin.Time]]</td>
+				</div>
+			</div> <!-- columns -->
+		</section>
+	[[else]]
+		<section id="users" class="admin-users container grid-lg pt-8">
+			<div class="flex-centered">
+				<div class="btn-group">
+					<a href="/admin/users?active" class="btn btn-lg [[if .Active]]active[[end]]">Active</a>
+					<a href="/admin/users?loggedin" class="btn btn-lg [[if .LoggedIn]]active[[end]]">Logged In</a>
+					<a href="/admin/users" class="btn btn-lg [[if .All]]active[[end]]">All</a>
+				</div>
+			</div>
+
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="avatar-column"></th>
+						<th>
+							<form @submit="submit">
+								<input @input="search" v-focus class="form-input" type="text" id="userSearch" value="[[.Search]]" 
+									placeholder="Search Users">
+							</form>
+						</th>
+						<th class="date">Created</th>
+						<th class="date">Last Login</th>
 					</tr>
-				[[end]]
-			</tbody>
-		</table>
-		[[template "pager" .Pager]]
-	</section>
+				</thead>
+				<tbody>
+					[[range .Users]]
+						<tr class="[[if not .Active]]secondary[[end]]">
+							<td><a href="/user/[[.Username]]">[[template "avatar" .]]</a></td>
+							<td>
+								<a href="/admin/users/[[.Username]]">[[.DisplayName]]</a>
+								[[if .IsAdmin]]<small>(admin)</small>[[end]]
+							</td>
+							<td>[[time .Created]]</td>
+							<td>[[time .LastLogin.Time]]</td>
+						</tr>
+					[[end]]
+				</tbody>
+			</table>
+			[[template "pager" .Pager]]
+		</section>
 	[[end]]
+[[end]]
 [[end]]

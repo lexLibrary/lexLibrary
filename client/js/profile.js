@@ -7,7 +7,7 @@ import image from './components/image';
 var vm = new Vue({
     el: '#main',
     components: {
-        'prog-image': image,
+        'p-image': image,
     },
     data: function() {
         return {};

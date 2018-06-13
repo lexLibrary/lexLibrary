@@ -6,9 +6,14 @@ import {
 } from './lib/data';
 
 import group_search from './components/group_search';
+import image from './components/image';
 import {
     debounce
 } from './lib/util';
+
+import {
+    query
+} from './lib/url';
 
 var logVM = new Vue({
     el: document.getElementById('logSearch'),
@@ -320,36 +325,68 @@ var singleRegistrationVM = new Vue({
 
 var users = new Vue({
     el: document.getElementById('users'),
+    directives: {
+        focus: {
+            inserted: function(el) {
+                el.focus();
+                el.selectionStart = el.selectionEnd = el.value.length;
+            },
+        },
+    },
     methods: {
-        search: debounce(function() {
+        submit: function(e) {
+            if (e) {
+                e.preventDefault();
+            }
             let search = document.getElementById("userSearch");
             if (!search || !search.value) {
                 return;
             }
-            window.location = '/admin/users?search=' + search.value;
-        }, 200)
+
+            let q = query();
+            q.search = search.value;
+
+            window.location = '/admin/users' + q.toString();
+        },
+        search: debounce(function() {
+            this.submit();
+        }, 500),
     },
 });
 
-// var user = new Vue({
-//     el: document.getElementById('users'),
-//     data: function() {
-//         return {
-// 			error: null,
-// 		};
-//     },
-//     computed: {},
-//     methods: {
-//         setActive: function(username, active) {
-//             xhr.put(`/admin/user/${username}`, {
-//                     active,
-//                 })
-//                 .then(() => {
-//                     location.reload(true);
-//                 })
-//                 .catch((err) => {
-//                     this.error = err.response;
-//                 });
-//         },
-//     },
-// });
+var user = new Vue({
+    el: document.getElementById('user'),
+    components: {
+        'p-image': image,
+    },
+    data: function() {
+        return {
+            error: null,
+		};
+    },
+    computed: {},
+    methods: {
+        setAdmin: function(username, admin) {
+            xhr.put(`/admin/user/${username}`, {
+                    admin,
+                })
+                .then(() => {
+                    location.reload(true);
+                })
+                .catch((err) => {
+                    this.error = err.response;
+                });
+        },
+        setActive: function(username, active) {
+            xhr.put(`/admin/user/${username}`, {
+                    active,
+                })
+                .then(() => {
+                    location.reload(true);
+                })
+                .catch((err) => {
+                    this.error = err.response;
+                });
+        },
+    },
+});

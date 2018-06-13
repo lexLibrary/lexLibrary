@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -23,6 +24,7 @@ var ErrNotAdmin = Unauthorized("This functionality is reserved for administrator
 
 var sqlAdmin = struct {
 	stats,
+	user,
 	init *data.Query
 	users func(bool, bool, bool, bool) *data.Query
 }{
@@ -46,6 +48,18 @@ var sqlAdmin = struct {
 	init: data.NewQuery(`
 		select occurred from schema_versions where version = 0
 	`),
+	user: data.NewQuery(fmt.Sprintf(`
+		select 	%s, s.created
+		from 	users u
+			left outer join sessions s
+				on u.id = s.user_id
+		where 	(s.created = (
+			select 	max(s2.created)
+			from 	sessions s2
+			where s2.user_id = s.user_id
+		) or s.created is null)
+		and u.username = {{arg "username"}}
+	`, userPublicColumns)),
 	users: func(active, loggedIn, search, total bool) *data.Query {
 		columns := userPublicColumns + ", s.created"
 		if total {
@@ -207,6 +221,23 @@ type InstanceUser struct {
 	LastLogin data.NullTime
 }
 
+func (u *InstanceUser) scan(record scanner) error {
+	err := record.Scan(
+		&u.ID,
+		&u.Username,
+		&u.Name,
+		&u.Active,
+		&u.profileImage,
+		&u.admin,
+		&u.Created,
+		&u.LastLogin,
+	)
+	if err == sql.ErrNoRows {
+		return ErrUserNotFound
+	}
+	return err
+}
+
 // InstanceUsers returns a list of all of the current users in Lex Library
 func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, search string, offset, limit int) (
 	users []*InstanceUser, total int, err error) {
@@ -234,17 +265,7 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, search string, offset, 
 
 		for rows.Next() {
 			u := &InstanceUser{}
-			err = rows.Scan(
-				&u.ID,
-				&u.Username,
-				&u.Name,
-				&u.Active,
-				&u.profileImage,
-				&u.admin,
-				&u.Created,
-				&u.LastLogin,
-			)
-
+			err = u.scan(rows)
 			if err != nil {
 				return err
 			}
@@ -266,4 +287,15 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, search string, offset, 
 	}
 
 	return users, total, nil
+}
+
+// InstanceUser returns an instance level view of a given user
+func (a *Admin) InstanceUser(username string) (*InstanceUser, error) {
+	u := &InstanceUser{}
+	err := u.scan(sqlAdmin.user.QueryRow(data.Arg("username", username)))
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }

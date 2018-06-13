@@ -38,6 +38,7 @@ type adminData struct {
 		All      bool
 		Search   string
 		Users    []*app.InstanceUser
+		User     *app.InstanceUser
 		Pager    pager
 	}
 }
@@ -236,6 +237,25 @@ func (a *adminPage) users() httprouter.Handle {
 	})
 }
 
+func (a *adminPage) user() httprouter.Handle {
+	return a.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
+		tData, err := a.data(c.session)
+		if errHandled(err, w, r) {
+			return
+		}
+
+		tData.Tab = "users"
+		u, err := tData.Admin.InstanceUser(c.params.ByName("username"))
+		if errHandled(err, w, r) {
+			return
+		}
+
+		tData.Users.User = u
+
+		w.(*templateWriter).execute(tData)
+	})
+}
+
 type adminUserInput struct {
 	Active *bool `json:"active"`
 	Admin  *bool `json:"admin"`
@@ -261,6 +281,12 @@ func adminUserUpdate(w http.ResponseWriter, r *http.Request, c ctx) {
 
 	if input.Active != nil {
 		if errHandled(admin.SetUserActive(username, *input.Active), w, r) {
+			return
+		}
+	}
+
+	if input.Admin != nil {
+		if errHandled(admin.SetUserAdmin(username, *input.Admin), w, r) {
 			return
 		}
 	}

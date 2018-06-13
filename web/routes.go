@@ -124,9 +124,11 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/admin/logs", admin.logs())
 	rootHandler.GET("/admin/logs/:id", admin.logs())
 	rootHandler.GET("/admin/users", admin.users())
+	rootHandler.GET("/admin/users/:username/", admin.user())
 	rootHandler.GET("/admin/registration", admin.registration())
 	rootHandler.GET("/admin/newregistration", admin.registrationNew())
 	rootHandler.GET("/admin/registration/:token", admin.registrationGet())
+
 	rootHandler.PUT("/admin/user/:username/", standard.handle(adminUserUpdate))
 
 	// groups

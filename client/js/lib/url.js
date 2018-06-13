@@ -1,24 +1,42 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
-export function query(url) {
-    var query_string = {};
+export function query(query = window.location.search.substring(1)) {
+    var queryObject = {};
 
-    var query = url || window.location.search.substring(1);
     var vars = query.split('&');
     for (var i = 0; i < vars.length; i++) {
         var pair = vars[i].split('=');
         // If first entry with this name
-        if (typeof query_string[pair[0]] === 'undefined') {
-            query_string[pair[0]] = decodeURIComponent(pair[1]);
+        if (typeof queryObject[pair[0]] === 'undefined') {
+            queryObject[pair[0]] = decodeURIComponent(pair[1]);
             // If second entry with this name
-        } else if (typeof query_string[pair[0]] === 'string') {
-            var arr = [query_string[pair[0]], decodeURIComponent(pair[1])];
-            query_string[pair[0]] = arr;
+        } else if (typeof queryObject[pair[0]] === 'string') {
+            var arr = [queryObject[pair[0]], decodeURIComponent(pair[1])];
+            queryObject[pair[0]] = arr;
             // If third or later entry with this name
         } else {
-            query_string[pair[0]].push(decodeURIComponent(pair[1]));
+            queryObject[pair[0]].push(decodeURIComponent(pair[1]));
         }
     }
-    return query_string;
+    queryObject.toString = function() {
+        let str = '?';
+        for (let i in this) {
+            if (i !== 'toString') {
+                if (this[i] === null || this[i] === undefined || this[i] === 'undefined') {
+                    str += i + '&';
+                } else if (typeof this[i] === 'string') {
+                    str += i + '=' + encodeURIComponent(this[i]) + '&';
+                } else {
+                    // array
+                    for (let j in this[i]) {
+                        str += i + '=' + encodeURIComponent(this[i][j]) + '&';
+                    }
+                }
+            }
+        }
+        return str.slice(0, -1);
+    };
+
+    return queryObject;
 }
 
 export

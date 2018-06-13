@@ -318,7 +318,7 @@ func TestAdmin(t *testing.T) {
 		err = seq.Get(uri.String()).
 			Find(".tab > .tab-item > a[href='/admin/users?active']").Click().
 			Find(".admin-users").Count(1).
-			Find(".btn-group > .active").Text().Equals("Active Only").
+			Find(".btn-group > .active").Text().Equals("Active").
 			//TODO: Finish tests
 			End()
 		if err != nil {

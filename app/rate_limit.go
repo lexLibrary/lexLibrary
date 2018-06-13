@@ -4,13 +4,13 @@ package app
 import (
 	"net/http"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
 //TODO: This rate limiting is incorrect when used with multiple webservers
 //  Add clustering settings for lex library
 
+// Attempter is an interface that allows for multiple different rate limit types
 type Attempter interface {
 	Attempt(id string) (RateLeft, error)
 }
@@ -22,8 +22,8 @@ type rateKey struct {
 
 var rates = struct {
 	sync.RWMutex
-	r map[rateKey]*RateLeft
-}{r: make(map[rateKey]*RateLeft)}
+	left map[rateKey]RateLeft
+}{left: make(map[rateKey]RateLeft)}
 
 // TODO: remove expired rates that haven't been used in a while?
 
@@ -58,71 +58,44 @@ var ErrTooManyRequests = NewFailureWithStatus("Too many requests", http.StatusTo
 // Attempt checks to see if a request is rate limited. Will return an error if it is
 func (rl *RateLimit) Attempt(id string) (RateLeft, error) {
 	key := rateKey{id: id, rateType: rl.Type}
-	result, ok := key.find()
-	if ok {
-		if result.remaining() <= 0 && result.Reset.After(time.Now()) {
-			return *result, ErrTooManyRequests
-		}
-		result.decrement()
-
-		return *result, nil
+	left := key.attempt(rl.Limit, time.Now().Add(rl.Period))
+	if left.Remaining < 0 {
+		return left, ErrTooManyRequests
 	}
-	return key.add(rl.Limit, time.Now().Add(rl.Period)), nil
+	return left, nil
 }
 
 // Attempt checks to see if a request is rate delayed. Will return an error if it is delayed the max amount
 func (rd *RateDelay) Attempt(id string) (RateLeft, error) {
 	key := rateKey{id: id, rateType: rd.Type}
-	result, ok := key.find()
-	if ok {
-		if result.remaining() <= 0 && result.Reset.After(time.Now()) {
-			delay := rd.Delay * (time.Duration(-1*result.remaining()) + 1)
-			if delay >= rd.Max {
-				return *result, ErrTooManyRequests
-			}
-
-			result.decrement()
-			rtn := *result // copy current instance of result before sleeping
-			time.Sleep(delay)
-			return rtn, nil
+	left := key.attempt(rd.Limit, time.Now().Add(rd.Period))
+	if left.Remaining < 0 {
+		delay := rd.Delay * (time.Duration(-1*left.Remaining) + 1)
+		if delay >= rd.Max {
+			return left, ErrTooManyRequests
 		}
-		result.decrement()
 
-		return *result, nil
+		time.Sleep(delay)
 	}
-	return key.add(rd.Limit, time.Now().Add(rd.Period)), nil
+	return left, nil
 }
 
-func (rk *rateKey) find() (*RateLeft, bool) {
-	rates.RLock()
-
-	result, ok := rates.r[*rk]
-	rates.RUnlock()
-
-	if !ok || result.Reset.Before(time.Now()) {
-		return nil, false
-	}
-
-	return result, true
-}
-
-func (rk *rateKey) add(limit int32, reset time.Time) RateLeft {
+func (rk rateKey) attempt(limit int32, reset time.Time) RateLeft {
 	rates.Lock()
 	defer rates.Unlock()
-	rr := &RateLeft{
-		Limit:     limit,
-		Reset:     reset,
-		Remaining: limit,
+
+	left, ok := rates.left[rk]
+	if !ok || left.Reset.Before(time.Now()) {
+		// add / update to fresh rate entry
+		left = RateLeft{
+			Limit:     limit,
+			Reset:     reset,
+			Remaining: limit,
+		}
 	}
 
-	rates.r[*rk] = rr
-	return *rr
-}
+	left.Remaining -= 1
 
-func (rl *RateLeft) decrement() {
-	atomic.AddInt32(&rl.Remaining, -1)
-}
-
-func (rl *RateLeft) remaining() int32 {
-	return atomic.LoadInt32(&rl.Remaining)
+	rates.left[rk] = left
+	return left
 }

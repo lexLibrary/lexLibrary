@@ -18,10 +18,11 @@ func TestRateLimit(t *testing.T) {
 	}
 
 	// free attempts
-	for i := 0; i <= int(rType.Limit); i++ {
+	for i := 1; i <= int(rType.Limit); i++ {
 		left, err := rType.Attempt("testID")
 		if err != nil {
-			t.Fatalf("Error attempting rate limit withing limits: %s", err)
+			t.Fatalf("Error attempting rate limit withing limits. Attempt #%d rate left %d: %s",
+				i, left.Remaining, err)
 		}
 		if left.Remaining != rType.Limit-int32(i) {
 			t.Fatalf("Incorrect rate left. Expected %d, got %d", rType.Limit-int32(i), left.Remaining)
@@ -32,8 +33,8 @@ func TestRateLimit(t *testing.T) {
 	if err != app.ErrTooManyRequests {
 		t.Fatalf("Rate limited request didn't return an error")
 	}
-	if left.Remaining != 0 {
-		t.Fatalf("Rate limit remaining is incorrect. Expected %d got %d", 0, left.Remaining)
+	if left.Remaining != -1 {
+		t.Fatalf("Rate limit remaining is incorrect. Expected %d got %d", -1, left.Remaining)
 	}
 
 	if testing.Short() {
@@ -44,10 +45,12 @@ func TestRateLimit(t *testing.T) {
 	time.Sleep(rType.Period)
 
 	// rate limits should reset
-	for i := 0; i <= int(rType.Limit); i++ {
+	for i := 1; i <= int(rType.Limit); i++ {
 		left, err := rType.Attempt("testID")
 		if err != nil {
-			t.Fatalf("Rate limit did not expire")
+			t.Fatalf("Rate limit did not expire. Attempt #%d rate left %d: %s",
+				i, left.Remaining, err)
+
 		}
 		if left.Remaining != rType.Limit-int32(i) {
 			t.Fatalf("Incorrect rate left. Expected %d, got %d", rType.Limit-int32(i), left.Remaining)
@@ -58,8 +61,8 @@ func TestRateLimit(t *testing.T) {
 	if err != app.ErrTooManyRequests {
 		t.Fatalf("Rate limited request didn't return an error")
 	}
-	if left.Remaining != 0 {
-		t.Fatalf("Rate limit remaining is incorrect. Expected %d got %d", 0, left.Remaining)
+	if left.Remaining != -1 {
+		t.Fatalf("Rate limit remaining is incorrect. Expected %d got %d", -1, left.Remaining)
 	}
 
 }
@@ -75,10 +78,12 @@ func TestRateDelay(t *testing.T) {
 	}
 
 	// free attempts
-	for i := 0; i <= int(rType.Limit); i++ {
-		_, err := rType.Attempt("testID")
+	for i := 1; i <= int(rType.Limit); i++ {
+		left, err := rType.Attempt("testID")
 		if err != nil {
-			t.Fatalf("Error attempting rate delay withing limits: %s", err)
+			t.Fatalf("Error attempting rate limit withing limits. Attempt #%d rate left %d: %s",
+				i, left.Remaining, err)
+
 		}
 	}
 
@@ -98,7 +103,7 @@ func TestRateDelay(t *testing.T) {
 	case <-time.After(1 * time.Second):
 	}
 
-	max := int(rType.Max/rType.Delay) - 2 //one spent already, and one is the Max delay, which we run separately
+	max := int(rType.Max/rType.Delay) - 1 //one spent already
 
 	// these requests will be delayed, but shouldn't error
 	for i := 0; i < max; i++ {
@@ -111,7 +116,7 @@ func TestRateDelay(t *testing.T) {
 	time.Sleep(1 * time.Millisecond)
 	_, err := rType.Attempt("testID")
 	if err != app.ErrTooManyRequests {
-		t.Fatalf("Rate delayed request past it's max delay didn't return an error")
+		t.Fatalf("Rate delayed request past it's max delay didn't return too many requests error: %s", err)
 	}
 
 }
