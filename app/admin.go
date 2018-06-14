@@ -34,10 +34,10 @@ var sqlAdmin = struct {
 		(select count(*) as num from users where active = {{TRUE}}) as users,
 		(
 			select count(*) as num from (
-				select count(*) from sessions 
+				select count(*) as num from sessions 
 				where expires > {{NOW}} and valid = {{TRUE}} 
 				group by user_id
-			)
+			) as user_sessions
 		) as sessions,
 		(select 0 as num) as documents, 
 		(select count(*) num from logs) as errorsTotal,

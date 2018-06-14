@@ -222,7 +222,7 @@ func (q *Query) Exec(args ...Argument) (result sql.Result, err error) {
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "Executing query: %s", q.Statement())
+		return nil, errors.Wrapf(err, "Executing query: \n%s\n", q.Statement())
 	}
 	return result, nil
 }
@@ -240,7 +240,7 @@ func (q *Query) Query(args ...Argument) (rows *sql.Rows, err error) {
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "Executing query: %s", q.Statement())
+		return nil, errors.Wrapf(err, "Executing query: \n%s\n", q.Statement())
 	}
 	return rows, nil
 }
@@ -261,7 +261,7 @@ func (r *Row) Scan(dest ...interface{}) error {
 		return err
 	}
 	if err != nil {
-		return errors.Wrapf(err, "Executing query: %s", r.statement)
+		return errors.Wrapf(err, "Executing query: \n%s\n", r.statement)
 	}
 	return nil
 }
