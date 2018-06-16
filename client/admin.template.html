@@ -13,7 +13,7 @@
 			<h1>Administration</h1>
 			<ul class="tab tab-block">
 				<li class='tab-item [[if eq .Tab "overview"]]active[[end]]'><a href="/admin">Overview</a></li>
-				<li class='tab-item [[if eq .Tab "users"]]active[[end]]'><a href="/admin/users?active">Users</a></li>
+				<li class='tab-item [[if eq .Tab "users"]]active[[end]]'><a href="/admin/users">Users</a></li>
 				<li class='tab-item [[if eq .Tab "registration"]]active[[end]]'><a href="/admin/registration">Registration</a></li>
 				<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
 				<li class='tab-item [[if eq .Tab "settings"]]active[[end]]'><a href="/admin/settings">Settings</a></li>
@@ -713,7 +713,7 @@
 				<div class="btn-group">
 					<a href="/admin/users?active" class="btn btn-lg [[if .Active]]active[[end]]">Active</a>
 					<a href="/admin/users?loggedin" class="btn btn-lg [[if .LoggedIn]]active[[end]]">Logged In</a>
-					<a href="/admin/users" class="btn btn-lg [[if .All]]active[[end]]">All</a>
+					<a href="/admin/users?all" class="btn btn-lg [[if .All]]active[[end]]">All</a>
 				</div>
 			</div>
 
@@ -740,7 +740,7 @@
 								[[if .IsAdmin]]<small>(admin)</small>[[end]]
 							</td>
 							<td>[[time .Created]]</td>
-							<td>[[time .LastLogin.Time]]</td>
+							<td>[[if .LastLogin.Valid]][[time .LastLogin.Time]][[end]]</td>
 						</tr>
 					[[end]]
 				</tbody>

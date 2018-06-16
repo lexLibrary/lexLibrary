@@ -221,8 +221,12 @@ func (a *adminPage) users() httprouter.Handle {
 
 		_, tData.Users.Active = qry["active"]
 		_, tData.Users.LoggedIn = qry["loggedin"]
+		_, tData.Users.All = qry["all"]
 		tData.Users.Search = qry.Get("search")
-		tData.Users.All = (!tData.Users.Active && !tData.Users.LoggedIn)
+		// default to active it none set
+		if !tData.Users.Active && !tData.Users.LoggedIn && !tData.Users.All {
+			tData.Users.Active = true
+		}
 
 		users, total, err := tData.Admin.InstanceUsers(tData.Users.Active, tData.Users.LoggedIn,
 			tData.Users.Search, pgr.Offset(), pgr.PageSize())

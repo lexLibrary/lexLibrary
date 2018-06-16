@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
@@ -292,7 +293,7 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, search string, offset, 
 // InstanceUser returns an instance level view of a given user
 func (a *Admin) InstanceUser(username string) (*InstanceUser, error) {
 	u := &InstanceUser{}
-	err := u.scan(sqlAdmin.user.QueryRow(data.Arg("username", username)))
+	err := u.scan(sqlAdmin.user.QueryRow(data.Arg("username", strings.ToLower(username))))
 	if err != nil {
 		return nil, err
 	}

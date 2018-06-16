@@ -313,13 +313,144 @@ func TestAdmin(t *testing.T) {
 	})
 
 	t.Run("Users", func(t *testing.T) {
+		// setup users for testing
+		adminUser, err := app.Login(username, password)
+		if err != nil {
+			t.Fatal(err)
+		}
+		admin, err := adminUser.Admin()
+		if err != nil {
+			t.Fatal(err)
+		}
+		password := "password1$Value"
+
+		inactive, err := app.UserNew("inactive", password)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = admin.SetUserActive(inactive.Username, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		loggedIn, err := app.UserNew("loggedin", password)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = loggedIn.NewSession(time.Now().Add(1*time.Hour), "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		loggedOut, err := app.UserNew("loggedout", password)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		s, err := loggedOut.NewSession(time.Now().Add(1*time.Hour), "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = s.Logout()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		multipleSessions, err := app.UserNew("multiplesessions", password)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = multipleSessions.NewSession(time.Now().Add(1*time.Hour), "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = multipleSessions.NewSession(time.Now().Add(1*time.Hour), "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = app.UserNew("neverLoggedIn", password)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = loggedIn.SetName("John Doe", loggedIn.Version)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = loggedOut.SetName("James Doe", loggedOut.Version)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Users
+		// admin, loggedIn, loggedOut, multipleSessions, inactive, neverLoggedIn
+
 		uri.Path = "/admin/"
 
 		err = seq.Get(uri.String()).
-			Find(".tab > .tab-item > a[href='/admin/users?active']").Click().
+			Find(".tab > .tab-item > a[href='/admin/users']").Click().
 			Find(".admin-users").Count(1).
 			Find(".btn-group > .active").Text().Equals("Active").
-			//TODO: Finish tests
+			Find(".admin-users tbody > tr > td:nth-child(2)").Count(5).Any().
+			Text().Contains("testuser").
+			Text().Contains("John Doe").
+			Text().Contains("James Doe").
+			Text().Contains("multiplesessions").
+			Text().Contains("neverloggedin").
+			Find(".btn-group > a[href='/admin/users?loggedin']").Click().
+			Find(".admin-users tbody > tr > td:nth-child(2)").Count(3).Any().
+			Text().Contains("testuser").
+			Text().Contains("John Doe").
+			Text().Contains("multiplesessions").
+			Find(".btn-group > a[href='/admin/users?all']").Click().
+			Find(".admin-users tbody > tr > td:nth-child(2)").Count(6).Any().
+			Text().Contains("testuser").
+			Text().Contains("John Doe").
+			Text().Contains("James Doe").
+			Text().Contains("multiplesessions").
+			Text().Contains("neverloggedin").
+			Text().Contains("inactive").
+			Find(".admin-users tbody > tr.secondary").Count(1).Text().Contains("inactive").
+			Find("#userSearch").Clear().SendKeys("doe").SendKeys(selenium.EnterKey).Wait(100 * time.Millisecond).
+			Find(".btn-group > .active").Text().Equals("All").
+			Find(".admin-users tbody > tr > td:nth-child(2)").Count(2).Any().
+			Text().Contains("John Doe").
+			Text().Contains("James Doe").
+			Find(".btn-group > a[href='/admin/users?loggedin']").Click().
+			Find("#userSearch").Clear().SendKeys("doe").Wait(1 * time.Second).
+			Find(".btn-group > .active").Text().Equals("Logged In").
+			Find(".admin-users tbody > tr > td:nth-child(2)").Count(1).Any().
+			Text().Contains("John Doe").
+			Find(".btn-group > a[href='/admin/users?all']").Click().
+			Find(".admin-users tbody > tr > td:nth-child(2) > a").Filter(
+			func(we *sequence.Elements) error {
+				return we.Text().Contains("John Doe").End()
+			}).Click().And().
+			URL().Path("/admin/users/loggedin/").
+			Find("#user .avatar.avatar-full").Count(1).
+			Find("#user h4").Text().Contains("John Doe").
+			Find("#user .form-group > .form-switch").Count(2).
+			Filter(func(we *sequence.Elements) error {
+				return we.Text().Contains("Active").End()
+			}).
+			Click().
+			Find("#user h4 > small > em").Text().Contains("(inactive)").
+			Find("#user .form-group > .form-switch").
+			Filter(func(we *sequence.Elements) error {
+				return we.Text().Contains("Active").End()
+			}).
+			Click().
+			Find("#user .form-group > .form-switch").
+			Filter(func(we *sequence.Elements) error {
+				return we.Text().Contains("Admin").End()
+			}).
+			Click().
+			Find("#user h4 > small").Text().Contains("(admin)").
 			End()
 		if err != nil {
 			t.Fatal(err)
