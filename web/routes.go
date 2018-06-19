@@ -81,6 +81,16 @@ func setupRoutes() http.Handler {
 	// user
 	rootHandler.POST("/user", createUser.handle(userCreate))
 	rootHandler.GET("/user/:username/image", nozip.handle(userGetImage))
+	publicProfile := &profilePage{
+		templateHandler: &templateHandler{
+			templateFiles: []string{"profile.template.html"},
+		},
+	}
+	rootHandler.GET("/user/:username", publicProfile.documents())
+	rootHandler.GET("/user/:username/readLater", publicProfile.readLater())
+	rootHandler.GET("/user/:username/history", publicProfile.history())
+	rootHandler.GET("/user/:username/documents", publicProfile.documents())
+	rootHandler.GET("/user/:username/comments", publicProfile.comments())
 
 	// profile
 	rootHandler.PUT("/profile/password", standard.handle(userUpdatePassword))
@@ -92,6 +102,7 @@ func setupRoutes() http.Handler {
 	rootHandler.DELETE("/profile/image", standard.handle(profileRemoveImage))
 
 	profile := &profilePage{
+		self: true,
 		templateHandler: &templateHandler{
 			templateFiles: []string{"profile.template.html"},
 		},

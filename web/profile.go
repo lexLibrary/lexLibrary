@@ -10,12 +10,15 @@ import (
 
 type profilePage struct {
 	*templateHandler
+	self bool
 }
 
 type profileData struct {
-	User  *app.User
+	User  *app.PublicProfile
 	Stats app.UserStats
 	Tab   string
+	Self  bool
+	Base  string
 }
 
 func profileGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
@@ -37,12 +40,24 @@ func profileGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
 	serveImage(w, r, u.ProfileImage(), false)
 }
 
-func (p *profilePage) data(s *app.Session) (*profileData, error) {
-	if s == nil {
-		return nil, app.Unauthorized("You do not have access to this user")
+func (p *profilePage) data(c ctx) (*profileData, error) {
+
+	var u *app.PublicProfile
+	var private *app.User
+	var err error
+	base := "/profile"
+
+	if p.self {
+		if c.session == nil {
+			return nil, app.Unauthorized("You do not have access to this user")
+		}
+		private, err = c.session.User()
+		u = &private.PublicProfile
+	} else {
+		u, err = app.UserGet(c.params.ByName("username"))
+		base = "/user/" + u.Username
 	}
 
-	u, err := s.User()
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +70,14 @@ func (p *profilePage) data(s *app.Session) (*profileData, error) {
 	return &profileData{
 		User:  u,
 		Stats: stats,
+		Self:  p.self,
+		Base:  base,
 	}, nil
 }
 
 func (p *profilePage) documents() httprouter.Handle {
 	return p.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
-		tData, err := p.data(c.session)
+		tData, err := p.data(c)
 		if errHandled(err, w, r) {
 			return
 		}
@@ -72,7 +89,7 @@ func (p *profilePage) documents() httprouter.Handle {
 
 func (p *profilePage) readLater() httprouter.Handle {
 	return p.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
-		tData, err := p.data(c.session)
+		tData, err := p.data(c)
 		if errHandled(err, w, r) {
 			return
 		}
@@ -84,7 +101,7 @@ func (p *profilePage) readLater() httprouter.Handle {
 
 func (p *profilePage) comments() httprouter.Handle {
 	return p.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
-		tData, err := p.data(c.session)
+		tData, err := p.data(c)
 		if errHandled(err, w, r) {
 			return
 		}
@@ -96,7 +113,7 @@ func (p *profilePage) comments() httprouter.Handle {
 
 func (p *profilePage) history() httprouter.Handle {
 	return p.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
-		tData, err := p.data(c.session)
+		tData, err := p.data(c)
 		if errHandled(err, w, r) {
 			return
 		}

@@ -21,7 +21,7 @@ var (
 )
 
 // Stats returns the user's statistics
-func (u *User) Stats() (UserStats, error) {
+func (u *PublicProfile) Stats() (UserStats, error) {
 	stats := UserStats{}
 	err := sqlUserStats.QueryRow().Scan(
 		&stats.DocumentsRead,

@@ -27,16 +27,17 @@
 			<div class="profile column text-center">
 				<div class="card">
 					<div class="card-body relative">
-						<a class="profile-edit" href="/profile/edit">Settings</a>
+						[[if .Self]]<a class="profile-edit" href="/profile/edit">Settings</a>[[end]]
 						<div class="profile-avatar">
-							<a href="/profile/edit">
-								<figure class="avatar avatar-full tooltip tooltip-bottom" data-tooltip="Set your profile image" 
-									data-initial="[[.User.DisplayInitials]]">
+							[[if .Self]]
+								<a href="/profile/edit" class=" tooltip tooltip-bottom" data-tooltip="Set your profile image">
+							[[end]]
+								<figure class="avatar avatar-full"data-initial="[[.User.DisplayInitials]]">
 									[[if .User.ProfileImage]]
-										<p-image src="/profile/image" alt="[[.User.DisplayName]]">
+										<p-image src="[[.Base]]/image" alt="[[.User.DisplayName]]">
 									[[end]]
 								</figure>
-							</a>
+							[[if .Self]]</a>[[end]]
 							<h3 id="displayName" class="pt-1">[[.User.DisplayName]]</h3>
 						</div>
 						<section class="section">
@@ -57,10 +58,10 @@
 						</section>
 						<section>
 							<ul class="tab tab-block">
-								<li class='tab-item [[if eq .Tab "documents"]]active[[end]]'><a href="/profile/documents">Documents</a></li>
-								<li class='tab-item [[if eq .Tab "readLater"]]active[[end]]'><a href="/profile/readLater">Read Later</a></li>
-								<li class='tab-item [[if eq .Tab "comments"]]active[[end]]'><a href="/profile/comments">Comments</a></li>
-								<li class='tab-item [[if eq .Tab "history"]]active[[end]]'><a href="/profile/history">History</a></li>
+								<li class='tab-item [[if eq .Tab "documents"]]active[[end]]'><a href="[[.Base]]/documents">Documents</a></li>
+								<li class='tab-item [[if eq .Tab "readLater"]]active[[end]]'><a href="[[.Base]]/readLater">Read Later</a></li>
+								<li class='tab-item [[if eq .Tab "comments"]]active[[end]]'><a href="[[.Base]]/comments">Comments</a></li>
+								<li class='tab-item [[if eq .Tab "history"]]active[[end]]'><a href="[[.Base]]/history">History</a></li>
 							</ul>
 							[[if eq .Tab "documents"]]
 								<p>TODO: documents</p>

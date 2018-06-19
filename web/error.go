@@ -5,7 +5,6 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"runtime"
 	"strings"
@@ -112,13 +111,14 @@ func unauthorized(w http.ResponseWriter, r *http.Request) {
 }
 func panicHandler(w http.ResponseWriter, r *http.Request, rec interface{}) {
 	if rec != nil {
+		var err error
 		if devMode {
 			buf := make([]byte, 1<<20)
 			stack := buf[:runtime.Stack(buf, true)]
-			errHandled(errors.Errorf("PANIC: %s \n STACK: %s", rec, stack), w, r)
-			log.Fatalf("PANIC: %s \n STACK: %s", rec, stack)
+			err = errors.Errorf("PANIC: %s \n STACK: %s", rec, stack)
+		} else {
+			err = errors.Errorf("Lex Library has panicked on %v and has recovered", rec)
 		}
-		errHandled(errors.Errorf("Lex Library has panicked on %v and has recovered", rec), w, r)
-		return
+		errHandled(err, w, r)
 	}
 }

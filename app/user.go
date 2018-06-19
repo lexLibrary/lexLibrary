@@ -704,3 +704,7 @@ func (u *User) RemoveProfileImage() error {
 		return imageDelete(tx, u.profileImage)
 	})
 }
+
+// func (p *publicProfile) Documents(who *app.User) {
+
+// }

@@ -138,7 +138,7 @@ var vm = new Vue({
                     location.reload(true);
                 })
                 .catch((err) => {
-this.error = err.response;
+                    this.error = err.response;
                 });
         },
         'changePassword': function(e) {

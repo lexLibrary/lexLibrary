@@ -248,7 +248,7 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, search string, offset, 
 
 	runSearch := search != ""
 
-	search = "%" + search + "%"
+	search = "%" + strings.ToLower(search) + "%"
 
 	var g errgroup.Group
 
