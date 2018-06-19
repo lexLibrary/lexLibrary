@@ -12,7 +12,7 @@ if [ "$LLBROWSER" == "firefox" ]
 then
 	docker run --name=$DOCKERNAME --rm -d -p 4444:4444 -v /dev/shm:/dev/shm selenium/standalone-firefox:latest
 else
-	docker run --name=$DOCKERNAME --rm -d -p 4444:4444 -v /dev/shm:/dev/shm selenium/standalone-chrome:3.0
+	docker run --name=$DOCKERNAME --rm -d -p 4444:4444 -v /dev/shm:/dev/shm selenium/standalone-chrome:3.12.0-cobalt
 fi
 
 go test "$@"

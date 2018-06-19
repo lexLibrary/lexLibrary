@@ -438,18 +438,18 @@ func TestAdmin(t *testing.T) {
 			Filter(func(we *sequence.Elements) error {
 				return we.Text().Contains("Active").End()
 			}).
-			Click().
+			Click().Wait(100 * time.Millisecond).
 			Find("#user h4 > small > em").Text().Contains("(inactive)").
 			Find("#user .form-group > .form-switch").
 			Filter(func(we *sequence.Elements) error {
 				return we.Text().Contains("Active").End()
 			}).
-			Click().
+			Click().Wait(100 * time.Millisecond).
 			Find("#user .form-group > .form-switch").
 			Filter(func(we *sequence.Elements) error {
 				return we.Text().Contains("Admin").End()
 			}).
-			Click().
+			Click().Wait(100 * time.Millisecond).
 			Find("#user h4 > small").Text().Contains("(admin)").
 			End()
 		if err != nil {

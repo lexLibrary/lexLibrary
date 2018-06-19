@@ -14,10 +14,12 @@
 		<a href="/" class="navbar-brand mr-2">Lex Library</a>
 	</section>
 	<section class="navbar-section">
-		[[if .User]]
-			<a @click="logout" class="btn btn-link" href="">Logout</a>
-		[[else]]
-			<a class="btn btn-link" href="/login?return=%2F">Log In</a>
+		[[if .Self]]
+			[[if .User]]
+				<a @click="logout" class="btn btn-link" href="">Logout</a>
+			[[else]]
+				<a class="btn btn-link" href="/login?return=%2F">Log In</a>
+			[[end]]
 		[[end]]
 	</section>
 </header>

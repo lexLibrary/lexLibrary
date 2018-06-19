@@ -70,6 +70,9 @@ func TestSignup(t *testing.T) {
 		Find("#inputPassword").Clear().SendKeys(password).
 		Find("#submit").Click().
 		Find(".has-error > .form-input-hint").Text().Contains("Passwords do not match").
+		And().Get(uri.String()).
+		Find("#inputUsername").SendKeys("testusername").
+		Find("#inputPassword").Clear().SendKeys(password).
 		Find("#inputPassword2").SendKeys(password).
 		Find("#submit").Click().
 		Find(".has-error > .form-input-hint").Count(0).And().
