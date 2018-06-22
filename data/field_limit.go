@@ -51,6 +51,7 @@ func FieldValidate(field, value string) error {
 	limit := FieldLimit(field)
 
 	id := strings.SplitN(field, ".", 2)[1]
+	value = strings.TrimSpace(value)
 
 	if len(value) > limit.Max() {
 		return fmt.Errorf("%s must be less than %d characters", id, limit.Max())

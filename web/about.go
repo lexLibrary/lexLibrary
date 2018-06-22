@@ -210,4 +210,11 @@ var attribution = []attribute{
 		LicenseType: "MIT",
 		LicenseURL:  "https://github.com/dustin/go-humanize/blob/master/LICENSE",
 	},
+	attribute{
+		Name:        "bluemonday",
+		URL:         "https://github.com/microcosm-cc/bluemonday",
+		Author:      "David Kitchen",
+		LicenseType: "BSD 3-Clause",
+		LicenseURL:  "https://github.com/microcosm-cc/bluemonday/blob/master/LICENSE.md",
+	},
 }

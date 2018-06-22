@@ -325,7 +325,7 @@ func (u *User) insert(tx *sql.Tx) error {
 }
 
 func (u *User) validate() error {
-	if u.Username == "" {
+	if strings.TrimSpace(u.Username) == "" {
 		return NewFailure("A username is required")
 	}
 	err := data.FieldValidate("user.name", u.Name)

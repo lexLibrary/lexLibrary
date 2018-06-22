@@ -211,7 +211,6 @@ var schemaVersions = []*Query{
 		create table document_drafts (
 			id {{id}} PRIMARY KEY NOT NULL,
 			document_id {{id}} NOT NULL REFERENCES documents(id),
-			original_version {{int}} NOT NULL,
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
 			version {{int}} NOT NULL,
@@ -231,6 +230,20 @@ var schemaVersions = []*Query{
 			created {{datetime}} NOT NULL,
 			creator {{id}} NOT NULL REFERENCES users(id),
 			PRIMARY KEY(document_id, version)
+		)
+	`),
+	NewQuery(`
+		create table document_tags (
+			document_id {{id}} NOT NULL REFERENCES documents(id),
+			tag {{text}} NOT NULL, 
+			PRIMARY KEY(document_id, tag)
+		)
+	`),
+	NewQuery(`
+		create table document_draft_tags (
+			draft_id {{id}} NOT NULL REFERENCES document_drafts(id),
+			tag {{text}} NOT NULL, 
+			PRIMARY KEY(draft_id, tag)
 		)
 	`),
 }
