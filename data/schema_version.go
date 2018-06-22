@@ -196,14 +196,14 @@ var schemaVersions = []*Query{
 			version {{int}} NOT NULL,
 			updated {{datetime}} NOT NULL,
 			created {{datetime}} NOT NULL,
-			creator_id {{id}} NOT NULL REFERENCES users(id), 
-			updater_id {{id}} NOT NULL REFERENCES users(id)
+			creator {{id}} NOT NULL REFERENCES users(id), 
+			updater {{id}} NOT NULL REFERENCES users(id)
 		)
 	`),
 	NewQuery(`
 		create table document_groups (
 			document_id {{id}} NOT NULL REFERENCES documents(id),
-			group_id {{id}} NOT NULL REFERENCES groups(id)
+			group_id {{id}} NOT NULL REFERENCES groups(id),
 			PRIMARY KEY(document_id, group_id)
 		)
 	`),
@@ -217,8 +217,8 @@ var schemaVersions = []*Query{
 			version {{int}} NOT NULL,
 			updated {{datetime}} NOT NULL,
 			created {{datetime}} NOT NULL,
-			creator_id {{id}} NOT NULL REFERENCES users(id), 
-			updater_id {{id}} NOT NULL REFERENCES users(id)
+			creator {{id}} NOT NULL REFERENCES users(id), 
+			updater {{id}} NOT NULL REFERENCES users(id)
 		)
 	`),
 	NewQuery(`
@@ -228,8 +228,8 @@ var schemaVersions = []*Query{
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
 			draft_id {{id}} NOT NULL REFERENCES document_drafts(id),
-			when {{datetime}} NOT NULL,
-			who_id {{id}} NOT NULL REFERENCES users(id)
+			created {{datetime}} NOT NULL,
+			creator {{id}} NOT NULL REFERENCES users(id),
 			PRIMARY KEY(document_id, version)
 		)
 	`),

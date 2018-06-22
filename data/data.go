@@ -152,22 +152,37 @@ func Teardown() error {
 }
 
 func initSQLite(cfg Config) error {
-	url := cfg.DatabaseURL
+	dbURL := cfg.DatabaseURL
 
 	if cfg.DatabaseFile == "" && cfg.DatabaseURL == "" {
 		cfg.DatabaseFile = DefaultConfig().DatabaseFile
 	}
 
-	if url == "" {
-		url = cfg.DatabaseFile
+	if dbURL == "" {
+		dbURL = "file:" + cfg.DatabaseFile
 	}
 
 	if cfg.MaxOpenConnections == 1 {
 		return errors.New("MaxOpenConnections must be more than 1 for sqlite")
 	}
 
-	var err error
-	db, err = sql.Open("sqlite3", url)
+	base := ""
+	qry := ""
+	split := strings.SplitN(dbURL, "?", 2)
+	base = split[0]
+	if len(split) == 2 {
+		qry = split[1]
+	}
+
+	q, err := url.ParseQuery(qry)
+	if err != nil {
+		return errors.Wrap(err, "Parsing sqlite DSN")
+	}
+
+	q.Set("foreign_keys", "true")
+	qry = q.Encode()
+	dbURL = base + "?" + qry
+	db, err = sql.Open("sqlite3", dbURL)
 	if err != nil {
 		return err
 	}
