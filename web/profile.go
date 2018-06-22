@@ -40,26 +40,34 @@ func profileGetImage(w http.ResponseWriter, r *http.Request, c ctx) {
 	serveImage(w, r, u.ProfileImage(), false)
 }
 
-func (p *profilePage) data(c ctx) (*profileData, error) {
+func (p profilePage) data(c ctx) (*profileData, error) {
 
 	var u *app.PublicProfile
 	var private *app.User
 	var err error
 	base := "/profile"
+	self := p.self
 
 	if p.self {
 		if c.session == nil {
 			return nil, app.Unauthorized("You do not have access to this user")
 		}
 		private, err = c.session.User()
+		if err != nil {
+			return nil, err
+		}
+
 		u = &private.PublicProfile
 	} else {
 		u, err = app.UserGet(c.params.ByName("username"))
+		if err != nil {
+			return nil, err
+		}
 		base = "/user/" + u.Username
-	}
 
-	if err != nil {
-		return nil, err
+		if c.session != nil && c.session.UserID == u.ID {
+			self = true
+		}
 	}
 
 	stats, err := u.Stats()
@@ -70,7 +78,7 @@ func (p *profilePage) data(c ctx) (*profileData, error) {
 	return &profileData{
 		User:  u,
 		Stats: stats,
-		Self:  p.self,
+		Self:  self,
 		Base:  base,
 	}, nil
 }
@@ -90,6 +98,10 @@ func (p *profilePage) documents() httprouter.Handle {
 func (p *profilePage) readLater() httprouter.Handle {
 	return p.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := p.data(c)
+		if !tData.Self {
+			notFound(w, r)
+			return
+		}
 		if errHandled(err, w, r) {
 			return
 		}
@@ -114,6 +126,10 @@ func (p *profilePage) comments() httprouter.Handle {
 func (p *profilePage) history() httprouter.Handle {
 	return p.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
 		tData, err := p.data(c)
+		if !tData.Self {
+			notFound(w, r)
+			return
+		}
 		if errHandled(err, w, r) {
 			return
 		}

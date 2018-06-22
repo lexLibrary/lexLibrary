@@ -188,4 +188,49 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create index i_name_search on groups (name_search)
 	`),
+	NewQuery(`
+		create table documents (
+			id {{id}} PRIMARY KEY NOT NULL,
+			title {{text}} NOT NULL,
+			content {{text}} NOT NULL,
+			version {{int}} NOT NULL,
+			updated {{datetime}} NOT NULL,
+			created {{datetime}} NOT NULL,
+			creator_id {{id}} NOT NULL REFERENCES users(id), 
+			updater_id {{id}} NOT NULL REFERENCES users(id)
+		)
+	`),
+	NewQuery(`
+		create table document_groups (
+			document_id {{id}} NOT NULL REFERENCES documents(id),
+			group_id {{id}} NOT NULL REFERENCES groups(id)
+			PRIMARY KEY(document_id, group_id)
+		)
+	`),
+	NewQuery(`
+		create table document_drafts (
+			id {{id}} PRIMARY KEY NOT NULL,
+			document_id {{id}} NOT NULL REFERENCES documents(id),
+			original_version {{int}} NOT NULL,
+			title {{text}} NOT NULL,
+			content {{text}} NOT NULL,
+			version {{int}} NOT NULL,
+			updated {{datetime}} NOT NULL,
+			created {{datetime}} NOT NULL,
+			creator_id {{id}} NOT NULL REFERENCES users(id), 
+			updater_id {{id}} NOT NULL REFERENCES users(id)
+		)
+	`),
+	NewQuery(`
+		create table document_history (
+			document_id {{id}} NOT NULL REFERENCES documents(id),
+			version {{int}} NOT NULL,
+			title {{text}} NOT NULL,
+			content {{text}} NOT NULL,
+			draft_id {{id}} NOT NULL REFERENCES document_drafts(id),
+			when {{datetime}} NOT NULL,
+			who_id {{id}} NOT NULL REFERENCES users(id)
+			PRIMARY KEY(document_id, version)
+		)
+	`),
 }

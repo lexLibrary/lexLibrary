@@ -432,24 +432,32 @@ func TestAdmin(t *testing.T) {
 				return we.Text().Contains("John Doe").End()
 			}).Click().And().
 			URL().Path("/admin/users/loggedin/").
+			End()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		uri.Path = "/admin/users/loggedin/"
+
+		err = seq.Get(uri.String()).
 			Find("#user .avatar.avatar-full").Count(1).
 			Find("#user h4").Text().Contains("John Doe").
 			Find("#user .form-group > .form-switch").Count(2).
 			Filter(func(we *sequence.Elements) error {
 				return we.Text().Contains("Active").End()
 			}).
-			Click().Wait(100 * time.Millisecond).
+			Click().
 			Find("#user h4 > small > em").Text().Contains("(inactive)").
 			Find("#user .form-group > .form-switch").
 			Filter(func(we *sequence.Elements) error {
 				return we.Text().Contains("Active").End()
 			}).
-			Click().Wait(100 * time.Millisecond).
+			Click().
 			Find("#user .form-group > .form-switch").
 			Filter(func(we *sequence.Elements) error {
 				return we.Text().Contains("Admin").End()
 			}).
-			Click().Wait(100 * time.Millisecond).
+			Click().
 			Find("#user h4 > small").Text().Contains("(admin)").
 			End()
 		if err != nil {

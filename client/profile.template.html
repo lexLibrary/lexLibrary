@@ -40,7 +40,13 @@
 									[[end]]
 								</figure>
 							[[if .Self]]</a>[[end]]
-							<h3 id="displayName" class="pt-1">[[.User.DisplayName]]</h3>
+							<h3 id="displayName" class="pt-1">[[.User.DisplayName]] 
+								[[if not .User.Active]] 
+									<small><em>(inactive)</em></small>
+								[[else if .User.IsAdmin]]
+									<small>(admin)</small>
+								[[end]]
+							</h3>
 						</div>
 						<section class="section">
 							<div class="columns">
@@ -61,9 +67,13 @@
 						<section>
 							<ul class="tab tab-block">
 								<li class='tab-item [[if eq .Tab "documents"]]active[[end]]'><a href="[[.Base]]/documents">Documents</a></li>
+								[[if .Self]]
 								<li class='tab-item [[if eq .Tab "readLater"]]active[[end]]'><a href="[[.Base]]/readLater">Read Later</a></li>
+								[[end]]
 								<li class='tab-item [[if eq .Tab "comments"]]active[[end]]'><a href="[[.Base]]/comments">Comments</a></li>
+								[[if .Self]]
 								<li class='tab-item [[if eq .Tab "history"]]active[[end]]'><a href="[[.Base]]/history">History</a></li>
+								[[end]]
 							</ul>
 							[[if eq .Tab "documents"]]
 								<p>TODO: documents</p>
