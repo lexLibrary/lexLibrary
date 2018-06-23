@@ -119,7 +119,7 @@ func TestUser(t *testing.T) {
 
 	t.Run("Invalid Name", func(t *testing.T) {
 		reset(t)
-		name := fmt.Sprintf("%70s", "full name")
+		name := fmt.Sprintf("Z%70s", "full name")
 
 		u, err := app.UserNew("testusername", "ODSjflaksjdfhiasfd323")
 		if err != nil {

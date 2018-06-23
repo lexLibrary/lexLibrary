@@ -170,6 +170,10 @@ func (e *Elements) Eventually() *Elements {
 		return e
 	}
 
+	if e.selectFunc == nil || e.selector == "" {
+		return e
+	}
+
 	err := e.seq.driver.WaitWithTimeoutAndInterval(func(d selenium.WebDriver) (bool, error) {
 		e.seq.err = nil
 		var err error
@@ -1039,4 +1043,33 @@ func (e *Elements) Clear() *Elements {
 	return e.test("Clear", func(we selenium.WebElement) error {
 		return we.Clear()
 	})
+}
+
+// Filter filters out any elements for which the passed in function returns an error, useful for
+// matching elements by text contents, since they can't be selected for with css selectors
+func (e *Elements) Filter(fn func(we *Elements) error) *Elements {
+	if e.seq.err != nil {
+		return e
+	}
+
+	var filtered []selenium.WebElement
+
+	for i := range e.elems {
+		// run filter tests on copies of sequence and elements, so errors, and last funcs don't get propogated
+		we := &Elements{
+			seq: &Sequence{
+				driver:          e.seq.driver,
+				EventualPoll:    e.seq.EventualPoll,
+				EventualTimeout: e.seq.EventualTimeout,
+			},
+			elems: []selenium.WebElement{e.elems[i]},
+		}
+		err := fn(we)
+		if err == nil {
+			filtered = append(filtered, e.elems[i])
+		}
+	}
+
+	e.elems = filtered
+	return e
 }

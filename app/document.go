@@ -42,11 +42,13 @@ type DocumentDraft struct {
 	updater data.ID
 
 	DocumentContent
+
+	editor *User // current user editing the draft
 }
 
 // DocumentHistory is a previously published version of a document
 type DocumentHistory struct {
-	draftID data.ID   `json:"draft_id"`
+	draftID data.ID
 	Created time.Time `json:"created,omitempty"`
 	creator data.ID
 
@@ -54,12 +56,13 @@ type DocumentHistory struct {
 }
 
 var sqlDocument = struct {
-	insert,
 	insertGroup,
 	insertTag,
 	insertDraft,
 	insertDraftTag,
-	insertHistory *data.Query
+	insertHistory,
+	updateDraft,
+	insert *data.Query
 }{
 	insert: data.NewQuery(`
 		insert into documents (
@@ -151,7 +154,22 @@ var sqlDocument = struct {
 			{{arg "creator"}},
 		)
 	`),
+	updateDraft: data.NewQuery(`
+		update document_drafts 
+		set updated = {{NOW}}, 
+			version = version + 1,
+			updater = {{arg "updater"}},
+			title = {{arg "title"}},
+			content = {{arg "content"}}
+		where id = {{arg "id"}} 
+		and version = {{arg "version"}}
+	`),
 }
+
+var (
+	ErrDocumentConflict     = Conflict("You are not editing the most current version of this document. Please refresh and try again")
+	ErrDocumentUpdateAccess = Unauthorized("You do not have access to update this document")
+)
 
 var sanitizePolicy = bluemonday.UGCPolicy()
 
@@ -170,6 +188,7 @@ func (u *User) NewDocument(title, content string, tags []string, groups []data.I
 			Content: content,
 			tags:    tags,
 		},
+		editor: u,
 	}
 
 	err := d.validate()
@@ -236,9 +255,54 @@ func (d *DocumentDraft) insert(tx *sql.Tx) error {
 	return nil
 }
 
-// func (d *DocumentDraft) Update(title, content string, version int) error {
+func (d *DocumentDraft) canEdit() bool {
+	// TODO: Invite others to edit your draft
+	return d.editor != nil && d.creator == d.editor.ID
+}
 
-// }
+// Save saves the current document draft
+func (d *DocumentDraft) Save(title, content string, version int) error {
+	return data.BeginTx(func(tx *sql.Tx) error {
+		return d.update(tx, title, content, version)
+	})
+}
+
+func (d *DocumentDraft) update(tx *sql.Tx, title, content string, version int) error {
+	if !d.canEdit() {
+		return ErrDocumentUpdateAccess
+	}
+	d.Title = title
+	d.Content = content
+
+	err := d.validate()
+	if err != nil {
+		return err
+	}
+
+	d.sanitize()
+
+	r, err := sqlDocument.updateDraft.Tx(tx).Exec(
+		data.Arg("id", d.ID),
+		data.Arg("version", d.Version),
+		data.Arg("updater", d.editor.ID),
+		data.Arg("title", d.Title),
+		data.Arg("content", d.Content),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return ErrDocumentConflict
+	}
+	return nil
+}
 
 // Publish publishes a draft turing a draft into a document
 // func (d *DocumentDraft) Publish() (*Document, error) {

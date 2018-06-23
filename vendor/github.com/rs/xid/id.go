@@ -30,7 +30,7 @@
 //   - Non configured, you don't need set a unique machine and/or data center id
 //   - K-ordered
 //   - Embedded time with 1 second precision
-//   - Unicity guaranted for 16,777,216 (24 bits) unique ids per second and per host/process
+//   - Unicity guaranteed for 16,777,216 (24 bits) unique ids per second and per host/process
 //
 // Best used with xlog's RequestIDHandler (https://godoc.org/github.com/rs/xlog#RequestIDHandler).
 //
@@ -48,9 +48,13 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash/crc32"
+	"io/ioutil"
 	"os"
 	"sync/atomic"
 	"time"
+	"bytes"
+	"sort"
 )
 
 // Code inspired from mgo/bson ObjectId
@@ -60,7 +64,6 @@ type ID [rawLen]byte
 
 const (
 	encodedLen = 20 // string encoded len
-	decodedLen = 15 // len after base32 decoding with the padded data
 	rawLen     = 12 // binary raw len
 
 	// encoding stores a custom version of the base32 encoding with lower case
@@ -68,23 +71,27 @@ const (
 	encoding = "0123456789abcdefghijklmnopqrstuv"
 )
 
-// ErrInvalidID is returned when trying to unmarshal an invalid ID
-var ErrInvalidID = errors.New("xid: invalid ID")
+var (
+	// ErrInvalidID is returned when trying to unmarshal an invalid ID
+	ErrInvalidID = errors.New("xid: invalid ID")
 
-// objectIDCounter is atomically incremented when generating a new ObjectId
-// using NewObjectId() function. It's used as a counter part of an id.
-// This id is initialized with a random value.
-var objectIDCounter = randInt()
+	// objectIDCounter is atomically incremented when generating a new ObjectId
+	// using NewObjectId() function. It's used as a counter part of an id.
+	// This id is initialized with a random value.
+	objectIDCounter = randInt()
 
-// machineId stores machine id generated once and used in subsequent calls
-// to NewObjectId function.
-var machineID = readMachineID()
+	// machineId stores machine id generated once and used in subsequent calls
+	// to NewObjectId function.
+	machineID = readMachineID()
 
-// pid stores the current process id
-var pid = os.Getpid()
+	// pid stores the current process id
+	pid = os.Getpid()
 
-// dec is the decoding map for base32 encoding
-var dec [256]byte
+	nilID ID
+
+	// dec is the decoding map for base32 encoding
+	dec [256]byte
+)
 
 func init() {
 	for i := 0; i < len(dec); i++ {
@@ -93,6 +100,14 @@ func init() {
 	for i := 0; i < len(encoding); i++ {
 		dec[encoding[i]] = byte(i)
 	}
+
+	// If /proc/self/cpuset exists and is not /, we can assume that we are in a
+	// form of container and use the content of cpuset xor-ed with the PID in
+	// order get a reasonable machine global unique PID.
+	b, err := ioutil.ReadFile("/proc/self/cpuset")
+	if err == nil && len(b) > 1 {
+		pid ^= int(crc32.ChecksumIEEE(b))
+	}
 }
 
 // readMachineId generates machine id and puts it into the machineId global
@@ -100,9 +115,13 @@ func init() {
 // a runtime error.
 func readMachineID() []byte {
 	id := make([]byte, 3)
-	if hostname, err := os.Hostname(); err == nil {
+	hid, err := readPlatformMachineID()
+	if err != nil || len(hid) == 0 {
+		hid, err = os.Hostname()
+	}
+	if err == nil && len(hid) != 0 {
 		hw := md5.New()
-		hw.Write([]byte(hostname))
+		hw.Write([]byte(hid))
 		copy(id, hw.Sum(nil))
 	} else {
 		// Fallback to rand number if machine id can't be gathered
@@ -122,7 +141,7 @@ func randInt() uint32 {
 	return uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])
 }
 
-// New generates a globaly unique ID
+// New generates a globally unique ID
 func New() ID {
 	var id ID
 	// Timestamp, 4 bytes, big endian
@@ -163,6 +182,15 @@ func (id ID) MarshalText() ([]byte, error) {
 	return text, nil
 }
 
+// MarshalJSON implements encoding/json Marshaler interface
+func (id ID) MarshalJSON() ([]byte, error) {
+	if id.IsNil() {
+		return []byte("null"), nil
+	}
+	text, err := id.MarshalText()
+	return []byte(`"` + string(text) + `"`), err
+}
+
 // encode by unrolling the stdlib base32 algorithm + removing all safe checks
 func encode(dst, id []byte) {
 	dst[0] = encoding[id[0]>>3]
@@ -199,6 +227,16 @@ func (id *ID) UnmarshalText(text []byte) error {
 	}
 	decode(id, text)
 	return nil
+}
+
+// UnmarshalJSON implements encoding/json Unmarshaler interface
+func (id *ID) UnmarshalJSON(b []byte) error {
+	s := string(b)
+	if s == "null" {
+		*id = nilID
+		return nil
+	}
+	return id.UnmarshalText(b[1 : len(b)-1])
 }
 
 // decode by unrolling the stdlib base32 algorithm + removing all safe checks
@@ -247,6 +285,9 @@ func (id ID) Counter() int32 {
 
 // Value implements the driver.Valuer interface.
 func (id ID) Value() (driver.Value, error) {
+	if id.IsNil() {
+		return nil, nil
+	}
 	b, err := id.MarshalText()
 	return string(b), err
 }
@@ -258,7 +299,63 @@ func (id *ID) Scan(value interface{}) (err error) {
 		return id.UnmarshalText([]byte(val))
 	case []byte:
 		return id.UnmarshalText(val)
+	case nil:
+		*id = nilID
+		return nil
 	default:
 		return fmt.Errorf("xid: scanning unsupported type: %T", value)
 	}
+}
+
+// IsNil Returns true if this is a "nil" ID
+func (id ID) IsNil() bool {
+	return id == nilID
+}
+
+// NilID returns a zero value for `xid.ID`.
+func NilID() ID {
+	return nilID
+}
+
+// Bytes returns the byte array representation of `ID`
+func (id ID) Bytes() []byte {
+	return id[:]
+}
+
+// FromBytes convert the byte array representation of `ID` back to `ID`
+func FromBytes(b []byte) (ID, error) {
+	var id ID
+	if len(b) != rawLen {
+		return id, ErrInvalidID
+	}
+	copy(id[:], b)
+	return id, nil
+}
+
+// Compare returns an integer comparing two IDs. It behaves just like `bytes.Compare`.
+// The result will be 0 if two IDs are identical, -1 if current id is less than the other one,
+// and 1 if current id is greater than the other.
+func (id ID) Compare(other ID) int {
+	return bytes.Compare(id[:], other[:])
+}
+
+
+type sorter []ID
+
+func (s sorter) Len() int {
+	return len(s)
+}
+
+func (s sorter) Less(i, j int) bool {
+	return s[i].Compare(s[j]) < 0
+}
+
+func (s sorter) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+// Sort sorts an array of IDs inplace.
+// It works by wrapping `[]ID` and use `sort.Sort`.
+func Sort(ids []ID) {
+	sort.Sort(sorter(ids))
 }

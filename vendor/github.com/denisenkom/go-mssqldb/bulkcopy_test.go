@@ -85,7 +85,7 @@ func TestBulkcopy(t *testing.T) {
 	// pool.
 	conn, err := pool.Conn(ctx)
 	if err != nil {
-		t.Error("failed to pull connection from pool", err)
+		t.Fatal("failed to pull connection from pool", err)
 	}
 	defer conn.Close()
 
@@ -144,7 +144,7 @@ func TestBulkcopy(t *testing.T) {
 		}
 		for i, c := range testValues {
 			if !compareValue(container[i], c.val) {
-				t.Errorf("columns %s : %s != %v\n", c.colname, container[i], c.val)
+				t.Errorf("columns %s : expected: %v, got: %v\n", c.colname, c.val, container[i])
 			}
 		}
 	}

@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "cloud.google.com/go"
+  packages = ["civil"]
+  revision = "777200caa7fb8936aed0f12b1fd79af64cc83ec9"
+  version = "v0.24.0"
+
+[[projects]]
   name = "github.com/blang/semver"
   packages = ["."]
   revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
@@ -10,25 +16,19 @@
 [[projects]]
   branch = "master"
   name = "github.com/denisenkom/go-mssqldb"
-  packages = [
-    ".",
-    "internal/cp"
-  ]
-  revision = "e32faac87a2220f9342289f2c3b567d1424b8ec5"
+  packages = [".","internal/cp"]
+  revision = "94c9c97e8c9f9844d15c846854a7a6031ae2132c"
 
 [[projects]]
   name = "github.com/disintegration/imaging"
   packages = ["."]
-  revision = "fd34ef7671b12cdf1b024d98c6b327b2770d32c4"
-  version = "v1.4.1"
+  revision = "bbcee2f5c9d5e94ca42c8b50ec847fec64a6c134"
+  version = "v1.4.2"
 
 [[projects]]
   branch = "master"
   name = "github.com/dustin/go-humanize"
-  packages = [
-    ".",
-    "english"
-  ]
+  packages = [".","english"]
   revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
@@ -40,24 +40,13 @@
 [[projects]]
   name = "github.com/go-sql-driver/mysql"
   packages = ["."]
-  revision = "a0583e0143b1624142adab07e0e97fe106d99561"
-  version = "v1.3"
+  revision = "d523deb1b23d913de5bdada721a6071e71283618"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-  packages = [
-    ".",
-    "hcl/ast",
-    "hcl/parser",
-    "hcl/printer",
-    "hcl/scanner",
-    "hcl/strconv",
-    "hcl/token",
-    "json/parser",
-    "json/scanner",
-    "json/token"
-  ]
+  packages = [".","hcl/ast","hcl/parser","hcl/printer","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
   revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
@@ -69,23 +58,20 @@
 [[projects]]
   branch = "master"
   name = "github.com/lib/pq"
-  packages = [
-    ".",
-    "oid"
-  ]
-  revision = "d34b9ff171c21ad295489235aec8b6626023cd04"
+  packages = [".","oid"]
+  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[projects]]
   name = "github.com/magiconair/properties"
   packages = ["."]
-  revision = "c3beff4c2358b44d0493c7dda585e7db7ff28ae6"
-  version = "v1.7.6"
+  revision = "c2353362d570a7bfa228149c62842019201cfb71"
+  version = "v1.8.0"
 
 [[projects]]
   name = "github.com/mattn/go-sqlite3"
   packages = ["."]
-  revision = "6c771bb9887719704b210e87e934f08be014bdb1"
-  version = "v1.6.0"
+  revision = "25ecb14adfc7543176f7d85291ec7dba82c6f7e4"
+  version = "v1.9.0"
 
 [[projects]]
   branch = "master"
@@ -97,7 +83,7 @@
   branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
+  revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
 
 [[projects]]
   name = "github.com/mssola/user_agent"
@@ -108,8 +94,8 @@
 [[projects]]
   name = "github.com/pelletier/go-toml"
   packages = ["."]
-  revision = "acdc4509485b587f5e675510c4f2c63e90ff68a8"
-  version = "v1.1.0"
+  revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -120,17 +106,14 @@
 [[projects]]
   name = "github.com/rs/xid"
   packages = ["."]
-  revision = "02dd45c33376f85d1064355dc790dcc4850596b1"
-  version = "v1.1"
+  revision = "2c7e97ce663ff82c49656bca3048df0fdd83c5f9"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "go1"
   name = "github.com/rwcarlsen/goexif"
-  packages = [
-    "exif",
-    "tiff"
-  ]
-  revision = "fb35d3c3290d09f3524b684b5d42d0063c227158"
+  packages = ["exif","tiff"]
+  revision = "8d986c03457a2057c7b0fb0a48113f7dd48f9619"
 
 [[projects]]
   branch = "master"
@@ -142,7 +125,7 @@
   branch = "master"
   name = "github.com/shurcooL/httpgzip"
   packages = ["."]
-  revision = "d78e9b0bdad734ae5eb8805b13586e53c9d43205"
+  revision = "b1c53ac65af9fd3d354d6f9ad30a0cca35e173ed"
 
 [[projects]]
   branch = "master"
@@ -152,12 +135,9 @@
 
 [[projects]]
   name = "github.com/spf13/afero"
-  packages = [
-    ".",
-    "mem"
-  ]
-  revision = "63644898a8da0bc22138abf860edaf5277b6102e"
-  version = "v1.1.0"
+  packages = [".","mem"]
+  revision = "787d034dfe70e44075ccc060d346146ef53270ad"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/spf13/cast"
@@ -186,52 +166,32 @@
 [[projects]]
   branch = "master"
   name = "github.com/tebeka/selenium"
-  packages = [
-    ".",
-    "chrome",
-    "firefox",
-    "internal/zip",
-    "log"
-  ]
-  revision = "6a80d8bc1bcda5ef9c53bf3dba09a97109b02b1a"
+  packages = [".","chrome","firefox","internal/zip","log"]
+  revision = "a49cf4b98a36c2b21b1ccb012852bd142d5fc04a"
 
 [[projects]]
   name = "github.com/timshannon/sequence"
   packages = ["."]
-  revision = "86b45afb0d987c4df3443ef9cbc71279592a696c"
-  version = "v0.0.5"
+  revision = "99d9905e43e684d55fe706427be3da63ebce88f2"
+  version = "v0.0.6"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = [
-    "argon2",
-    "blake2b",
-    "md4"
-  ]
-  revision = "2b6c08872f4b66da917bb4ce98df4f0307330f78"
+  packages = ["argon2","blake2b","md4"]
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/image"
-  packages = [
-    "bmp",
-    "tiff",
-    "tiff/lzw"
-  ]
-  revision = "f315e440302883054d0c2bd85486878cb4f8572c"
+  packages = ["bmp","tiff","tiff/lzw"]
+  revision = "af66defab954cb421ca110193eed9477c8541e2a"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = [
-    "context",
-    "html",
-    "html/atom",
-    "idna",
-    "lex/httplex"
-  ]
-  revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
+  packages = ["context","html","html/atom","http/httpguts","idna"]
+  revision = "afe8f62b1d6bbd81f31868121a50b06d8188e1f9"
 
 [[projects]]
   branch = "master"
@@ -242,29 +202,20 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix"]
-  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
+  packages = ["cpu","unix","windows"]
+  revision = "63fc586f45fe72d95d5240a5d5eb95e6503907d3"
 
 [[projects]]
   name = "golang.org/x/text"
-  packages = [
-    "collate",
-    "collate/build",
-    "internal/colltab",
-    "internal/gen",
-    "internal/tag",
-    "internal/triegen",
-    "internal/ucd",
-    "language",
-    "secure/bidirule",
-    "transform",
-    "unicode/bidi",
-    "unicode/cldr",
-    "unicode/norm",
-    "unicode/rangetable"
-  ]
+  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
+
+[[projects]]
+  name = "google.golang.org/appengine"
+  packages = ["cloudsql"]
+  revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
+  version = "v1.1.0"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
