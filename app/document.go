@@ -48,7 +48,7 @@ type DocumentDraft struct {
 
 // DocumentHistory is a previously published version of a document
 type DocumentHistory struct {
-	draftID data.ID
+	Version int       `json:"version"`
 	Created time.Time `json:"created,omitempty"`
 	creator data.ID
 
@@ -62,6 +62,7 @@ var sqlDocument = struct {
 	insertDraftTag,
 	insertHistory,
 	updateDraft,
+	get,
 	insert *data.Query
 }{
 	insert: data.NewQuery(`
@@ -141,7 +142,6 @@ var sqlDocument = struct {
 			version,
 			title,
 			content,
-			draft_id,
 			created,
 			creator,
 		) values (
@@ -149,7 +149,6 @@ var sqlDocument = struct {
 			{{arg "version"}},
 			{{arg "title"}},
 			{{arg "content"}},
-			{{arg "draft_id"}},
 			{{arg "created"}},
 			{{arg "creator"}},
 		)
@@ -164,11 +163,24 @@ var sqlDocument = struct {
 		where id = {{arg "id"}} 
 		and version = {{arg "version"}}
 	`),
+	get: data.NewQuery(`
+		select 	id,
+				title,
+				content,
+				version,
+				updated,
+				created,
+				creator,
+				updater
+		from documents
+		where id = {{arg "id"}}
+	`),
 }
 
 var (
 	ErrDocumentConflict     = Conflict("You are not editing the most current version of this document. Please refresh and try again")
 	ErrDocumentUpdateAccess = Unauthorized("You do not have access to update this document")
+	ErrDocumentNotFound     = NotFound("Document not found")
 )
 
 var sanitizePolicy = bluemonday.UGCPolicy()
@@ -304,7 +316,68 @@ func (d *DocumentDraft) update(tx *sql.Tx, title, content string, version int) e
 	return nil
 }
 
-// Publish publishes a draft turing a draft into a document
-// func (d *DocumentDraft) Publish() (*Document, error) {
+func (d *Document) scan(record scanner) error {
+	err := record.Scan(
+		&d.ID,
+		&d.Title,
+		&d.Content,
+		&d.Version,
+		&d.Updated,
+		&d.Created,
+		&d.creator,
+		&d.updater,
+	)
+	if err == sql.ErrNoRows {
+		return ErrDocumentNotFound
+	}
+	return err
+}
 
-// }
+// make history turns the current document version into a history record
+func (d *Document) makeHistory() *DocumentHistory {
+	return &DocumentHistory{
+		Version:         d.Version,
+		Created:         d.Updated, // history created is current updated
+		creator:         d.updater, // history creator is current updater
+		DocumentContent: d.DocumentContent,
+	}
+}
+
+// link builds weighted links to other published documents based on their tags
+// func (d *Document) link() error {}
+// index adds the document to the search index
+// func(d *Document) index() error {}
+
+// Publish publishes a draft turing a draft into a document
+func (d *DocumentDraft) Publish() error {
+	if !d.canEdit() {
+		return ErrDocumentUpdateAccess
+	}
+
+	p := &Document{}
+	err := p.scan(sqlDocument.get.QueryRow(data.Arg("id", d.DocumentContent.ID)))
+	if err != nil {
+		return err
+	}
+
+	return data.BeginTx(func(tx *sql.Tx) error {
+		err = p.makeHistory().insert(tx)
+		if err != nil {
+			return err
+		}
+		//TODO: insert new current record based on draft
+	})
+}
+
+func (h *DocumentHistory) insert(tx *sql.Tx) error {
+	_, err := sqlDocument.insertHistory.Tx(tx).Exec(
+		data.Arg("document_id", h.ID),
+		data.Arg("version", h.Version),
+		data.Arg("title", h.Title),
+		data.Arg("content", h.Content),
+		data.Arg("created", h.Created),
+		data.Arg("creator", h.creator),
+	)
+
+	return err
+}

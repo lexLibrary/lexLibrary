@@ -226,7 +226,6 @@ var schemaVersions = []*Query{
 			version {{int}} NOT NULL,
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
-			draft_id {{id}} NOT NULL REFERENCES document_drafts(id),
 			created {{datetime}} NOT NULL,
 			creator {{id}} NOT NULL REFERENCES users(id),
 			PRIMARY KEY(document_id, version)
