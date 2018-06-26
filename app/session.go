@@ -123,7 +123,7 @@ func Login(username string, password string) (*User, error) {
 	return u, nil
 }
 
-// SessionNew generates a new session for the passed in user
+// NewSession generates a new session for the passed in user
 func (u *User) NewSession(expires time.Time, ipAddress, userAgent string) (*Session, error) {
 	if expires.IsZero() {
 		expires = time.Now().AddDate(0, 0, 3)

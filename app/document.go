@@ -29,7 +29,18 @@ type DocumentContent struct {
 	ID      data.ID `json:"id"`
 	Title   string  `json:"title"`
 	Content string  `json:"content"`
-	tags    []string
+	tags    []Tag
+}
+
+const (
+	tagTypeUser = "user"
+	tagTypeAuto = "auto"
+)
+
+// Tag is a string value that
+type Tag struct {
+	Value string `json: "value"`
+	Type  string `json: "type"`
 }
 
 // DocumentDraft is a draft of a document, not visible to the public
@@ -63,6 +74,11 @@ var sqlDocument = struct {
 	insertHistory,
 	updateDraft,
 	get,
+	getDraftTags,
+	getTags,
+	update,
+	deleteTags,
+	deleteDraftTags,
 	insert *data.Query
 }{
 	insert: data.NewQuery(`
@@ -98,10 +114,12 @@ var sqlDocument = struct {
 	insertTag: data.NewQuery(`
 		insert into document_tags (
 			document_id,
-			tag
+			tag,
+			type
 		) values (
 			{{arg "document_id"}},
 			{{arg "tag"}}
+			{{arg "type"}}
 		)
 	`),
 	insertDraft: data.NewQuery(`
@@ -130,10 +148,12 @@ var sqlDocument = struct {
 	insertDraftTag: data.NewQuery(`
 		insert into document_draft_tags (
 			draft_id,
-			tag
+			tag,
+			type
 		) values (
 			{{arg "draft_id"}},
 			{{arg "tag"}}
+			{{arg "type"}}
 		)
 	`),
 	insertHistory: data.NewQuery(`
@@ -163,24 +183,50 @@ var sqlDocument = struct {
 		where id = {{arg "id"}} 
 		and version = {{arg "version"}}
 	`),
+	update: data.NewQuery(`
+		update documents 
+		set updated = {{NOW}}, 
+			version = version + 1,
+			updater = {{arg "updater"}},
+			title = {{arg "title"}},
+			content = {{arg "content"}}
+		where id = {{arg "id"}} 
+		and version = {{arg "version"}}
+	`),
 	get: data.NewQuery(`
 		select 	id,
-				title,
-				content,
-				version,
-				updated,
-				created,
-				creator,
-				updater
+			title,
+			content,
+			version,
+			updated,
+			created,
+			creator,
+			updater
 		from documents
 		where id = {{arg "id"}}
+	`),
+	getTags: data.NewQuery(`
+		select 	document_id,
+			tag,
+			type
+		from document_tags
+		where	document_id = {{arg "id"}}	
+	`),
+	deleteTags: data.NewQuery(`
+		delete from document_tags
+		where document_id = {{arg "document_id"}}
+	`),
+	deleteDraftTags: data.NewQuery(`
+		delete from document_draft_tags
+		where draft_id = {{arg "draft_id"}}
 	`),
 }
 
 var (
-	ErrDocumentConflict     = Conflict("You are not editing the most current version of this document. Please refresh and try again")
-	ErrDocumentUpdateAccess = Unauthorized("You do not have access to update this document")
-	ErrDocumentNotFound     = NotFound("Document not found")
+	errDocumentConflict = Conflict("You are not editing the most current version of this document. " +
+		"Please refresh and try again")
+	errDocumentUpdateAccess = Unauthorized("You do not have access to update this document")
+	errDocumentNotFound     = NotFound("Document not found")
 )
 
 var sanitizePolicy = bluemonday.UGCPolicy()
@@ -198,10 +244,11 @@ func (u *User) NewDocument(title, content string, tags []string, groups []data.I
 			ID:      data.NewID(),
 			Title:   title,
 			Content: content,
-			tags:    tags,
 		},
 		editor: u,
 	}
+
+	d.mergeTags(tagTypeUser, tags...)
 
 	err := d.validate()
 	if err != nil {
@@ -209,6 +256,11 @@ func (u *User) NewDocument(title, content string, tags []string, groups []data.I
 	}
 
 	d.sanitize()
+
+	err = d.autoTag()
+	if err != nil {
+		return nil, err
+	}
 
 	err = data.BeginTx(func(tx *sql.Tx) error {
 		return d.insert(tx)
@@ -235,6 +287,34 @@ func (d *DocumentContent) sanitize() {
 	d.Content = sanitizePolicy.Sanitize(d.Content)
 }
 
+// autoTag builds tags automatically based on the document's content. User specified tags
+// have a greater weight than auto generated tags
+func (d *DocumentContent) autoTag() error {
+	//TODO: don't overwrite any user tags
+
+	return nil
+}
+
+// mergeTags merges the passed in tags with the current document
+func (d *DocumentContent) mergeTags(tagType string, tagList ...string) {
+
+	for i := range tagList {
+		found := false
+		for j := range d.tags {
+			if d.tags[j].Value == tagList[i] {
+				found = true
+				break
+			}
+		}
+		if !found {
+			d.tags = append(d.tags, Tag{
+				Value: tagList[i],
+				Type:  tagType,
+			})
+		}
+	}
+}
+
 func (d *DocumentDraft) insert(tx *sql.Tx) error {
 	if tx == nil {
 		panic("A transaction is required when inserting a document draft")
@@ -258,7 +338,8 @@ func (d *DocumentDraft) insert(tx *sql.Tx) error {
 	for i := range d.tags {
 		_, err = sqlDocument.insertDraftTag.Tx(tx).Exec(
 			data.Arg("draft_id", d.ID),
-			data.Arg("tag", d.tags[i]),
+			data.Arg("tag", d.tags[i].Value),
+			data.Arg("type", d.tags[i].Type),
 		)
 		if err != nil {
 			return err
@@ -273,18 +354,19 @@ func (d *DocumentDraft) canEdit() bool {
 }
 
 // Save saves the current document draft
-func (d *DocumentDraft) Save(title, content string, version int) error {
+func (d *DocumentDraft) Save(title, content string, tags []string, version int) error {
 	return data.BeginTx(func(tx *sql.Tx) error {
-		return d.update(tx, title, content, version)
+		return d.update(tx, title, content, tags, version)
 	})
 }
 
-func (d *DocumentDraft) update(tx *sql.Tx, title, content string, version int) error {
+func (d *DocumentDraft) update(tx *sql.Tx, title, content string, tags []string, version int) error {
 	if !d.canEdit() {
-		return ErrDocumentUpdateAccess
+		return errDocumentUpdateAccess
 	}
 	d.Title = title
 	d.Content = content
+	d.mergeTags(tagTypeUser, tags...)
 
 	err := d.validate()
 	if err != nil {
@@ -292,6 +374,11 @@ func (d *DocumentDraft) update(tx *sql.Tx, title, content string, version int) e
 	}
 
 	d.sanitize()
+
+	err = d.autoTag()
+	if err != nil {
+		return err
+	}
 
 	r, err := sqlDocument.updateDraft.Tx(tx).Exec(
 		data.Arg("id", d.ID),
@@ -311,8 +398,26 @@ func (d *DocumentDraft) update(tx *sql.Tx, title, content string, version int) e
 	}
 
 	if rows == 0 {
-		return ErrDocumentConflict
+		return errDocumentConflict
 	}
+
+	_, err = sqlDocument.deleteDraftTags.Tx(tx).Exec(data.Arg("draft_id", d.ID))
+	if err != nil {
+		return err
+	}
+
+	for i := range d.tags {
+		_, err = sqlDocument.insertDraftTag.Tx(tx).Exec(
+			data.Arg("draft_id", d.ID),
+			data.Arg("tag", d.tags[i].Value),
+			data.Arg("type", d.tags[i].Type),
+		)
+		if err != nil {
+			return err
+		}
+
+	}
+
 	return nil
 }
 
@@ -328,10 +433,15 @@ func (d *Document) scan(record scanner) error {
 		&d.updater,
 	)
 	if err == sql.ErrNoRows {
-		return ErrDocumentNotFound
+		return errDocumentNotFound
 	}
 	return err
 }
+
+// Tags returns the tags for the given document
+// func (d *DocumentContent) Tags() ([]Tag, error) {
+
+// }
 
 // make history turns the current document version into a history record
 func (d *Document) makeHistory() *DocumentHistory {
@@ -344,29 +454,76 @@ func (d *Document) makeHistory() *DocumentHistory {
 }
 
 // link builds weighted links to other published documents based on their tags
-// func (d *Document) link() error {}
+func (d *Document) link() error {
+	//TODO:
+	return nil
+}
+
 // index adds the document to the search index
-// func(d *Document) index() error {}
+func (d *Document) index() error {
+	//TODO:
+	return nil
+}
 
 // Publish publishes a draft turing a draft into a document
 func (d *DocumentDraft) Publish() error {
 	if !d.canEdit() {
-		return ErrDocumentUpdateAccess
-	}
-
-	p := &Document{}
-	err := p.scan(sqlDocument.get.QueryRow(data.Arg("id", d.DocumentContent.ID)))
-	if err != nil {
-		return err
+		return errDocumentUpdateAccess
 	}
 
 	return data.BeginTx(func(tx *sql.Tx) error {
-		err = p.makeHistory().insert(tx)
+		var new *Document
+		old := &Document{}
+		err := old.scan(sqlDocument.get.QueryRow(data.Arg("id", d.DocumentContent.ID)))
+		if err == errDocumentNotFound {
+			new = d.makeDocument(nil)
+			err = new.insert(tx)
+
+			if err != nil {
+				return err
+			}
+		} else {
+			err = old.makeHistory().insert(tx)
+			if err != nil {
+				return err
+			}
+			new = d.makeDocument(old)
+			err = new.update(tx)
+
+			if err != nil {
+				return err
+			}
+
+		}
+
+		err = new.link()
 		if err != nil {
 			return err
 		}
-		//TODO: insert new current record based on draft
+
+		return new.index()
 	})
+}
+
+// makeDocument creates a document record from the current document draft
+func (d *DocumentDraft) makeDocument(currentDocument *Document) *Document {
+	if currentDocument == nil {
+		return &Document{
+			Version:         0,
+			Updated:         time.Now(),
+			Created:         time.Now(),
+			creator:         d.editor.ID,
+			updater:         d.editor.ID,
+			DocumentContent: d.DocumentContent,
+		}
+	}
+
+	newDoc := *currentDocument
+	newDoc.Updated = time.Now()
+	newDoc.updater = d.editor.ID
+	newDoc.DocumentContent = d.DocumentContent
+
+	return &newDoc
 }
 
 func (h *DocumentHistory) insert(tx *sql.Tx) error {
@@ -380,4 +537,83 @@ func (h *DocumentHistory) insert(tx *sql.Tx) error {
 	)
 
 	return err
+}
+
+func (d *Document) insert(tx *sql.Tx) error {
+	if tx == nil {
+		panic("A transaction is required when inserting a document")
+	}
+
+	_, err := sqlDocument.insert.Tx(tx).Exec(
+		data.Arg("id", d.ID),
+		data.Arg("title", d.Title),
+		data.Arg("content", d.Content),
+		data.Arg("version", d.Version),
+		data.Arg("updated", d.Updated),
+		data.Arg("created", d.Created),
+		data.Arg("creator", d.creator),
+		data.Arg("updater", d.updater),
+	)
+	if err != nil {
+		return err
+	}
+
+	for i := range d.tags {
+		_, err = sqlDocument.insertTag.Tx(tx).Exec(
+			data.Arg("draft_id", d.ID),
+			data.Arg("tag", d.tags[i].Value),
+			data.Arg("type", d.tags[i].Type),
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+
+}
+
+func (d *Document) update(tx *sql.Tx) error {
+	if tx == nil {
+		panic("A transaction is required when updating a document")
+	}
+
+	r, err := sqlDocument.update.Tx(tx).Exec(
+		data.Arg("id", d.ID),
+		data.Arg("version", d.Version),
+		data.Arg("updater", d.updater),
+		data.Arg("title", d.Title),
+		data.Arg("content", d.Content),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errDocumentConflict
+	}
+
+	_, err = sqlDocument.deleteTags.Tx(tx).Exec(data.Arg("document_id", d.ID))
+	if err != nil {
+		return err
+	}
+
+	for i := range d.tags {
+		_, err = sqlDocument.insertTag.Tx(tx).Exec(
+			data.Arg("document_id", d.ID),
+			data.Arg("tag", d.tags[i].Value),
+			data.Arg("type", d.tags[i].Type),
+		)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }

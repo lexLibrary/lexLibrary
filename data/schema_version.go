@@ -235,6 +235,7 @@ var schemaVersions = []*Query{
 		create table document_tags (
 			document_id {{id}} NOT NULL REFERENCES documents(id),
 			tag {{text}} NOT NULL, 
+			type {{text}} NOT NULL,
 			PRIMARY KEY(document_id, tag)
 		)
 	`),
@@ -242,6 +243,7 @@ var schemaVersions = []*Query{
 		create table document_draft_tags (
 			draft_id {{id}} NOT NULL REFERENCES document_drafts(id),
 			tag {{text}} NOT NULL, 
+			type {{text}} NOT NULL,
 			PRIMARY KEY(draft_id, tag)
 		)
 	`),

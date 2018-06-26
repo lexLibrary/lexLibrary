@@ -15,6 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// RegistrationTokenPath is the path where registration tokens will be claimed
 const RegistrationTokenPath = "/registration"
 
 // RegistrationToken is a temporary token that can be used to register new logins for Lex Library
@@ -398,6 +399,7 @@ func RegisterUserFromToken(username, password, token string) (*User, error) {
 	return u, err
 }
 
+// RegistrationToken retrieves a registration token
 func (a *Admin) RegistrationToken(token string) (*RegistrationToken, error) {
 	return registrationTokenGet(token)
 }
@@ -519,6 +521,7 @@ func (t *RegistrationToken) Users() ([]*PublicProfile, error) {
 	return users, nil
 }
 
+// URL returns the URL to claim a registration token
 func (t *RegistrationToken) URL() (string, error) {
 	u, err := url.Parse(SettingMust("URL").String())
 	if err != nil {

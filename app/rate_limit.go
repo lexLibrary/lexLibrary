@@ -94,7 +94,7 @@ func (rk rateKey) attempt(limit int32, reset time.Time) RateLeft {
 		}
 	}
 
-	left.Remaining -= 1
+	left.Remaining--
 
 	rates.left[rk] = left
 	return left

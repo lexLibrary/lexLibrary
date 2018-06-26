@@ -217,6 +217,7 @@ func (a *Admin) Overview() (*Overview, error) {
 	return o, nil
 }
 
+// InstanceUser is a user record with the last login, used on the admin page
 type InstanceUser struct {
 	PublicProfile
 	LastLogin data.NullTime

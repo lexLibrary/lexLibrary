@@ -243,15 +243,15 @@ func publicProfileGet(id data.ID) (*PublicProfile, error) {
 	return u, nil
 }
 
-func (u *PublicProfile) scan(record scanner) error {
+func (p *PublicProfile) scan(record scanner) error {
 	err := record.Scan(
-		&u.ID,
-		&u.Username,
-		&u.Name,
-		&u.Active,
-		&u.profileImage,
-		&u.admin,
-		&u.Created,
+		&p.ID,
+		&p.Username,
+		&p.Name,
+		&p.Active,
+		&p.profileImage,
+		&p.admin,
+		&p.Created,
 	)
 	if err == sql.ErrNoRows {
 		return ErrUserNotFound
@@ -504,8 +504,8 @@ func (u *User) Admin() (*Admin, error) {
 }
 
 // ProfileImage returns the user's profile image
-func (u *PublicProfile) ProfileImage() *Image {
-	return imageGet(u.profileImage)
+func (p *PublicProfile) ProfileImage() *Image {
+	return imageGet(p.profileImage)
 }
 
 // ProfileImageDraft returns the draft profile image
@@ -627,16 +627,16 @@ func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 }
 
 // DisplayName is the name displayed.  If no name is set then the username is displayed
-func (u *PublicProfile) DisplayName() string {
-	if u.Name != "" {
-		return u.Name
+func (p *PublicProfile) DisplayName() string {
+	if p.Name != "" {
+		return p.Name
 	}
-	return u.Username
+	return p.Username
 }
 
 // DisplayInitials is two characters that display if no profile image is set
-func (u *PublicProfile) DisplayInitials() string {
-	initials := strings.Split(u.DisplayName(), " ")
+func (p *PublicProfile) DisplayInitials() string {
+	initials := strings.Split(p.DisplayName(), " ")
 	if len(initials) == 1 {
 		if len(initials[0]) == 1 {
 			return initials[0]
