@@ -223,7 +223,7 @@ type InstanceUser struct {
 	LastLogin data.NullTime
 }
 
-func (u *InstanceUser) scan(record scanner) error {
+func (u *InstanceUser) scan(record Scanner) error {
 	err := record.Scan(
 		&u.ID,
 		&u.Username,

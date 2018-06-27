@@ -179,7 +179,7 @@ func initSQLite(cfg Config) error {
 		return errors.Wrap(err, "Parsing sqlite DSN")
 	}
 
-	q.Set("foreign_keys", "true")
+	q.Set("_fk", "true")
 	qry = q.Encode()
 	dbURL = base + "?" + qry
 	db, err = sql.Open("sqlite3", dbURL)

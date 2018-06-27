@@ -35,6 +35,6 @@ func Init() error {
 }
 
 // scanner is used to allow row and rows to scan into application types
-type scanner interface {
+type Scanner interface {
 	Scan(dest ...interface{}) error
 }

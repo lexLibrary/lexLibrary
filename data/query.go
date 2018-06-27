@@ -342,21 +342,13 @@ func BeginTx(trnFunc func(tx *sql.Tx) error) error {
 	return nil
 }
 
-// Debug runs the passed in query and returns a string of the results
-// in a tab delimited format, with columns listed in the first row
-// meant for debugging use. Will panic instead of throwing an error
-func (q *Query) Debug(args ...Argument) string {
-	padding := 25
+// PrintRows pretty prints the result set from passed in rows
+func PrintRows(rows *sql.Rows, padding int) (string, error) {
 	result := ""
-
-	rows, err := q.Query(args...)
-	if err != nil {
-		panic(err)
-	}
 
 	columns, err := rows.Columns()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	lengths := make([]int, len(columns))
@@ -411,7 +403,22 @@ func (q *Query) Debug(args ...Argument) string {
 		count++
 	}
 
-	return result + wrap + "\n(" + strconv.Itoa(count) + " rows)\n"
+	return result + wrap + "\n(" + strconv.Itoa(count) + " rows)\n", nil
+}
+
+// Debug runs the passed in query and returns a string of the results
+// in a tab delimited format, with columns listed in the first row
+// meant for debugging use. Will panic instead of throwing an error
+func (q *Query) Debug(args ...Argument) string {
+	rows, err := q.Query(args...)
+	if err != nil {
+		panic(err)
+	}
+	result, err := PrintRows(rows, 25)
+	if err != nil {
+		panic(err)
+	}
+	return result
 }
 
 // DebugPrint prints out the debug query to the screen

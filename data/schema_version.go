@@ -210,7 +210,7 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create table document_drafts (
 			id {{id}} PRIMARY KEY NOT NULL,
-			document_id {{id}} NOT NULL REFERENCES documents(id),
+			document_id {{id}} REFERENCES documents(id),
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
 			version {{int}} NOT NULL,

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
@@ -33,11 +34,17 @@ func resetDB(t *testing.T) {
 	truncateTable(t, "user_to_groups")
 	truncateTable(t, "registration_token_groups")
 	truncateTable(t, "registration_token_users")
-	truncateTable(t, "users")
+	truncateTable(t, "document_groups")
+	truncateTable(t, "document_tags")
+	truncateTable(t, "document_draft_tags")
+	truncateTable(t, "document_history")
+	truncateTable(t, "document_drafts")
+	truncateTable(t, "documents")
 	truncateTable(t, "groups")
 	truncateTable(t, "settings")
-	truncateTable(t, "images")
 	truncateTable(t, "registration_tokens")
+	truncateTable(t, "users")
+	truncateTable(t, "images")
 }
 
 func resetAdmin(t *testing.T, username, password string) *app.Admin {
@@ -61,5 +68,28 @@ func truncateTable(t *testing.T, table string) {
 	_, err := data.NewQuery(fmt.Sprintf("delete from %s", table)).Exec()
 	if err != nil {
 		t.Fatalf("Error emptying %s table before running tests: %s", table, err)
+	}
+}
+
+func assertRow(t *testing.T, row *data.Row, assertValues ...interface{}) {
+	t.Helper()
+	rowValues := make([]interface{}, len(assertValues), len(assertValues))
+
+	for i := range assertValues {
+		rowValues[i] = reflect.New(reflect.TypeOf(assertValues[i])).Interface()
+	}
+
+	err := row.Scan(rowValues...)
+	if err != nil {
+		t.Fatal(err)
+		// return err
+	}
+
+	for i := range assertValues {
+		rowVal := reflect.ValueOf(rowValues[i]).Elem().Interface()
+		if !reflect.DeepEqual(assertValues[i], rowVal) {
+			t.Fatalf("Column %d doesn't match the asserted value. Expected %v, got %v", i+1,
+				assertValues[i], rowVal)
+		}
 	}
 }

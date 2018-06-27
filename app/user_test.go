@@ -653,16 +653,8 @@ func TestUser(t *testing.T) {
 			t.Fatalf("New draft image upload did not replace old draft image")
 		}
 
-		count := 0
-
-		err = data.NewQuery(`select count(*) as cnt from images where id = {{arg "id"}}`).
-			QueryRow(data.Arg("id", origDraftID)).Scan(&count)
-		if err != nil {
-			t.Fatalf("Error getting image count: %s", err)
-		}
-		if count != 0 {
-			t.Fatalf("Old draft image was not deleted. Expected %d, got %d.", 0, count)
-		}
+		assertRow(t, data.NewQuery(`select count(*) as cnt from images where id = {{arg "id"}}`).
+			QueryRow(data.Arg("id", origDraftID)), 0)
 
 		err = u.SetProfileImageFromDraft(-1, 0, 100, 100)
 		if err != nil {

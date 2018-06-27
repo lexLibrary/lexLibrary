@@ -190,7 +190,7 @@ func (u *User) NewGroup(name string) (*Group, error) {
 	return g, nil
 }
 
-func (g *Group) scan(record scanner) error {
+func (g *Group) scan(record Scanner) error {
 	err := record.Scan(
 		&g.ID,
 		&g.Name,

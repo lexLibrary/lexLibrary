@@ -58,16 +58,9 @@ func TestSession(t *testing.T) {
 			t.Fatalf("Error logging out session: %s", err)
 		}
 
-		valid := true
-		err = data.NewQuery(`select valid from sessions where id = {{arg "id"}}`).QueryRow(data.Arg("id", s.ID)).
-			Scan(&valid)
-		if err != nil {
-			t.Fatalf("Error getting session for ID %s: %s", s.ID, err)
-		}
-
-		if valid {
-			t.Fatalf("Logged out session is still valid")
-		}
+		assertRow(t, data.NewQuery(`
+			select valid from sessions where id = {{arg "id"}}
+		`).QueryRow(data.Arg("id", s.ID)), false)
 
 	})
 

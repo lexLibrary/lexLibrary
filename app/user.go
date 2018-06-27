@@ -243,7 +243,7 @@ func publicProfileGet(id data.ID) (*PublicProfile, error) {
 	return u, nil
 }
 
-func (p *PublicProfile) scan(record scanner) error {
+func (p *PublicProfile) scan(record Scanner) error {
 	err := record.Scan(
 		&p.ID,
 		&p.Username,
@@ -259,7 +259,7 @@ func (p *PublicProfile) scan(record scanner) error {
 	return err
 }
 
-func (u *User) scan(record scanner) error {
+func (u *User) scan(record Scanner) error {
 	err := record.Scan(
 		&u.ID,
 		&u.Username,
