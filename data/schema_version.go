@@ -236,6 +236,7 @@ var schemaVersions = []*Query{
 			document_id {{id}} NOT NULL REFERENCES documents(id),
 			tag {{text}} NOT NULL, 
 			type {{text}} NOT NULL,
+			stem {{text}},
 			PRIMARY KEY(document_id, tag)
 		)
 	`),
@@ -244,6 +245,7 @@ var schemaVersions = []*Query{
 			draft_id {{id}} NOT NULL REFERENCES document_drafts(id),
 			tag {{text}} NOT NULL, 
 			type {{text}} NOT NULL,
+			stem {{text}},
 			PRIMARY KEY(draft_id, tag)
 		)
 	`),

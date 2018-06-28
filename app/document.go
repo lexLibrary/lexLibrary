@@ -18,7 +18,7 @@ type Document struct {
 	Created time.Time `json:"created,omitempty"`
 	creator data.ID
 	updater data.ID
-	groups  []data.ID
+	// groups  []data.ID
 
 	DocumentContent
 }
@@ -30,18 +30,19 @@ type DocumentContent struct {
 	Title   string  `json:"title"`
 	Content string  `json:"content"`
 	Tags    []Tag   `json:"tags"`
+	// Lanuage //TODO:
 }
 
 const (
 	tagTypeUser = "user"
-	tagTypeAuto = "auto"
+	// tagTypeAuto = "auto"
 )
 
 // Tag is a string value that
 type Tag struct {
-	Value string `json: "value"`
-	Type  string `json: "type"`
-	Stem  string `json: "stem"`
+	Value string `json:"value"`
+	Type  string `json:"type"`
+	Stem  string `json:"stem"`
 }
 
 // DocumentDraft is a draft of a document, not visible to the public
@@ -491,7 +492,9 @@ func (d *DocumentDraft) Publish() (*Document, error) {
 		} else {
 			old := &Document{}
 			err := old.scan(sqlDocument.get.QueryRow(data.Arg("id", d.DocumentContent.ID)))
-
+			if err != nil {
+				return err
+			}
 			err = old.makeHistory().insert(tx)
 			if err != nil {
 				return err

@@ -182,6 +182,14 @@ func TestDocument(t *testing.T) {
 				select count(*) from document_tags where document_id = {{arg "id"}}
 			`).QueryRow(data.Arg("id", doc.ID)), 3)
 
+			assertRow(t, data.NewQuery(`
+				select count(*) from document_drafts where id = {{arg "id"}}
+			`).QueryRow(data.Arg("id", draft.ID)), 0)
+
+			assertRow(t, data.NewQuery(`
+				select count(*) from document_draft_tags where draft_id = {{arg "id"}}
+			`).QueryRow(data.Arg("id", draft.ID)), 0)
+
 		})
 
 	})

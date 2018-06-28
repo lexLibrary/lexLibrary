@@ -73,7 +73,7 @@ func truncateTable(t *testing.T, table string) {
 
 func assertRow(t *testing.T, row *data.Row, assertValues ...interface{}) {
 	t.Helper()
-	rowValues := make([]interface{}, len(assertValues), len(assertValues))
+	rowValues := make([]interface{}, len(assertValues))
 
 	for i := range assertValues {
 		rowValues[i] = reflect.New(reflect.TypeOf(assertValues[i])).Interface()
