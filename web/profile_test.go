@@ -13,12 +13,9 @@ func TestProfile(t *testing.T) {
 	username := "testUser"
 	password := "testpasswordThatisLongEnough"
 
-	err := createUserAndLogin(username, password, false)
-	if err != nil {
-		t.Fatalf("Error setting up user for testing: %s", err)
-	}
+	setupUserAndLogin(t, username, password, false)
 
-	err = newSequence().Get(uri.String()).
+	err := newSequence().Get(uri.String()).
 		Find(".profile-edit").Count(1).
 		Find("figure.avatar.avatar-full").Count(1).Attribute("data-initial").Equals("TE").
 		Find("#displayName").Text().Equals(strings.ToLower(username)).

@@ -14,7 +14,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	err := data.TestingSetup()
+	err := data.TestingSetup(m)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,29 +27,10 @@ func TestMain(m *testing.M) {
 	os.Exit(result)
 }
 
-func resetDB(t *testing.T) {
-	t.Helper()
-	truncateTable(t, "logs")
-	truncateTable(t, "sessions")
-	truncateTable(t, "user_to_groups")
-	truncateTable(t, "registration_token_groups")
-	truncateTable(t, "registration_token_users")
-	truncateTable(t, "document_groups")
-	truncateTable(t, "document_tags")
-	truncateTable(t, "document_draft_tags")
-	truncateTable(t, "document_history")
-	truncateTable(t, "document_drafts")
-	truncateTable(t, "documents")
-	truncateTable(t, "groups")
-	truncateTable(t, "settings")
-	truncateTable(t, "registration_tokens")
-	truncateTable(t, "users")
-	truncateTable(t, "images")
-}
-
 func resetAdmin(t *testing.T, username, password string) *app.Admin {
 	t.Helper()
-	resetDB(t)
+	// resetDB(t)
+	data.ResetDB(t)
 
 	u, err := app.FirstRunSetup(username, password)
 	if err != nil {

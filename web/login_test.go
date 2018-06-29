@@ -14,10 +14,7 @@ func TestLogin(t *testing.T) {
 	uri := *llURL
 	uri.Path = "login"
 
-	err := reset()
-	if err != nil {
-		t.Fatalf("Error resetting table before running tests: %s", err)
-	}
+	data.ResetDB(t)
 
 	username := "testusername"
 	password := "testWithAPrettyGoodP@ssword"

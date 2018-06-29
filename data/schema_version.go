@@ -194,6 +194,7 @@ var schemaVersions = []*Query{
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
 			version {{int}} NOT NULL,
+			draft_id {{id}} NOT NULL,
 			updated {{datetime}} NOT NULL,
 			created {{datetime}} NOT NULL,
 			creator {{id}} NOT NULL REFERENCES users(id), 
@@ -224,6 +225,7 @@ var schemaVersions = []*Query{
 		create table document_history (
 			document_id {{id}} NOT NULL REFERENCES documents(id),
 			version {{int}} NOT NULL,
+			draft_id {{id}} NOT NULL,
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
 			created {{datetime}} NOT NULL,

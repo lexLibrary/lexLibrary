@@ -14,6 +14,7 @@ import (
 // Document is an instance of a published document
 type Document struct {
 	Version int       `json:"version"`
+	DraftID data.ID   `json:"draft_id"`
 	Updated time.Time `json:"updated,omitempty"`
 	Created time.Time `json:"created,omitempty"`
 	creator data.ID
@@ -62,6 +63,7 @@ type DocumentDraft struct {
 // DocumentHistory is a previously published version of a document
 type DocumentHistory struct {
 	Version int       `json:"version"`
+	DraftID data.ID   `json:"draft_id"`
 	Created time.Time `json:"created,omitempty"`
 	creator data.ID
 
@@ -90,6 +92,7 @@ var sqlDocument = struct {
 			title,
 			content,
 			version,
+			draft_id,
 			updated,
 			created,
 			creator,
@@ -99,6 +102,7 @@ var sqlDocument = struct {
 			{{arg "title"}},
 			{{arg "content"}},
 			{{arg "version"}},
+			{{arg "draft_id"}},
 			{{arg "updated"}},
 			{{arg "created"}},
 			{{arg "creator"}},
@@ -163,6 +167,7 @@ var sqlDocument = struct {
 		insert into document_history (
 			document_id,
 			version,
+			draft_id,
 			title,
 			content,
 			created,
@@ -170,6 +175,7 @@ var sqlDocument = struct {
 		) values (
 			{{arg "document_id"}},
 			{{arg "version"}},
+			{{arg "draft_id"}},
 			{{arg "title"}},
 			{{arg "content"}},
 			{{arg "created"}},
@@ -190,6 +196,7 @@ var sqlDocument = struct {
 		update documents 
 		set updated = {{NOW}}, 
 			version = version + 1,
+			draft_id = {{arg "draft_id"}},
 			updater = {{arg "updater"}},
 			title = {{arg "title"}},
 			content = {{arg "content"}}
@@ -201,6 +208,7 @@ var sqlDocument = struct {
 			title,
 			content,
 			version,
+			draft_id,
 			updated,
 			created,
 			creator,
@@ -239,7 +247,7 @@ var (
 var sanitizePolicy = bluemonday.UGCPolicy()
 
 // NewDocument starts a new document and returns the draft of it
-func (u *User) NewDocument(title, content string, tags []string) (*DocumentDraft, error) {
+func (u *User) NewDocument() (*DocumentDraft, error) {
 	d := &DocumentDraft{
 		ID:      data.NewID(),
 		Version: 0,
@@ -247,28 +255,10 @@ func (u *User) NewDocument(title, content string, tags []string) (*DocumentDraft
 		Created: time.Now(),
 		creator: u.ID,
 		updater: u.ID,
-		DocumentContent: DocumentContent{
-			Title:   title,
-			Content: content,
-		},
-		editor: u,
+		editor:  u,
 	}
 
-	d.mergeTags(tagTypeUser, tags...)
-
-	err := d.validate()
-	if err != nil {
-		return nil, err
-	}
-
-	d.sanitize()
-
-	err = d.autoTag()
-	if err != nil {
-		return nil, err
-	}
-
-	err = data.BeginTx(func(tx *sql.Tx) error {
+	err := data.BeginTx(func(tx *sql.Tx) error {
 		return d.insert(tx)
 	})
 
@@ -277,11 +267,32 @@ func (u *User) NewDocument(title, content string, tags []string) (*DocumentDraft
 	}
 
 	return d, nil
-
 }
 
+// NewDraft creates a new Draft for the given document
 // func (d *Document) NewDraft() (*DocumentDraft, error) {
-// TODO:
+
+// 	draft := &DocumentDraft{
+// 		ID:              data.NewID(),
+// 		Version:         0,
+// 		Updated:         time.Now(),
+// 		Created:         time.Now(),
+// 		creator:         u.ID,
+// 		updater:         u.ID,
+// 		editor:          who,
+// 		DocumentContent: d.DocumentContent,
+// 	}
+
+// 	err := data.BeginTx(func(tx *sql.Tx) error {
+// 		return d.insert(tx)
+// 	})
+
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return d, nil
+
 // }
 
 func (d *DocumentContent) validate() error {
@@ -305,9 +316,9 @@ func (d *DocumentContent) autoTag() error {
 	return nil
 }
 
-// mergeTags merges the passed in tags with the current document
+// mergeTags merges the passed in tags with the current document and removes duplicates
 func (d *DocumentContent) mergeTags(tagType string, tagList ...string) {
-
+	// FIXME: Can't append to the same list I'm searching
 	for i := range tagList {
 		found := false
 		for j := range d.Tags {
@@ -358,11 +369,6 @@ func (d *DocumentDraft) insert(tx *sql.Tx) error {
 	return nil
 }
 
-func (d *DocumentDraft) canEdit() bool {
-	// TODO: Invite others to edit your draft
-	return d.editor != nil && d.creator == d.editor.ID
-}
-
 // Save saves the current document draft
 func (d *DocumentDraft) Save(title, content string, tags []string, version int) error {
 	return data.BeginTx(func(tx *sql.Tx) error {
@@ -371,7 +377,7 @@ func (d *DocumentDraft) Save(title, content string, tags []string, version int) 
 }
 
 func (d *DocumentDraft) update(tx *sql.Tx, title, content string, tags []string, version int) error {
-	if !d.canEdit() {
+	if d.editor == nil {
 		return errDocumentUpdateAccess
 	}
 	d.Title = title
@@ -455,6 +461,7 @@ func (d *Document) scan(record Scanner) error {
 func (d *Document) makeHistory() *DocumentHistory {
 	return &DocumentHistory{
 		Version:         d.Version,
+		DraftID:         d.DraftID,
 		Created:         d.Updated, // history created is current updated
 		creator:         d.updater, // history creator is current updater
 		DocumentContent: d.DocumentContent,
@@ -475,7 +482,7 @@ func (d *Document) index() error {
 
 // Publish publishes a draft turing a draft into a document
 func (d *DocumentDraft) Publish() (*Document, error) {
-	if !d.canEdit() {
+	if d.editor == nil {
 		return nil, errDocumentUpdateAccess
 	}
 
@@ -532,6 +539,7 @@ func (d *DocumentDraft) makeDocument(currentDocument *Document) *Document {
 
 		return &Document{
 			Version: 0,
+			DraftID: d.ID,
 			Updated: time.Now(),
 			Created: time.Now(),
 			creator: d.editor.ID,
@@ -546,6 +554,7 @@ func (d *DocumentDraft) makeDocument(currentDocument *Document) *Document {
 	}
 
 	newDoc := *currentDocument
+	newDoc.DraftID = d.ID
 	newDoc.Updated = time.Now()
 	newDoc.updater = d.editor.ID
 	newDoc.DocumentContent = d.DocumentContent
@@ -570,6 +579,7 @@ func (h *DocumentHistory) insert(tx *sql.Tx) error {
 	_, err := sqlDocument.insertHistory.Tx(tx).Exec(
 		data.Arg("document_id", h.ID),
 		data.Arg("version", h.Version),
+		data.Arg("draft_id", h.DraftID),
 		data.Arg("title", h.Title),
 		data.Arg("content", h.Content),
 		data.Arg("created", h.Created),
@@ -589,6 +599,7 @@ func (d *Document) insert(tx *sql.Tx) error {
 		data.Arg("title", d.Title),
 		data.Arg("content", d.Content),
 		data.Arg("version", d.Version),
+		data.Arg("draft_id", d.DraftID),
 		data.Arg("updated", d.Updated),
 		data.Arg("created", d.Created),
 		data.Arg("creator", d.creator),
@@ -620,6 +631,7 @@ func (d *Document) update(tx *sql.Tx) error {
 	r, err := sqlDocument.update.Tx(tx).Exec(
 		data.Arg("id", d.ID),
 		data.Arg("version", d.Version),
+		data.Arg("draft_id", d.DraftID),
 		data.Arg("updater", d.updater),
 		data.Arg("title", d.Title),
 		data.Arg("content", d.Content),

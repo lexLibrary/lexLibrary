@@ -16,14 +16,12 @@ import (
 func TestAdmin(t *testing.T) {
 	uri := *llURL
 	uri.Path = "admin"
+	var err error
 
 	username := "testuser"
 	password := "testpasswordThatisLongEnough"
 
-	err := createUserAndLogin(username, password, true)
-	if err != nil {
-		t.Fatalf("Error setting up user for testing: %s", err)
-	}
+	setupUserAndLogin(t, username, password, true)
 
 	seq := newSequence()
 

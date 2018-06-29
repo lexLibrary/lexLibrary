@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
+	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/tebeka/selenium"
 )
 
@@ -14,10 +15,7 @@ func TestSignup(t *testing.T) {
 	uri := *llURL
 	uri.Path = "signup"
 
-	err := reset()
-	if err != nil {
-		t.Fatalf("Error resetting table before running tests: %s", err)
-	}
+	data.ResetDB(t)
 
 	adminUsername := "admin"
 	password := "testWithAPrettyGoodP@ssword"

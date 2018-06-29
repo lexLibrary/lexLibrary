@@ -11,7 +11,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	err := data.TestingSetup()
+	err := data.TestingSetup(m)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -19,16 +19,8 @@ func TestDocument(t *testing.T) {
 
 	t.Run("New Document", func(t *testing.T) {
 		reset(t)
-		title := "test title"
-		content := "<div>TestContent</div>"
-		tags := []string{"tag1", "tag2", "tag3", "tag1", "tag1", "tag2"}
 
-		_, err := user.NewDocument("", content, tags)
-		if !app.IsFail(err) {
-			t.Fatalf("Adding document without title did not fail: %s", err)
-		}
-
-		draft, err := user.NewDocument(title, content, tags)
+		draft, err := user.NewDocument()
 		if err != nil {
 			t.Fatalf("Error adding new document: %s", err)
 		}
@@ -49,37 +41,15 @@ func TestDocument(t *testing.T) {
 			t.Fatalf("Document ID is not nil")
 		}
 
-		if draft.Title != title {
-			t.Fatalf("Draft tite is incorrect. Expected %s, got %s", title, draft.Title)
-		}
-
-		if draft.Content != content {
-			t.Fatalf("Draft content is incorrect. Expected %s, got %s", content, draft.Content)
-		}
-
-		for i := range tags {
-			found := false
-			for j := range draft.Tags {
-				if tags[i] == draft.Tags[j].Value {
-					found = true
-					break
-				}
-			}
-			if !found {
-				t.Fatalf("Tag %s not found in draft tags", tags[i])
-			}
-		}
-
-		if len(draft.Tags) != 3 {
-			t.Fatalf("Draft contains duplicate tags.  Expected %d, got %d", 3, len(draft.Tags))
-		}
+		assertRow(t, data.NewQuery(`
+			select count(*) from document_drafts where id = {{arg "id"}}
+		`).QueryRow(data.Arg("id", draft.ID)), 1)
 
 	})
 
 	t.Run("New Draft", func(t *testing.T) {
 		reset(t)
-		draft, err := user.NewDocument("test draft title", "<h1>Test Draft Content</h1>",
-			[]string{"tag1", "tag2", "tag3", "tag1", "tag1", "tag2"})
+		draft, err := user.NewDocument()
 		if err != nil {
 			t.Fatalf("Error adding new draft: %s", err)
 		}
@@ -157,6 +127,11 @@ func TestDocument(t *testing.T) {
 					doc.Content)
 			}
 
+			if doc.DraftID != draft.ID {
+				t.Fatalf("Published doc has invalid draft id. Expected %s, got %s", draft.ID,
+					doc.DraftID)
+			}
+
 			if doc.ID.IsNil() {
 				t.Fatalf("Doc has nil ID")
 			}
@@ -176,11 +151,12 @@ func TestDocument(t *testing.T) {
 			}
 
 			assertRow(t, data.NewQuery(`
-				select count(*) from documents where id = {{arg "id"}}
-			`).QueryRow(data.Arg("id", doc.ID)), 1)
+				select id, version, draft_id, title, content from documents where id = {{arg "id"}}
+			`).QueryRow(data.Arg("id", doc.ID)),
+				doc.ID, doc.Version, draft.ID, draft.Title, draft.Content)
 			assertRow(t, data.NewQuery(`
 				select count(*) from document_tags where document_id = {{arg "id"}}
-			`).QueryRow(data.Arg("id", doc.ID)), 3)
+			`).QueryRow(data.Arg("id", doc.ID)), 0)
 
 			assertRow(t, data.NewQuery(`
 				select count(*) from document_drafts where id = {{arg "id"}}

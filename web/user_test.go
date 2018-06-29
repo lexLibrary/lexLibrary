@@ -14,10 +14,7 @@ func TestUser(t *testing.T) {
 	username := "testuser"
 	password := "testpasswordThatisLongEnough"
 
-	err := createUserAndLogin(username, password, true)
-	if err != nil {
-		t.Fatalf("Error setting up user for testing: %s", err)
-	}
+	setupUserAndLogin(t, username, password, true)
 
 	adminUser, err := app.Login(username, password)
 	if err != nil {
