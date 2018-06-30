@@ -236,7 +236,7 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create table document_tags (
 			document_id {{id}} NOT NULL REFERENCES documents(id),
-			tag {{text}} NOT NULL, 
+			tag {{varchar "document.tag"}} NOT NULL, 
 			type {{text}} NOT NULL,
 			stem {{text}},
 			PRIMARY KEY(document_id, tag)
@@ -245,7 +245,7 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create table document_draft_tags (
 			draft_id {{id}} NOT NULL REFERENCES document_drafts(id),
-			tag {{text}} NOT NULL, 
+			tag {{varchar "document.tag"}} NOT NULL, 
 			type {{text}} NOT NULL,
 			stem {{text}},
 			PRIMARY KEY(draft_id, tag)

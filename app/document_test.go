@@ -3,6 +3,7 @@
 package app_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
@@ -66,11 +67,19 @@ func TestDocument(t *testing.T) {
 				t.Fatalf("No failure on empty title: %s", err)
 			}
 
+			d = *draft
 			err = d.Save(newTitle, newContent, newTags, 3)
 			if !app.IsFail(err) {
 				t.Fatalf("No failure on incorrect version: %s", err)
 			}
 
+			d = *draft
+			err = d.Save(newTitle, newContent, []string{fmt.Sprintf("Long %70s", "tag value")}, 3)
+			if !app.IsFail(err) {
+				t.Fatalf("No failure on incorrect version: %s", err)
+			}
+
+			d = *draft
 			err = d.Save(newTitle, newContent, newTags, draft.Version)
 			if err != nil {
 				t.Fatalf("Error Saving draft: %s", err)
@@ -166,6 +175,10 @@ func TestDocument(t *testing.T) {
 				select count(*) from document_draft_tags where draft_id = {{arg "id"}}
 			`).QueryRow(data.Arg("id", draft.ID)), 0)
 
+			assertRow(t, data.NewQuery(`
+				select count(*) from document_history 
+				where draft_id = {{arg "draft_id"}} and document_id = {{arg "document_id"}}
+			`).QueryRow(data.Arg("draft_id", draft.ID), data.Arg("document_id", doc.ID)), 0)
 		})
 
 	})

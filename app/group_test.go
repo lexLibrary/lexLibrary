@@ -34,7 +34,7 @@ func TestGroup(t *testing.T) {
 
 	t.Run("New", func(t *testing.T) {
 		reset(t)
-		_, err := user.NewGroup(fmt.Sprintf("Z%70s", "test group"))
+		_, err := user.NewGroup(fmt.Sprintf("Z%128s", "test group"))
 		if err == nil {
 			t.Fatal("Adding a new group didn't limit the group name size")
 		}
@@ -113,7 +113,7 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Error getting group admin: %s", err)
 		}
 
-		err = ga.SetName(fmt.Sprintf("Z%70s", "test group"), g.Version)
+		err = ga.SetName(fmt.Sprintf("Z%128s name", "test group"), g.Version)
 		if !app.IsFail(err) {
 			t.Fatal("Setting group name didn't limit the group name size")
 		}

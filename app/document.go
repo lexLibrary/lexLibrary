@@ -22,6 +22,8 @@ type Document struct {
 	// groups  []data.ID
 
 	DocumentContent
+
+	accessor *User
 }
 
 // DocumentContent is the contents of a document who's structure is shared between drafts, history records, and
@@ -270,34 +272,42 @@ func (u *User) NewDocument() (*DocumentDraft, error) {
 }
 
 // NewDraft creates a new Draft for the given document
-// func (d *Document) NewDraft() (*DocumentDraft, error) {
+func (d *Document) NewDraft() (*DocumentDraft, error) {
+	if d.accessor == nil {
+		return nil, errDocumentUpdateAccess
+	}
+	draft := &DocumentDraft{
+		ID:              data.NewID(),
+		Version:         0,
+		Updated:         time.Now(),
+		Created:         time.Now(),
+		creator:         d.accessor.ID,
+		updater:         d.accessor.ID,
+		editor:          d.accessor,
+		DocumentContent: d.DocumentContent,
+	}
 
-// 	draft := &DocumentDraft{
-// 		ID:              data.NewID(),
-// 		Version:         0,
-// 		Updated:         time.Now(),
-// 		Created:         time.Now(),
-// 		creator:         u.ID,
-// 		updater:         u.ID,
-// 		editor:          who,
-// 		DocumentContent: d.DocumentContent,
-// 	}
+	err := data.BeginTx(func(tx *sql.Tx) error {
+		return draft.insert(tx)
+	})
 
-// 	err := data.BeginTx(func(tx *sql.Tx) error {
-// 		return d.insert(tx)
-// 	})
+	if err != nil {
+		return nil, err
+	}
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return d, nil
-
-// }
+	return draft, nil
+}
 
 func (d *DocumentContent) validate() error {
 	if strings.TrimSpace(d.Title) == "" {
 		return NewFailure("A title is required on documents")
+	}
+
+	for i := range d.Tags {
+		err := data.FieldValidate("document.tag", d.Tags[i].Value)
+		if err != nil {
+			return NewFailureFromErr(err)
+		}
 	}
 
 	return nil

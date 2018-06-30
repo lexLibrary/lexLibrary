@@ -13,10 +13,12 @@ type fieldLimit struct {
 }
 
 // field limits should be all lower case and follow the naming standard <type>.<field>
+// NOTE: If you update these after release, you'll need to to write column update scripts in schema_version.go
 var fieldLimits = map[string]fieldLimit{
 	"user.name":     {0, 64},
 	"user.username": {3, 64},
-	"group.name":    {1, 64},
+	"group.name":    {1, 128},
+	"document.tag":  {1, 64},
 }
 
 // FieldLimit returns the limit for specific field sizes in lex library.  This provides one single location
