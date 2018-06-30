@@ -19,7 +19,7 @@ type Document struct {
 	Created time.Time `json:"created,omitempty"`
 	creator data.ID
 	updater data.ID
-	// groups  []data.ID
+	groups  []data.ID
 
 	DocumentContent
 
@@ -38,7 +38,7 @@ type DocumentContent struct {
 
 const (
 	tagTypeUser = "user"
-	// tagTypeAuto = "auto"
+	tagTypeAuto = "auto"
 )
 
 // Tag is a string value that
@@ -207,16 +207,18 @@ var sqlDocument = struct {
 	`),
 	get: data.NewQuery(`
 		select 	id,
-			title,
-			content,
-			version,
-			draft_id,
-			updated,
-			created,
-			creator,
-			updater
-		from documents
-		where id = {{arg "id"}}
+				title,
+				content,
+				version,
+				draft_id,
+				updated,
+				created,
+				creator,
+				updater
+		from documents d
+			inner join document_groups g on d.id = g.document_id
+			inner join document_tags t on d.id = t.document_id
+		where d.id = {{arg "id"}}
 	`),
 	getTags: data.NewQuery(`
 		select 	document_id,
@@ -247,6 +249,53 @@ var (
 )
 
 var sanitizePolicy = bluemonday.UGCPolicy()
+
+// Document retrieves a document
+func DocumentGet(id data.ID, who *User) (*Document, error) {
+	if id.IsNil() {
+		return nil, errDocumentNotFound
+	}
+
+	d, err := documentGet(id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.tryAccess(who)
+	if err != nil {
+		return nil, err
+	}
+
+	return d, nil
+}
+
+func documentGet(id data.ID) (*Document, error) {
+	d := &Document{}
+
+	err := d.scan(sqlDocument.get.QueryRow(data.Arg("id", id)))
+	if err != nil {
+		return nil, err
+	}
+	// get tags
+	// get groups
+	//FIXME:
+}
+
+// tryAccess tries to access the document with the given user
+func (d *Document) tryAccess(who *User) error {
+	if len(d.groups) == 0 {
+		if who == nil && !SettingMust("AllowPublicDocuments").Bool() {
+			return errDocumentNotFound
+		}
+		d.accessor = who
+		return nil
+	}
+	if who == nil {
+		return errDocumentNotFound
+	}
+
+	return nil
+}
 
 // NewDocument starts a new document and returns the draft of it
 func (u *User) NewDocument() (*DocumentDraft, error) {
@@ -321,29 +370,29 @@ func (d *DocumentContent) sanitize() {
 // autoTag builds tags automatically based on the document's content. User specified tags
 // have a greater weight than auto generated tags
 func (d *DocumentContent) autoTag() error {
-	//TODO: don't overwrite any user tags
-
 	return nil
 }
 
-// mergeTags merges the passed in tags with the current document and removes duplicates
-func (d *DocumentContent) mergeTags(tagType string, tagList ...string) {
-	// FIXME: Can't append to the same list I'm searching
-	for i := range tagList {
-		found := false
-		for j := range d.Tags {
-			if d.Tags[j].Value == tagList[i] {
-				found = true
-				break
-			}
-		}
-		if !found {
-			d.Tags = append(d.Tags, Tag{
-				Value: tagList[i],
-				Type:  tagType,
-			})
+// addTag adds a tag to the given document, including the tag's stem.  It won't add the tag if one already exists
+func (d *DocumentContent) addTag(tagType, tagValue string) {
+	for i := range d.Tags {
+		if d.Tags[i].Value == tagValue && d.Tags[i].Type != tagTypeAuto {
+			return
 		}
 	}
+
+	tag := Tag{
+		Value: tagValue,
+		Type:  tagType,
+	}
+
+	tag.stem()
+
+	d.Tags = append(d.Tags, tag)
+}
+
+func (t *Tag) stem() {
+	//TODO: stemming
 }
 
 func (d *DocumentDraft) insert(tx *sql.Tx) error {
@@ -394,7 +443,10 @@ func (d *DocumentDraft) update(tx *sql.Tx, title, content string, tags []string,
 	d.Content = content
 	d.Version = version
 	d.Tags = nil
-	d.mergeTags(tagTypeUser, tags...)
+
+	for i := range tags {
+		d.addTag(tagTypeUser, tags[i])
+	}
 
 	err := d.validate()
 	if err != nil {
