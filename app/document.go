@@ -80,8 +80,6 @@ var sqlDocument = struct {
 	insertHistory,
 	updateDraft,
 	get,
-	getDraftTags,
-	getTags,
 	update,
 	deleteTags,
 	deleteDraftTags,
@@ -206,26 +204,23 @@ var sqlDocument = struct {
 		and version = {{arg "version"}}
 	`),
 	get: data.NewQuery(`
-		select 	id,
-				title,
-				content,
-				version,
-				draft_id,
-				updated,
-				created,
-				creator,
-				updater
+		select 	d.id,
+			d.title,
+			d.content,
+			d.version,
+			d.draft_id,
+			d.updated,
+			d.created,
+			d.creator,
+			d.updater,
+			t.tag,
+			t.type,
+			t.stem,
+			g.id
 		from documents d
-			inner join document_groups g on d.id = g.document_id
-			inner join document_tags t on d.id = t.document_id
+			left outer join document_groups g on d.id = g.document_id
+			left outer document_tags t on d.id = t.document_id
 		where d.id = {{arg "id"}}
-	`),
-	getTags: data.NewQuery(`
-		select 	document_id,
-			tag,
-			type
-		from document_tags
-		where	document_id = {{arg "id"}}	
 	`),
 	deleteTags: data.NewQuery(`
 		delete from document_tags
@@ -272,13 +267,51 @@ func DocumentGet(id data.ID, who *User) (*Document, error) {
 func documentGet(id data.ID) (*Document, error) {
 	d := &Document{}
 
-	err := d.scan(sqlDocument.get.QueryRow(data.Arg("id", id)))
+	rows, err := sqlDocument.get.Query(data.Arg("id", id))
 	if err != nil {
 		return nil, err
 	}
-	// get tags
-	// get groups
-	//FIXME:
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var tag, tagType, stem sql.NullString
+		var groupID data.ID
+
+		err := rows.Scan(
+			&d.ID,
+			&d.Title,
+			&d.Content,
+			&d.Version,
+			&d.Updated,
+			&d.Created,
+			&d.creator,
+			&d.updater,
+			&tag,
+			&tagType,
+			&stem,
+			&groupID,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if tag.Valid && tagType.Valid && stem.Valid {
+			d.Tags = append(d.Tags, Tag{
+				Value: tag.String,
+				Type:  tagType.String,
+				Stem:  stem.String,
+			})
+		}
+
+		if !groupID.IsNil() {
+			d.groups = append(d.groups, groupID)
+		}
+
+	}
+
+	return d, nil
 }
 
 // tryAccess tries to access the document with the given user
@@ -293,6 +326,8 @@ func (d *Document) tryAccess(who *User) error {
 	if who == nil {
 		return errDocumentNotFound
 	}
+
+	// TODO: Check for group membership
 
 	return nil
 }
@@ -502,23 +537,6 @@ func (d *DocumentDraft) update(tx *sql.Tx, title, content string, tags []string,
 	return nil
 }
 
-func (d *Document) scan(record Scanner) error {
-	err := record.Scan(
-		&d.ID,
-		&d.Title,
-		&d.Content,
-		&d.Version,
-		&d.Updated,
-		&d.Created,
-		&d.creator,
-		&d.updater,
-	)
-	if err == sql.ErrNoRows {
-		return errDocumentNotFound
-	}
-	return err
-}
-
 // make history turns the current document version into a history record
 func (d *Document) makeHistory() *DocumentHistory {
 	return &DocumentHistory{
@@ -559,11 +577,11 @@ func (d *DocumentDraft) Publish() (*Document, error) {
 				return err
 			}
 		} else {
-			old := &Document{}
-			err := old.scan(sqlDocument.get.QueryRow(data.Arg("id", d.DocumentContent.ID)))
+			old, err := documentGet(d.DocumentContent.ID)
 			if err != nil {
 				return err
 			}
+
 			err = old.makeHistory().insert(tx)
 			if err != nil {
 				return err

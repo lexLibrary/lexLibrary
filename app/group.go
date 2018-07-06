@@ -4,8 +4,6 @@ package app
 
 import (
 	"database/sql"
-	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -35,8 +33,9 @@ var sqlGroup = struct {
 	member,
 	update,
 	updateMember,
+	byIDs,
+	byIDsTotal,
 	insertMember *data.Query
-	byIDs func(ids []data.ID, count bool) (*data.Query, []data.Argument)
 }{
 	insert: data.NewQuery(`
 		insert into groups (
@@ -56,7 +55,7 @@ var sqlGroup = struct {
 		)
 	`),
 	userInsert: data.NewQuery(`
-		insert into user_to_groups (
+		insert into group_users (
 			user_id,
 			group_id,
 			admin
@@ -82,31 +81,19 @@ var sqlGroup = struct {
 			LIMIT {{arg "limit"}}
 		{{end}}
 	`),
-	byIDs: func(ids []data.ID, count bool) (*data.Query, []data.Argument) {
-		in := ""
-		args := make([]data.Argument, len(ids))
-		for i := range ids {
-			if i != 0 {
-				in += ", "
-			}
-			name := "id" + strconv.Itoa(i)
-			in += fmt.Sprintf(`{{arg "%s"}}`, name)
-			args[i].Name = name
-			args[i].Value = ids[i]
-		}
-		sel := `select id, name, version, updated, created`
-		if count {
-			sel = `select count(id)`
-		}
-		return data.NewQuery(fmt.Sprintf(`
-			%s 
-			from groups 
-			where id in (%s)
-		`, sel, in)), args
-	},
+	byIDsTotal: data.NewQuery(`
+		select count(id)
+		from groups 
+		where id in ({{arg "...ids"}})
+	`),
+	byIDs: data.NewQuery(`
+		select id, name, version, updated, created
+		from groups 
+		where id in ({{arg "...ids"}})
+	`),
 	member: data.NewQuery(`
 		select admin 
-		from user_to_groups 
+		from group_users 
 		where user_id = {{arg "user_id"}} 
 		and group_id = {{arg "group_id"}}
 	`),
@@ -119,7 +106,7 @@ var sqlGroup = struct {
 		and version = {{arg "version"}}
 	`),
 	insertMember: data.NewQuery(`
-		insert into user_to_groups (
+		insert into group_users (
 			user_id,
 			group_id,
 			admin
@@ -131,7 +118,7 @@ var sqlGroup = struct {
 		and active = {{TRUE}}
 	`),
 	updateMember: data.NewQuery(`
-		update user_to_groups
+		update group_users
 		set admin = {{arg "admin"}}
 		where user_id = {{arg "user_id"}}
 		and group_id = {{arg "group_id"}}
@@ -142,7 +129,8 @@ var (
 	// ErrGroupNotFound is returned when a group couldn't be found
 	ErrGroupNotFound = NotFound("Group not found")
 	// ErrGroupConflict occurs when someone updates an older version of a group
-	ErrGroupConflict = Conflict("You are not editing the most current version of this group. Please refresh and try again.")
+	ErrGroupConflict = Conflict("You are not editing the most current version of this group. Please refresh and " +
+		"try again.")
 )
 
 // NewGroup creates a new group and sets the creator as the groups Admin

@@ -88,7 +88,7 @@ func ResetDB(t *testing.T) {
 	t.Helper()
 	TruncateTable(t, "logs")
 	TruncateTable(t, "sessions")
-	TruncateTable(t, "user_to_groups")
+	TruncateTable(t, "group_users")
 	TruncateTable(t, "registration_token_groups")
 	TruncateTable(t, "registration_token_users")
 	TruncateTable(t, "document_groups")

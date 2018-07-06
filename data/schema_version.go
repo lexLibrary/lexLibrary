@@ -144,7 +144,7 @@ var schemaVersions = []*Query{
 		)	
 	`),
 	NewQuery(`
-		create table user_to_groups (
+		create table group_users (
 			user_id {{id}} NOT NULL REFERENCES users(id),
 			group_id {{id}} NOT NULL REFERENCES groups(id),
 			admin {{bool}},

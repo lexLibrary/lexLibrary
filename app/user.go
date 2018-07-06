@@ -93,6 +93,7 @@ var sqlUser = struct {
 	updateName,
 	updateProfileImage,
 	updateProfileDraftImage,
+	isGroupMember,
 	updateUsername *data.Query
 }{
 	insert: data.NewQuery(`
@@ -139,6 +140,11 @@ var sqlUser = struct {
 	updateProfileImage:      sqlUserUpdate("profile_image_id", "profile_image_draft_id"),
 	updateProfileDraftImage: sqlUserUpdate("profile_image_draft_id"),
 	updateUsername:          sqlUserUpdate("username"),
+	isGroupMember: data.NewQuery(`
+		select group_id from group_users
+		where user_id = {{arg "user_id"}}
+		and group_id in ({{arg "...group_id"}})
+	`),
 }
 
 var sqlUserUpdate = func(columns ...string) *data.Query {

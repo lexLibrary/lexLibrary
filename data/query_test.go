@@ -557,5 +557,84 @@ func TestDataTypes(t *testing.T) {
 		}
 	})
 
+	t.Run("In Queries", func(t *testing.T) {
+		reset(t)
+
+		ids := make([]data.ID, 10, 10)
+
+		for i := range ids {
+			ids[i] = data.NewID()
+			_, err := data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).
+				Exec(data.Arg("id_type", ids[i]))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		tests := []struct {
+			name   string
+			query  string
+			args   []data.Argument
+			result []data.ID
+		}{
+			{"simple in", `select id_type from data_types where id_type in ({{arg "...ids"}})`,
+				data.Args("ids", ids[3:7]), ids[3:7]},
+			{"mulitple args + in", `
+				select id_type from data_types 
+				where id_type <> {{arg "not_id"}}
+				and id_type in ({{arg "...ids"}})
+			`,
+				append(data.Args("ids", ids[3:7]), data.Arg("not_id", ids[4])),
+				[]data.ID{ids[3], ids[5], ids[6]},
+			},
+			{"single in", `select id_type from data_types where id_type in ({{arg "...ids"}})`,
+				data.Args("ids", ids[3:3]), ids[3:3]},
+			{"empty in", `select id_type from data_types where id_type in ({{arg "...ids"}})`,
+				nil, nil},
+		}
+
+		for _, test := range tests {
+			rows, err := data.NewQuery(test.query).
+				Query(test.args...)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var result []data.ID
+			for rows.Next() {
+				var id data.ID
+
+				err = rows.Scan(&id)
+				if err != nil {
+					t.Fatalf("Error executing test %s Query:%s: %s", test.name, test.query, err)
+				}
+				result = append(result, id)
+			}
+
+			if len(test.result) != len(result) {
+				rows.Close()
+				t.Fatalf("Test: %s Result length is incorrect. Expected %d, got %d\nQuery: %s",
+					test.name, len(test.result), len(result), test.query)
+			}
+
+			for i := range test.result {
+				found := false
+				for j := range result {
+					if result[j] == test.result[i] {
+						found = true
+						break
+					}
+				}
+				if !found {
+					rows.Close()
+					t.Fatalf("Test: %s ID not found in result set: %s\nQuery: %s",
+						test.name, test.result[i], test.query)
+				}
+			}
+		}
+
+	})
+
 	dropTable(t)
 }

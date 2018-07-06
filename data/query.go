@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
@@ -23,6 +24,7 @@ type Query struct {
 	statement string
 	args      []string
 	tx        *sql.Tx
+	hasIn     bool
 }
 
 // Argument is a wrapper around sql.NamedArg so that a data behavior can be unified across all database backends
@@ -43,6 +45,24 @@ func Arg(name string, value interface{}) Argument {
 	}
 
 	return Argument(sql.Named(name, value))
+}
+
+// Args creates an array of args under the same name, useful for in queries
+func Args(name string, value interface{}) []Argument {
+	val := reflect.ValueOf(value)
+	kind := val.Kind()
+
+	if kind != reflect.Slice && kind != reflect.Array {
+		panic("func Args can only be used with slices and arrays")
+	}
+
+	args := make([]Argument, val.Len(), val.Len())
+
+	for i := range args {
+		args[i] = Argument(sql.Named(inArgName(name, i), val.Index(i).Interface()))
+	}
+
+	return args
 }
 
 // NewQuery creates a new query from the template passed in
@@ -81,6 +101,17 @@ func (q *Query) orderedArgs(args []Argument) []interface{} {
 	return ordered
 }
 
+func (q *Query) argPlaceholder(name string) string {
+	switch dbType {
+	case postgres, cockroachdb:
+		return "$" + strconv.Itoa(len(q.args))
+	case sqlserver:
+		return "@" + name
+	default:
+		return "?"
+	}
+}
+
 func (q *Query) buildTemplate() {
 	if db == nil {
 		panic("Can't build query templates before the database type is set")
@@ -91,20 +122,20 @@ func (q *Query) buildTemplate() {
 			if name == "" {
 				panic("Arguments must be named in sql statements")
 			}
+
 			for i := range q.args {
 				if name == q.args[i] {
 					panic(fmt.Sprintf("%s already exists in the query arguments", name))
 				}
 			}
+
 			q.args = append(q.args, name)
-			switch dbType {
-			case postgres, cockroachdb:
-				return "$" + strconv.Itoa(len(q.args))
-			case sqlserver:
-				return "@" + name
-			default:
-				return "?"
+			if strings.HasPrefix(name, "...") {
+				q.hasIn = true
+				// arguments are an in statement set at runtime
+				return fmt.Sprintf(`{{inArgs "%s"}}`, strings.TrimPrefix(name, "..."))
 			}
+			return q.argPlaceholder(name)
 		},
 		"bytes":    bytesColumn,
 		"datetime": datetimeColumn,
@@ -196,6 +227,10 @@ func (q *Query) buildTemplate() {
 		},
 	}
 
+	q.parseStatement(funcs)
+}
+
+func (q *Query) parseStatement(funcs template.FuncMap) {
 	buff := bytes.NewBuffer([]byte{})
 	tmpl, err := template.New("").Funcs(funcs).Parse(q.statement)
 	if err != nil {
@@ -214,6 +249,7 @@ func (q *Query) Exec(args ...Argument) (result sql.Result, err error) {
 	if q.statement == "" {
 		q.buildTemplate()
 	}
+	q = q.expandIn(args...)
 
 	if q.tx != nil {
 		result, err = q.tx.Exec(q.statement, q.orderedArgs(args)...)
@@ -233,6 +269,7 @@ func (q *Query) Query(args ...Argument) (rows *sql.Rows, err error) {
 		q.buildTemplate()
 	}
 
+	q = q.expandIn(args...)
 	if q.tx != nil {
 		rows, err = q.tx.Query(q.statement, q.orderedArgs(args)...)
 	} else {
@@ -271,6 +308,8 @@ func (q *Query) QueryRow(args ...Argument) *Row {
 	if q.statement == "" {
 		q.buildTemplate()
 	}
+
+	q = q.expandIn(args...)
 	r := &Row{
 		statement: q.Statement(),
 	}
@@ -284,23 +323,15 @@ func (q *Query) QueryRow(args ...Argument) *Row {
 	return r
 }
 
-func (q *Query) copy() *Query {
-	return &Query{
-		statement: q.statement,
-		args:      q.args,
-		tx:        q.tx,
-	}
-}
-
 // Tx returns a new copy of the query that runs in the passed in transaction if a transaction is passed in
 // if tx is nil then the normal query is returned
 func (q *Query) Tx(tx *sql.Tx) *Query {
 	if tx == nil {
 		return q
 	}
-	copy := q.copy()
+	copy := *q
 	copy.tx = tx
-	return copy
+	return &copy
 }
 
 // Statement returns the complied query template
@@ -313,6 +344,45 @@ func (q *Query) Statement() string {
 
 func (q *Query) String() string {
 	return q.Statement()
+}
+
+func inArgName(name string, i int) string {
+	return name + ":" + strconv.Itoa(i)
+}
+
+func (q *Query) expandIn(args ...Argument) *Query {
+	if !q.hasIn {
+		return q
+	}
+
+	newQ := *q
+	newQ.parseStatement(template.FuncMap{
+		"inArgs": func(name string) string {
+			in := ""
+			for a := range newQ.args {
+				if newQ.args[a] == "..."+name {
+					var inArgs []string
+					for i := range args {
+						inName := inArgName(name, len(inArgs))
+						if args[i].Name == inName {
+							if i != 0 {
+								in += ", "
+							}
+							in += newQ.argPlaceholder(inName)
+							inArgs = append(inArgs, inName)
+						}
+					}
+					// expand the single argument by replacing it with a slice of numbered
+					// arguments in the runtime argument slice
+					newQ.args = append(newQ.args[:a], append(inArgs, newQ.args[a+1:]...)...)
+					break
+				}
+			}
+
+			return in
+		},
+	})
+	return &newQ
 }
 
 // BeginTx begins a transaction on the database
@@ -371,7 +441,6 @@ func PrintRows(rows *sql.Rows, padding int) (string, error) {
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-
 	count := 0
 	defer rows.Close()
 	for rows.Next() {
@@ -414,6 +483,7 @@ func (q *Query) Debug(args ...Argument) string {
 	if err != nil {
 		panic(err)
 	}
+
 	result, err := PrintRows(rows, 25)
 	if err != nil {
 		panic(err)

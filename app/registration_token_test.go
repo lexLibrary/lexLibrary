@@ -184,7 +184,7 @@ func TestRegistrationToken(t *testing.T) {
 			t.Fatalf("Error registering new user from token: %s", err)
 		}
 
-		rows, err := data.NewQuery(`select group_id from user_to_groups where user_id = {{arg "id"}}`).
+		rows, err := data.NewQuery(`select group_id from group_users where user_id = {{arg "id"}}`).
 			Query(data.Arg("id", u.ID))
 		if err != nil {
 			t.Fatalf("Error looking up user groups: %s", err)

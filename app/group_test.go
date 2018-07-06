@@ -176,7 +176,7 @@ func TestGroup(t *testing.T) {
 		}
 
 		isAdmin := false
-		getMember := data.NewQuery(`select admin from user_to_groups 
+		getMember := data.NewQuery(`select admin from group_users
 			where group_id = {{arg "group_id"}} and user_id = {{arg "user_id"}}`)
 
 		err = getMember.QueryRow(data.Arg("user_id", other.ID), data.Arg("group_id", g.ID)).Scan(&isAdmin)
