@@ -24,7 +24,7 @@ type Query struct {
 	statement string
 	args      []string
 	tx        *sql.Tx
-	hasIn     bool
+	inCount   int
 }
 
 // Argument is a wrapper around sql.NamedArg so that a data behavior can be unified across all database backends
@@ -101,10 +101,10 @@ func (q Query) orderedArgs(args []Argument) []interface{} {
 	return ordered
 }
 
-func (q Query) argPlaceholder(name string) string {
+func argPlaceholder(name string, index int) string {
 	switch dbType {
 	case postgres, cockroachdb:
-		return "$" + strconv.Itoa(len(q.args))
+		return "$" + strconv.Itoa(index)
 	case sqlserver:
 		return "@" + name
 	default:
@@ -131,11 +131,11 @@ func (q *Query) buildTemplate() {
 
 			q.args = append(q.args, name)
 			if strings.HasPrefix(name, "...") {
-				q.hasIn = true
+				q.inCount++
 				// arguments are an in statement set at runtime
 				return fmt.Sprintf(`{{inArgs "%s"}}`, strings.TrimPrefix(name, "..."))
 			}
-			return q.argPlaceholder(name)
+			return argPlaceholder(name, len(q.args))
 		},
 		"bytes":    bytesColumn,
 		"datetime": datetimeColumn,
@@ -350,10 +350,14 @@ func inArgName(name string, i int) string {
 }
 
 func (q Query) expandIn(args ...Argument) Query {
-	if !q.hasIn {
+	if q.inCount == 0 {
 		return q
 	}
 
+	if len(args) == 0 {
+		panic(fmt.Sprintf("Query %s has an in query with no matching arguments.  Check for len() ==0",
+			q.statement))
+	}
 	// expand the single argument by replacing it with a slice of numbered
 	// arguments in the runtime argument slice
 	// copy to prevent side effects
@@ -361,24 +365,26 @@ func (q Query) expandIn(args ...Argument) Query {
 	q.parseStatement(template.FuncMap{
 		"inArgs": func(name string) string {
 			in := ""
-			wArgs := make([]string, len(q.args))
-			copy(wArgs, q.args)
-			q.args = wArgs
-
-			for a := range wArgs {
-				if wArgs[a] == "..."+name {
-					count := 0
+			for a := range args {
+				if q.args[a] == "..."+name {
+					var inArgs []string
 					for i := range args {
-						inName := inArgName(name, count)
+						inName := inArgName(name, len(inArgs))
 						if args[i].Name == inName {
-							if i != 0 {
+							if len(inArgs) != 0 {
 								in += ", "
 							}
-							q.args = append(q.args[:a+count], append([]string{inName}, q.args[a+count+1:]...)...)
-							in += q.argPlaceholder(inName)
-							count++
+							in += argPlaceholder(inName, len(q.args)+len(inArgs)-(q.inCount-1))
+							inArgs = append(inArgs, inName)
 						}
 					}
+					if len(inArgs) == 0 {
+						panic(fmt.Sprintf("Query %s has an in query with no matching arguments.  Check for len() ==0",
+							q.statement))
+					}
+					wArgs := make([]string, len(q.args))
+					copy(wArgs, q.args)
+					q.args = append(wArgs[:a], append(inArgs, wArgs[a+1:]...)...)
 					break
 				}
 			}

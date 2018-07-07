@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"database/sql"
-	"fmt"
 	"io"
 	"math"
 	"strings"
@@ -103,8 +102,6 @@ func TestDataTypes(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error inserting datetime type: %s", err)
 		}
-
-		fmt.Printf("Expected: %v\n", expected)
 
 		var got time.Time
 		err = data.NewQuery("Select datetime_type from data_types").QueryRow().Scan(&got)
@@ -588,9 +585,15 @@ func TestDataTypes(t *testing.T) {
 				[]data.ID{ids[3], ids[5], ids[6]},
 			},
 			{"single in", `select id_type from data_types where id_type in ({{arg "...ids"}})`,
-				data.Args("ids", ids[3:3]), ids[3:3]},
-			{"empty in", `select id_type from data_types where id_type in ({{arg "...ids"}})`,
-				nil, nil},
+				data.Args("ids", ids[3:4]), ids[3:4]},
+			{"mulitple in args", `
+				select id_type from data_types
+				where id_type in ({{arg "...ids"}})
+				and id_type not in ({{arg "...not_ids"}})
+			`,
+				append(data.Args("ids", ids[3:7]), data.Args("not_ids", ids[4:6])...),
+				[]data.ID{ids[3], ids[6]},
+			},
 		}
 
 		for _, test := range tests {
@@ -651,18 +654,15 @@ func TestDataTypes(t *testing.T) {
 
 		qry := data.NewQuery(`select id_type from data_types where id_type in ({{arg "...ids"}})`)
 
-		var nilslice []data.ID
-
 		tests := []struct {
 			args   []data.Argument
 			result []data.ID
 		}{
 			{data.Args("ids", ids[:]), ids[:]},
-			{data.Args("ids", ids[7:7]), ids[7:7]},
+			{data.Args("ids", ids[7:8]), ids[7:8]},
 			{data.Args("ids", ids[3:7]), ids[3:7]},
 			{data.Args("ids", ids[1:3]), ids[1:3]},
-			{data.Args("ids", nilslice), nil},
-			{data.Args("ids", ids[1:1]), ids[1:1]},
+			{data.Args("ids", ids[1:2]), ids[1:2]},
 		}
 
 		for i, test := range tests {
@@ -707,5 +707,20 @@ func TestDataTypes(t *testing.T) {
 
 	})
 
+	t.Run("In Queries with 0 args", func(t *testing.T) {
+		reset(t)
+		defer func() {
+			if r := recover(); r == nil {
+				t.Fatalf("Running an in query without arguments did not panic")
+			}
+		}()
+
+		data.NewQuery(`select * from table where field in ({{arg "...args"}})`).
+			QueryRow(data.Args("args", []int{})...)
+
+		data.NewQuery(`select * from table where field in ({{arg "...args"}}) and id = {{arg "id"}}`).
+			QueryRow(append(data.Args("args", []int{}), data.Arg("id", 1))...)
+
+	})
 	dropTable(t)
 }
