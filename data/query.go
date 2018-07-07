@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/mattn/go-sqlite3" // register sqlite3
+	"github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 )
 
@@ -56,7 +56,7 @@ func Args(name string, value interface{}) []Argument {
 		panic("func Args can only be used with slices and arrays")
 	}
 
-	args := make([]Argument, val.Len(), val.Len())
+	args := make([]Argument, val.Len())
 
 	for i := range args {
 		args[i] = Argument(sql.Named(inArgName(name, i), val.Index(i).Interface()))
@@ -80,7 +80,7 @@ func NewQuery(tmpl string) *Query {
 	return q
 }
 
-func (q *Query) orderedArgs(args []Argument) []interface{} {
+func (q Query) orderedArgs(args []Argument) []interface{} {
 	ordered := make([]interface{}, 0, len(q.args))
 
 	for i := range q.args {
@@ -101,7 +101,7 @@ func (q *Query) orderedArgs(args []Argument) []interface{} {
 	return ordered
 }
 
-func (q *Query) argPlaceholder(name string) string {
+func (q Query) argPlaceholder(name string) string {
 	switch dbType {
 	case postgres, cockroachdb:
 		return "$" + strconv.Itoa(len(q.args))
@@ -245,7 +245,7 @@ func (q *Query) parseStatement(funcs template.FuncMap) {
 }
 
 // Exec executes a templated query without returning any rows
-func (q *Query) Exec(args ...Argument) (result sql.Result, err error) {
+func (q Query) Exec(args ...Argument) (result sql.Result, err error) {
 	if q.statement == "" {
 		q.buildTemplate()
 	}
@@ -264,9 +264,9 @@ func (q *Query) Exec(args ...Argument) (result sql.Result, err error) {
 }
 
 // Query executes a templated query that returns rows
-func (q *Query) Query(args ...Argument) (rows *sql.Rows, err error) {
+func (q Query) Query(args ...Argument) (rows *sql.Rows, err error) {
 	if q.statement == "" {
-		q.buildTemplate()
+		panic("Query template hasn't been built yet")
 	}
 
 	q = q.expandIn(args...)
@@ -304,9 +304,9 @@ func (r *Row) Scan(dest ...interface{}) error {
 }
 
 // QueryRow executes a templated query that returns a single row
-func (q *Query) QueryRow(args ...Argument) *Row {
+func (q Query) QueryRow(args ...Argument) *Row {
 	if q.statement == "" {
-		q.buildTemplate()
+		panic("Query template hasn't been built yet")
 	}
 
 	q = q.expandIn(args...)
@@ -325,24 +325,23 @@ func (q *Query) QueryRow(args ...Argument) *Row {
 
 // Tx returns a new copy of the query that runs in the passed in transaction if a transaction is passed in
 // if tx is nil then the normal query is returned
-func (q *Query) Tx(tx *sql.Tx) *Query {
+func (q Query) Tx(tx *sql.Tx) Query {
 	if tx == nil {
 		return q
 	}
-	copy := *q
-	copy.tx = tx
-	return &copy
+	q.tx = tx
+	return q
 }
 
 // Statement returns the complied query template
-func (q *Query) Statement() string {
+func (q Query) Statement() string {
 	if q.statement == "" {
-		q.buildTemplate()
+		panic("Query template hasn't been built yet")
 	}
 	return q.statement
 }
 
-func (q *Query) String() string {
+func (q Query) String() string {
 	return q.Statement()
 }
 
@@ -350,17 +349,16 @@ func inArgName(name string, i int) string {
 	return name + ":" + strconv.Itoa(i)
 }
 
-func (q *Query) expandIn(args ...Argument) *Query {
+func (q Query) expandIn(args ...Argument) Query {
 	if !q.hasIn {
 		return q
 	}
 
-	newQ := *q
-	newQ.parseStatement(template.FuncMap{
+	q.parseStatement(template.FuncMap{
 		"inArgs": func(name string) string {
 			in := ""
-			for a := range newQ.args {
-				if newQ.args[a] == "..."+name {
+			for a := range q.args {
+				if q.args[a] == "..."+name {
 					var inArgs []string
 					for i := range args {
 						inName := inArgName(name, len(inArgs))
@@ -368,13 +366,15 @@ func (q *Query) expandIn(args ...Argument) *Query {
 							if i != 0 {
 								in += ", "
 							}
-							in += newQ.argPlaceholder(inName)
+							in += q.argPlaceholder(inName)
 							inArgs = append(inArgs, inName)
 						}
 					}
 					// expand the single argument by replacing it with a slice of numbered
 					// arguments in the runtime argument slice
-					newQ.args = append(newQ.args[:a], append(inArgs, newQ.args[a+1:]...)...)
+					// copy to prevent side effects
+					wArgs := make([]string, len(q.args))
+					q.args = append(wArgs[:a], append(inArgs, wArgs[a+1:]...)...)
 					break
 				}
 			}
@@ -382,7 +382,7 @@ func (q *Query) expandIn(args ...Argument) *Query {
 			return in
 		},
 	})
-	return &newQ
+	return q
 }
 
 // BeginTx begins a transaction on the database
@@ -478,7 +478,7 @@ func PrintRows(rows *sql.Rows, padding int) (string, error) {
 // Debug runs the passed in query and returns a string of the results
 // in a tab delimited format, with columns listed in the first row
 // meant for debugging use. Will panic instead of throwing an error
-func (q *Query) Debug(args ...Argument) string {
+func (q Query) Debug(args ...Argument) string {
 	rows, err := q.Query(args...)
 	if err != nil {
 		panic(err)
@@ -492,7 +492,7 @@ func (q *Query) Debug(args ...Argument) string {
 }
 
 // DebugPrint prints out the debug query to the screen
-func (q *Query) DebugPrint(args ...Argument) {
+func (q Query) DebugPrint(args ...Argument) {
 	fmt.Println(q.Debug(args...))
 }
 

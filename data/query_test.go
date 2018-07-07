@@ -560,7 +560,7 @@ func TestDataTypes(t *testing.T) {
 	t.Run("In Queries", func(t *testing.T) {
 		reset(t)
 
-		ids := make([]data.ID, 10, 10)
+		ids := make([]data.ID, 10)
 
 		for i := range ids {
 			ids[i] = data.NewID()
@@ -630,6 +630,77 @@ func TestDataTypes(t *testing.T) {
 					rows.Close()
 					t.Fatalf("Test: %s ID not found in result set: %s\nQuery: %s",
 						test.name, test.result[i], test.query)
+				}
+			}
+		}
+
+	})
+	t.Run("In Queries Side effects", func(t *testing.T) {
+		reset(t)
+
+		ids := make([]data.ID, 10)
+
+		for i := range ids {
+			ids[i] = data.NewID()
+			_, err := data.NewQuery(`insert into data_types (id_type) values ({{arg "id_type"}})`).
+				Exec(data.Arg("id_type", ids[i]))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		qry := data.NewQuery(`select id_type from data_types where id_type in ({{arg "...ids"}})`)
+
+		var nilslice []data.ID
+
+		tests := []struct {
+			args   []data.Argument
+			result []data.ID
+		}{
+			{data.Args("ids", ids[:]), ids[:]},
+			{data.Args("ids", ids[7:7]), ids[7:7]},
+			{data.Args("ids", ids[3:7]), ids[3:7]},
+			{data.Args("ids", ids[1:3]), ids[1:3]},
+			{data.Args("ids", nilslice), nil},
+			{data.Args("ids", ids[1:1]), ids[1:1]},
+		}
+
+		for i, test := range tests {
+			rows, err := qry.Query(test.args...)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var result []data.ID
+			for rows.Next() {
+				var id data.ID
+
+				err = rows.Scan(&id)
+				if err != nil {
+					t.Fatalf("Error executing test %d: %s", i, err)
+				}
+				result = append(result, id)
+			}
+
+			if len(test.result) != len(result) {
+				rows.Close()
+				t.Fatalf("Test: %d Result length is incorrect. Expected %d, got %d",
+					i, len(test.result), len(result))
+			}
+
+			for i := range test.result {
+				found := false
+				for j := range result {
+					if result[j] == test.result[i] {
+						found = true
+						break
+					}
+				}
+				if !found {
+					rows.Close()
+					t.Fatalf("Test: %d ID not found in result set: %s\n",
+						i, test.result[i])
 				}
 			}
 		}

@@ -277,6 +277,7 @@ func (t *RegistrationToken) validate() error {
 			// one or more groups were not found
 			return NewFailure("One or more of the groups are invalid")
 		}
+
 	}
 	return nil
 }
