@@ -354,28 +354,31 @@ func (q Query) expandIn(args ...Argument) Query {
 		return q
 	}
 
+	// expand the single argument by replacing it with a slice of numbered
+	// arguments in the runtime argument slice
+	// copy to prevent side effects
+
 	q.parseStatement(template.FuncMap{
 		"inArgs": func(name string) string {
 			in := ""
-			for a := range q.args {
-				if q.args[a] == "..."+name {
-					var inArgs []string
+			wArgs := make([]string, len(q.args))
+			copy(wArgs, q.args)
+			q.args = wArgs
+
+			for a := range wArgs {
+				if wArgs[a] == "..."+name {
+					count := 0
 					for i := range args {
-						inName := inArgName(name, len(inArgs))
+						inName := inArgName(name, count)
 						if args[i].Name == inName {
 							if i != 0 {
 								in += ", "
 							}
+							q.args = append(q.args[:a+count], append([]string{inName}, q.args[a+count+1:]...)...)
 							in += q.argPlaceholder(inName)
-							inArgs = append(inArgs, inName)
+							count++
 						}
 					}
-					// expand the single argument by replacing it with a slice of numbered
-					// arguments in the runtime argument slice
-					// copy to prevent side effects
-					wArgs := make([]string, len(q.args))
-					copy(wArgs, q.args)
-					q.args = append(wArgs[:a], append(inArgs, wArgs[a+1:]...)...)
 					break
 				}
 			}
