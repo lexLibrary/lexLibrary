@@ -374,6 +374,7 @@ func (q Query) expandIn(args ...Argument) Query {
 					// arguments in the runtime argument slice
 					// copy to prevent side effects
 					wArgs := make([]string, len(q.args))
+					copy(wArgs, q.args)
 					q.args = append(wArgs[:a], append(inArgs, wArgs[a+1:]...)...)
 					break
 				}

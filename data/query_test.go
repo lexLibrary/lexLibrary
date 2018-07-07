@@ -598,7 +598,7 @@ func TestDataTypes(t *testing.T) {
 				Query(test.args...)
 
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("Error executing test %s Query:%s: %s", test.name, test.query, err)
 			}
 
 			var result []data.ID
