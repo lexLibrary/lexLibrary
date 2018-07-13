@@ -101,10 +101,10 @@ func (q Query) orderedArgs(args []Argument) []interface{} {
 	return ordered
 }
 
-func argPlaceholder(name string, index int) string {
+func (q Query) argPlaceholder(name string) string {
 	switch dbType {
 	case postgres, cockroachdb:
-		return "$" + strconv.Itoa(index)
+		return "$" + strconv.Itoa(len(q.args))
 	case sqlserver:
 		return "@" + name
 	default:
@@ -135,7 +135,7 @@ func (q *Query) buildTemplate() {
 				// arguments are an in statement set at runtime
 				return fmt.Sprintf(`{{inArgs "%s"}}`, strings.TrimPrefix(name, "..."))
 			}
-			return argPlaceholder(name, len(q.args))
+			return q.argPlaceholder(name)
 		},
 		"bytes":    bytesColumn,
 		"datetime": datetimeColumn,
@@ -366,7 +366,7 @@ func (q Query) expandIn(args ...Argument) Query {
 		"inArgs": func(name string) string {
 			in := ""
 			for a := range args {
-				if q.args[a] == "..."+name {
+				if args[a].Name == name {
 					var inArgs []string
 					for i := range args {
 						inName := inArgName(name, len(inArgs))
@@ -374,7 +374,7 @@ func (q Query) expandIn(args ...Argument) Query {
 							if len(inArgs) != 0 {
 								in += ", "
 							}
-							in += argPlaceholder(inName, len(q.args)+len(inArgs)-(q.inCount-1))
+							in += q.argPlaceholder(inName)
 							inArgs = append(inArgs, inName)
 						}
 					}
