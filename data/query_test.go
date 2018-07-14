@@ -576,10 +576,18 @@ func TestDataTypes(t *testing.T) {
 		}{
 			{"simple in", `select id_type from data_types where id_type in ({{arg "...ids"}})`,
 				data.Args("ids", ids[3:7]), ids[3:7]},
-			{"mulitple args + in", `
+			{"mulitple args + trailing in", `
 				select id_type from data_types 
 				where id_type <> {{arg "not_id"}}
 				and id_type in ({{arg "...ids"}})
+			`,
+				append(data.Args("ids", ids[3:7]), data.Arg("not_id", ids[4])),
+				[]data.ID{ids[3], ids[5], ids[6]},
+			},
+			{"mulitple args + leading in", `
+				select id_type from data_types 
+				where id_type in ({{arg "...ids"}})
+				and id_type <> {{arg "not_id"}}
 			`,
 				append(data.Args("ids", ids[3:7]), data.Arg("not_id", ids[4])),
 				[]data.ID{ids[3], ids[5], ids[6]},
@@ -593,6 +601,16 @@ func TestDataTypes(t *testing.T) {
 			`,
 				append(data.Args("ids", ids[3:7]), data.Args("not_ids", ids[4:6])...),
 				[]data.ID{ids[3], ids[6]},
+			},
+			{"mulitple args between two ins ", `
+				select id_type from data_types
+				where id_type in ({{arg "...ids"}})
+				and id_type <> {{arg "single"}}
+				and id_type not in ({{arg "...not_ids"}})
+			`,
+				append(append(data.Args("ids", ids[3:7]), data.Args("not_ids", ids[4:6])...),
+					data.Arg("single", ids[6])),
+				[]data.ID{ids[3]},
 			},
 		}
 
@@ -720,7 +738,8 @@ func TestDataTypes(t *testing.T) {
 
 		data.NewQuery(`select * from table where field in ({{arg "...args"}}) and id = {{arg "id"}}`).
 			QueryRow(append(data.Args("args", []int{}), data.Arg("id", 1))...)
-
 	})
 	dropTable(t)
 }
+
+//TODO: Test Count and Page

@@ -24,7 +24,7 @@ type Query struct {
 	statement string
 	args      []string
 	tx        *sql.Tx
-	inCount   int
+	hasIn     bool
 }
 
 // Argument is a wrapper around sql.NamedArg so that a data behavior can be unified across all database backends
@@ -59,7 +59,7 @@ func Args(name string, value interface{}) []Argument {
 	args := make([]Argument, val.Len())
 
 	for i := range args {
-		args[i] = Argument(sql.Named(inArgName(name, i), val.Index(i).Interface()))
+		args[i] = Argument(sql.Named(name+strconv.Itoa(i), val.Index(i).Interface()))
 	}
 
 	return args
@@ -112,11 +112,8 @@ func (q Query) argPlaceholder(name string) string {
 	}
 }
 
-func (q *Query) buildTemplate() {
-	if db == nil {
-		panic("Can't build query templates before the database type is set")
-	}
-	funcs := template.FuncMap{
+func (q *Query) defaultFuncMap() template.FuncMap {
+	return template.FuncMap{
 		"arg": func(name string) string {
 			// Args must be named and must be unique, and must use sql.Named
 			if name == "" {
@@ -130,11 +127,13 @@ func (q *Query) buildTemplate() {
 			}
 
 			q.args = append(q.args, name)
+
 			if strings.HasPrefix(name, "...") {
-				q.inCount++
+				q.hasIn = true
 				// arguments are an in statement set at runtime
 				return fmt.Sprintf(`{{inArgs "%s"}}`, strings.TrimPrefix(name, "..."))
 			}
+
 			return q.argPlaceholder(name)
 		},
 		"bytes":    bytesColumn,
@@ -227,7 +226,13 @@ func (q *Query) buildTemplate() {
 		},
 	}
 
-	q.parseStatement(funcs)
+}
+
+func (q *Query) buildTemplate() {
+	if db == nil {
+		panic("Can't build query templates before the database type is set")
+	}
+	q.parseStatement(q.defaultFuncMap())
 }
 
 func (q *Query) parseStatement(funcs template.FuncMap) {
@@ -249,7 +254,7 @@ func (q Query) Exec(args ...Argument) (result sql.Result, err error) {
 	if q.statement == "" {
 		q.buildTemplate()
 	}
-	q = q.expandIn(args...)
+	q = q.expandIn(args)
 
 	if q.tx != nil {
 		result, err = q.tx.Exec(q.statement, q.orderedArgs(args)...)
@@ -269,7 +274,7 @@ func (q Query) Query(args ...Argument) (rows *sql.Rows, err error) {
 		panic("Query template hasn't been built yet")
 	}
 
-	q = q.expandIn(args...)
+	q = q.expandIn(args)
 	if q.tx != nil {
 		rows, err = q.tx.Query(q.statement, q.orderedArgs(args)...)
 	} else {
@@ -309,7 +314,7 @@ func (q Query) QueryRow(args ...Argument) *Row {
 		panic("Query template hasn't been built yet")
 	}
 
-	q = q.expandIn(args...)
+	q = q.expandIn(args)
 	r := &Row{
 		statement: q.Statement(),
 	}
@@ -345,53 +350,61 @@ func (q Query) String() string {
 	return q.Statement()
 }
 
-func inArgName(name string, i int) string {
-	return name + ":" + strconv.Itoa(i)
+func (q Query) argIndex(name string) int {
+	for i := range q.args {
+		if q.args[i] == name {
+			return i
+		}
+	}
+
+	panic(fmt.Sprintf("Arg %s does not exist in this query", name))
 }
 
-func (q Query) expandIn(args ...Argument) Query {
-	if q.inCount == 0 {
+func (q Query) expandIn(args []Argument) Query {
+	if !q.hasIn {
 		return q
 	}
 
 	if len(args) == 0 {
-		panic(fmt.Sprintf("Query %s has an in query with no matching arguments.  Check for len() ==0",
+		panic(fmt.Sprintf("Query %s has an in query with no matching arguments.  Check for len() == 0",
 			q.statement))
 	}
 	// expand the single argument by replacing it with a slice of numbered
 	// arguments in the runtime argument slice
-	// copy to prevent side effects
 
 	q.parseStatement(template.FuncMap{
 		"inArgs": func(name string) string {
 			in := ""
-			for a := range args {
-				if args[a].Name == name {
-					var inArgs []string
-					for i := range args {
-						inName := inArgName(name, len(inArgs))
-						if args[i].Name == inName {
-							if len(inArgs) != 0 {
-								in += ", "
-							}
-							in += q.argPlaceholder(inName)
-							inArgs = append(inArgs, inName)
-						}
+			for i := range args {
+				if strings.HasPrefix(args[i].Name, name) {
+					insert := q.argIndex("..." + name)
+
+					// put expanded args one position before where the placeholder arg is
+					// this preserves the order of all arguments once expanded
+					q.args = append(q.args, "")
+					copy(q.args[insert+1:], q.args[insert:])
+					q.args[insert] = args[i].Name
+
+					if len(in) != 0 {
+						in += ", "
 					}
-					if len(inArgs) == 0 {
-						panic(fmt.Sprintf("Query %s has an in query with no matching arguments.  Check for len() ==0",
-							q.statement))
-					}
-					wArgs := make([]string, len(q.args))
-					copy(wArgs, q.args)
-					q.args = append(wArgs[:a], append(inArgs, wArgs[a+1:]...)...)
-					break
+					in += q.argPlaceholder(args[i].Name)
 				}
 			}
 
 			return in
 		},
 	})
+
+	// remove ... arguments as they've been expanded into the number of arguments passed in
+	keep := make([]string, 0, len(args))
+	for i := range q.args {
+		if !strings.HasPrefix(q.args[i], "...") {
+			keep = append(keep, q.args[i])
+		}
+	}
+
+	q.args = keep
 	return q
 }
 
@@ -511,4 +524,26 @@ func prepareQueries() error {
 		queryBuildQueue[i].buildTemplate()
 	}
 	return nil
+}
+
+// Count returns a query that returns a count of the original queries results by wrapping
+// the original query in a select count(*)
+func (q Query) Count() Query {
+	q.statement = fmt.Sprintf("select count(*) from (%s)tblCount", q.statement)
+	return q
+}
+
+// Page returns a query that pages the results using database specific offset / limits
+// adds the arguments "offset" and "limit" to the query
+func (q Query) Page() Query {
+	q.statement += `
+		{{if sqlserver}}
+			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
+		{{else}}
+			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
+		{{end}}
+	`
+
+	q.parseStatement(q.defaultFuncMap())
+	return q
 }
