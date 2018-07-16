@@ -14,6 +14,7 @@ import (
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 var queryBuildQueue []*Query
@@ -24,7 +25,9 @@ type Query struct {
 	statement string
 	args      []string
 	tx        *sql.Tx
-	hasIn     bool
+
+	// deferParse defers parsing the template until the query is executed.
+	deferParse bool
 }
 
 // Argument is a wrapper around sql.NamedArg so that a data behavior can be unified across all database backends
@@ -71,11 +74,7 @@ func NewQuery(tmpl string) *Query {
 		statement: tmpl,
 	}
 
-	if db != nil {
-		q.buildTemplate()
-	} else {
-		queryBuildQueue = append(queryBuildQueue, q)
-	}
+	q.buildTemplate()
 
 	return q
 }
@@ -112,28 +111,65 @@ func (q Query) argPlaceholder(name string) string {
 	}
 }
 
-func (q *Query) defaultFuncMap() template.FuncMap {
-	return template.FuncMap{
-		"arg": func(name string) string {
-			// Args must be named and must be unique, and must use sql.Named
-			if name == "" {
-				panic("Arguments must be named in sql statements")
+func (q *Query) addArg(name string) {
+	if name == "" {
+		panic("Arguments must be named in sql statements")
+	}
+
+	for i := range q.args {
+		if name == q.args[i] {
+			panic(fmt.Sprintf("%s already exists in the query arguments", name))
+		}
+	}
+
+	q.args = append(q.args, name)
+}
+
+func (q *Query) buildTemplate() {
+	if db == nil {
+		queryBuildQueue = append(queryBuildQueue, q)
+		return
+	}
+
+	err := q.parseStatement(false)
+	if err != nil {
+		panic(fmt.Errorf("Error parsing query template '%s': %s", q.statement, err))
+	}
+}
+
+func (q *Query) parseStatement(deferred bool, args ...Argument) error {
+	if deferred {
+		q.args = nil
+	}
+
+	buff := bytes.NewBuffer([]byte{})
+	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"args": func(name string) string {
+			if !deferred {
+				q.deferParse = true
+				// will set at runtime
+				return ""
 			}
 
-			for i := range q.args {
-				if name == q.args[i] {
-					panic(fmt.Sprintf("%s already exists in the query arguments", name))
+			if len(args) == 0 {
+				panic(fmt.Sprintf("Query %s has an in query with no matching arguments. "+
+					"Check for len() == 0", q.statement))
+			}
+
+			in := ""
+			for i := range args {
+				if strings.HasPrefix(args[i].Name, name) {
+					q.addArg(args[i].Name)
+					if len(in) != 0 {
+						in += ", "
+					}
+					in += q.argPlaceholder(args[i].Name)
 				}
 			}
-
-			q.args = append(q.args, name)
-
-			if strings.HasPrefix(name, "...") {
-				q.hasIn = true
-				// arguments are an in statement set at runtime
-				return fmt.Sprintf(`{{inArgs "%s"}}`, strings.TrimPrefix(name, "..."))
-			}
-
+			return in
+		},
+		"arg": func(name string) string {
+			q.addArg(name)
 			return q.argPlaceholder(name)
 		},
 		"bytes":    bytesColumn,
@@ -224,29 +260,25 @@ func (q *Query) defaultFuncMap() template.FuncMap {
 				panic("Unsupported database type")
 			}
 		},
-	}
-
-}
-
-func (q *Query) buildTemplate() {
-	if db == nil {
-		panic("Can't build query templates before the database type is set")
-	}
-	q.parseStatement(q.defaultFuncMap())
-}
-
-func (q *Query) parseStatement(funcs template.FuncMap) {
-	buff := bytes.NewBuffer([]byte{})
-	tmpl, err := template.New("").Funcs(funcs).Parse(q.statement)
+	}).Parse(q.statement)
 	if err != nil {
-		panic(fmt.Errorf("Error parsing query template '%s': %s", q.statement, err))
+		return err
 	}
-	err = tmpl.Execute(buff, nil)
+	err = tmpl.Execute(buff, struct {
+		Args []Argument
+	}{
+		Args: args,
+	})
+
 	if err != nil {
-		panic(fmt.Errorf("Error building query template'%s': %s", q.statement, err))
+		return err
 	}
 
-	q.statement = strings.TrimSpace(buff.String())
+	if !q.deferParse || deferred {
+		q.statement = strings.TrimSpace(buff.String())
+	}
+
+	return nil
 }
 
 // Exec executes a templated query without returning any rows
@@ -254,7 +286,13 @@ func (q Query) Exec(args ...Argument) (result sql.Result, err error) {
 	if q.statement == "" {
 		q.buildTemplate()
 	}
-	q = q.expandIn(args)
+
+	if q.deferParse {
+		err := q.parseStatement(true, args...)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	if q.tx != nil {
 		result, err = q.tx.Exec(q.statement, q.orderedArgs(args)...)
@@ -274,7 +312,13 @@ func (q Query) Query(args ...Argument) (rows *sql.Rows, err error) {
 		panic("Query template hasn't been built yet")
 	}
 
-	q = q.expandIn(args)
+	if q.deferParse {
+		err := q.parseStatement(true, args...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if q.tx != nil {
 		rows, err = q.tx.Query(q.statement, q.orderedArgs(args)...)
 	} else {
@@ -313,10 +357,15 @@ func (q Query) QueryRow(args ...Argument) *Row {
 	if q.statement == "" {
 		panic("Query template hasn't been built yet")
 	}
+	var err error
 
-	q = q.expandIn(args)
+	if q.deferParse {
+		err = q.parseStatement(true, args...)
+	}
+
 	r := &Row{
 		statement: q.Statement(),
+		err:       err,
 	}
 
 	if q.tx != nil {
@@ -348,64 +397,6 @@ func (q Query) Statement() string {
 
 func (q Query) String() string {
 	return q.Statement()
-}
-
-func (q Query) argIndex(name string) int {
-	for i := range q.args {
-		if q.args[i] == name {
-			return i
-		}
-	}
-
-	panic(fmt.Sprintf("Arg %s does not exist in this query", name))
-}
-
-func (q Query) expandIn(args []Argument) Query {
-	if !q.hasIn {
-		return q
-	}
-
-	if len(args) == 0 {
-		panic(fmt.Sprintf("Query %s has an in query with no matching arguments.  Check for len() == 0",
-			q.statement))
-	}
-	// expand the single argument by replacing it with a slice of numbered
-	// arguments in the runtime argument slice
-
-	q.parseStatement(template.FuncMap{
-		"inArgs": func(name string) string {
-			in := ""
-			for i := range args {
-				if strings.HasPrefix(args[i].Name, name) {
-					insert := q.argIndex("..." + name)
-
-					// put expanded args one position before where the placeholder arg is
-					// this preserves the order of all arguments once expanded
-					q.args = append(q.args, "")
-					copy(q.args[insert+1:], q.args[insert:])
-					q.args[insert] = args[i].Name
-
-					if len(in) != 0 {
-						in += ", "
-					}
-					in += q.argPlaceholder(args[i].Name)
-				}
-			}
-
-			return in
-		},
-	})
-
-	// remove ... arguments as they've been expanded into the number of arguments passed in
-	keep := make([]string, 0, len(args))
-	for i := range q.args {
-		if !strings.HasPrefix(q.args[i], "...") {
-			keep = append(keep, q.args[i])
-		}
-	}
-
-	q.args = keep
-	return q
 }
 
 // BeginTx begins a transaction on the database
@@ -528,14 +519,15 @@ func prepareQueries() error {
 
 // Count returns a query that returns a count of the original queries results by wrapping
 // the original query in a select count(*)
-func (q Query) Count() Query {
+func (q Query) Count() *Query {
 	q.statement = fmt.Sprintf("select count(*) from (%s)tblCount", q.statement)
-	return q
+	q.buildTemplate()
+	return &q
 }
 
-// Page returns a query that pages the results using database specific offset / limits
+// Offset returns a query that pages the results using database specific offset / limits
 // adds the arguments "offset" and "limit" to the query
-func (q Query) Page() Query {
+func (q Query) Offset() *Query {
 	q.statement += `
 		{{if sqlserver}}
 			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
@@ -544,6 +536,48 @@ func (q Query) Page() Query {
 		{{end}}
 	`
 
-	q.parseStatement(q.defaultFuncMap())
-	return q
+	q.buildTemplate()
+	return &q
+}
+
+// PagedQuery is a query that has both an offset query and a count query
+type PagedQuery struct {
+	Total  *Query
+	Offset *Query
+}
+
+// NewPagedQuery creates a new PagedQuery
+func NewPagedQuery(tmpl string) *PagedQuery {
+	q := NewQuery(tmpl)
+	return &PagedQuery{
+		Total:  q.Count(),
+		Offset: q.Offset(),
+	}
+}
+
+// Query runs the offset and total queries simultaneously returning the current page and the total number of
+// records across all pages
+func (p PagedQuery) Query(offset, limit int, args ...Argument) (rows *sql.Rows, total int, err error) {
+	var g errgroup.Group
+	g.Go(func() error {
+		rows, err = p.Offset.Query(append(args,
+			Arg("offset", offset),
+			Arg("limit", limit),
+		)...)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	g.Go(func() error {
+		return p.Total.QueryRow(args...).Scan(&total)
+	})
+
+	err = g.Wait()
+	if err != nil {
+		return nil, total, err
+	}
+
+	return
 }

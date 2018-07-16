@@ -143,7 +143,7 @@ var sqlUser = struct {
 	isGroupMember: data.NewQuery(`
 		select group_id from group_users
 		where user_id = {{arg "user_id"}}
-		and group_id in ({{arg "...group_id"}})
+		and group_id in ({{args "group_id"}})
 	`),
 }
 

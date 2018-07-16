@@ -84,12 +84,12 @@ var sqlGroup = struct {
 	byIDsTotal: data.NewQuery(`
 		select count(id)
 		from groups 
-		where id in ({{arg "...ids"}})
+		where id in ({{args "ids"}})
 	`),
 	byIDs: data.NewQuery(`
 		select id, name, version, updated, created
 		from groups 
-		where id in ({{arg "...ids"}})
+		where id in ({{args "ids"}})
 	`),
 	member: data.NewQuery(`
 		select admin 

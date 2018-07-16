@@ -574,43 +574,51 @@ func TestDataTypes(t *testing.T) {
 			args   []data.Argument
 			result []data.ID
 		}{
-			{"simple in", `select id_type from data_types where id_type in ({{arg "...ids"}})`,
+			{"simple in", `select id_type from data_types where id_type in ({{args "ids"}})`,
 				data.Args("ids", ids[3:7]), ids[3:7]},
 			{"mulitple args + trailing in", `
 				select id_type from data_types 
 				where id_type <> {{arg "not_id"}}
-				and id_type in ({{arg "...ids"}})
+				and id_type in ({{args "ids"}})
 			`,
 				append(data.Args("ids", ids[3:7]), data.Arg("not_id", ids[4])),
 				[]data.ID{ids[3], ids[5], ids[6]},
 			},
-			{"mulitple args + leading in", `
+			{"mulitple args + leading in out of order", `
 				select id_type from data_types 
-				where id_type in ({{arg "...ids"}})
+				where id_type in ({{args "ids"}})
 				and id_type <> {{arg "not_id"}}
 			`,
 				append(data.Args("ids", ids[3:7]), data.Arg("not_id", ids[4])),
 				[]data.ID{ids[3], ids[5], ids[6]},
 			},
-			{"single in", `select id_type from data_types where id_type in ({{arg "...ids"}})`,
+			{"single in", `select id_type from data_types where id_type in ({{args "ids"}})`,
 				data.Args("ids", ids[3:4]), ids[3:4]},
 			{"mulitple in args", `
 				select id_type from data_types
-				where id_type in ({{arg "...ids"}})
-				and id_type not in ({{arg "...not_ids"}})
+				where id_type in ({{args "ids"}})
+				and id_type not in ({{args "not_ids"}})
 			`,
 				append(data.Args("ids", ids[3:7]), data.Args("not_ids", ids[4:6])...),
 				[]data.ID{ids[3], ids[6]},
 			},
-			{"mulitple args between two ins ", `
+			{"mulitple args between two ins out of order", `
 				select id_type from data_types
-				where id_type in ({{arg "...ids"}})
+				where id_type in ({{args "ids"}})
 				and id_type <> {{arg "single"}}
-				and id_type not in ({{arg "...not_ids"}})
+				and id_type not in ({{args "not_ids"}})
 			`,
 				append(append(data.Args("ids", ids[3:7]), data.Args("not_ids", ids[4:6])...),
 					data.Arg("single", ids[6])),
 				[]data.ID{ids[3]},
+			},
+			{"mulitple in args out of order", `
+				select id_type from data_types
+				where id_type not in ({{args "not_ids"}})
+				and id_type in ({{args "ids"}})
+			`,
+				append(data.Args("ids", ids[3:7]), data.Args("not_ids", ids[4:6])...),
+				[]data.ID{ids[3], ids[6]},
 			},
 		}
 
@@ -670,7 +678,7 @@ func TestDataTypes(t *testing.T) {
 			}
 		}
 
-		qry := data.NewQuery(`select id_type from data_types where id_type in ({{arg "...ids"}})`)
+		qry := data.NewQuery(`select id_type from data_types where id_type in ({{args "ids"}})`)
 
 		tests := []struct {
 			args   []data.Argument
@@ -733,10 +741,10 @@ func TestDataTypes(t *testing.T) {
 			}
 		}()
 
-		data.NewQuery(`select * from table where field in ({{arg "...args"}})`).
+		data.NewQuery(`select * from table where field in ({{args "args"}})`).
 			QueryRow(data.Args("args", []int{})...)
 
-		data.NewQuery(`select * from table where field in ({{arg "...args"}}) and id = {{arg "id"}}`).
+		data.NewQuery(`select * from table where field in ({{args "args"}}) and id = {{arg "id"}}`).
 			QueryRow(append(data.Args("args", []int{}), data.Arg("id", 1))...)
 	})
 	dropTable(t)

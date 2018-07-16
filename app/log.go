@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
-	"golang.org/x/sync/errgroup"
 )
 
 // Log is a logged error message in the database
@@ -21,40 +20,23 @@ type Log struct {
 
 var sqlLog = struct {
 	insert,
-	get,
-	total,
 	totalSince,
-	search,
-	searchTotal,
 	byID *data.Query
+	get, search *data.PagedQuery
 }{
 	insert: data.NewQuery(`insert into logs (id, occurred, message) 
 		values ({{arg "id"}}, {{arg "occurred"}}, {{arg "message"}})`),
-	get: data.NewQuery(`
-		select id, occurred, message from logs order by occurred desc 
-		{{if sqlserver}}
-			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
-		{{else}}
-			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-		{{end}}
-	`),
-	total:      data.NewQuery(`select count(*) from logs`),
+	get:        data.NewPagedQuery(`select id, occurred, message from logs order by occurred desc`),
 	totalSince: data.NewQuery(`select count(*) from logs where occurred >= {{arg "occurred"}}`),
 	// Performance of this search will be poor, and I may just remove this functionality altogether
 	// but it's an admin only thing, so maybe it's worth keeping around.  There is no nice way to do case-insensitve
-	// columns across all of the databases, unless I drop support for TiDB, Cockroach.  It might be
+	// columns across all of the databases, unless I drop support for Cockroach.  It might be
 	// worth it if other features require case insensitivity, but I think we can get by without it.
-	search: data.NewQuery(`
+	search: data.NewPagedQuery(`
 		select id, occurred, message from logs 
 		where lower(message) like lower({{arg "search"}}) order by occurred desc 
-		{{if sqlserver}}
-			OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
-		{{else}}
-			LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-		{{end}}
 	`),
-	searchTotal: data.NewQuery(`select count(*) from logs where lower(message) like lower({{arg "search"}})`),
-	byID:        data.NewQuery(`select id, occurred, message from logs where id = {{arg "id"}}`),
+	byID: data.NewQuery(`select id, occurred, message from logs where id = {{arg "id"}}`),
 }
 
 // LogError logs an error to the logs table
@@ -88,32 +70,19 @@ func LogGet(offset, limit int) (logs []*Log, total int, err error) {
 		limit = 10
 	}
 
-	var g errgroup.Group
-
-	g.Go(func() error {
-		rows, err := sqlLog.get.Query(data.Arg("offset", offset), data.Arg("limit", limit))
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			log := &Log{}
-			err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
-			if err != nil {
-				return err
-			}
-			logs = append(logs, log)
-		}
-		return nil
-	})
-	g.Go(func() error {
-		return sqlLog.total.QueryRow().Scan(&total)
-	})
-
-	err = g.Wait()
+	rows, total, err := sqlLog.get.Query(offset, limit)
 	if err != nil {
-		return nil, total, err
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		log := &Log{}
+		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
+		if err != nil {
+			return nil, 0, err
+		}
+		logs = append(logs, log)
 	}
 
 	return logs, total, nil
@@ -144,33 +113,19 @@ func LogSearch(search string, offset, limit int) (logs []*Log, total int, err er
 		limit = 10
 	}
 
-	var g errgroup.Group
-	g.Go(func() error {
-		rows, err := sqlLog.search.Query(
-			data.Arg("search", "%"+search+"%"),
-			data.Arg("offset", offset),
-			data.Arg("limit", limit))
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			log := &Log{}
-			err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
-			if err != nil {
-				return err
-			}
-			logs = append(logs, log)
-		}
-		return nil
-	})
-	g.Go(func() error {
-		return sqlLog.searchTotal.QueryRow(data.Arg("search", "%"+search+"%")).Scan(&total)
-	})
-	err = g.Wait()
+	rows, total, err := sqlLog.search.Query(offset, limit, data.Arg("search", "%"+search+"%"))
 	if err != nil {
-		return nil, total, err
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		log := &Log{}
+		err = rows.Scan(&log.ID, &log.Occurred, &log.Message)
+		if err != nil {
+			return nil, 0, err
+		}
+		logs = append(logs, log)
 	}
 
 	return logs, total, nil
