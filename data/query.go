@@ -564,11 +564,7 @@ func (p PagedQuery) Query(offset, limit int, args ...Argument) (rows *sql.Rows, 
 			Arg("offset", offset),
 			Arg("limit", limit),
 		)...)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 	g.Go(func() error {
 		return p.Total.QueryRow(args...).Scan(&total)
