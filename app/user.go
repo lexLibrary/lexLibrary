@@ -141,7 +141,7 @@ var sqlUser = struct {
 	updateProfileDraftImage: sqlUserUpdate("profile_image_draft_id"),
 	updateUsername:          sqlUserUpdate("username"),
 	isGroupMember: data.NewQuery(`
-		select group_id from group_users
+		select count(*) from group_users
 		where user_id = {{arg "user_id"}}
 		and group_id in ({{args "group_id"}})
 	`),

@@ -228,6 +228,48 @@ func (u *User) GroupFromName(name string) (*Group, error) {
 	return g, nil
 }
 
+func groupsFromIDs(ids ...data.ID) ([]*Group, error) {
+	groups := make([]*Group, 0, len(ids))
+
+	if len(ids) == 0 {
+		return groups, nil
+	}
+
+	rows, err := sqlGroup.byIDs.Query(data.Args("id", ids)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		g := &Group{}
+		err = g.scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		groups = append(groups, g)
+	}
+
+	return groups, nil
+}
+
+func validateGroups(groupIDs ...data.ID) error {
+	if len(groupIDs) == 0 {
+		return nil
+	}
+	groupCount := 0
+	err := sqlGroup.byIDsTotal.QueryRow(data.Args("ids", groupIDs)...).Scan(&groupCount)
+	if err != nil {
+		return err
+	}
+
+	if groupCount != len(groupIDs) {
+		// one or more groups were not found
+		return NewFailure("One or more of the groups are invalid")
+	}
+	return nil
+}
+
 func (g *Group) validate() error {
 	err := data.FieldValidate("group.name", g.Name)
 	if err != nil {

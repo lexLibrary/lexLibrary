@@ -520,7 +520,8 @@ func prepareQueries() error {
 // Count returns a query that returns a count of the original queries results by wrapping
 // the original query in a select count(*)
 func (q Query) Count() *Query {
-	q.statement = fmt.Sprintf("select count(*) from (%s)tblCount", q.statement)
+	q.statement = fmt.Sprintf(`select count(*) from (%s {{if sqlserver}}OFFSET 0 ROWS{{end}})tblCount`,
+		q.statement)
 	q.buildTemplate()
 	return &q
 }

@@ -16,7 +16,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/denisenkom/go-mssqldb"
-  packages = [".","internal/cp"]
+  packages = [
+    ".",
+    "internal/cp"
+  ]
   revision = "94c9c97e8c9f9844d15c846854a7a6031ae2132c"
 
 [[projects]]
@@ -28,7 +31,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/dustin/go-humanize"
-  packages = [".","english"]
+  packages = [
+    ".",
+    "english"
+  ]
   revision = "02af3965c54e8cacf948b97fef38925c4120652c"
 
 [[projects]]
@@ -46,7 +52,18 @@
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-  packages = [".","hcl/ast","hcl/parser","hcl/printer","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
+  packages = [
+    ".",
+    "hcl/ast",
+    "hcl/parser",
+    "hcl/printer",
+    "hcl/scanner",
+    "hcl/strconv",
+    "hcl/token",
+    "json/parser",
+    "json/scanner",
+    "json/token"
+  ]
   revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
@@ -58,7 +75,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/lib/pq"
-  packages = [".","oid"]
+  packages = [
+    ".",
+    "oid"
+  ]
   revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[projects]]
@@ -112,7 +132,10 @@
 [[projects]]
   branch = "go1"
   name = "github.com/rwcarlsen/goexif"
-  packages = ["exif","tiff"]
+  packages = [
+    "exif",
+    "tiff"
+  ]
   revision = "8d986c03457a2057c7b0fb0a48113f7dd48f9619"
 
 [[projects]]
@@ -135,7 +158,10 @@
 
 [[projects]]
   name = "github.com/spf13/afero"
-  packages = [".","mem"]
+  packages = [
+    ".",
+    "mem"
+  ]
   revision = "787d034dfe70e44075ccc060d346146ef53270ad"
   version = "v1.1.1"
 
@@ -166,7 +192,13 @@
 [[projects]]
   branch = "master"
   name = "github.com/tebeka/selenium"
-  packages = [".","chrome","firefox","internal/zip","log"]
+  packages = [
+    ".",
+    "chrome",
+    "firefox",
+    "internal/zip",
+    "log"
+  ]
   revision = "a49cf4b98a36c2b21b1ccb012852bd142d5fc04a"
 
 [[projects]]
@@ -178,19 +210,33 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["argon2","blake2b","md4"]
+  packages = [
+    "argon2",
+    "blake2b",
+    "md4"
+  ]
   revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/image"
-  packages = ["bmp","tiff","tiff/lzw"]
+  packages = [
+    "bmp",
+    "tiff",
+    "tiff/lzw"
+  ]
   revision = "af66defab954cb421ca110193eed9477c8541e2a"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["context","html","html/atom","http/httpguts","idna"]
+  packages = [
+    "context",
+    "html",
+    "html/atom",
+    "http/httpguts",
+    "idna"
+  ]
   revision = "afe8f62b1d6bbd81f31868121a50b06d8188e1f9"
 
 [[projects]]
@@ -202,12 +248,31 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["cpu","unix","windows"]
+  packages = [
+    "cpu",
+    "unix",
+    "windows"
+  ]
   revision = "63fc586f45fe72d95d5240a5d5eb95e6503907d3"
 
 [[projects]]
   name = "golang.org/x/text"
-  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
+  packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
+    "internal/gen",
+    "internal/tag",
+    "internal/triegen",
+    "internal/ucd",
+    "language",
+    "secure/bidirule",
+    "transform",
+    "unicode/bidi",
+    "unicode/cldr",
+    "unicode/norm",
+    "unicode/rangetable"
+  ]
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
@@ -226,6 +291,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "eba13ebb2da12a57fb262dd5208a64602c6dae567db09cd22c25e00c17bd299e"
+  inputs-digest = "5740c6e5b70dd323bd590d68c8443452c7c3912c2e255542998f224ed998fd92"
   solver-name = "gps-cdcl"
   solver-version = 1

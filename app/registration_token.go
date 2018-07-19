@@ -267,17 +267,10 @@ func (t *RegistrationToken) validate() error {
 		return NewFailure("Expires must be a date in the future")
 	}
 	if len(t.groups) != 0 {
-		groupCount := 0
-		err := sqlGroup.byIDsTotal.QueryRow(data.Args("ids", t.groups)...).Scan(&groupCount)
+		err := validateGroups(t.groups...)
 		if err != nil {
 			return err
 		}
-
-		if groupCount != len(t.groups) {
-			// one or more groups were not found
-			return NewFailure("One or more of the groups are invalid")
-		}
-
 	}
 	return nil
 }

@@ -96,6 +96,7 @@ func ResetDB(t *testing.T) {
 	TruncateTable(t, "document_draft_tags")
 	TruncateTable(t, "document_history")
 	TruncateTable(t, "document_drafts")
+	TruncateTable(t, "document_contents")
 	TruncateTable(t, "documents")
 	TruncateTable(t, "groups")
 	TruncateTable(t, "settings")

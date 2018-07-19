@@ -190,15 +190,25 @@ var schemaVersions = []*Query{
 	`),
 	NewQuery(`
 		create table documents (
-			id {{id}} PRIMARY KEY NOT NULL,
+			id {{id}} NOT NULL PRIMARY KEY,
+			group_publish {{bool}} NOT NULL,
+			created {{datetime}} NOT NULL,
+			creator {{id}} NOT NULL REFERENCES users(id)
+		)
+	`),
+
+	NewQuery(`
+		create table document_contents (
+			document_id {{id}} NOT NULL REFERENCES documents(id),
+			language {{varchar "document.language"}} NOT NULL, 
+			version {{int}} NOT NULL,
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
-			version {{int}} NOT NULL,
-			draft_id {{id}} NOT NULL,
-			updated {{datetime}} NOT NULL,
 			created {{datetime}} NOT NULL,
 			creator {{id}} NOT NULL REFERENCES users(id), 
-			updater {{id}} NOT NULL REFERENCES users(id)
+			updated {{datetime}} NOT NULL,
+			updater {{id}} NOT NULL REFERENCES users(id),
+			PRIMARY KEY(document_id, language)
 		)
 	`),
 	NewQuery(`
@@ -212,6 +222,7 @@ var schemaVersions = []*Query{
 		create table document_drafts (
 			id {{id}} PRIMARY KEY NOT NULL,
 			document_id {{id}} REFERENCES documents(id),
+			language {{varchar "document.language"}} NOT NULL, 
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
 			version {{int}} NOT NULL,
@@ -225,30 +236,33 @@ var schemaVersions = []*Query{
 		create table document_history (
 			document_id {{id}} NOT NULL REFERENCES documents(id),
 			version {{int}} NOT NULL,
-			draft_id {{id}} NOT NULL,
+			language {{varchar "document.language"}} NOT NULL, 
 			title {{text}} NOT NULL,
 			content {{text}} NOT NULL,
 			created {{datetime}} NOT NULL,
 			creator {{id}} NOT NULL REFERENCES users(id),
-			PRIMARY KEY(document_id, version)
+			PRIMARY KEY(document_id, language, version)
 		)
 	`),
 	NewQuery(`
 		create table document_tags (
-			document_id {{id}} NOT NULL REFERENCES documents(id),
+			document_id {{id}} NOT NULL,
+			language {{varchar "document.language"}} NOT NULL, 
 			tag {{varchar "document.tag"}} NOT NULL, 
+			stem {{text}} NOT NULL,
 			type {{text}} NOT NULL,
-			stem {{text}},
-			PRIMARY KEY(document_id, tag)
+			PRIMARY KEY(document_id, language, tag),
+			FOREIGN KEY (document_id, language) REFERENCES document_contents(document_id, language)
 		)
 	`),
 	NewQuery(`
 		create table document_draft_tags (
 			draft_id {{id}} NOT NULL REFERENCES document_drafts(id),
+			language {{varchar "document.language"}} NOT NULL, 
 			tag {{varchar "document.tag"}} NOT NULL, 
+			stem {{text}} NOT NULL,
 			type {{text}} NOT NULL,
-			stem {{text}},
-			PRIMARY KEY(draft_id, tag)
+			PRIMARY KEY(draft_id, language, tag)
 		)
 	`),
 }

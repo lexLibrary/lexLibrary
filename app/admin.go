@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/lexLibrary/lexLibrary/data"
-	"golang.org/x/sync/errgroup"
 )
 
 // Admin is a wrapper around User that only provides access to admin level functions
@@ -27,7 +26,7 @@ var sqlAdmin = struct {
 	stats,
 	user,
 	init *data.Query
-	users func(bool, bool, bool, bool) *data.Query
+	users func(bool, bool, bool) *data.PagedQuery
 }{
 	stats: data.NewQuery(`
 		select users.num, sessions.num, documents.num, errorsTotal.num, errorsSinceStart.num
@@ -61,11 +60,8 @@ var sqlAdmin = struct {
 		) or s.created is null)
 		and u.username = {{arg "username"}}
 	`, userPublicColumns)),
-	users: func(active, loggedIn, search, total bool) *data.Query {
-		columns := userPublicColumns + ", s.created"
-		if total {
-			columns = "count(*)"
-		}
+	users: func(active, loggedIn, search bool) *data.PagedQuery {
+		columns := userPublicColumns + ", s.created as session_created"
 
 		criteria := ""
 		if loggedIn {
@@ -95,18 +91,10 @@ var sqlAdmin = struct {
 				where s2.user_id = s.user_id
 			) or s.created is null)
 			%s
-		`, columns, criteria)
-		if !total {
-			qry += `
 			order by u.created desc
-			{{if sqlserver}}
-				OFFSET {{arg "offset"}} ROWS FETCH NEXT {{arg "limit"}} ROWS ONLY
-			{{else}}
-				LIMIT {{arg "limit" }} OFFSET {{arg "offset"}}
-			{{end}}
-		`
-		}
-		return data.NewQuery(qry)
+		`, columns, criteria)
+
+		return data.NewPagedQuery(qry)
 	},
 }
 
@@ -251,41 +239,22 @@ func (a *Admin) InstanceUsers(activeOnly, loggedIn bool, search string, offset, 
 
 	search = "%" + strings.ToLower(search) + "%"
 
-	var g errgroup.Group
+	rows, total, err := sqlAdmin.users(activeOnly, loggedIn, runSearch).Query(offset, limit,
+		data.Arg("usernameSearch", search),
+		data.Arg("nameSearch", search))
 
-	g.Go(func() error {
-		rows, err := sqlAdmin.users(activeOnly, loggedIn, runSearch, false).Query(
-			data.Arg("limit", limit),
-			data.Arg("offset", offset),
-			data.Arg("usernameSearch", search),
-			data.Arg("nameSearch", search),
-		)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		for rows.Next() {
-			u := &InstanceUser{}
-			err = u.scan(rows)
-			if err != nil {
-				return err
-			}
-			users = append(users, u)
-		}
-		return nil
-	})
-
-	g.Go(func() error {
-		return sqlAdmin.users(activeOnly, loggedIn, search != "", true).QueryRow(
-			data.Arg("usernameSearch", search),
-			data.Arg("nameSearch", search),
-		).Scan(&total)
-	})
-
-	err = g.Wait()
 	if err != nil {
 		return nil, total, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		u := &InstanceUser{}
+		err = u.scan(rows)
+		if err != nil {
+			return nil, total, err
+		}
+		users = append(users, u)
 	}
 
 	return users, total, nil

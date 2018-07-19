@@ -208,6 +208,11 @@ func TestGroup(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error updating group member: %s", err)
 		}
+
+		err = ga.SetMember(other.ID, true)
+		if err != nil {
+			t.Fatalf("Error updating group member who is already a member: %s", err)
+		}
 	})
 
 	t.Run("GroupSearch", func(t *testing.T) {
