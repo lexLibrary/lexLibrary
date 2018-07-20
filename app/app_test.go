@@ -82,21 +82,21 @@ func testRow(row *data.Row, assertValues ...interface{}) error {
 	return nil
 }
 
-type assertRowTest struct {
-	query   string
-	args    []data.Argument
-	results []interface{}
-}
+// type assertRowTest struct {
+// 	query   string
+// 	args    []data.Argument
+// 	results []interface{}
+// }
 
-type assertRowTests []assertRowTest
+// type assertRowTests []assertRowTest
 
-func (a assertRowTests) run(t *testing.T) {
-	t.Helper()
-	for _, test := range a {
-		qry := data.NewQuery(test.query)
-		err := testRow(qry.QueryRow(test.args...), test.results...)
-		if err != nil {
-			t.Fatalf("Error running test query: \n%s\nERROR: %s", qry.Statement(), err)
-		}
-	}
-}
+// func (a assertRowTests) run(t *testing.T) {
+// 	t.Helper()
+// 	for _, test := range a {
+// 		qry := data.NewQuery(test.query)
+// 		err := testRow(qry.QueryRow(test.args...), test.results...)
+// 		if err != nil {
+// 			t.Fatalf("Error running test query: \n%s\nERROR: %s", qry.Statement(), err)
+// 		}
+// 	}
+// }

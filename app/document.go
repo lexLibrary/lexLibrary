@@ -347,13 +347,13 @@ func documentGet(id data.ID, lan language.Tag) (*Document, error) {
 			&groupID,
 		)
 
+		if err != nil {
+			return nil, err
+		}
+
 		d.DocumentContent.Language, err = language.Parse(strLan)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Parsing language value %s from document with id %s", lan, id)
-		}
-
-		if err != nil {
-			return nil, err
 		}
 
 		if tag.Valid && tagType.Valid && stem.Valid {
