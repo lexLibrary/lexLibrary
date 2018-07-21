@@ -18,10 +18,10 @@ import (
 type Document struct {
 	DocumentContent
 
-	GroupPublish bool      `json:"group_publish"`
-	Created      time.Time `json:"created,omitempty"`
-	creator      data.ID
-	groups       []data.ID
+	Created       time.Time `json:"created,omitempty"`
+	creator       data.ID
+	groups        []data.ID
+	publishGroups []data.ID
 
 	accessor *User
 }
@@ -83,17 +83,16 @@ var sqlDocument = struct {
 	deleteDraft,
 	insertContent,
 	groupExists,
+	updateGroup,
 	insert *data.Query
 }{
 	insert: data.NewQuery(`
 		insert into documents (
 			id,
-			group_publish,
 			created,
 			creator
 		) values (
 			{{arg "id"}},
-			{{arg "group_publish"}},
 			{{arg "created"}},
 			{{arg "creator"}}
 		)
@@ -124,10 +123,12 @@ var sqlDocument = struct {
 	insertGroup: data.NewQuery(`
 		insert into document_groups (
 			document_id,
-			group_id
+			group_id,
+			can_publish
 		) select
 			{{arg "document_id"}},
-			id
+			id,
+			{{arg "can_publish"}}
 		from	groups
 		where id = {{arg "group_id"}}
 	`),
@@ -229,7 +230,6 @@ var sqlDocument = struct {
 	`),
 	get: data.NewQuery(`
 		select 	d.id,
-			d.group_publish,
 			d.created,
 			d.creator,
 			c.language,
@@ -244,7 +244,8 @@ var sqlDocument = struct {
 			t.language,
 			t.type,
 			t.stem,
-			g.group_id
+			g.group_id,
+			g.can_publish
 		from 	documents d
 			inner join document_contents c on d.id = c.document_id
 			left outer join document_groups g on d.id = g.document_id
@@ -275,6 +276,12 @@ var sqlDocument = struct {
 	groupExists: data.NewQuery(`
 		select count(*)
 		from document_groups
+		where document_id = {{arg "document_id"}}
+		and group_id = {{arg "group_id"}}
+	`),
+	updateGroup: data.NewQuery(`
+		update document_groups
+		set can_publish = {{arg "can_publish"}}
 		where document_id = {{arg "document_id"}}
 		and group_id = {{arg "group_id"}}
 	`),
@@ -325,11 +332,11 @@ func documentGet(id data.ID, lan language.Tag) (*Document, error) {
 		found = true
 		var tag, tagStrLan, tagType, stem sql.NullString
 		var groupID data.ID
+		var canPublish sql.NullBool
 		var strLan string
 
 		err := rows.Scan(
 			&d.ID,
-			&d.GroupPublish,
 			&d.Created,
 			&d.creator,
 			&strLan,
@@ -345,6 +352,7 @@ func documentGet(id data.ID, lan language.Tag) (*Document, error) {
 			&tagType,
 			&stem,
 			&groupID,
+			&canPublish,
 		)
 
 		if err != nil {
@@ -372,6 +380,9 @@ func documentGet(id data.ID, lan language.Tag) (*Document, error) {
 
 		if !groupID.IsNil() {
 			d.groups = append(d.groups, groupID)
+			if canPublish.Valid && canPublish.Bool {
+				d.publishGroups = append(d.publishGroups, groupID)
+			}
 		}
 	}
 
@@ -724,10 +735,15 @@ func (d *DocumentDraft) Publish() (*Document, error) {
 		return nil, errDocumentUpdateAccess
 	}
 
+	err := d.validate()
+	if err != nil {
+		return nil, err
+	}
+
 	//TODO: Draft publish approval?
 
 	var new *Document
-	err := data.BeginTx(func(tx *sql.Tx) error {
+	err = data.BeginTx(func(tx *sql.Tx) error {
 		if d.DocumentContent.ID.IsNil() {
 			// new document
 			new = d.makeDocument(nil)
@@ -855,7 +871,6 @@ func (d *Document) insert(tx *sql.Tx) error {
 
 	_, err := sqlDocument.insert.Tx(tx).Exec(
 		data.Arg("id", d.ID),
-		data.Arg("group_publish", d.GroupPublish),
 		data.Arg("created", d.Created),
 		data.Arg("creator", d.creator),
 	)
@@ -958,8 +973,8 @@ func (d *DocumentContent) update(tx *sql.Tx, who *User) error {
 	return nil
 }
 
-// AddGroup adds a new group to a document
-func (d *Document) AddGroup(groupID data.ID) error {
+// AddGroup adds a new group to a document, or updates an existing document group
+func (d *Document) AddGroup(groupID data.ID, canPublish bool) error {
 	if d.accessor == nil || d.accessor.ID != d.creator {
 		return errDocumentUpdateAccess
 	}
@@ -977,10 +992,20 @@ func (d *Document) AddGroup(groupID data.ID) error {
 	}
 
 	if count != 0 {
-		return nil
+		_, err := sqlDocument.updateGroup.Exec(
+			data.Arg("document_id", d.ID),
+			data.Arg("group_id", groupID),
+			data.Arg("can_publish", canPublish),
+		)
+
+		return err
 	}
 
-	result, err := sqlDocument.insertGroup.Exec(data.Arg("document_id", d.ID), data.Arg("group_id", groupID))
+	result, err := sqlDocument.insertGroup.Exec(
+		data.Arg("document_id", d.ID),
+		data.Arg("group_id", groupID),
+		data.Arg("can_publish", canPublish),
+	)
 	if err != nil {
 		return err
 	}
@@ -997,6 +1022,7 @@ func (d *Document) AddGroup(groupID data.ID) error {
 	return nil
 }
 
+// RemoveGroup removes a group from the document
 func (d *Document) RemoveGroup(groupID data.ID) error {
 	if d.accessor == nil || d.accessor.ID != d.creator {
 		return errDocumentUpdateAccess
@@ -1007,9 +1033,6 @@ func (d *Document) RemoveGroup(groupID data.ID) error {
 	}
 
 	_, err := sqlDocument.deleteGroup.Exec(data.Arg("document_id", d.ID), data.Arg("group_id", groupID))
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }

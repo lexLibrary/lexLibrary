@@ -4,6 +4,7 @@ package app_test
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/lexLibrary/lexLibrary/app"
@@ -23,25 +24,12 @@ func TestDocument(t *testing.T) {
 		reset(t)
 
 		draft, err := user.NewDocument(language.English)
-		if err != nil {
-			t.Fatalf("Error adding new document: %s", err)
-		}
+		ok(t, err)
 
-		if draft == nil {
-			t.Fatalf("Draft document was nil")
-		}
-
-		if draft.Version != 0 {
-			t.Fatalf("Draft version is incorrect.  Expected %d, got %d", 0, draft.Version)
-		}
-
-		if draft.ID.IsNil() {
-			t.Fatalf("Draft ID is nil")
-		}
-
-		if !draft.DocumentContent.ID.IsNil() {
-			t.Fatalf("Document ID is not nil")
-		}
+		assert(t, draft != nil, "Draft is nil")
+		equals(t, 0, draft.Version)
+		assert(t, !draft.ID.IsNil(), "Draft ID is nil")
+		assert(t, draft.DocumentContent.ID.IsNil(), "Document ID is not nil on new document")
 
 		assertRow(t, data.NewQuery(`
 			select count(*) from document_drafts where id = {{arg "id"}}
@@ -52,9 +40,7 @@ func TestDocument(t *testing.T) {
 	t.Run("New Draft", func(t *testing.T) {
 		reset(t)
 		draft, err := user.NewDocument(language.English)
-		if err != nil {
-			t.Fatalf("Error adding new draft: %s", err)
-		}
+		ok(t, err)
 
 		t.Run("Save", func(t *testing.T) {
 			newTitle := "new Title"
@@ -63,45 +49,26 @@ func TestDocument(t *testing.T) {
 
 			d := *draft
 
-			err = d.Save("", newContent, newTags, draft.Version)
-			if !app.IsFail(err) {
-				t.Fatalf("No failure on empty title: %s", err)
-			}
+			assertFail(t, d.Save("", newContent, newTags, draft.Version), http.StatusBadRequest,
+				"Empty title did not fail")
 
 			d = *draft
-			err = d.Save(newTitle, newContent, newTags, 3)
-			if !app.IsFail(err) {
-				t.Fatalf("No failure on incorrect version: %s", err)
-			}
+			assertFail(t, d.Save(newTitle, newContent, newTags, 3), http.StatusConflict,
+				"No failure on incorrect version")
 
 			d = *draft
-			err = d.Save(newTitle, newContent, []string{fmt.Sprintf("Long %70s", "tag value")}, 3)
-			if !app.IsFail(err) {
-				t.Fatalf("No failure on incorrect version: %s", err)
-			}
+			assertFail(t, d.Save(newTitle, newContent, []string{fmt.Sprintf("Long %70s", "tag value")}, 3),
+				http.StatusBadRequest, "No failure on long tag")
 
-			d = *draft
-			err = d.Save(newTitle, newContent, newTags, draft.Version)
-			if err != nil {
-				t.Fatalf("Error Saving draft: %s", err)
-			}
-
-			if d.Version != 1 {
-				t.Fatalf("Incorrect draft version. Expected %d, got %d", 1, d.Version)
-			}
-
-			if d.Title != newTitle {
-				t.Fatalf("Incorrect title. Expected %s got %s", newTitle, d.Title)
-			}
-
-			if d.Content != newContent {
-				t.Fatalf("Incorrect content. Expected %s got %s", newContent, d.Content)
-			}
+			ok(t, draft.Save(newTitle, newContent, newTags, draft.Version))
+			equals(t, 1, draft.Version)
+			equals(t, newTitle, draft.Title)
+			equals(t, newContent, draft.Content)
 
 			for i := range newTags {
 				found := false
-				for j := range d.Tags {
-					if newTags[i] == d.Tags[j].Value {
+				for j := range draft.Tags {
+					if newTags[i] == draft.Tags[j].Value {
 						found = true
 						break
 					}
@@ -111,103 +78,82 @@ func TestDocument(t *testing.T) {
 				}
 			}
 
-			if len(d.Tags) != 3 {
-				t.Fatalf("Draft contains duplicate tags.  Expected %d, got %d", 3, len(d.Tags))
-			}
+			equals(t, 3, len(draft.Tags))
 
-		})
+			t.Run("Publish", func(t *testing.T) {
+				// test publishing an empty draft
+				empty, err := user.NewDocument(language.English)
+				ok(t, err)
+				_, err = empty.Publish()
+				assertFail(t, err, http.StatusBadRequest, "Didn't fail on publishing an empty draft")
 
-		t.Run("Publish", func(t *testing.T) {
-			doc, err := draft.Publish()
-			if err != nil {
-				t.Fatalf("Error publishing draft: %s", err)
-			}
+				doc, err := draft.Publish()
+				ok(t, err)
 
-			if doc == nil {
-				t.Fatalf("Published Document is nil")
-			}
+				assert(t, doc != nil, "Published Document is nil")
 
-			if doc.Title != draft.Title {
-				t.Fatalf("Published doc title doesn't match draft. Expected %s, got %s", draft.Title,
-					doc.Title)
-			}
+				equals(t, draft.Title, doc.Title)
+				equals(t, draft.Content, doc.Content)
 
-			if doc.Content != draft.Content {
-				t.Fatalf("Published doc content doesn't match draft. Expected %s, got %s", draft.Content,
-					doc.Content)
-			}
+				assert(t, !doc.ID.IsNil(), "Doc has nil ID")
 
-			if doc.ID.IsNil() {
-				t.Fatalf("Doc has nil ID")
-			}
+				for i := range draft.Tags {
+					found := false
+					for j := range doc.Tags {
+						if draft.Tags[i].Value == doc.Tags[j].Value &&
+							draft.Tags[i].Type == doc.Tags[j].Type {
+							found = true
+						}
+					}
 
-			for i := range draft.Tags {
-				found := false
-				for j := range doc.Tags {
-					if draft.Tags[i].Value == doc.Tags[j].Value &&
-						draft.Tags[i].Type == doc.Tags[j].Type {
-						found = true
+					if !found {
+						t.Fatalf("Draft tag %s not found in new Doc: ", draft.Tags[i].Value)
 					}
 				}
 
-				if !found {
-					t.Fatalf("Draft tag %s not found in new Doc: ", draft.Tags[i].Value)
-				}
-			}
-
-			assertRow(t, data.NewQuery(`
+				assertRow(t, data.NewQuery(`
 				select count(*) from documents where id = {{arg "id"}}
 			`).QueryRow(data.Arg("id", doc.ID)), 1)
-			assertRow(t, data.NewQuery(`
+				assertRow(t, data.NewQuery(`
 				select document_id, language, version, title, content 
 				from document_contents 
 				where document_id = {{arg "id"}}
 				and language = {{arg "language"}}
 			`).QueryRow(data.Arg("id", doc.ID), data.Arg("language", draft.Language.String())),
-				doc.ID, doc.Language.String(), doc.Version, draft.Title, draft.Content)
-			assertRow(t, data.NewQuery(`
+					doc.ID, doc.Language.String(), doc.Version, draft.Title, draft.Content)
+				assertRow(t, data.NewQuery(`
 				select count(*) from document_tags where document_id = {{arg "id"}}
-			`).QueryRow(data.Arg("id", doc.ID)), 0)
+			`).QueryRow(data.Arg("id", doc.ID)), 3)
 
-			assertRow(t, data.NewQuery(`
+				assertRow(t, data.NewQuery(`
 				select count(*) from document_drafts where id = {{arg "id"}}
 			`).QueryRow(data.Arg("id", draft.ID)), 0)
 
-			assertRow(t, data.NewQuery(`
+				assertRow(t, data.NewQuery(`
 				select count(*) from document_draft_tags where draft_id = {{arg "id"}}
 			`).QueryRow(data.Arg("id", draft.ID)), 0)
 
-			assertRow(t, data.NewQuery(`
+				assertRow(t, data.NewQuery(`
 				select count(*) from document_history 
 				where document_id = {{arg "document_id"}}
 			`).QueryRow(data.Arg("document_id", doc.ID)), 0)
-		})
-
-		t.Run("Get", func(t *testing.T) {
+			})
 
 		})
-
 	})
 
 	t.Run("Existing Document", func(t *testing.T) {
 		reset(t)
 		draft, err := user.NewDocument(language.English)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
-		draft.Save("Title", "<h2>Content</h2>", []string{"tag1", "tag2", "tag3"}, draft.Version)
+		ok(t, draft.Save("Title", "<h2>Content</h2>", []string{"tag1", "tag2", "tag3"}, draft.Version))
 		doc, err := draft.Publish()
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		t.Run("New Draft", func(t *testing.T) {
 			first, err := doc.NewDraft(doc.Language)
-			if err != nil {
-				t.Fatalf("Error creating new draft of existing document: %s", err)
-			}
-
+			ok(t, err)
 			assertRow(t, data.NewQuery(`
 				select count(*) from document_drafts 
 				where document_id = {{arg "document_id"}}
@@ -229,12 +175,8 @@ func TestDocument(t *testing.T) {
 			), 3)
 
 			second, err := doc.NewDraft(doc.Language)
-			if err != nil {
-				t.Fatalf("Error creating a second draft of existing document: %s", err)
-			}
-			if second.ID == first.ID {
-				t.Fatal("Second draft has matching draft id to first draft")
-			}
+			ok(t, err)
+			assert(t, first.ID != second.ID, "Second draft has matching draft id to first draft")
 
 			assertRow(t, data.NewQuery(`
 				select count(*) from document_drafts 
@@ -266,13 +208,10 @@ func TestDocument(t *testing.T) {
 			), 2)
 
 			third, err := doc.NewDraft(language.Polish)
-			if err != nil {
-				t.Fatalf("Error creating a third draft of existing document in a new language: %s", err)
-			}
+			ok(t, err)
 
-			if third.Language.String() == doc.Language.String() {
-				t.Fatalf("New language draft doesn't have a different language from the original")
-			}
+			assert(t, third.Language.String() != doc.Language.String(),
+				"New language draft doesn't have a different language from the original")
 
 			assertRow(t, data.NewQuery(`
 				select count(*) from document_drafts 
@@ -314,19 +253,13 @@ func TestDocument(t *testing.T) {
 			thirdTags := []string{"3", "three"}
 
 			err = first.Save(firstTitle, firstContent, firstTags, first.Version)
-			if err != nil {
-				t.Fatal(err)
-			}
+			ok(t, err)
 
 			err = second.Save(secondTitle, secondContent, secondTags, second.Version)
-			if err != nil {
-				t.Fatal(err)
-			}
+			ok(t, err)
 
 			err = third.Save(thirdTitle, thirdContent, thirdTags, third.Version)
-			if err != nil {
-				t.Fatal(err)
-			}
+			ok(t, err)
 
 			draftQuery := data.NewQuery(`
 				select title, content, d.language, count(*)
@@ -358,24 +291,18 @@ func TestDocument(t *testing.T) {
 			`)
 
 			_, err = first.Publish()
-			if err != nil {
-				t.Fatal(err)
-			}
+			ok(t, err)
 
 			assertRow(t, publishQuery.QueryRow(data.Arg("id", doc.ID), data.Arg("document_id", doc.ID)),
 				1, 2)
 
 			_, err = second.Publish()
-			if err != nil {
-				t.Fatal(err)
-			}
+			ok(t, err)
 
 			assertRow(t, publishQuery.QueryRow(data.Arg("id", doc.ID), data.Arg("document_id", doc.ID)),
 				1, 1)
 			_, err = third.Publish()
-			if err != nil {
-				t.Fatal(err)
-			}
+			ok(t, err)
 
 			assertRow(t, publishQuery.QueryRow(data.Arg("id", doc.ID), data.Arg("document_id", doc.ID)),
 				2, 0)
@@ -384,29 +311,18 @@ func TestDocument(t *testing.T) {
 
 		t.Run("Groups", func(t *testing.T) {
 			group1, err := user.NewGroup("test document Group")
-			if err != nil {
-				t.Fatal(err)
-			}
+			ok(t, err)
 			group2, err := user.NewGroup("test document Group 2")
-			if err != nil {
-				t.Fatal(err)
-			}
+			ok(t, err)
 
 			t.Run("Add", func(t *testing.T) {
-				err = doc.AddGroup(data.ID{})
-				if !app.IsFail(err) {
-					t.Fatalf("Adding null group ID to document did not fail: %s", err)
-				}
+				assertFail(t, doc.AddGroup(data.ID{}, false), http.StatusBadRequest,
+					"Adding null group ID to document did not fail")
 
-				err = doc.AddGroup(data.NewID())
-				if !app.IsFail(err) {
-					t.Fatalf("Adding invalid group to document did not fail: %s", err)
-				}
+				assertFail(t, doc.AddGroup(data.NewID(), false), http.StatusNotFound,
+					"Adding invalid group to document did not fail")
 
-				err = doc.AddGroup(group1.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
+				ok(t, doc.AddGroup(group1.ID, false))
 				assertQuery := data.NewQuery(`
 					select count(*) 
 					from document_groups 
@@ -415,34 +331,29 @@ func TestDocument(t *testing.T) {
 
 				assertRow(t, assertQuery.QueryRow(data.Arg("document_id", doc.ID)), 1)
 
-				err = doc.AddGroup(group2.ID)
+				err = doc.AddGroup(group2.ID, false)
 				if err != nil {
 					t.Fatal(err)
 				}
 
 				assertRow(t, assertQuery.QueryRow(data.Arg("document_id", doc.ID)), 2)
 
-				err = doc.AddGroup(group1.ID)
-				if err != nil {
-					t.Fatalf("Error adding a group that already exists: %s", err)
-				}
+				ok(t, doc.AddGroup(group1.ID, true))
+				assertRow(t, data.NewQuery(`
+					select can_publish
+					from document_groups
+					where document_id = {{arg "document_id"}}
+					and group_id = {{arg "group_id"}}
+				`).QueryRow(data.Arg("document_id", doc.ID), data.Arg("group_id", group1.ID)), true)
 			})
 
 			t.Run("Remove", func(t *testing.T) {
-				err = doc.RemoveGroup(data.ID{})
-				if !app.IsFail(err) {
-					t.Fatalf("Removing null group ID from document did not fail: %s", err)
-				}
+				assertFail(t, doc.RemoveGroup(data.ID{}), http.StatusBadRequest,
+					"Removing null group ID from document did not fail")
 
-				err = doc.RemoveGroup(data.NewID())
-				if err != nil {
-					t.Fatalf("Removing invalid group from document failed: %s", err)
-				}
+				ok(t, doc.RemoveGroup(data.NewID()))
 
-				err = doc.RemoveGroup(group1.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
+				ok(t, doc.RemoveGroup(group1.ID))
 				assertQuery := data.NewQuery(`
 					select count(*) 
 					from document_groups 
@@ -451,23 +362,107 @@ func TestDocument(t *testing.T) {
 
 				assertRow(t, assertQuery.QueryRow(data.Arg("document_id", doc.ID)), 1)
 
-				err = doc.RemoveGroup(group2.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
+				ok(t, doc.RemoveGroup(group2.ID))
 
 				assertRow(t, assertQuery.QueryRow(data.Arg("document_id", doc.ID)), 0)
 
-				err = doc.RemoveGroup(group1.ID)
-				if err != nil {
-					t.Fatalf("Error removing a group that is already gone: %s", err)
-				}
+				ok(t, doc.RemoveGroup(group1.ID))
 			})
-		})
 
-		t.Run("Get", func(t *testing.T) {
+			t.Run("Permissions", func(t *testing.T) {
+				admin, err := user.Admin()
+				ok(t, err)
+				ok(t, admin.SetSetting("AllowPublicDocuments", true))
+				ok(t, admin.SetSetting("AllowPublicSignups", true))
 
+				other, err := app.UserNew("otheruser", "otheruserpassword")
+				ok(t, err)
+
+				doc, err := app.DocumentGet(doc.ID, doc.Language, nil)
+				ok(t, err)
+
+				assertFail(t, doc.AddGroup(group1.ID, false), http.StatusUnauthorized,
+					"Adding a group to a document accessed publically")
+				assertFail(t, doc.RemoveGroup(group1.ID), http.StatusUnauthorized,
+					"Removing a group to a document accessed publically")
+
+				doc, err = app.DocumentGet(doc.ID, doc.Language, other)
+				ok(t, err)
+
+				assertFail(t, doc.AddGroup(group1.ID, false), http.StatusUnauthorized,
+					"Adding a group to a document accessed by a non-owner")
+
+				assertFail(t, doc.RemoveGroup(group1.ID), http.StatusUnauthorized,
+					"Removing a group to a document accessed by a non-owner")
+			})
 		})
 	})
 
+	t.Run("Get", func(t *testing.T) {
+		reset(t)
+
+		draft, err := user.NewDocument(language.English)
+		ok(t, err)
+		ok(t, draft.Save("Title", "<h1>Content</h1>", []string{"tag1", "tag2", "tag3", "tag4"}, draft.Version))
+
+		doc, err := draft.Publish()
+		ok(t, err)
+
+		admin, err := user.Admin()
+		ok(t, err)
+		ok(t, admin.SetSetting("AllowPublicDocuments", false))
+
+		_, err = app.DocumentGet(data.ID{}, language.English, user)
+		assertFail(t, err, http.StatusNotFound, "Getting document with nil ID did not fail")
+
+		_, err = app.DocumentGet(data.NewID(), language.English, user)
+		assertFail(t, err, http.StatusNotFound, "Getting document with an invalid ID did not fail")
+
+		_, err = app.DocumentGet(doc.ID, language.Polish, user)
+		assertFail(t, err, http.StatusNotFound, "Getting document with incorrect language")
+
+		_, err = app.DocumentGet(doc.ID, language.English, nil)
+		assertFail(t, err, http.StatusNotFound, "Getting private document with no user")
+
+		ok(t, admin.SetSetting("AllowPublicDocuments", true))
+
+		other, err := app.DocumentGet(doc.ID, language.English, nil)
+		ok(t, err)
+
+		equals(t, doc.Title, other.Title)
+		equals(t, doc.Content, other.Content)
+		equals(t, doc.Tags, other.Tags)
+
+		// doc with no tags
+		newDraft, err := user.NewDocument(language.Ukrainian)
+		ok(t, err)
+		ok(t, newDraft.Save("Title", "<h1>Content</h1>", nil, newDraft.Version))
+
+		newDoc, err := newDraft.Publish()
+		ok(t, err)
+
+		other, err = app.DocumentGet(newDoc.ID, language.Ukrainian, nil)
+		ok(t, err)
+		equals(t, newDoc.Title, other.Title)
+		equals(t, newDoc.Content, other.Content)
+		equals(t, newDoc.Tags, other.Tags)
+
+		t.Run("Group Access", func(t *testing.T) {
+			ok(t, admin.SetSetting("AllowPublicSignups", true))
+			// otherUser, err := app.UserNew("other", "otherPassword")
+			// ok(t, err)
+
+			blue, err := user.NewGroup("blue")
+			ok(t, err)
+			// red, err := user.NewGroup("red")
+			// ok(t, err)
+
+			ok(t, doc.AddGroup(blue.ID, false))
+		})
+
+	})
+
+	t.Run("Get Draft", func(t *testing.T) {
+
+	})
 }

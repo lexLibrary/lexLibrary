@@ -191,7 +191,6 @@ var schemaVersions = []*Query{
 	NewQuery(`
 		create table documents (
 			id {{id}} NOT NULL PRIMARY KEY,
-			group_publish {{bool}} NOT NULL,
 			created {{datetime}} NOT NULL,
 			creator {{id}} NOT NULL REFERENCES users(id)
 		)
@@ -215,6 +214,7 @@ var schemaVersions = []*Query{
 		create table document_groups (
 			document_id {{id}} NOT NULL REFERENCES documents(id),
 			group_id {{id}} NOT NULL REFERENCES groups(id),
+			can_publish {{bool}} NOT NULL,
 			PRIMARY KEY(document_id, group_id)
 		)
 	`),
