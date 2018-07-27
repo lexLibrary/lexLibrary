@@ -15,6 +15,15 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/blevesearch/snowballstem"
+  packages = [
+    ".",
+    "english"
+  ]
+  revision = "26b06a2c243d4f8ca5db3486f94409dd5b2a7467"
+
+[[projects]]
+  branch = "master"
   name = "github.com/denisenkom/go-mssqldb"
   packages = [
     ".",
@@ -291,6 +300,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5740c6e5b70dd323bd590d68c8443452c7c3912c2e255542998f224ed998fd92"
+  inputs-digest = "6e62a6bc8a908eb1503dbd65922f3208643eabc63f07f124d01fef22f8f6fbbf"
   solver-name = "gps-cdcl"
   solver-version = 1

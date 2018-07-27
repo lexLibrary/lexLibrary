@@ -5,6 +5,7 @@ package app_test
 import (
 	"fmt"
 	"image/png"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -20,11 +21,7 @@ func TestUser(t *testing.T) {
 		t.Helper()
 
 		admin = resetAdmin(t, "admin", "adminpassword")
-
-		err := admin.SetSetting("AllowPublicSignups", true)
-		if err != nil {
-			t.Fatalf("Error allowing public signups for testing: %s", err)
-		}
+		ok(t, admin.SetSetting("AllowPublicSignups", true))
 	}
 
 	t.Run("New", func(t *testing.T) {
@@ -32,15 +29,12 @@ func TestUser(t *testing.T) {
 		username := "newusęr"
 
 		u, err := app.UserNew(username, "ODSjflaksjdfhiasfd323")
-		if err != nil {
-			t.Fatalf("Error adding new user: %s", err)
-		}
+		ok(t, err)
 
-		time.Sleep(1 * time.Second)
+		// make sure time comparisons are in the past
+		time.Sleep(10 * time.Millisecond)
 
-		if u.Username != username {
-			t.Fatalf("Returned user doesn't match passed in values")
-		}
+		equals(t, u.Username, username)
 
 		var oID xid.ID
 		var oUsername string
@@ -122,43 +116,21 @@ func TestUser(t *testing.T) {
 		name := fmt.Sprintf("Z%70s", "full name")
 
 		u, err := app.UserNew("testusername", "ODSjflaksjdfhiasfd323")
-		if err != nil {
-			t.Fatalf("Error adding user")
-		}
+		ok(t, err)
 
-		err = u.SetName(name, u.Version)
-		if err == nil {
-			t.Fatalf("No error adding too long name")
-		}
-		if !app.IsFail(err) {
-			t.Fatalf("Error on too long name is not a failure")
-		}
+		assertFail(t, u.SetName(name, u.Version), http.StatusBadRequest, "Error on too long name is not a failure")
 	})
 
 	t.Run("Invalid Username", func(t *testing.T) {
 		reset(t)
 		_, err := app.UserNew("", "ODSjflaksjdfhiasfd323")
-		if err == nil {
-			t.Fatalf("No error adding user without a username")
-		}
-		if !app.IsFail(err) {
-			t.Fatalf("Error on empty username is not a failure")
-		}
-		_, err = app.UserNew("username with space", "ODSjflaksjdfhiasfd323")
-		if err == nil {
-			t.Fatalf("No error adding username with a space")
-		}
-		if !app.IsFail(err) {
-			t.Fatalf("Error on username with a space is not a failure")
-		}
-		_, err = app.UserNew("username_with_underscores", "ODSjflaksjdfhiasfd323")
-		if err == nil {
-			t.Fatalf("No error adding username with underscores")
-		}
-		if !app.IsFail(err) {
-			t.Fatalf("Error on username with underscores is not a failure")
-		}
+		assertFail(t, err, http.StatusBadRequest, "Adding user without a username")
 
+		_, err = app.UserNew("username with space", "ODSjflaksjdfhiasfd323")
+		assertFail(t, err, http.StatusBadRequest, "No error adding username with a space")
+
+		_, err = app.UserNew("username_with_underscores", "ODSjflaksjdfhiasfd323")
+		assertFail(t, err, http.StatusBadRequest, "No error adding username with underscores")
 	})
 
 	t.Run("Duplicate Username", func(t *testing.T) {

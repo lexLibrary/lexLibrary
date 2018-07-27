@@ -4,10 +4,27 @@ package app
 
 import (
 	"database/sql"
-	"fmt"
 	"strings"
 	"time"
 
+	"github.com/blevesearch/snowballstem"
+	"github.com/blevesearch/snowballstem/arabic"
+	"github.com/blevesearch/snowballstem/danish"
+	"github.com/blevesearch/snowballstem/dutch"
+	"github.com/blevesearch/snowballstem/english"
+	"github.com/blevesearch/snowballstem/finnish"
+	"github.com/blevesearch/snowballstem/french"
+	"github.com/blevesearch/snowballstem/german"
+	"github.com/blevesearch/snowballstem/hungarian"
+	"github.com/blevesearch/snowballstem/italian"
+	"github.com/blevesearch/snowballstem/norwegian"
+	"github.com/blevesearch/snowballstem/portuguese"
+	"github.com/blevesearch/snowballstem/romanian"
+	"github.com/blevesearch/snowballstem/russian"
+	"github.com/blevesearch/snowballstem/spanish"
+	"github.com/blevesearch/snowballstem/swedish"
+	"github.com/blevesearch/snowballstem/tamil"
+	"github.com/blevesearch/snowballstem/turkish"
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
@@ -68,225 +85,6 @@ type DocumentHistory struct {
 	DocumentContent
 }
 
-var sqlDocument = struct {
-	insertGroup,
-	insertTag,
-	insertDraft,
-	insertDraftTag,
-	insertHistory,
-	updateDraft,
-	get,
-	update,
-	deleteGroup,
-	deleteTags,
-	deleteDraftTags,
-	deleteDraft,
-	insertContent,
-	groupExists,
-	updateGroup,
-	insert *data.Query
-}{
-	insert: data.NewQuery(`
-		insert into documents (
-			id,
-			created,
-			creator
-		) values (
-			{{arg "id"}},
-			{{arg "created"}},
-			{{arg "creator"}}
-		)
-	`),
-	insertContent: data.NewQuery(`
-		insert into document_contents (
-			document_id,
-			language,
-			version,
-			title,
-			content,
-			created,
-			creator,
-			updated,
-			updater
-		) values (
-			{{arg "document_id"}},
-			{{arg "language"}},
-			{{arg "version"}},
-			{{arg "title"}},
-			{{arg "content"}},
-			{{arg "created"}},
-			{{arg "creator"}},
-			{{arg "updated"}},
-			{{arg "updater"}}
-		)
-	`),
-	insertGroup: data.NewQuery(`
-		insert into document_groups (
-			document_id,
-			group_id,
-			can_publish
-		) select
-			{{arg "document_id"}},
-			id,
-			{{arg "can_publish"}}
-		from	groups
-		where id = {{arg "group_id"}}
-	`),
-	insertTag: data.NewQuery(`
-		insert into document_tags (
-			document_id,
-			language,
-			tag,
-			stem,
-			type
-		) values (
-			{{arg "document_id"}},
-			{{arg "language"}},
-			{{arg "tag"}},
-			{{arg "stem"}},
-			{{arg "type"}}
-		)
-	`),
-	insertDraft: data.NewQuery(`
-		insert into document_drafts (
-			id,
-			document_id,
-			language,
-			title,
-			content,
-			version,
-			updated,
-			created,
-			creator,
-			updater
-		) values (
-			{{arg "id"}},
-			{{arg "document_id"}},
-			{{arg "language"}},
-			{{arg "title"}},
-			{{arg "content"}},
-			{{arg "version"}},
-			{{arg "updated"}},
-			{{arg "created"}},
-			{{arg "creator"}},
-			{{arg "updater"}}
-		)
-	`),
-	insertDraftTag: data.NewQuery(`
-		insert into document_draft_tags (
-			draft_id,
-			language,
-			tag,
-			stem,
-			type
-		) values (
-			{{arg "draft_id"}},
-			{{arg "language"}},
-			{{arg "tag"}},
-			{{arg "stem"}},
-			{{arg "type"}}
-		)
-	`),
-	insertHistory: data.NewQuery(`
-		insert into document_history (
-			document_id,
-			language,
-			version,
-			title,
-			content,
-			created,
-			creator
-		) values (
-			{{arg "document_id"}},
-			{{arg "language"}},
-			{{arg "version"}},
-			{{arg "title"}},
-			{{arg "content"}},
-			{{arg "created"}},
-			{{arg "creator"}}
-		)
-	`),
-	updateDraft: data.NewQuery(`
-		update document_drafts 
-		set 	updated = {{NOW}}, 
-			version = version + 1,
-			updater = {{arg "updater"}},
-			title = {{arg "title"}},
-			content = {{arg "content"}}
-		where id = {{arg "id"}} 
-		and version = {{arg "version"}}
-		and language = {{arg "language"}}
-	`),
-	update: data.NewQuery(`
-		update document_contents 
-		set 	title = {{arg "title"}},
-			content = {{arg "content"}},
-			updated = {{NOW}}, 
-			version = version + 1,
-			updater = {{arg "updater"}}
-		where document_id = {{arg "document_id"}} 
-		and version = {{arg "version"}}
-		and language = {{arg "language"}}
-	`),
-	get: data.NewQuery(`
-		select 	d.id,
-			d.created,
-			d.creator,
-			c.language,
-			c.title,
-			c.content,
-			c.version,
-			c.updated,
-			c.created,
-			c.creator,
-			c.updater,
-			t.tag,
-			t.language,
-			t.type,
-			t.stem,
-			g.group_id,
-			g.can_publish
-		from 	documents d
-			inner join document_contents c on d.id = c.document_id
-			left outer join document_groups g on d.id = g.document_id
-			left outer join document_tags t on d.id = t.document_id
-		where 	d.id = {{arg "id"}}
-		and 	c.language = {{arg "language"}}
-	`),
-	deleteGroup: data.NewQuery(`
-		delete from document_groups 
-		where 	document_id = {{arg "document_id"}}
-		and 	group_id = {{arg "group_id"}}
-	`),
-	deleteTags: data.NewQuery(`
-		delete from document_tags
-		where document_id = {{arg "document_id"}}
-		and language = {{arg "language"}}
-	`),
-	deleteDraftTags: data.NewQuery(`
-		delete from document_draft_tags
-		where draft_id = {{arg "draft_id"}}
-		and language = {{arg "language"}}
-	`),
-	deleteDraft: data.NewQuery(`
-		delete from document_drafts
-		where 	id = {{arg "id"}}
-		and 	language = {{arg "language"}}
-	`),
-	groupExists: data.NewQuery(`
-		select count(*)
-		from document_groups
-		where document_id = {{arg "document_id"}}
-		and group_id = {{arg "group_id"}}
-	`),
-	updateGroup: data.NewQuery(`
-		update document_groups
-		set can_publish = {{arg "can_publish"}}
-		where document_id = {{arg "document_id"}}
-		and group_id = {{arg "group_id"}}
-	`),
-}
-
 var (
 	errDocumentConflict = Conflict("You are not editing the most current version of this document. " +
 		"Please refresh and try again")
@@ -295,7 +93,9 @@ var (
 	errDocumentNotFound     = NotFound("Document not found")
 )
 
-var sanitizePolicy = bluemonday.UGCPolicy()
+var (
+	sanitizePolicy = bluemonday.UGCPolicy()
+)
 
 // DocumentGet retrieves a document
 func DocumentGet(id data.ID, lan language.Tag, who *User) (*Document, error) {
@@ -430,46 +230,104 @@ func (d *Document) tryAccess(who *User) error {
 }
 
 // Draft retrieves a document draft
-// func (u *User) Draft(id data.ID, lan language.Tag) (*Document, error) {
-// 	if id.IsNil() {
-// 		return nil, errDocumentNotFound
-// 	}
+func (u *User) Draft(id data.ID, lan language.Tag) (*DocumentDraft, error) {
+	if id.IsNil() {
+		return nil, errDocumentNotFound
+	}
 
-// 	// 	d, err := documentGet(id, lan)
-// 	// 	if err != nil {
-// 	// 		return nil, err
-// 	// 	}
+	d, err := draftGet(id, lan)
+	if err != nil {
+		return nil, err
+	}
 
-// 	// 	err = d.tryAccess(who)
-// set editor
-// only doc creator or draft creator can access
-// 	// 	if err != nil {
-// 	// 		return nil, err
-// 	// 	}
+	err = d.tryAccess(u)
+	if err != nil {
+		return nil, err
+	}
 
-// 	// 	return d, nil
-// }
+	return d, nil
+}
 
 // tryAccess tries to access the document draft with the given user
-// func (d *DocumentDraft) tryAccess(who *User) error {
-// 	if who == nil {
-// 		return errDocumentNotFound
-// 	}
+func (d *DocumentDraft) tryAccess(who *User) error {
+	d.editor = who
+	// if they have access to publish, then they can access
+	// any draft of the document they can publish on
+	return d.canPublish()
+}
 
-// 	if who.IsAdmin() || who.ID == d.creator || who.ID == document.creator? {
-// 		d.editor = who
-// 		return nil
-// 	}
+func draftGet(id data.ID, lan language.Tag) (*DocumentDraft, error) {
+	d := &DocumentDraft{}
 
-// 	return nil
-// }
+	rows, err := sqlDocument.getDraft.Query(data.Arg("id", id), data.Arg("language", lan.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	found := false
+
+	for rows.Next() {
+		found = true
+		var tag, tagStrLan, tagType, stem sql.NullString
+		var strLan string
+
+		err := rows.Scan(
+			&d.ID,
+			&d.DocumentContent.ID,
+			&strLan,
+			&d.DocumentContent.Title,
+			&d.DocumentContent.Content,
+			&d.DocumentContent.Version,
+			&d.DocumentContent.Updated,
+			&d.DocumentContent.Created,
+			&d.DocumentContent.creator,
+			&d.DocumentContent.updater,
+			&tag,
+			&tagStrLan,
+			&tagType,
+			&stem,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		d.DocumentContent.Language, err = language.Parse(strLan)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Parsing language value %s from draft with id %s", lan, id)
+		}
+
+		if tag.Valid && tagType.Valid && stem.Valid {
+			tagLan, err := language.Parse(tagStrLan.String)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Parsing langauge value %s from draft id %d tag %s",
+					tagStrLan, id, tag.String)
+			}
+			d.Tags = append(d.Tags, Tag{
+				Value:    tag.String,
+				Language: tagLan,
+				Type:     tagType.String,
+				Stem:     stem.String,
+			})
+		}
+	}
+
+	if !found {
+		return nil, errDocumentNotFound
+	}
+
+	return d, nil
+}
 
 // NewDocument starts a new document and returns the draft of it
-func (u *User) NewDocument(lan language.Tag) (*DocumentDraft, error) {
+func (u *User) NewDocument(tite string, lan language.Tag) (*DocumentDraft, error) {
 	d := &DocumentDraft{
 		ID:     data.NewID(),
 		editor: u,
 		DocumentContent: DocumentContent{
+			Title:    tite,
 			Language: lan,
 			Version:  0,
 			Updated:  time.Now(),
@@ -478,8 +336,12 @@ func (u *User) NewDocument(lan language.Tag) (*DocumentDraft, error) {
 			updater:  u.ID,
 		},
 	}
+	err := d.validate()
+	if err != nil {
+		return nil, err
+	}
 
-	err := data.BeginTx(func(tx *sql.Tx) error {
+	err = data.BeginTx(func(tx *sql.Tx) error {
 		return d.insert(tx)
 	})
 
@@ -496,12 +358,6 @@ func (d *Document) NewDraft(lan language.Tag) (*DocumentDraft, error) {
 		return nil, errDocumentUpdateAccess
 	}
 
-	draftTags := make([]Tag, len(d.Tags))
-	for i := range d.Tags {
-		draftTags[i] = d.Tags[i]
-		draftTags[i].Language = lan
-	}
-
 	draft := &DocumentDraft{
 		ID:     data.NewID(),
 		editor: d.accessor,
@@ -510,13 +366,17 @@ func (d *Document) NewDraft(lan language.Tag) (*DocumentDraft, error) {
 			Language: lan,
 			Title:    d.DocumentContent.Title,
 			Content:  d.DocumentContent.Content,
-			Tags:     draftTags,
+			Tags:     make([]Tag, 0, len(d.Tags)),
 			Version:  0,
 			Updated:  time.Now(),
 			Created:  time.Now(),
 			creator:  d.accessor.ID,
 			updater:  d.accessor.ID,
 		},
+	}
+
+	for i := range d.Tags {
+		draft.addTag(d.Tags[i].Type, d.Tags[i].Value)
 	}
 
 	err := data.BeginTx(func(tx *sql.Tx) error {
@@ -581,7 +441,48 @@ func (d *DocumentContent) addTag(tagType, tagValue string) {
 }
 
 func (t *Tag) stem() {
-	//TODO: stemming
+	env := snowballstem.NewEnv(t.Value)
+	switch t.Language {
+	case language.Arabic:
+		arabic.Stem(env)
+	case language.Danish:
+		danish.Stem(env)
+	case language.Dutch:
+		dutch.Stem(env)
+	case language.English:
+		english.Stem(env)
+	case language.Finnish:
+		finnish.Stem(env)
+	case language.French:
+		french.Stem(env)
+	case language.German:
+		german.Stem(env)
+	case language.Hungarian:
+		hungarian.Stem(env)
+	case language.Italian:
+		italian.Stem(env)
+	case language.Norwegian:
+		norwegian.Stem(env)
+	case language.Portuguese:
+		portuguese.Stem(env)
+	case language.Romanian:
+		romanian.Stem(env)
+	case language.Russian:
+		russian.Stem(env)
+	case language.Spanish:
+		spanish.Stem(env)
+	case language.Swedish:
+		swedish.Stem(env)
+	case language.Tamil:
+		tamil.Stem(env)
+	case language.Turkish:
+		turkish.Stem(env)
+	default:
+		t.Stem = t.Value
+		return
+	}
+
+	t.Stem = env.Current()
 }
 
 func (d *DocumentDraft) insert(tx *sql.Tx) error {
@@ -622,15 +523,17 @@ func (d *DocumentDraft) insert(tx *sql.Tx) error {
 
 // Save saves the current document draft
 func (d *DocumentDraft) Save(title, content string, tags []string, version int) error {
+	if d.editor == nil || d.editor.ID != d.creator {
+		return errDocumentUpdateAccess
+	}
+	//TODO: Invite others to work on your draft
+
 	return data.BeginTx(func(tx *sql.Tx) error {
 		return d.update(tx, title, content, tags, version)
 	})
 }
 
 func (d *DocumentDraft) update(tx *sql.Tx, title, content string, tags []string, version int) error {
-	if d.editor == nil {
-		return errDocumentUpdateAccess
-	}
 	d.Title = title
 	d.Content = content
 	d.Version = version
@@ -729,18 +632,49 @@ func (d *Document) index(tx *sql.Tx) error {
 	return nil
 }
 
-// Publish publishes a draft turing a draft into a document
-func (d *DocumentDraft) Publish() (*Document, error) {
+func (d *DocumentDraft) canPublish() error {
 	if d.editor == nil {
-		return nil, errDocumentUpdateAccess
+		return errDocumentUpdateAccess
 	}
 
-	err := d.validate()
+	if d.editor.IsAdmin() {
+		return nil
+	}
+
+	if d.editor.ID == d.creator && d.DocumentContent.ID.IsNil() {
+		// Brand new document
+		return nil
+	}
+
+	count := 0
+	err := sqlDocument.canPublish.QueryRow(
+		data.Arg("document_id", d.DocumentContent.ID),
+		data.Arg("user_id", d.editor.ID),
+		data.Arg("creator", d.editor.ID),
+	).Scan(&count)
+
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return errDocumentUpdateAccess
+	}
+
+	return nil
+}
+
+// Publish publishes a draft turing a draft into a document
+func (d *DocumentDraft) Publish() (*Document, error) {
+	err := d.canPublish()
 	if err != nil {
 		return nil, err
 	}
 
-	//TODO: Draft publish approval?
+	err = d.validate()
+	if err != nil {
+		return nil, err
+	}
 
 	var new *Document
 	err = data.BeginTx(func(tx *sql.Tx) error {
@@ -834,6 +768,17 @@ func (d *DocumentDraft) makeDocument(currentDocument *Document) *Document {
 	return &newDoc
 }
 
+// Delete deletes a draft
+func (d *DocumentDraft) Delete() error {
+	if d.editor == nil || d.editor.ID != d.creator {
+		return errDocumentUpdateAccess
+	}
+
+	return data.BeginTx(func(tx *sql.Tx) error {
+		return d.delete(tx)
+	})
+}
+
 func (d *DocumentDraft) delete(tx *sql.Tx) error {
 	if tx == nil {
 		panic("A transaction is required when deleting a draft")
@@ -923,8 +868,6 @@ func (d *DocumentContent) update(tx *sql.Tx, who *User) error {
 	if who == nil {
 		return errDocumentUpdateAccess
 	}
-
-	fmt.Println("Document Version: ", d.Version)
 
 	r, err := sqlDocument.update.Tx(tx).Exec(
 		data.Arg("title", d.Title),

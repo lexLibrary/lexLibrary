@@ -16,7 +16,6 @@ import (
 func TestAdmin(t *testing.T) {
 	uri := *llURL
 	uri.Path = "admin"
-	var err error
 
 	username := "testuser"
 	password := "testpasswordThatisLongEnough"
@@ -26,7 +25,7 @@ func TestAdmin(t *testing.T) {
 	seq := newSequence()
 
 	t.Run("Overview", func(t *testing.T) {
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".tab > .tab-item.active").Count(1).Text().Contains("Overview").
 			Find(".admin-overview.table").Count(6).
 			Find(".card > .card-header > .card-title").Any().Text().Contains("Instance Information").
@@ -37,32 +36,25 @@ func TestAdmin(t *testing.T) {
 			Find(".card > .card-header > .card-title").Any().Text().Contains("Data Configuration").
 			Find(".tab > .tab-item > a[href='/admin']").Click().
 			Find(".tab > .tab-item.active").Count(1).Text().Contains("Overview").
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 	})
 
 	t.Run("Logs", func(t *testing.T) {
 		errMessage := "New Error message"
 		errID := app.LogError(fmt.Errorf(errMessage))
 
-		err = seq.
-			Find(".tab > .tab-item > a[href='/admin/logs']").Click().
+		seq.Find(".tab > .tab-item > a[href='/admin/logs']").Click().
 			Find(".tab > .tab-item.active").Count(1).Text().Contains("Logs").
 			Find(".admin-logs > table.table > tbody > tr").Text().Contains(errMessage).
 			Find(".admin-logs > table.table > tbody > tr > td > a.float-right").Text().Contains("View").Click().
 			Find("h4").Text().Contains("Log Entry from").
 			Find("h4 > small").Text().Contains(errID.String()).
 			Find("section.admin-logs > p").Text().Contains(errMessage).
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 
 		// searching
 		app.LogError(fmt.Errorf("other error"))
-		err = seq.Back().Refresh().
+		seq.Back().Refresh().
 			Find(".admin-logs > table.table > tbody > tr").Count(2).
 			Find(".input-group > input.input[type='text']").SendKeys(strings.ToUpper(errMessage)).
 			Find(".input-group > button.btn.btn-primary").Click().
@@ -72,10 +64,7 @@ func TestAdmin(t *testing.T) {
 			Find("h4").Text().Contains("Log Entry from").
 			Find("h4 > small").Text().Contains(errID.String()).
 			Find("section.admin-logs > p").Text().Contains(errMessage).
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 
 		// pagination
 
@@ -98,115 +87,83 @@ func TestAdmin(t *testing.T) {
 		uri.Path = "/admin/logs"
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver, []string{"Previous", "1", "2", "Next"})
-			}).End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			}).Ok(t)
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver, []string{"Previous", "1", "2", "3", "Next"})
-			}).End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			}).Ok(t)
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "Next"})
-			}).End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			}).Ok(t)
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver, []string{"Previous", "1", "2", "3", "4", "5", "Next"})
-			}).End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			}).Ok(t)
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver,
 					[]string{"Previous", "1", "2", "3", "4", "5", "6", "Next"})
-			}).End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			}).Ok(t)
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver,
 					[]string{"Previous", "1", "2", "3", "4", "5", "6", "7", "Next"})
-			}).End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			}).Ok(t)
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver,
 					[]string{"Previous", "1", "2", "3", "4", "5", "6", "...", "8", "Next"})
-			}).End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			}).Ok(t)
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
 			Test("pagination", func(driver selenium.WebDriver) error {
 				return testPagination(driver,
 					[]string{"Previous", "1", "2", "3", "4", "5", "6", "...", "9", "Next"})
-			}).End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			}).Ok(t)
 
 		addPage()
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".admin-logs > table.table > tbody > tr").Count(30).
 			Find("ul.pagination > li.page-item.disabled").Text().Contains("Previous").
 			Find("ul.pagination > li:nth-child(2).page-item.active").Text().Contains("1").And().
@@ -258,17 +215,14 @@ func TestAdmin(t *testing.T) {
 					[]string{"Previous", "1", "...", "4", "5", "6", "7", "8", "...", "10", "Next"})
 			}).
 			Find("ul.pagination > li.page-item.active").Text().Contains("6").
-			End()
+			Ok(t)
 
-		if err != nil {
-			t.Fatal(err)
-		}
 	})
 
 	t.Run("Settings", func(t *testing.T) {
 		uri.Path = "/admin/settings"
 
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find("#settings").Count(1).
 			Find(".menu").Count(1).
 			Find("ul.menu > li.menu-item > a.active").Count(1).Text().Contains("Security").
@@ -304,10 +258,7 @@ func TestAdmin(t *testing.T) {
 			Find(".columns > .column > form.setting-group").Count(2).
 			Find("#settingSearch").Clear().SendKeys("shouldn't match on anything").
 			Find(".columns > .column > form.setting-group").Count(0).
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 	})
 
 	t.Run("Users", func(t *testing.T) {
@@ -390,7 +341,7 @@ func TestAdmin(t *testing.T) {
 
 		uri.Path = "/admin/"
 
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".tab > .tab-item > a[href='/admin/users']").Click().
 			Find(".admin-users").Count(1).
 			Find(".btn-group > .active").Text().Equals("Active").
@@ -430,14 +381,11 @@ func TestAdmin(t *testing.T) {
 				return we.Text().Contains("John Doe").End()
 			}).Click().And().
 			URL().Path("/admin/users/loggedin/").
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 
 		uri.Path = "/admin/users/loggedin/"
 
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find("#user .avatar.avatar-full").Count(1).
 			Find("#user h4").Text().Contains("John Doe").
 			Find("#user .form-group > .form-switch").Count(2).
@@ -457,17 +405,14 @@ func TestAdmin(t *testing.T) {
 			}).
 			Click().
 			Find("#user h4 > small").Text().Contains("(admin)").
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 	})
 
 	t.Run("Registration", func(t *testing.T) {
 		uri.Path = "/admin/registration"
 
 		// new registration
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".registration").Count(1).
 			Find(".registration > a[href='/admin/newregistration']").Click().
 			Find("#newRegistration").Count(1).
@@ -491,16 +436,13 @@ func TestAdmin(t *testing.T) {
 			Find("#tokenExpiration input[type='date']").SendKeys(dateInput(time.Now().AddDate(1, 0, 0))).
 			Find("form  button[type='submit']").Click().
 			Find(".form-group.has-error  .form-input-hint").Count(0).
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 
 		// group testing
 		gSearch := "#groupSearch > div > input"
 		gResult := "#groupSearch > ul.menu > li"
 		uri.Path = "/admin/newregistration"
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find("#tokenDescription").Clear().SendKeys("group testing").
 			Find(gSearch).Clear().SendKeys("test group name").Wait(500 * time.Millisecond).
 			Find(gResult).Count(2).Any().Text().Contains("Create group test group name").
@@ -537,14 +479,11 @@ func TestAdmin(t *testing.T) {
 			Find("#newRegistration  .chips > .chip").Count(3).
 			Find("form  button[type='submit']").Click().
 			Find(".form-group.has-error  .form-input-hint").Count(0).
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 
 		uri.Path = "/admin/registration"
 		// registration list
-		err = seq.URL().Path("/admin/registration").
+		seq.URL().Path("/admin/registration").
 			Find(".registration > .table > tbody > tr").Count(2).
 			Find(".registration > a[href='/admin/newregistration']").Click().
 			Find("#tokenDescription").Clear().SendKeys("Valid Token Test").
@@ -561,14 +500,10 @@ func TestAdmin(t *testing.T) {
 			Find(".btn-group > a.btn:not(.active)").Text().Equals("All").Click().
 			Find(".registration > .table > tbody > tr").Count(3).
 			Find(".registration > .table > tbody > tr.secondary").Text().Contains("Valid Token Test").
-			End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 
 		// view single registration
-		err = seq.URL().Path("/admin/registration").
+		seq.URL().Path("/admin/registration").
 			Find(".registration > .table > tbody > tr > td > a").
 			Filter(func(e *sequence.Elements) error {
 				return e.Text().Contains("group testing").End()
@@ -583,10 +518,7 @@ func TestAdmin(t *testing.T) {
 			Find("#singleRegistration .input-group > button.btn-primary").Click().
 			Find("#singleRegistration button.btn.btn-error").Text().Contains("Remove").Click().
 			Find("#singleRegistration .input-group > input.form-input").Count(0).
-			End()
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 
 		tokenUrl := ""
 
@@ -594,7 +526,7 @@ func TestAdmin(t *testing.T) {
 		testPassword := "registeredPasswordThatHasANumber4"
 
 		// test registration link
-		err = seq.Get(uri.String()).
+		seq.Get(uri.String()).
 			Find(".registration > .table > tbody > tr > td:nth-child(1) > a").Count(1).Click().
 			Find("#singleRegistration .tile-title").Text().Contains("Created by "+username).
 			Find("#singleRegistration .tile-content .tile-subtitle.text-gray").
@@ -623,11 +555,7 @@ func TestAdmin(t *testing.T) {
 			Any().Text().Contains("4 Registrations Left").
 			Find(".tile-row > .tile").Count(1).
 			FindChildren(".tile-content > .tile-title").Text().Contains(testUsername).
-			End()
-
-		if err != nil {
-			t.Fatal(err)
-		}
+			Ok(t)
 
 	})
 }

@@ -281,6 +281,23 @@ func (q *Query) parseStatement(deferred bool, args ...Argument) error {
 	return nil
 }
 
+type queryError struct {
+	statement string
+	args      []Argument
+	err       error
+}
+
+func (e *queryError) Error() string {
+	args := ""
+	for i := range e.args {
+		if i != 0 {
+			args += ", "
+		}
+		args += fmt.Sprintf("%s=%s", e.args[i].Name, e.args[i].Value)
+	}
+	return fmt.Sprintf("Error executing query: \n%s\nArguments: %s\n: %s", e.statement, args, e.err)
+}
+
 // Exec executes a templated query without returning any rows
 func (q Query) Exec(args ...Argument) (result sql.Result, err error) {
 	if q.statement == "" {
@@ -301,7 +318,11 @@ func (q Query) Exec(args ...Argument) (result sql.Result, err error) {
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "Executing query: \n%s\n", q.Statement())
+		return nil, &queryError{
+			err:       err,
+			statement: q.Statement(),
+			args:      args,
+		}
 	}
 	return result, nil
 }
@@ -326,7 +347,11 @@ func (q Query) Query(args ...Argument) (rows *sql.Rows, err error) {
 	}
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "Executing query: \n%s\n", q.Statement())
+		return nil, &queryError{
+			err:       err,
+			statement: q.Statement(),
+			args:      args,
+		}
 	}
 	return rows, nil
 }
@@ -336,6 +361,7 @@ type Row struct {
 	row       *sql.Row
 	err       error
 	statement string
+	args      []Argument
 }
 
 func (r *Row) Scan(dest ...interface{}) error {
@@ -347,7 +373,11 @@ func (r *Row) Scan(dest ...interface{}) error {
 		return err
 	}
 	if err != nil {
-		return errors.Wrapf(err, "Executing query: \n%s\n", r.statement)
+		return &queryError{
+			err:       err,
+			statement: r.statement,
+			args:      r.args,
+		}
 	}
 	return nil
 }

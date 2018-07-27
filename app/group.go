@@ -360,8 +360,18 @@ func (ga *GroupAdmin) SetName(name string, version int) error {
 	})
 }
 
-// SetMember adds a new member to a group or updates an existing member
-func (ga *GroupAdmin) SetMember(userID data.ID, admin bool) error {
+// AddMember adds a new member to a group, if user is already an member and an admin they are demoted
+// to normal member
+func (ga *GroupAdmin) AddMember(userID data.ID) error {
+	return ga.setMember(userID, false)
+}
+
+// AddAddmin adds a new member to a group as an admin or updates an existing member to admin
+func (ga *GroupAdmin) AddAdmin(userID data.ID) error {
+	return ga.setMember(userID, true)
+}
+
+func (ga *GroupAdmin) setMember(userID data.ID, admin bool) error {
 	if userID.IsNil() {
 		return NewFailure("Cannot add an invalid user to a group")
 	}

@@ -19,128 +19,89 @@ func TestLogin(t *testing.T) {
 	username := "testusername"
 	password := "testWithAPrettyGoodP@ssword"
 	user, err := app.FirstRunSetup(username, password)
-	if err != nil {
-		t.Fatalf("Error setting up admin user: %s", err)
-	}
+	ok(t, err)
+
 	admin, err := user.Admin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	ok(t, err)
 
 	err = admin.SetSetting("AllowPublicSignups", true)
-	if err != nil {
-		t.Fatalf("Error allowing public signups for testing: %s", err)
-	}
+	ok(t, err)
 
-	err = driver.DeleteAllCookies()
-	if err != nil {
-		t.Fatalf("Error clearing all cookies for testing: %s", err)
-	}
+	ok(t, driver.DeleteAllCookies())
 
 	// Invalid username and password
-	err = newSequence().
+	newSequence().
 		Get(uri.String()).
 		Find("#login").Visible().
 		Find("#inputUsername").Visible().
-		Find(".has-error > .form-input-hint").Count(0).
+		Find(".toast-error").Count(0).
 		Find(".card-footer").Visible().
 		Find("#inputUsername").SendKeys("badusername").
 		Find("#inputPassword").SendKeys("badpassword").
 		Find(".btn.btn-primary.btn-block").Click().
-		Find(".has-error > .form-input-hint").Visible().
-		End()
-
-	if err != nil {
-		t.Fatalf("Testing Login Page failed: %s", err)
-	}
+		Find(".toast-error").Visible().
+		Ok(t)
 
 	// Disabled Public Signups
-	err = admin.SetSetting("AllowPublicSignups", false)
-	if err != nil {
-		t.Fatalf("Error blocking public signups for testing: %s", err)
-	}
+	ok(t, admin.SetSetting("AllowPublicSignups", false))
 
-	err = newSequence().
+	newSequence().
 		Refresh().
 		Find(".card-footer").Count(0).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
 		Find(".btn.btn-primary.btn-block").Click().
-		Find(".has-error > .form-input-hint").Count(0).
-		End()
-
-	if err != nil {
-		t.Fatalf("Testing Login Page failed: %s", err)
-	}
+		Find(".toast-error").Count(0).
+		Ok(t)
 
 	// Page redirect on login
-	err = driver.DeleteAllCookies()
-	if err != nil {
-		t.Fatalf("Error clearing all cookies for testing: %s", err)
-	}
+	ok(t, driver.DeleteAllCookies())
 
 	testPath := "/testpath"
-	err = newSequence().
+	newSequence().
 		Get(uri.String() + "?return=" + testPath).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
 		Find(".btn.btn-primary.btn-block").Click().
 		And().
 		URL().Path(testPath).Eventually().
-		End()
-
-	if err != nil {
-		t.Fatalf("Testing Login Page failed: %s", err)
-	}
+		Ok(t)
 
 	// Expire Password
-	err = driver.DeleteAllCookies()
-	if err != nil {
-		t.Fatalf("Error clearing all cookies for testing: %s", err)
-	}
+	ok(t, driver.DeleteAllCookies())
 
 	// expire password soon
 	_, err = data.NewQuery(`update users set password_expiration = {{arg "expires"}}
 			where username = {{arg "username"}}`).
 		Exec(data.Arg("expires", time.Now().AddDate(0, 0, 6)), data.Arg("username", username))
-	if err != nil {
-		t.Fatalf("Error expiring password: %s", err)
-	}
+	ok(t, err)
 
-	err = sequence.Start(driver).
+	sequence.Start(driver).
 		Get(uri.String()).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
 		Find(".btn.btn-primary.btn-block").Click().
-		Find(".has-error > .form-input-hint").Count(0).
+		Find(".toast-error").Count(0).
 		Find(".modal").Count(1).
 		Find(".modal-overlay").Count(1).
 		Find(".modal-container").Count(1).
 		Find(".modal-footer > .btn").Any().Text().Contains("Skip").
 		Find(".modal-footer > .btn.btn-primary").Any().Text().Contains("Submit").
-		End()
-	if err != nil {
-		t.Fatalf("Testing expiring password failed: %s", err)
-	}
+		Ok(t)
 
 	// expire password completely
 	_, err = data.NewQuery(`update users set password_expiration = {{arg "expires"}}
 			where username = {{arg "username"}}`).
 		Exec(data.Arg("expires", time.Now()), data.Arg("username", username))
-	if err != nil {
-		t.Fatalf("Error expiring password: %s", err)
-	}
-	err = driver.DeleteAllCookies()
-	if err != nil {
-		t.Fatalf("Error clearing all cookies for testing: %s", err)
-	}
+	ok(t, err)
+	ok(t, driver.DeleteAllCookies())
 
-	err = sequence.Start(driver).
+	sequence.Start(driver).
 		Get(uri.String()).
 		Find("#inputUsername").SendKeys(username).
 		Find("#inputPassword").SendKeys(password).
 		Find(".btn.btn-primary.btn-block").Click().
-		Find(".has-error > .form-input-hint").Count(0).
+		Find(".toast-error").Count(0).
 		Find(".modal").Count(1).
 		Find(".modal-overlay").Count(1).
 		Find(".modal-container").Count(1).
@@ -153,9 +114,5 @@ func TestLogin(t *testing.T) {
 		Find(".modal-footer > .btn").Click().
 		Find(".has-error > .form-input-hint").Count(0).And().
 		URL().Path("/").Eventually().
-		End()
-	if err != nil {
-		t.Fatalf("Testing expiring password failed: %s", err)
-	}
-
+		Ok(t)
 }

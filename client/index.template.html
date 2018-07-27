@@ -10,6 +10,12 @@
 	<div class="page-container">
 		[[template "nav" .]]
 		<div class="page-content container grid-lg">
+			<ul>
+				[[if .User]]
+					<li><a href="/admin">Admin Page</a></li>
+					<li><a href="/documents/new">New Document</a></li>
+				[[end]]
+			</ul>
 		</div>
 		[[template "footer" .]]
 	</div>

@@ -111,7 +111,8 @@ func Init(cfg Config) error {
 		if err == nil {
 			db.SetConnMaxLifetime(lifetime)
 		} else {
-			log.Printf("Invalid MaxConnectionLifetime duration format (%s), using default", cfg.MaxConnectionLifetime)
+			log.Printf("Invalid MaxConnectionLifetime duration format (%s), using default",
+				cfg.MaxConnectionLifetime)
 		}
 	}
 	db.SetMaxIdleConns(cfg.MaxIdleConnections)

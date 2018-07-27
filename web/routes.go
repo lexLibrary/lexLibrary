@@ -154,5 +154,14 @@ func setupRoutes() http.Handler {
 	rootHandler.DELETE(path.Join(app.RegistrationTokenPath, ":token"), standard.handle(registrationDelete))
 	rootHandler.POST("/user/:token", createUser.handle(userCreate))
 
+	// documents
+	/*
+		/documents/new
+		/document/:id/
+		/document/:id/edit
+		/document/:id/draft/:draftID
+
+	*/
+
 	return rootHandler
 }

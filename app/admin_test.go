@@ -17,11 +17,7 @@ func TestAdmin(t *testing.T) {
 		t.Helper()
 
 		admin = resetAdmin(t, "admin", "adminpassword")
-
-		err := admin.SetSetting("AllowPublicSignups", true)
-		if err != nil {
-			t.Fatalf("Error allowing public signups for testing: %s", err)
-		}
+		ok(t, admin.SetSetting("AllowPublicSignups", true))
 
 	}
 
@@ -29,13 +25,9 @@ func TestAdmin(t *testing.T) {
 		reset(t)
 
 		overview, err := admin.Overview()
-		if err != nil {
-			t.Fatalf("Error getting admin overview: %s", err)
-		}
+		ok(t, err)
 
-		if overview == nil {
-			t.Fatal("Admin Overview is nil")
-		}
+		assert(t, overview != nil, "Admin Overview is nil")
 	})
 
 	t.Run("InstanceUsers", func(t *testing.T) {
@@ -44,67 +36,38 @@ func TestAdmin(t *testing.T) {
 		password := "passwordValue"
 
 		inactive, err := app.UserNew("inactive", password)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		err = admin.SetUserActive(inactive.Username, false)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		loggedIn, err := app.UserNew("loggedin", password)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		_, err = loggedIn.NewSession(time.Now().Add(1*time.Hour), "", "")
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		loggedOut, err := app.UserNew("loggedout", password)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		s, err := loggedOut.NewSession(time.Now().Add(1*time.Hour), "", "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = s.Logout()
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
+		ok(t, s.Logout())
 
 		multipleSessions, err := app.UserNew("multiplesessions", password)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		_, err = multipleSessions.NewSession(time.Now().Add(1*time.Hour), "", "")
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 		_, err = multipleSessions.NewSession(time.Now().Add(1*time.Hour), "", "")
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		neverLoggedIn, err := app.UserNew("neverLoggedIn", password)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
-		err = loggedIn.SetName("John Doe", loggedIn.Version)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, loggedIn.SetName("John Doe", loggedIn.Version))
 
-		err = loggedOut.SetName("James Doe", loggedOut.Version)
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, loggedOut.SetName("James Doe", loggedOut.Version))
 
 		tests := []struct {
 			activeOnly bool
@@ -135,18 +98,11 @@ func TestAdmin(t *testing.T) {
 			t.Run(fmt.Sprintf("Test %d", i), func(t *testing.T) {
 				users, total, err := admin.InstanceUsers(test.activeOnly, test.loggedIn, test.search,
 					test.offset, test.limit)
-				if err != nil {
-					t.Fatal(err)
-				}
+				ok(t, err)
 
-				if total != test.total {
-					t.Fatalf("Total doesn't match. Expected %d, got %d", test.total, total)
-				}
+				equals(t, total, test.total)
 
-				if len(users) != len(test.result) {
-					t.Fatalf("Result len doesn't match. Expected %d, got %d", len(test.result),
-						len(users))
-				}
+				equals(t, len(users), len(test.result))
 
 				for _, result := range test.result {
 					found := false
@@ -156,9 +112,7 @@ func TestAdmin(t *testing.T) {
 							break
 						}
 					}
-					if !found {
-						t.Fatalf("User %s was not found in the result set.", result.Username)
-					}
+					assert(t, found, "User %s was not found in the result set.", result.Username)
 				}
 			})
 		}
@@ -169,40 +123,26 @@ func TestAdmin(t *testing.T) {
 		reset(t)
 
 		user, err := app.UserNew("instanceUserTest", "testInstanceUserPassword")
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		iu, err := admin.InstanceUser("instanceUSERTEST")
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
-		if iu.Username != user.Username || iu.ID != user.ID {
-			t.Fatalf("Incorrect user returned. Expected %s Got %s", user.ID, iu.ID)
-		}
+		equals(t, iu.Username, user.Username)
+		equals(t, iu.ID, user.ID)
 
-		if iu.LastLogin.Valid {
-			t.Fatalf("Instance user's last login was valid. Expected %v got %v", false, iu.LastLogin.Valid)
-		}
+		assert(t, !iu.LastLogin.Valid, "Instance user's last login was valid. Expected %v got %v",
+			false, iu.LastLogin.Valid)
 
 		_, err = user.NewSession(time.Now().Add(1*time.Hour), "", "")
-		if err != nil {
-			t.Fatal(err)
-		}
+		ok(t, err)
 
 		iu, err = admin.InstanceUser("instanceusertest")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if iu.Username != user.Username || iu.ID != user.ID {
-			t.Fatalf("Incorrect user returned. Expected %s Got %s", user.ID, iu.ID)
-		}
-
-		if !iu.LastLogin.Valid {
-			t.Fatalf("Instance user's last login was not valid. Expected %v got %v", true,
-				iu.LastLogin.Valid)
-		}
+		ok(t, err)
+		equals(t, iu.Username, user.Username)
+		equals(t, iu.ID, user.ID)
+		assert(t, iu.LastLogin.Valid, "Instance user's last login was not valid. Expected %v got %v", true,
+			iu.LastLogin.Valid)
 
 	})
 }

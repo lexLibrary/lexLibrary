@@ -13,17 +13,22 @@ import (
 )
 
 func TestDocument(t *testing.T) {
+	var admin *app.Admin
 	var user *app.User
 	reset := func(t *testing.T) {
 		t.Helper()
 
-		user = resetAdmin(t, "admin", "adminpassword").User()
+		var err error
+		admin = resetAdmin(t, "admin", "adminpassword")
+		ok(t, admin.SetSetting("AllowPublicSignups", true))
+		user, err = app.UserNew("regularUser", "regularUserPassword")
+		ok(t, err)
 	}
 
 	t.Run("New Document", func(t *testing.T) {
 		reset(t)
 
-		draft, err := user.NewDocument(language.English)
+		draft, err := user.NewDocument("test", language.English)
 		ok(t, err)
 
 		assert(t, draft != nil, "Draft is nil")
@@ -39,7 +44,7 @@ func TestDocument(t *testing.T) {
 
 	t.Run("New Draft", func(t *testing.T) {
 		reset(t)
-		draft, err := user.NewDocument(language.English)
+		draft, err := user.NewDocument("test", language.English)
 		ok(t, err)
 
 		t.Run("Save", func(t *testing.T) {
@@ -59,6 +64,13 @@ func TestDocument(t *testing.T) {
 			d = *draft
 			assertFail(t, d.Save(newTitle, newContent, []string{fmt.Sprintf("Long %70s", "tag value")}, 3),
 				http.StatusBadRequest, "No failure on long tag")
+
+			// test saving as other user
+			otherDraft, err := admin.User().Draft(draft.ID, draft.Language)
+			ok(t, err)
+
+			assertFail(t, otherDraft.Save(newTitle, newContent, nil, otherDraft.Version),
+				http.StatusUnauthorized, "Saving draft as user other than creator")
 
 			ok(t, draft.Save(newTitle, newContent, newTags, draft.Version))
 			equals(t, 1, draft.Version)
@@ -81,12 +93,6 @@ func TestDocument(t *testing.T) {
 			equals(t, 3, len(draft.Tags))
 
 			t.Run("Publish", func(t *testing.T) {
-				// test publishing an empty draft
-				empty, err := user.NewDocument(language.English)
-				ok(t, err)
-				_, err = empty.Publish()
-				assertFail(t, err, http.StatusBadRequest, "Didn't fail on publishing an empty draft")
-
 				doc, err := draft.Publish()
 				ok(t, err)
 
@@ -140,11 +146,24 @@ func TestDocument(t *testing.T) {
 			})
 
 		})
+
+		t.Run("Delete", func(t *testing.T) {
+			draft, err = user.NewDocument("test", language.English)
+			ok(t, err)
+
+			otherDraft, err := admin.User().Draft(draft.ID, draft.Language)
+			ok(t, err)
+
+			assertFail(t, otherDraft.Delete(),
+				http.StatusUnauthorized, "Deleting draft as user other than creator")
+
+			ok(t, draft.Delete())
+		})
 	})
 
 	t.Run("Existing Document", func(t *testing.T) {
 		reset(t)
-		draft, err := user.NewDocument(language.English)
+		draft, err := user.NewDocument("test", language.English)
 		ok(t, err)
 
 		ok(t, draft.Save("Title", "<h2>Content</h2>", []string{"tag1", "tag2", "tag3"}, draft.Version))
@@ -370,8 +389,6 @@ func TestDocument(t *testing.T) {
 			})
 
 			t.Run("Permissions", func(t *testing.T) {
-				admin, err := user.Admin()
-				ok(t, err)
 				ok(t, admin.SetSetting("AllowPublicDocuments", true))
 				ok(t, admin.SetSetting("AllowPublicSignups", true))
 
@@ -401,15 +418,13 @@ func TestDocument(t *testing.T) {
 	t.Run("Get", func(t *testing.T) {
 		reset(t)
 
-		draft, err := user.NewDocument(language.English)
+		draft, err := user.NewDocument("test", language.English)
 		ok(t, err)
 		ok(t, draft.Save("Title", "<h1>Content</h1>", []string{"tag1", "tag2", "tag3", "tag4"}, draft.Version))
 
 		doc, err := draft.Publish()
 		ok(t, err)
 
-		admin, err := user.Admin()
-		ok(t, err)
 		ok(t, admin.SetSetting("AllowPublicDocuments", false))
 
 		_, err = app.DocumentGet(data.ID{}, language.English, user)
@@ -434,7 +449,7 @@ func TestDocument(t *testing.T) {
 		equals(t, doc.Tags, other.Tags)
 
 		// doc with no tags
-		newDraft, err := user.NewDocument(language.Ukrainian)
+		newDraft, err := user.NewDocument("test", language.Ukrainian)
 		ok(t, err)
 		ok(t, newDraft.Save("Title", "<h1>Content</h1>", nil, newDraft.Version))
 
@@ -448,21 +463,119 @@ func TestDocument(t *testing.T) {
 		equals(t, newDoc.Tags, other.Tags)
 
 		t.Run("Group Access", func(t *testing.T) {
+			// get latest version of document
 			ok(t, admin.SetSetting("AllowPublicSignups", true))
-			// otherUser, err := app.UserNew("other", "otherPassword")
-			// ok(t, err)
+			otherUser, err := app.UserNew("other", "otherPassword")
+			ok(t, err)
 
 			blue, err := user.NewGroup("blue")
 			ok(t, err)
-			// red, err := user.NewGroup("red")
-			// ok(t, err)
+
+			red, err := otherUser.NewGroup("red")
+			ok(t, err)
 
 			ok(t, doc.AddGroup(blue.ID, false))
+
+			_, err = app.DocumentGet(doc.ID, language.English, nil)
+			assertFail(t, err, http.StatusNotFound, "Getting private document with no user")
+
+			_, err = app.DocumentGet(doc.ID, doc.Language, otherUser)
+			assertFail(t, err, http.StatusUnauthorized, "Accessing document without group membership")
+
+			ok(t, doc.AddGroup(red.ID, false))
+
+			otherDoc, err := app.DocumentGet(doc.ID, doc.Language, otherUser)
+			ok(t, err)
+
+			equals(t, doc.ID, otherDoc.ID)
+			equals(t, doc.Title, otherDoc.Title)
+			equals(t, doc.Content, otherDoc.Content)
+
+			otherDraft, err := otherDoc.NewDraft(language.English)
+			ok(t, err)
+
+			_, err = otherDraft.Publish()
+			assertFail(t, err, http.StatusUnauthorized, "Publishing document without group permissions")
+
+			ok(t, doc.AddGroup(red.ID, true))
+
+			_, err = otherDraft.Publish()
+			ok(t, err)
+
+			// admins can access and publish anything
+			adminDoc, err := app.DocumentGet(doc.ID, doc.Language, admin.User())
+			ok(t, err)
+
+			adminDraft, err := adminDoc.NewDraft(language.English)
+			ok(t, err)
+
+			_, err = adminDraft.Publish()
+			ok(t, err)
+
+		})
+	})
+
+	t.Run("Get Draft", func(t *testing.T) {
+		reset(t)
+
+		ok(t, admin.SetSetting("AllowPublicSignups", true))
+		otherUser, err := app.UserNew("other", "otherPassword")
+		ok(t, err)
+
+		draft, err := user.NewDocument("test", language.English)
+		ok(t, err)
+		ok(t, draft.Save("Title", "<h1>Content</h1>", []string{"tag1", "tag2", "tag3", "tag4"}, draft.Version))
+
+		_, err = user.Draft(data.ID{}, draft.Language)
+		assertFail(t, err, http.StatusNotFound, "Getting draft with nil ID did not fail")
+
+		_, err = user.Draft(data.NewID(), draft.Language)
+		assertFail(t, err, http.StatusNotFound, "Getting draft with invalid ID did not fail")
+
+		t.Run("Unpublished", func(t *testing.T) {
+			_, err = otherUser.Draft(draft.ID, draft.Language)
+			assertFail(t, err, http.StatusUnauthorized, "Getting draft from other user")
+
+			otherDraft, err := user.Draft(draft.ID, draft.Language)
+			ok(t, err)
+
+			equals(t, draft.Title, otherDraft.Title)
+			equals(t, draft.Content, otherDraft.Content)
+			equals(t, draft.Tags, otherDraft.Tags)
+
+			_, err = admin.User().Draft(draft.ID, draft.Language)
+			ok(t, err)
+		})
+
+		t.Run("Published", func(t *testing.T) {
+			doc, err := draft.Publish()
+			ok(t, err)
+
+			draft, err = doc.NewDraft(language.Russian)
+			ok(t, err)
+
+			blue, err := user.NewGroup("blue")
+			ok(t, err)
+
+			ok(t, doc.AddGroup(blue.ID, false))
+
+			_, err = otherUser.Draft(draft.ID, draft.Language)
+			assertFail(t, err, http.StatusUnauthorized, "Getting draft from other user")
+
+			groupAdmin, err := blue.Admin(user)
+			ok(t, err)
+
+			ok(t, groupAdmin.AddMember(otherUser.ID))
+
+			_, err = otherUser.Draft(draft.ID, draft.Language)
+			assertFail(t, err, http.StatusUnauthorized,
+				"Getting draft from other user in group without publish access")
+
+			ok(t, doc.AddGroup(blue.ID, true))
+			_, err = otherUser.Draft(draft.ID, draft.Language)
+			ok(t, err)
 		})
 
 	})
 
-	t.Run("Get Draft", func(t *testing.T) {
-
-	})
 }

@@ -80,7 +80,7 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Error getting group admin: %s", err)
 		}
 
-		err = ga.SetMember(user.ID, false)
+		err = ga.AddMember(user.ID)
 		if err != nil {
 			t.Fatalf("Error adding member to group: %s", err)
 		}
@@ -90,7 +90,7 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Getting admin from a non admin member did not fail")
 		}
 
-		err = ga.SetMember(admin.User().ID, false)
+		err = ga.AddMember(admin.User().ID)
 		if err != nil {
 			t.Fatalf("Error removing admin from group: %s", err)
 		}
@@ -160,17 +160,17 @@ func TestGroup(t *testing.T) {
 
 		id := data.ID{}
 
-		err = ga.SetMember(id, false)
+		err = ga.AddMember(id)
 		if !app.IsFail(err) {
 			t.Fatalf("No failure when adding an invalid group member id")
 		}
 
-		err = ga.SetMember(data.NewID(), false)
+		err = ga.AddMember(data.NewID())
 		if !app.IsFail(err) {
 			t.Fatalf("No failure when adding an invalid group member")
 		}
 
-		err = ga.SetMember(other.ID, false)
+		err = ga.AddMember(other.ID)
 		if err != nil {
 			t.Fatalf("Error adding new group member: %s", err)
 		}
@@ -187,7 +187,7 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("No member found")
 		}
 
-		err = ga.SetMember(other.ID, true)
+		err = ga.AddAdmin(other.ID)
 		if err != nil {
 			t.Fatalf("Error updating group member: %s", err)
 		}
@@ -204,12 +204,12 @@ func TestGroup(t *testing.T) {
 			t.Fatalf("Invalid group admin value. Expected %t, got %t", true, isAdmin)
 		}
 
-		err = ga.SetMember(other.ID, true)
+		err = ga.AddAdmin(other.ID)
 		if err != nil {
 			t.Fatalf("Error updating group member: %s", err)
 		}
 
-		err = ga.SetMember(other.ID, true)
+		err = ga.AddAdmin(other.ID)
 		if err != nil {
 			t.Fatalf("Error updating group member who is already a member: %s", err)
 		}

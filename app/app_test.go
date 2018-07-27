@@ -136,7 +136,7 @@ func equals(tb testing.TB, exp, act interface{}) {
 func assertFail(tb testing.TB, err error, status int, msg string) {
 	_, file, line, _ := runtime.Caller(1)
 	if !app.IsFail(err) {
-		fmt.Printf("\033[31m%s:%d:\n\n\texp failure\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, err)
+		fmt.Printf("\033[31m%s:%d:\n\n\texp failure\n\n\tgot: %s\033[39m\n\n", filepath.Base(file), line, err)
 		tb.FailNow()
 	}
 

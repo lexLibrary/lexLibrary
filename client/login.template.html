@@ -23,12 +23,16 @@
 			[[end]]
 			<div class="card">
 				<div class="card-body">
+					<div v-if="error" v-cloak class="toast toast-error">
+						<button @click="error=null" class="btn btn-clear float-right"></button>
+						{{error}}
+					</div>
+
 					<form @submit="login">
-						<div :class="{'has-error': error}" class="form-group">
+						<div class="form-group">
 							<label class="form-label" for="inputUsername">Username</label>
 							<input v-model="username" v-focus type="text" class="form-input" id="inputUsername" 
 								maxlength="[[fieldMax `user.username`]]" placeholder="Enter username">
-							<p v-if="error" v-cloak class="form-input-hint">{{error}}</p>
 						</div>
 						<div class="form-group">
 							<label class="form-label" for="inputPassword">Password</label>
