@@ -20,6 +20,7 @@ import (
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/lexLibrary/lexLibrary/files"
 	"github.com/pkg/errors"
+	"golang.org/x/text/language"
 )
 
 const (
@@ -35,8 +36,9 @@ func standardHeaders(w http.ResponseWriter) {
 }
 
 type ctx struct {
-	params  httprouter.Params
-	session *app.Session
+	params   httprouter.Params
+	session  *app.Session
+	language language.Tag
 }
 
 type llHandler func(http.ResponseWriter, *http.Request, ctx)
@@ -63,7 +65,8 @@ func (h handleMaker) handle(llhandle llHandler) httprouter.Handle {
 			return
 		}
 		c := ctx{
-			params: p,
+			params:   p,
+			language: languageFromRequest(r),
 		}
 
 		if h.session {

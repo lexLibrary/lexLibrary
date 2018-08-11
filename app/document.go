@@ -322,12 +322,12 @@ func draftGet(id data.ID, lan language.Tag) (*DocumentDraft, error) {
 }
 
 // NewDocument starts a new document and returns the draft of it
-func (u *User) NewDocument(tite string, lan language.Tag) (*DocumentDraft, error) {
+func (u *User) NewDocument(title string, lan language.Tag) (*DocumentDraft, error) {
 	d := &DocumentDraft{
 		ID:     data.NewID(),
 		editor: u,
 		DocumentContent: DocumentContent{
-			Title:    tite,
+			Title:    title,
 			Language: lan,
 			Version:  0,
 			Updated:  time.Now(),

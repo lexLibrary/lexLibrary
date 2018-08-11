@@ -159,9 +159,13 @@ func setupRoutes() http.Handler {
 		/documents/new
 		/document/:id/
 		/document/:id/edit
-		/document/:id/draft/:draftID
+		/draft/:id
 
 	*/
+
+	rootHandler.POST("/documents/new", standard.handle(documentNew))
+	// rootHandler.POST("/documents/:id/edit", standard.handle(draftNew))
+	rootHandler.PUT("/draft/:id", standard.handle(draftSave))
 
 	return rootHandler
 }
