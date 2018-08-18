@@ -23,6 +23,7 @@ import (
 	"github.com/blevesearch/snowballstem/swedish"
 	"github.com/blevesearch/snowballstem/tamil"
 	"github.com/blevesearch/snowballstem/turkish"
+	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 )
 
@@ -81,7 +82,17 @@ func (l *Language) Scan(value interface{}) error {
 		return nil
 	}
 
-	return (*language.Tag)(l).UnmarshalText(value.([]byte))
+	var val []byte
+	switch value.(type) {
+	case string:
+		val = []byte(value.(string))
+	case []byte:
+		val = value.([]byte)
+	default:
+		return errors.New("Incompatible type for GzippedText")
+	}
+
+	return (*language.Tag)(l).UnmarshalText(val)
 }
 
 // Value implements the driver Valuer interface.
