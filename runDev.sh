@@ -25,7 +25,7 @@ $LASTMODIFIED">./files/assets/version
 cp ./app/bad_passwords.txt ./files/assets
 
 # generate embedded files
-go generate
+# go generate
 
 go build -o lexLibrary -tags=dev
 

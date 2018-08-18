@@ -217,4 +217,11 @@ var attribution = []attribute{
 		LicenseType: "BSD 3-Clause",
 		LicenseURL:  "https://github.com/microcosm-cc/bluemonday/blob/master/LICENSE.md",
 	},
+	attribute{
+		Name:        "bleve",
+		URL:         "http://blevesearch.com/",
+		Author:      "Couchbase, Inc.",
+		LicenseType: "Apache 2.0",
+		LicenseURL:  "https://github.com/blevesearch/bleve/blob/master/LICENSE",
+	},
 }

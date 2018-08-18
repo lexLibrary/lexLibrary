@@ -24,6 +24,7 @@ var jsFiles = [
     'profile.js',
     'profile_edit.js',
     'admin.js',
+	'editor.js',
 ];
 
 function rollupFiles(dev) {

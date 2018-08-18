@@ -7,28 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blevesearch/snowballstem"
-	"github.com/blevesearch/snowballstem/arabic"
-	"github.com/blevesearch/snowballstem/danish"
-	"github.com/blevesearch/snowballstem/dutch"
-	"github.com/blevesearch/snowballstem/english"
-	"github.com/blevesearch/snowballstem/finnish"
-	"github.com/blevesearch/snowballstem/french"
-	"github.com/blevesearch/snowballstem/german"
-	"github.com/blevesearch/snowballstem/hungarian"
-	"github.com/blevesearch/snowballstem/italian"
-	"github.com/blevesearch/snowballstem/norwegian"
-	"github.com/blevesearch/snowballstem/portuguese"
-	"github.com/blevesearch/snowballstem/romanian"
-	"github.com/blevesearch/snowballstem/russian"
-	"github.com/blevesearch/snowballstem/spanish"
-	"github.com/blevesearch/snowballstem/swedish"
-	"github.com/blevesearch/snowballstem/tamil"
-	"github.com/blevesearch/snowballstem/turkish"
 	"github.com/lexLibrary/lexLibrary/data"
 	"github.com/microcosm-cc/bluemonday"
-	"github.com/pkg/errors"
-	"golang.org/x/text/language"
 )
 
 // Document is an instance of a published document
@@ -49,7 +29,7 @@ type Document struct {
 type DocumentContent struct {
 	ID       data.ID `json:"id"`
 	Version  int     `json:"version"`
-	Language language.Tag
+	Language Language
 	Title    string    `json:"title"`
 	Content  string    `json:"content"`
 	Tags     []Tag     `json:"tags"`
@@ -68,7 +48,7 @@ const (
 type Tag struct {
 	Value    string `json:"value"`
 	Type     string `json:"type"`
-	Language language.Tag
+	Language Language
 	Stem     string `json:"stem"`
 }
 
@@ -98,7 +78,7 @@ var (
 )
 
 // DocumentGet retrieves a document
-func DocumentGet(id data.ID, lan language.Tag, who *User) (*Document, error) {
+func DocumentGet(id data.ID, lan Language, who *User) (*Document, error) {
 	if id.IsNil() {
 		return nil, errDocumentNotFound
 	}
@@ -116,7 +96,7 @@ func DocumentGet(id data.ID, lan language.Tag, who *User) (*Document, error) {
 	return d, nil
 }
 
-func documentGet(id data.ID, lan language.Tag) (*Document, error) {
+func documentGet(id data.ID, lan Language) (*Document, error) {
 	d := &Document{}
 
 	rows, err := sqlDocument.get.Query(data.Arg("id", id), data.Arg("language", lan.String()))
@@ -130,16 +110,16 @@ func documentGet(id data.ID, lan language.Tag) (*Document, error) {
 
 	for rows.Next() {
 		found = true
-		var tag, tagStrLan, tagType, stem sql.NullString
+		var tag, tagType, stem sql.NullString
+		var tagLan Language
 		var groupID data.ID
 		var canPublish sql.NullBool
-		var strLan string
 
 		err := rows.Scan(
 			&d.ID,
 			&d.Created,
 			&d.creator,
-			&strLan,
+			&d.DocumentContent.Language,
 			&d.DocumentContent.Title,
 			&d.DocumentContent.Content,
 			&d.DocumentContent.Version,
@@ -148,7 +128,7 @@ func documentGet(id data.ID, lan language.Tag) (*Document, error) {
 			&d.DocumentContent.creator,
 			&d.DocumentContent.updater,
 			&tag,
-			&tagStrLan,
+			&tagLan,
 			&tagType,
 			&stem,
 			&groupID,
@@ -159,17 +139,7 @@ func documentGet(id data.ID, lan language.Tag) (*Document, error) {
 			return nil, err
 		}
 
-		d.DocumentContent.Language, err = language.Parse(strLan)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Parsing language value %s from document with id %s", lan, id)
-		}
-
 		if tag.Valid && tagType.Valid && stem.Valid {
-			tagLan, err := language.Parse(tagStrLan.String)
-			if err != nil {
-				return nil, errors.Wrapf(err, "Parsing langauge value %s from document id %d tag %s",
-					tagStrLan, id, tag.String)
-			}
 			d.Tags = append(d.Tags, Tag{
 				Value:    tag.String,
 				Language: tagLan,
@@ -230,7 +200,7 @@ func (d *Document) tryAccess(who *User) error {
 }
 
 // Draft retrieves a document draft
-func (u *User) Draft(id data.ID, lan language.Tag) (*DocumentDraft, error) {
+func (u *User) Draft(id data.ID, lan Language) (*DocumentDraft, error) {
 	if id.IsNil() {
 		return nil, errDocumentNotFound
 	}
@@ -256,7 +226,7 @@ func (d *DocumentDraft) tryAccess(who *User) error {
 	return d.canPublish()
 }
 
-func draftGet(id data.ID, lan language.Tag) (*DocumentDraft, error) {
+func draftGet(id data.ID, lan Language) (*DocumentDraft, error) {
 	d := &DocumentDraft{}
 
 	rows, err := sqlDocument.getDraft.Query(data.Arg("id", id), data.Arg("language", lan.String()))
@@ -270,13 +240,13 @@ func draftGet(id data.ID, lan language.Tag) (*DocumentDraft, error) {
 
 	for rows.Next() {
 		found = true
-		var tag, tagStrLan, tagType, stem sql.NullString
-		var strLan string
+		var tag, tagType, stem sql.NullString
+		var tagLan Language
 
 		err := rows.Scan(
 			&d.ID,
 			&d.DocumentContent.ID,
-			&strLan,
+			&d.DocumentContent.Language,
 			&d.DocumentContent.Title,
 			&d.DocumentContent.Content,
 			&d.DocumentContent.Version,
@@ -285,7 +255,7 @@ func draftGet(id data.ID, lan language.Tag) (*DocumentDraft, error) {
 			&d.DocumentContent.creator,
 			&d.DocumentContent.updater,
 			&tag,
-			&tagStrLan,
+			&tagLan,
 			&tagType,
 			&stem,
 		)
@@ -294,17 +264,7 @@ func draftGet(id data.ID, lan language.Tag) (*DocumentDraft, error) {
 			return nil, err
 		}
 
-		d.DocumentContent.Language, err = language.Parse(strLan)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Parsing language value %s from draft with id %s", lan, id)
-		}
-
 		if tag.Valid && tagType.Valid && stem.Valid {
-			tagLan, err := language.Parse(tagStrLan.String)
-			if err != nil {
-				return nil, errors.Wrapf(err, "Parsing langauge value %s from draft id %d tag %s",
-					tagStrLan, id, tag.String)
-			}
 			d.Tags = append(d.Tags, Tag{
 				Value:    tag.String,
 				Language: tagLan,
@@ -322,7 +282,7 @@ func draftGet(id data.ID, lan language.Tag) (*DocumentDraft, error) {
 }
 
 // NewDocument starts a new document and returns the draft of it
-func (u *User) NewDocument(title string, lan language.Tag) (*DocumentDraft, error) {
+func (u *User) NewDocument(title string, lan Language) (*DocumentDraft, error) {
 	d := &DocumentDraft{
 		ID:     data.NewID(),
 		editor: u,
@@ -353,7 +313,7 @@ func (u *User) NewDocument(title string, lan language.Tag) (*DocumentDraft, erro
 }
 
 // NewDraft creates a new Draft for the given document
-func (d *Document) NewDraft(lan language.Tag) (*DocumentDraft, error) {
+func (d *Document) NewDraft(lan Language) (*DocumentDraft, error) {
 	if d.accessor == nil {
 		return nil, errDocumentUpdateAccess
 	}
@@ -441,48 +401,7 @@ func (d *DocumentContent) addTag(tagType, tagValue string) {
 }
 
 func (t *Tag) stem() {
-	env := snowballstem.NewEnv(t.Value)
-	switch t.Language {
-	case language.Arabic:
-		arabic.Stem(env)
-	case language.Danish:
-		danish.Stem(env)
-	case language.Dutch:
-		dutch.Stem(env)
-	case language.English:
-		english.Stem(env)
-	case language.Finnish:
-		finnish.Stem(env)
-	case language.French:
-		french.Stem(env)
-	case language.German:
-		german.Stem(env)
-	case language.Hungarian:
-		hungarian.Stem(env)
-	case language.Italian:
-		italian.Stem(env)
-	case language.Norwegian:
-		norwegian.Stem(env)
-	case language.Portuguese:
-		portuguese.Stem(env)
-	case language.Romanian:
-		romanian.Stem(env)
-	case language.Russian:
-		russian.Stem(env)
-	case language.Spanish:
-		spanish.Stem(env)
-	case language.Swedish:
-		swedish.Stem(env)
-	case language.Tamil:
-		tamil.Stem(env)
-	case language.Turkish:
-		turkish.Stem(env)
-	default:
-		t.Stem = t.Value
-		return
-	}
-
-	t.Stem = env.Current()
+	t.Language.Stem(t.Value)
 }
 
 func (d *DocumentDraft) insert(tx *sql.Tx) error {
@@ -493,7 +412,7 @@ func (d *DocumentDraft) insert(tx *sql.Tx) error {
 	_, err := sqlDocument.insertDraft.Tx(tx).Exec(
 		data.Arg("id", d.ID),
 		data.Arg("document_id", d.DocumentContent.ID),
-		data.Arg("language", d.Language.String()),
+		data.Arg("language", d.Language),
 		data.Arg("title", d.Title),
 		data.Arg("content", d.Content),
 		data.Arg("version", d.Version),
@@ -509,7 +428,7 @@ func (d *DocumentDraft) insert(tx *sql.Tx) error {
 	for i := range d.Tags {
 		_, err = sqlDocument.insertDraftTag.Tx(tx).Exec(
 			data.Arg("draft_id", d.ID),
-			data.Arg("language", d.Tags[i].Language.String()),
+			data.Arg("language", d.Tags[i].Language),
 			data.Arg("tag", d.Tags[i].Value),
 			data.Arg("stem", d.Tags[i].Stem),
 			data.Arg("type", d.Tags[i].Type),
@@ -557,7 +476,7 @@ func (d *DocumentDraft) update(tx *sql.Tx, title, content string, tags []string,
 
 	r, err := sqlDocument.updateDraft.Tx(tx).Exec(
 		data.Arg("id", d.ID),
-		data.Arg("language", d.Language.String()),
+		data.Arg("language", d.Language),
 		data.Arg("version", d.Version),
 		data.Arg("updater", d.editor.ID),
 		data.Arg("title", d.Title),
@@ -579,7 +498,7 @@ func (d *DocumentDraft) update(tx *sql.Tx, title, content string, tags []string,
 
 	_, err = sqlDocument.deleteDraftTags.Tx(tx).Exec(
 		data.Arg("draft_id", d.ID),
-		data.Arg("language", d.Language.String()),
+		data.Arg("language", d.Language),
 	)
 	if err != nil {
 		return err
@@ -588,7 +507,7 @@ func (d *DocumentDraft) update(tx *sql.Tx, title, content string, tags []string,
 	for i := range d.Tags {
 		_, err = sqlDocument.insertDraftTag.Tx(tx).Exec(
 			data.Arg("draft_id", d.ID),
-			data.Arg("language", d.Tags[i].Language.String()),
+			data.Arg("language", d.Tags[i].Language),
 			data.Arg("tag", d.Tags[i].Value),
 			data.Arg("stem", d.Tags[i].Stem),
 			data.Arg("type", d.Tags[i].Type),
@@ -785,12 +704,12 @@ func (d *DocumentDraft) delete(tx *sql.Tx) error {
 	}
 	_, err := sqlDocument.deleteDraftTags.Tx(tx).Exec(
 		data.Arg("draft_id", d.ID),
-		data.Arg("language", d.Language.String()),
+		data.Arg("language", d.Language),
 	)
 	if err != nil {
 		return err
 	}
-	_, err = sqlDocument.deleteDraft.Tx(tx).Exec(data.Arg("id", d.ID), data.Arg("language", d.Language.String()))
+	_, err = sqlDocument.deleteDraft.Tx(tx).Exec(data.Arg("id", d.ID), data.Arg("language", d.Language))
 
 	return err
 }
@@ -798,7 +717,7 @@ func (d *DocumentDraft) delete(tx *sql.Tx) error {
 func (h *DocumentHistory) insert(tx *sql.Tx) error {
 	_, err := sqlDocument.insertHistory.Tx(tx).Exec(
 		data.Arg("document_id", h.ID),
-		data.Arg("language", h.Language.String()),
+		data.Arg("language", h.Language),
 		data.Arg("version", h.Version),
 		data.Arg("title", h.Title),
 		data.Arg("content", h.Content),
@@ -832,7 +751,7 @@ func (d *DocumentContent) insert(tx *sql.Tx) error {
 	}
 	_, err := sqlDocument.insertContent.Tx(tx).Exec(
 		data.Arg("document_id", d.ID),
-		data.Arg("language", d.Language.String()),
+		data.Arg("language", d.Language),
 		data.Arg("version", d.Version),
 		data.Arg("title", d.Title),
 		data.Arg("content", d.Content),
@@ -848,7 +767,7 @@ func (d *DocumentContent) insert(tx *sql.Tx) error {
 	for i := range d.Tags {
 		_, err = sqlDocument.insertTag.Tx(tx).Exec(
 			data.Arg("document_id", d.ID),
-			data.Arg("language", d.Tags[i].Language.String()),
+			data.Arg("language", d.Tags[i].Language),
 			data.Arg("tag", d.Tags[i].Value),
 			data.Arg("stem", d.Tags[i].Stem),
 			data.Arg("type", d.Tags[i].Type),
@@ -875,7 +794,7 @@ func (d *DocumentContent) update(tx *sql.Tx, who *User) error {
 		data.Arg("updater", who.ID),
 		data.Arg("document_id", d.ID),
 		data.Arg("version", d.Version),
-		data.Arg("language", d.Language.String()),
+		data.Arg("language", d.Language),
 	)
 
 	if err != nil {
@@ -893,7 +812,7 @@ func (d *DocumentContent) update(tx *sql.Tx, who *User) error {
 
 	_, err = sqlDocument.deleteTags.Tx(tx).Exec(
 		data.Arg("document_id", d.ID),
-		data.Arg("language", d.Language.String()),
+		data.Arg("language", d.Language),
 	)
 	if err != nil {
 		return err
@@ -902,7 +821,7 @@ func (d *DocumentContent) update(tx *sql.Tx, who *User) error {
 	for i := range d.Tags {
 		_, err = sqlDocument.insertTag.Tx(tx).Exec(
 			data.Arg("document_id", d.ID),
-			data.Arg("language", d.Tags[i].Language.String()),
+			data.Arg("language", d.Tags[i].Language),
 			data.Arg("tag", d.Tags[i].Value),
 			data.Arg("stem", d.Tags[i].Stem),
 			data.Arg("type", d.Tags[i].Type),

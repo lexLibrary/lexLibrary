@@ -155,17 +155,17 @@ func setupRoutes() http.Handler {
 	rootHandler.POST("/user/:token", createUser.handle(userCreate))
 
 	// documents
-	/*
-		/documents/new
-		/document/:id/
-		/document/:id/edit
-		/draft/:id
-
-	*/
-
-	rootHandler.POST("/documents/new", standard.handle(documentNew))
-	// rootHandler.POST("/documents/:id/edit", standard.handle(draftNew))
+	rootHandler.POST("/document/new", standard.handle(documentNew))
+	rootHandler.POST("/documents/:id/draft", standard.handle(draftNew))
 	rootHandler.PUT("/draft/:id", standard.handle(draftSave))
+
+	editor := &editorPage{
+		templateHandler: &templateHandler{
+			templateFiles: []string{"editor.template.html"},
+		},
+	}
+
+	rootHandler.GET("/document/new", editor.newDocument())
 
 	return rootHandler
 }

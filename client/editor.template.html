@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	[[template "header"]]
+
+	[[if eq .Page "new"]]
+		<title>New Document - Lex Library</title>
+	[[end]]
+</head>
+
+<body>
+	<div class="page-container">
+		[[template "nav" .]]
+		<div class="page-content">
+		[[if eq .Page "new"]]
+			<div id="newDocument" class="container grid-sm pt-8">
+				<form>
+					<div class="form-group">
+						<label class="form-label label-lg" for="title">Title</label>
+						<div class="input-group">
+							<input class="form-input input-lg" type="text" id="title" placeholder="Document Title">
+							<language></language>
+						</div>
+					</div>
+					<button type="submit" class="btn btn-lg btn-primary">Submit</button>
+				</form>
+			</div>
+		[[end]]
+		</div>
+		[[template "footer" .]]
+	</div>
+</body>
+<script src="/js/vue.js"></script>
+<script src="/js/editor.js"></script>
+
+</html>

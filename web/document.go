@@ -41,7 +41,7 @@ func documentNew(w http.ResponseWriter, r *http.Request, c ctx) {
 	lan := c.language
 
 	if input.Language != nil {
-		lan = languageFromString(*input.Language)
+		lan = app.MatchLanguage(*input.Language)
 	}
 
 	doc, err := u.NewDocument(*input.Title, lan)
@@ -86,7 +86,7 @@ func draftSave(w http.ResponseWriter, r *http.Request, c ctx) {
 
 	lan := c.language
 	if input.Language != nil {
-		lan = languageFromString(*input.Language)
+		lan = app.MatchLanguage(*input.Language)
 	}
 
 	id, err := data.IDFromString(c.params.ByName("id"))
@@ -106,19 +106,43 @@ func draftSave(w http.ResponseWriter, r *http.Request, c ctx) {
 	respond(w, success(nil))
 }
 
-// func draftNew(w http.ResponseWriter, r *http.Request, c ctx) {
-// 	if c.session == nil {
-// 		unauthorized(w, r)
-// 		return
-// 	}
+func draftNew(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
 
-// 	u, err := c.session.User()
-// 	if errHandled(err, w, r) {
-// 		return
-// 	}
+	input := &documentInput{}
+	err := parseInput(r, input)
+	if errHandled(err, w, r) {
+		return
+	}
 
-// 	id, err := data.IDFromString(c.params.ByName("id"))
-// 	if err != nil {
-// 		notFound(w, r)
-// 	}
-// }
+	draftLan := c.language
+
+	if input.Language != nil {
+		draftLan = app.MatchLanguage(*input.Language)
+	}
+
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	id, err := data.IDFromString(c.params.ByName("id"))
+	if err != nil {
+		notFound(w, r)
+	}
+
+	doc, err := app.DocumentGet(id, c.language, u)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	draft, err := doc.NewDraft(draftLan)
+	if errHandled(err, w, r) {
+		return
+	}
+
+	respond(w, created(draft))
+}
