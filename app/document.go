@@ -99,7 +99,7 @@ func DocumentGet(id data.ID, lan Language, who *User) (*Document, error) {
 func documentGet(id data.ID, lan Language) (*Document, error) {
 	d := &Document{}
 
-	rows, err := sqlDocument.get.Query(data.Arg("id", id), data.Arg("language", lan.String()))
+	rows, err := sqlDocument.get.Query(data.Arg("id", id), data.Arg("language", lan))
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func (d *DocumentDraft) tryAccess(who *User) error {
 func draftGet(id data.ID, lan Language) (*DocumentDraft, error) {
 	d := &DocumentDraft{}
 
-	rows, err := sqlDocument.getDraft.Query(data.Arg("id", id), data.Arg("language", lan.String()))
+	rows, err := sqlDocument.getDraft.Query(data.Arg("id", id), data.Arg("language", lan))
 	if err != nil {
 		return nil, err
 	}

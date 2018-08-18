@@ -28,7 +28,7 @@ func TestDocument(t *testing.T) {
 	t.Run("New Document", func(t *testing.T) {
 		reset(t)
 
-		draft, err := user.NewDocument("test", app.Language{language.English})
+		draft, err := user.NewDocument("test", app.Language(language.English))
 		ok(t, err)
 
 		assert(t, draft != nil, "Draft is nil")
@@ -44,7 +44,7 @@ func TestDocument(t *testing.T) {
 
 	t.Run("New Draft", func(t *testing.T) {
 		reset(t)
-		draft, err := user.NewDocument("test", app.Language{language.English})
+		draft, err := user.NewDocument("test", app.Language(language.English))
 		ok(t, err)
 
 		t.Run("Save", func(t *testing.T) {
@@ -125,8 +125,8 @@ func TestDocument(t *testing.T) {
 				from document_contents 
 				where document_id = {{arg "id"}}
 				and language = {{arg "language"}}
-			`).QueryRow(data.Arg("id", doc.ID), data.Arg("language", draft.Language.String())),
-					doc.ID, doc.Language.String(), doc.Version, draft.Title, draft.Content)
+			`).QueryRow(data.Arg("id", doc.ID), data.Arg("language", draft.Language)),
+					doc.ID, doc.Language, doc.Version, draft.Title, draft.Content)
 				assertRow(t, data.NewQuery(`
 				select count(*) from document_tags where document_id = {{arg "id"}}
 			`).QueryRow(data.Arg("id", doc.ID)), 3)
@@ -148,7 +148,7 @@ func TestDocument(t *testing.T) {
 		})
 
 		t.Run("Delete", func(t *testing.T) {
-			draft, err = user.NewDocument("test", app.Language{language.English})
+			draft, err = user.NewDocument("test", app.Language(language.English))
 			ok(t, err)
 
 			otherDraft, err := admin.User().Draft(draft.ID, draft.Language)
@@ -163,7 +163,7 @@ func TestDocument(t *testing.T) {
 
 	t.Run("Existing Document", func(t *testing.T) {
 		reset(t)
-		draft, err := user.NewDocument("test", app.Language{language.English})
+		draft, err := user.NewDocument("test", app.Language(language.English))
 		ok(t, err)
 
 		ok(t, draft.Save("Title", "<h2>Content</h2>", []string{"tag1", "tag2", "tag3"}, draft.Version))
@@ -180,7 +180,7 @@ func TestDocument(t *testing.T) {
 				and id = {{arg "id"}}
 			`).QueryRow(
 				data.Arg("document_id", doc.ID),
-				data.Arg("language", doc.Language.String()),
+				data.Arg("language", doc.Language),
 				data.Arg("id", first.ID),
 			), 1)
 
@@ -189,7 +189,7 @@ func TestDocument(t *testing.T) {
 				where language = {{arg "language"}}
 				and draft_id = {{arg "id"}}
 			`).QueryRow(
-				data.Arg("language", doc.Language.String()),
+				data.Arg("language", doc.Language),
 				data.Arg("id", first.ID),
 			), 3)
 
@@ -204,7 +204,7 @@ func TestDocument(t *testing.T) {
 				and id = {{arg "id"}}
 			`).QueryRow(
 				data.Arg("document_id", doc.ID),
-				data.Arg("language", doc.Language.String()),
+				data.Arg("language", doc.Language),
 				data.Arg("id", second.ID),
 			), 1)
 
@@ -213,7 +213,7 @@ func TestDocument(t *testing.T) {
 				where language = {{arg "language"}}
 				and draft_id = {{arg "id"}}
 			`).QueryRow(
-				data.Arg("language", doc.Language.String()),
+				data.Arg("language", doc.Language),
 				data.Arg("id", second.ID),
 			), 3)
 
@@ -223,10 +223,10 @@ func TestDocument(t *testing.T) {
 				and language = {{arg "language"}}
 			`).QueryRow(
 				data.Arg("document_id", doc.ID),
-				data.Arg("language", doc.Language.String()),
+				data.Arg("language", doc.Language),
 			), 2)
 
-			third, err := doc.NewDraft(app.Language{language.Polish})
+			third, err := doc.NewDraft(app.Language(language.Polish))
 			ok(t, err)
 
 			assert(t, third.Language.String() != doc.Language.String(),
@@ -239,7 +239,7 @@ func TestDocument(t *testing.T) {
 				and id = {{arg "id"}}
 			`).QueryRow(
 				data.Arg("document_id", doc.ID),
-				data.Arg("language", third.Language.String()),
+				data.Arg("language", third.Language),
 				data.Arg("id", third.ID),
 			), 1)
 
@@ -248,7 +248,7 @@ func TestDocument(t *testing.T) {
 				where language = {{arg "language"}}
 				and draft_id = {{arg "id"}}
 			`).QueryRow(
-				data.Arg("language", third.Language.String()),
+				data.Arg("language", third.Language),
 				data.Arg("id", third.ID),
 			), 3)
 
@@ -258,7 +258,7 @@ func TestDocument(t *testing.T) {
 				and language = {{arg "language"}}
 			`).QueryRow(
 				data.Arg("document_id", doc.ID),
-				data.Arg("language", third.Language.String()),
+				data.Arg("language", third.Language),
 			), 1)
 
 			firstTitle := "First Title"
@@ -289,11 +289,11 @@ func TestDocument(t *testing.T) {
 			`)
 
 			assertRow(t, draftQuery.QueryRow(data.Arg("id", first.ID)),
-				firstTitle, firstContent, first.Language.String(), 3)
+				firstTitle, firstContent, first.Language, 3)
 			assertRow(t, draftQuery.QueryRow(data.Arg("id", second.ID)),
-				secondTitle, secondContent, second.Language.String(), 4)
+				secondTitle, secondContent, second.Language, 4)
 			assertRow(t, draftQuery.QueryRow(data.Arg("id", third.ID)),
-				thirdTitle, thirdContent, third.Language.String(), 2)
+				thirdTitle, thirdContent, third.Language, 2)
 
 			publishQuery := data.NewQuery(`
 				select tbl1.documents, tbl2.drafts
@@ -402,7 +402,6 @@ func TestDocument(t *testing.T) {
 					"Adding a group to a document accessed publically")
 				assertFail(t, doc.RemoveGroup(group1.ID), http.StatusUnauthorized,
 					"Removing a group to a document accessed publically")
-
 				doc, err = app.DocumentGet(doc.ID, doc.Language, other)
 				ok(t, err)
 
@@ -418,7 +417,7 @@ func TestDocument(t *testing.T) {
 	t.Run("Get", func(t *testing.T) {
 		reset(t)
 
-		draft, err := user.NewDocument("test", app.Language{language.English})
+		draft, err := user.NewDocument("test", app.Language(language.English))
 		ok(t, err)
 		ok(t, draft.Save("Title", "<h1>Content</h1>", []string{"tag1", "tag2", "tag3", "tag4"}, draft.Version))
 
@@ -427,40 +426,42 @@ func TestDocument(t *testing.T) {
 
 		ok(t, admin.SetSetting("AllowPublicDocuments", false))
 
-		_, err = app.DocumentGet(data.ID{}, app.Language{language.English}, user)
+		_, err = app.DocumentGet(data.ID{}, app.Language(language.English), user)
 		assertFail(t, err, http.StatusNotFound, "Getting document with nil ID did not fail")
 
-		_, err = app.DocumentGet(data.NewID(), app.Language{language.English}, user)
+		_, err = app.DocumentGet(data.NewID(), app.Language(language.English), user)
 		assertFail(t, err, http.StatusNotFound, "Getting document with an invalid ID did not fail")
 
-		_, err = app.DocumentGet(doc.ID, app.Language{language.Polish}, user)
+		_, err = app.DocumentGet(doc.ID, app.Language(language.Polish), user)
 		assertFail(t, err, http.StatusNotFound, "Getting document with incorrect language")
 
-		_, err = app.DocumentGet(doc.ID, app.Language{language.English}, nil)
+		_, err = app.DocumentGet(doc.ID, app.Language(language.English), nil)
 		assertFail(t, err, http.StatusNotFound, "Getting private document with no user")
 
 		ok(t, admin.SetSetting("AllowPublicDocuments", true))
 
-		other, err := app.DocumentGet(doc.ID, app.Language{language.English}, nil)
+		other, err := app.DocumentGet(doc.ID, app.Language(language.English), nil)
 		ok(t, err)
 
 		equals(t, doc.Title, other.Title)
 		equals(t, doc.Content, other.Content)
 		equals(t, doc.Tags, other.Tags)
+		equals(t, doc.Language, other.Language)
 
 		// doc with no tags
-		newDraft, err := user.NewDocument("test", app.Language{language.Ukrainian})
+		newDraft, err := user.NewDocument("test", app.Language(language.Ukrainian))
 		ok(t, err)
 		ok(t, newDraft.Save("Title", "<h1>Content</h1>", nil, newDraft.Version))
 
 		newDoc, err := newDraft.Publish()
 		ok(t, err)
 
-		other, err = app.DocumentGet(newDoc.ID, app.Language{language.Ukrainian}, nil)
+		other, err = app.DocumentGet(newDoc.ID, app.Language(language.Ukrainian), nil)
 		ok(t, err)
 		equals(t, newDoc.Title, other.Title)
 		equals(t, newDoc.Content, other.Content)
 		equals(t, newDoc.Tags, other.Tags)
+		equals(t, newDoc.Language, other.Language)
 
 		t.Run("Group Access", func(t *testing.T) {
 			// get latest version of document
@@ -476,7 +477,7 @@ func TestDocument(t *testing.T) {
 
 			ok(t, doc.AddGroup(blue.ID, false))
 
-			_, err = app.DocumentGet(doc.ID, app.Language{language.English}, nil)
+			_, err = app.DocumentGet(doc.ID, app.Language(language.English), nil)
 			assertFail(t, err, http.StatusNotFound, "Getting private document with no user")
 
 			_, err = app.DocumentGet(doc.ID, doc.Language, otherUser)
@@ -491,7 +492,7 @@ func TestDocument(t *testing.T) {
 			equals(t, doc.Title, otherDoc.Title)
 			equals(t, doc.Content, otherDoc.Content)
 
-			otherDraft, err := otherDoc.NewDraft(app.Language{language.English})
+			otherDraft, err := otherDoc.NewDraft(app.Language(language.English))
 			ok(t, err)
 
 			_, err = otherDraft.Publish()
@@ -506,7 +507,7 @@ func TestDocument(t *testing.T) {
 			adminDoc, err := app.DocumentGet(doc.ID, doc.Language, admin.User())
 			ok(t, err)
 
-			adminDraft, err := adminDoc.NewDraft(app.Language{language.English})
+			adminDraft, err := adminDoc.NewDraft(app.Language(language.English))
 			ok(t, err)
 
 			_, err = adminDraft.Publish()
@@ -522,7 +523,7 @@ func TestDocument(t *testing.T) {
 		otherUser, err := app.UserNew("other", "otherPassword")
 		ok(t, err)
 
-		draft, err := user.NewDocument("test", app.Language{language.English})
+		draft, err := user.NewDocument("test", app.Language(language.English))
 		ok(t, err)
 		ok(t, draft.Save("Title", "<h1>Content</h1>", []string{"tag1", "tag2", "tag3", "tag4"}, draft.Version))
 
@@ -551,7 +552,7 @@ func TestDocument(t *testing.T) {
 			doc, err := draft.Publish()
 			ok(t, err)
 
-			draft, err = doc.NewDraft(app.Language{language.Russian})
+			draft, err = doc.NewDraft(app.Language(language.Russian))
 			ok(t, err)
 
 			blue, err := user.NewGroup("blue")

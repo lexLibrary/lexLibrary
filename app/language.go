@@ -51,53 +51,58 @@ var languages = []language.Tag{
 
 var languageMatcher = language.NewMatcher(languages)
 
-type Language struct {
-	language.Tag
-}
+type Language language.Tag
 
 // newLanguage creates a new language type for language specific text processing, user input should probably
 // use MatchLanguage
-func newLanguage(lan string) (Language, error) {
-	tag, err := language.Parse(lan)
-	if err != nil {
-		return Language{}, err
-	}
-	return Language{tag}, nil
-}
+// func newLanguage(lan string) (Language, error) {
+// 	tag, err := language.Parse(lan)
+// 	if err != nil {
+// 		return Language{}, err
+// 	}
+// 	return Language(tag), nil
+// }
 
 // MatchLanguage returns a language matched against only the supported list of languages, or returns
 // the instance default language if none match
 func MatchLanguage(lans ...string) Language {
 	tag, _ := language.MatchStrings(languageMatcher, lans...)
-	return Language{tag}
+	return Language(tag)
+}
+
+// String implements Stringer interface
+func (l Language) String() string {
+	return language.Tag(l).String()
 }
 
 // Scan implements the Scanner interface.
 func (l *Language) Scan(value interface{}) error {
-	//FIXME
-	val, err := driver.String.ConvertValue(value)
-	if err != nil {
-		return err
+	if value == nil {
+		return nil
 	}
 
-	tag, err := language.Parse(val.(string))
-	if err != nil {
-		return err
-	}
-
-	l.Tag = tag
-	return nil
+	return (*language.Tag)(l).UnmarshalText(value.([]byte))
 }
 
 // Value implements the driver Valuer interface.
 func (l Language) Value() (driver.Value, error) {
-	return l.String(), nil
+	return language.Tag(l).MarshalText()
+}
+
+// MarshalJSON implements the JSON interface for Language
+func (l Language) MarshalJSON() ([]byte, error) {
+	return language.Tag(l).MarshalText()
+}
+
+// UnmarshalJSON implements the JSON interface for Language
+func (l *Language) UnmarshalJSON(data []byte) error {
+	return (*language.Tag)(l).UnmarshalText(data)
 }
 
 // Stem returns the stem of the given word for the given language
 func (l Language) Stem(word string) string {
 	env := snowballstem.NewEnv(word)
-	switch l.Tag {
+	switch language.Tag(l) {
 	case language.Arabic:
 		arabic.Stem(env)
 	case language.Danish:
