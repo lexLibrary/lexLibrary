@@ -3,9 +3,12 @@
 
 <head>
 	[[template "header"]]
+	<link href="/css/quill.snow.css" rel="stylesheet">
 
 	[[if eq .Page "new"]]
 		<title>New Document - Lex Library</title>
+	[[else if eq .Page "edit"]]
+		<title>Edit [[.Draft.Title]] - Lex Library</title>
 	[[end]]
 </head>
 
@@ -15,16 +18,26 @@
 		<div class="page-content">
 		[[if eq .Page "new"]]
 			<div id="newDocument" class="container grid-sm pt-8">
-				<form>
-					<div class="form-group">
-						<label class="form-label label-lg" for="title">Title</label>
+				<form @submit="submit">
+					<div :class="{'has-error': error}" class="form-group">
 						<div class="input-group">
-							<input class="form-input input-lg" type="text" id="title" placeholder="Document Title">
-							<language></language>
+							<input v-model="title" class="form-input input-lg" type="text" id="title" placeholder="Document Title">
+							<select id="language" class="select-lg form-select">
+								[[range .Languages]]
+									<option [[if eq .String ctx.Language.String]]selected="selected"[[end]] value="[[.String]]">
+										[[.Display]]
+									</option>
+								[[end]]
+							</select>
 						</div>
+						<p v-if="error" v-cloak class="form-input-hint">{{error}}</p>
 					</div>
 					<button type="submit" class="btn btn-lg btn-primary">Submit</button>
 				</form>
+			</div>
+		[[else if eq .Page "edit"]]
+			<div id="editor" class="container grid-md pt-8">
+				<div v-editor></div>
 			</div>
 		[[end]]
 		</div>
@@ -32,6 +45,7 @@
 	</div>
 </body>
 <script src="/js/vue.js"></script>
+<script src="/js/quill.js"></script>
 <script src="/js/editor.js"></script>
 
 </html>

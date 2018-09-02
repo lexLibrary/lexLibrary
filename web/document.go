@@ -84,17 +84,12 @@ func draftSave(w http.ResponseWriter, r *http.Request, c ctx) {
 		return
 	}
 
-	lan := c.language
-	if input.Language != nil {
-		lan = app.MatchLanguage(*input.Language)
-	}
-
 	id, err := data.IDFromString(c.params.ByName("id"))
 	if err != nil {
 		notFound(w, r)
 	}
 
-	draft, err := u.Draft(id, lan)
+	draft, err := u.Draft(id)
 	if errHandled(err, w, r) {
 		return
 	}

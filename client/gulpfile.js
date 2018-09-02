@@ -24,8 +24,20 @@ var jsFiles = [
     'profile.js',
     'profile_edit.js',
     'admin.js',
-	'editor.js',
+    'editor.js',
 ];
+
+var staticJSFiles = [{
+    dir: './node_modules/vue/dist/',
+    prod: 'vue.min.js',
+    dev: 'vue.js',
+    out: 'vue.js',
+}, {
+    dir: './node_modules/quill/dist/',
+    prod: 'quill.min.js',
+    dev: 'quill.js',
+    out: 'quill.js',
+}, ];
 
 function rollupFiles(dev) {
     let promises = [];
@@ -48,9 +60,9 @@ function rollupFile(file, dev) {
         plugins.push(uglify());
     }
     return rollup.rollup({
-        input: file,
-        plugins: plugins
-    })
+            input: file,
+            plugins: plugins
+        })
         .then(bundle => {
             return bundle.write({
                 file: path.join(assetDir, file),
@@ -60,25 +72,35 @@ function rollupFile(file, dev) {
         });
 }
 
-gulp.task('js', function () {
+function staticJS(dev) {
+    let promises = [];
+    for (let file of staticJSFiles) {
+        promises.push(gulp.src(path.join(file.dir, dev ? file.dev : file.prod))
+            .pipe(rename(file.out))
+            .pipe(gulp.dest(path.join(assetDir, 'js')))
+        );
+    }
+
+    return Promise.all(promises);
+}
+
+
+gulp.task('js', function() {
     return [
         rollupFiles(),
-        gulp.src('./node_modules/vue/dist/vue.min.js')
-            .pipe(rename('vue.js'))
-            .pipe(gulp.dest(path.join(assetDir, 'js')))
+        staticJS(),
     ];
 });
 
-gulp.task('devJs', function () {
+gulp.task('devJs', function() {
     return [
         rollupFiles(true),
-        gulp.src('./node_modules/vue/dist/vue.js')
-            .pipe(gulp.dest(path.join(assetDir, 'js')))
+        staticJS(true),
     ];
 });
 
-gulp.task('css', function () {
-    return gulp.src('./scss/**/*.scss')
+gulp.task('css', function() {
+    return [gulp.src('./scss/**/*.scss')
         .pipe(sass({
             outputStyle: 'compressed',
             includePaths: 'node_modules'
@@ -88,11 +110,14 @@ gulp.task('css', function () {
                 cascade: false
             })
         ]))
-        .pipe(gulp.dest(path.join(assetDir, 'css')));
+        .pipe(gulp.dest(path.join(assetDir, 'css'))),
+        gulp.src('./node_modules/quill/dist/quill.snow.css')
+        .pipe(gulp.dest(path.join(assetDir, 'css'))),
+    ];
 });
 
-gulp.task('devCss', function () {
-    return gulp.src('./scss/**/*.scss')
+gulp.task('devCss', function() {
+    return [gulp.src('./scss/**/*.scss')
         .pipe(sourcemaps.init())
         .pipe(sass({
             outputStyle: 'compressed',
@@ -104,26 +129,29 @@ gulp.task('devCss', function () {
             })
         ]))
         .pipe(sourcemaps.write())
-        .pipe(gulp.dest(path.join(assetDir, 'css')));
+        .pipe(gulp.dest(path.join(assetDir, 'css'))),
+		gulp.src('./node_modules/quill/dist/quill.snow.css')
+        .pipe(gulp.dest(path.join(assetDir, 'css'))),
+	];
 });
 
 
 // static files
-gulp.task('html', function () {
+gulp.task('html', function() {
     return gulp.src([
         './**/*.html',
         '!node_modules/**/*'
     ]).pipe(gulp.dest(assetDir));
 });
 
-gulp.task('images', function () {
+gulp.task('images', function() {
     return gulp.src('./images/*')
         .pipe(gulp.dest(path.join(assetDir, 'images')));
 });
 
 
 // watch for changes
-gulp.task('watch', function () {
+gulp.task('watch', function() {
     gulp.watch(['./**/*.html'], ['html']);
     gulp.watch('./images/**/*', ['images']);
     gulp.watch(['./scss/**/*.scss'], ['devCss']);

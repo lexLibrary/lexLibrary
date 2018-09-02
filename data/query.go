@@ -248,17 +248,9 @@ func (q *Query) parseStatement(deferred bool, args ...Argument) error {
 		"sqlserver": func() bool {
 			return dbType == sqlserver
 		},
+		"esc": dbEscape,
 		"limit": func() string {
-			switch dbType {
-			case sqlite, postgres, cockroachdb:
-				return `"limit"`
-			case mysql, mariadb:
-				return "`limit`"
-			case sqlserver:
-				return "[limit]"
-			default:
-				panic("Unsupported database type")
-			}
+			return dbEscape("limit")
 		},
 	}).Parse(q.statement)
 	if err != nil {
@@ -279,6 +271,19 @@ func (q *Query) parseStatement(deferred bool, args ...Argument) error {
 	}
 
 	return nil
+}
+
+func dbEscape(word string) string {
+	switch dbType {
+	case sqlite, postgres, cockroachdb:
+		return fmt.Sprintf(`"%s"`, word)
+	case mysql, mariadb:
+		return fmt.Sprintf("`%s`", word)
+	case sqlserver:
+		return fmt.Sprintf("[%s]", word)
+	default:
+		panic("Unsupported database type")
+	}
 }
 
 type queryError struct {

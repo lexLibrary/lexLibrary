@@ -224,4 +224,11 @@ var attribution = []attribute{
 		LicenseType: "Apache 2.0",
 		LicenseURL:  "https://github.com/blevesearch/bleve/blob/master/LICENSE",
 	},
+	attribute{
+		Name:        "Quill",
+		URL:         "hyttps://quilljs.com",
+		Author:      "Slab",
+		LicenseType: "BSD 3-Clause",
+		LicenseURL:  "https://github.com/quilljs/quill/blob/develop/LICENSE",
+	},
 }

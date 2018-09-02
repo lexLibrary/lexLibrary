@@ -25,6 +25,7 @@ import (
 	"github.com/blevesearch/snowballstem/turkish"
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 //https://blog.golang.org/matchlang
@@ -34,7 +35,6 @@ var languages = []language.Tag{
 	language.Arabic,
 	language.Danish,
 	language.Dutch,
-	language.English,
 	language.Finnish,
 	language.French,
 	language.German,
@@ -49,6 +49,8 @@ var languages = []language.Tag{
 	language.Tamil,
 	language.Turkish,
 }
+
+var LanguagesSupported = languageTagsToLanguageSlice(languages)
 
 var languageMatcher = language.NewMatcher(languages)
 
@@ -71,9 +73,23 @@ func MatchLanguage(lans ...string) Language {
 	return Language(tag)
 }
 
+func languageTagsToLanguageSlice(tags []language.Tag) []Language {
+	l := make([]Language, len(tags))
+
+	for i := range tags {
+		l[i] = Language(tags[i])
+	}
+
+	return l
+}
+
 // String implements Stringer interface
 func (l Language) String() string {
 	return language.Tag(l).String()
+}
+
+func (l Language) Display() string {
+	return display.Self.Name(language.Tag(l))
 }
 
 // Scan implements the Scanner interface.
@@ -89,7 +105,7 @@ func (l *Language) Scan(value interface{}) error {
 	case []byte:
 		val = value.([]byte)
 	default:
-		return errors.New("Incompatible type for GzippedText")
+		return errors.Errorf("Incorrect type for Language.  Expected string got %T", value)
 	}
 
 	return (*language.Tag)(l).UnmarshalText(val)
@@ -97,16 +113,16 @@ func (l *Language) Scan(value interface{}) error {
 
 // Value implements the driver Valuer interface.
 func (l Language) Value() (driver.Value, error) {
+	return language.Tag(l).String(), nil
+}
+
+// MarshalText implements the MarshalText interface for Language
+func (l Language) MarshalText() ([]byte, error) {
 	return language.Tag(l).MarshalText()
 }
 
-// MarshalJSON implements the JSON interface for Language
-func (l Language) MarshalJSON() ([]byte, error) {
-	return language.Tag(l).MarshalText()
-}
-
-// UnmarshalJSON implements the JSON interface for Language
-func (l *Language) UnmarshalJSON(data []byte) error {
+// UnmarshalJSON implements the Text interface for Language
+func (l *Language) UnmarshalText(data []byte) error {
 	return (*language.Tag)(l).UnmarshalText(data)
 }
 

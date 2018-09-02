@@ -68,20 +68,22 @@ func errHandled(err error, w http.ResponseWriter, r *http.Request) bool {
 
 	accept := r.Header.Get("Accept")
 	if strings.Contains(accept, acceptHTML) {
-		setTemplateHeaders(w)
 		w.WriteHeader(status)
 		switch status {
 		case http.StatusNotFound:
+			notFoundHandler.setHeaders(w)
 			terr := notFoundHandler.template.Execute(w, nil)
 			if terr != nil {
 				app.LogError(errors.Wrap(terr, "Writing not_found template"))
 			}
 		case http.StatusUnauthorized:
+			unauthorizedHandler.setHeaders(w)
 			terr := unauthorizedHandler.template.Execute(w, map[string]bool{"Unauthorized": true})
 			if terr != nil {
 				app.LogError(errors.Wrap(terr, "Writing login template"))
 			}
 		default:
+			errorHandler.setHeaders(w)
 			terr := errorHandler.template.Execute(w, struct {
 				ErrorID data.ID
 			}{

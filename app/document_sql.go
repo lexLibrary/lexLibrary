@@ -210,9 +210,7 @@ var sqlDocument = struct {
 		from 	document_drafts d
 			left outer join document_draft_tags t 
 				on d.id = t.draft_id
-				and d.language = t.language
 		where 	d.id = {{arg "id"}}
-		and 	d.language = {{arg "language"}}
 	`),
 
 	deleteGroup: data.NewQuery(`

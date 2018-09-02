@@ -262,7 +262,7 @@ var schemaVersions = []*Query{
 			tag {{varchar "document.tag"}} NOT NULL, 
 			stem {{text}} NOT NULL,
 			type {{text}} NOT NULL,
-			PRIMARY KEY(draft_id, language, tag)
+			PRIMARY KEY(draft_id, tag)
 		)
 	`),
 }

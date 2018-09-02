@@ -27,9 +27,9 @@ type Document struct {
 // published documents
 // There can be multiple language versions of the same document
 type DocumentContent struct {
-	ID       data.ID `json:"id"`
-	Version  int     `json:"version"`
-	Language Language
+	ID       data.ID   `json:"id"`
+	Version  int       `json:"version"`
+	Language Language  `json:"language"`
 	Title    string    `json:"title"`
 	Content  string    `json:"content"`
 	Tags     []Tag     `json:"tags"`
@@ -200,12 +200,12 @@ func (d *Document) tryAccess(who *User) error {
 }
 
 // Draft retrieves a document draft
-func (u *User) Draft(id data.ID, lan Language) (*DocumentDraft, error) {
+func (u *User) Draft(id data.ID) (*DocumentDraft, error) {
 	if id.IsNil() {
 		return nil, errDocumentNotFound
 	}
 
-	d, err := draftGet(id, lan)
+	d, err := draftGet(id)
 	if err != nil {
 		return nil, err
 	}
@@ -226,10 +226,10 @@ func (d *DocumentDraft) tryAccess(who *User) error {
 	return d.canPublish()
 }
 
-func draftGet(id data.ID, lan Language) (*DocumentDraft, error) {
+func draftGet(id data.ID) (*DocumentDraft, error) {
 	d := &DocumentDraft{}
 
-	rows, err := sqlDocument.getDraft.Query(data.Arg("id", id), data.Arg("language", lan))
+	rows, err := sqlDocument.getDraft.Query(data.Arg("id", id))
 	if err != nil {
 		return nil, err
 	}

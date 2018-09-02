@@ -162,10 +162,12 @@ func setupRoutes() http.Handler {
 	editor := &editorPage{
 		templateHandler: &templateHandler{
 			templateFiles: []string{"editor.template.html"},
+			csp:           cspDefault.addStyle("'unsafe-inline'"),
 		},
 	}
 
 	rootHandler.GET("/document/new", editor.newDocument())
+	rootHandler.GET("/draft/:id", editor.edit())
 
 	return rootHandler
 }

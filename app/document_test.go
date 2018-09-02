@@ -66,7 +66,7 @@ func TestDocument(t *testing.T) {
 				http.StatusBadRequest, "No failure on long tag")
 
 			// test saving as other user
-			otherDraft, err := admin.User().Draft(draft.ID, draft.Language)
+			otherDraft, err := admin.User().Draft(draft.ID)
 			ok(t, err)
 
 			assertFail(t, otherDraft.Save(newTitle, newContent, nil, otherDraft.Version),
@@ -118,31 +118,31 @@ func TestDocument(t *testing.T) {
 				}
 
 				assertRow(t, data.NewQuery(`
-				select count(*) from documents where id = {{arg "id"}}
-			`).QueryRow(data.Arg("id", doc.ID)), 1)
+					select count(*) from documents where id = {{arg "id"}}
+				`).QueryRow(data.Arg("id", doc.ID)), 1)
 				assertRow(t, data.NewQuery(`
-				select document_id, language, version, title, content 
-				from document_contents 
-				where document_id = {{arg "id"}}
-				and language = {{arg "language"}}
-			`).QueryRow(data.Arg("id", doc.ID), data.Arg("language", draft.Language)),
+					select document_id, language, version, title, content 
+					from document_contents 
+					where document_id = {{arg "id"}}
+					and language = {{arg "language"}}
+				`).QueryRow(data.Arg("id", doc.ID), data.Arg("language", draft.Language)),
 					doc.ID, doc.Language, doc.Version, draft.Title, draft.Content)
 				assertRow(t, data.NewQuery(`
-				select count(*) from document_tags where document_id = {{arg "id"}}
-			`).QueryRow(data.Arg("id", doc.ID)), 3)
+					select count(*) from document_tags where document_id = {{arg "id"}}
+				`).QueryRow(data.Arg("id", doc.ID)), 3)
 
 				assertRow(t, data.NewQuery(`
-				select count(*) from document_drafts where id = {{arg "id"}}
-			`).QueryRow(data.Arg("id", draft.ID)), 0)
+					select count(*) from document_drafts where id = {{arg "id"}}
+				`).QueryRow(data.Arg("id", draft.ID)), 0)
 
 				assertRow(t, data.NewQuery(`
-				select count(*) from document_draft_tags where draft_id = {{arg "id"}}
-			`).QueryRow(data.Arg("id", draft.ID)), 0)
+					select count(*) from document_draft_tags where draft_id = {{arg "id"}}
+				`).QueryRow(data.Arg("id", draft.ID)), 0)
 
 				assertRow(t, data.NewQuery(`
-				select count(*) from document_history 
-				where document_id = {{arg "document_id"}}
-			`).QueryRow(data.Arg("document_id", doc.ID)), 0)
+					select count(*) from document_history 
+					where document_id = {{arg "document_id"}}
+				`).QueryRow(data.Arg("document_id", doc.ID)), 0)
 			})
 
 		})
@@ -151,7 +151,7 @@ func TestDocument(t *testing.T) {
 			draft, err = user.NewDocument("test", app.Language(language.English))
 			ok(t, err)
 
-			otherDraft, err := admin.User().Draft(draft.ID, draft.Language)
+			otherDraft, err := admin.User().Draft(draft.ID)
 			ok(t, err)
 
 			assertFail(t, otherDraft.Delete(),
@@ -527,24 +527,24 @@ func TestDocument(t *testing.T) {
 		ok(t, err)
 		ok(t, draft.Save("Title", "<h1>Content</h1>", []string{"tag1", "tag2", "tag3", "tag4"}, draft.Version))
 
-		_, err = user.Draft(data.ID{}, draft.Language)
+		_, err = user.Draft(data.ID{})
 		assertFail(t, err, http.StatusNotFound, "Getting draft with nil ID did not fail")
 
-		_, err = user.Draft(data.NewID(), draft.Language)
+		_, err = user.Draft(data.NewID())
 		assertFail(t, err, http.StatusNotFound, "Getting draft with invalid ID did not fail")
 
 		t.Run("Unpublished", func(t *testing.T) {
-			_, err = otherUser.Draft(draft.ID, draft.Language)
+			_, err = otherUser.Draft(draft.ID)
 			assertFail(t, err, http.StatusUnauthorized, "Getting draft from other user")
 
-			otherDraft, err := user.Draft(draft.ID, draft.Language)
+			otherDraft, err := user.Draft(draft.ID)
 			ok(t, err)
 
 			equals(t, draft.Title, otherDraft.Title)
 			equals(t, draft.Content, otherDraft.Content)
 			equals(t, draft.Tags, otherDraft.Tags)
 
-			_, err = admin.User().Draft(draft.ID, draft.Language)
+			_, err = admin.User().Draft(draft.ID)
 			ok(t, err)
 		})
 
@@ -560,7 +560,7 @@ func TestDocument(t *testing.T) {
 
 			ok(t, doc.AddGroup(blue.ID, false))
 
-			_, err = otherUser.Draft(draft.ID, draft.Language)
+			_, err = otherUser.Draft(draft.ID)
 			assertFail(t, err, http.StatusUnauthorized, "Getting draft from other user")
 
 			groupAdmin, err := blue.Admin(user)
@@ -568,12 +568,12 @@ func TestDocument(t *testing.T) {
 
 			ok(t, groupAdmin.AddMember(otherUser.ID))
 
-			_, err = otherUser.Draft(draft.ID, draft.Language)
+			_, err = otherUser.Draft(draft.ID)
 			assertFail(t, err, http.StatusUnauthorized,
 				"Getting draft from other user in group without publish access")
 
 			ok(t, doc.AddGroup(blue.ID, true))
-			_, err = otherUser.Draft(draft.ID, draft.Language)
+			_, err = otherUser.Draft(draft.ID)
 			ok(t, err)
 		})
 
