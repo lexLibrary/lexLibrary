@@ -36,14 +36,25 @@
 				</form>
 			</div>
 		[[else if eq .Page "edit"]]
-			<div id="editor" class="container grid-md pt-8">
-				<div v-editor></div>
+			<div v-if="error" v-cloak class="toast toast-error">
+				<button @click="error=null" class="btn btn-clear float-right"></button>
+				{{error}}
 			</div>
+			[[with .Draft]]
+			<div id="editor" v-cloak class="container grid-md pt-8">
+				<button @click="save" class="btn btn-lg btn-primary float-right">Save</button>
+				<h1>[[.Title]]</h1>
+				<div v-editor>
+					[[html .Content]]
+				</div>
+			</div>
+			[[end]]
 		[[end]]
 		</div>
 		[[template "footer" .]]
 	</div>
 </body>
+<script type="application/json" id="payload">[[.Draft]]</script>
 <script src="/js/vue.js"></script>
 <script src="/js/quill.js"></script>
 <script src="/js/editor.js"></script>

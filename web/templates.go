@@ -33,6 +33,9 @@ var templateFuncs = map[string]interface{}{
 
 		return template.JS(bytes), err
 	},
+	"html": func(value string) template.HTML {
+		return template.HTML(value)
+	},
 	"time": func(t time.Time) string {
 		return t.Local().Format("January _2 03:04:05 PM")
 	},

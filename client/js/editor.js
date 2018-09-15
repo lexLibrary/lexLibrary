@@ -1,26 +1,30 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 import './lib/polyfill';
 import * as xhr from './lib/xhr';
+import {
+    payload
+} from './lib/data';
+
 
 var newDocument = new Vue({
     el: document.getElementById('newDocument'),
-    data: function() {
+    data: function () {
         return {
             title: '',
             error: null,
         };
     },
     methods: {
-        'submit': function(e) {
+        'submit': function (e) {
             if (e) {
                 e.preventDefault();
             }
             let lan = document.getElementById('language');
 
             xhr.post('/document/new', {
-                    title: this.title,
-                    language: lan.value,
-                })
+                title: this.title,
+                language: lan.value,
+            })
                 .then((result) => {
                     window.location = `/draft/${result.response.id}`;
                 })
@@ -33,16 +37,17 @@ var newDocument = new Vue({
 
 var edit = new Vue({
     el: document.getElementById('editor'),
-    data: function() {
+    data: function () {
         return {
+            draft: payload(),
             editor: null,
             error: null,
         };
     },
     directives: {
         editor: {
-            inserted: function(el) {
-                let editor = new Quill(el, {
+            inserted: function (el, binding, vnode) {
+                vnode.context.editor = new Quill(el, {
                     modules: {
                         toolbar: [
                             ['bold', 'italic', 'underline', 'strike'], // toggled buttons
@@ -94,5 +99,20 @@ var edit = new Vue({
             },
         },
     },
-    methods: {},
+    methods: {
+        "save": function () {
+            xhr.put(`/draft/${this.draft.id}`, {
+                title: this.draft.title,
+                version: this.draft.version,
+                content: this.editor.container.innerHTML,
+                tags: this.draft.tags,
+            })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch((err) => {
+                    this.error = err.response;
+                });
+        },
+    },
 });
