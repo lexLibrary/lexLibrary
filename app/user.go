@@ -611,17 +611,7 @@ func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 		if err != nil {
 			return err
 		}
-
-		if !u.profileImage.IsNil() {
-			// a previous user image exists, delete it
-			err = imageDelete(tx, u.profileImage)
-			if err != nil {
-				return err
-			}
-
-		}
-
-		return u.update(func() (sql.Result, error) {
+		err = u.update(func() (sql.Result, error) {
 			return sqlUser.updateProfileImage.Tx(tx).Exec(
 				data.Arg("profile_image_id", u.profileImageDraft),
 				data.Arg("profile_image_draft_id", nil),
@@ -629,6 +619,18 @@ func (u *User) SetProfileImageFromDraft(x0, y0, x1, y1 float64) error {
 				data.Arg("version", u.Version),
 			)
 		})
+		if err != nil {
+			return err
+		}
+
+		if !u.profileImage.IsNil() {
+			// a previous user image exists, delete it
+			err = imageDelete(tx, u.profileImage)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 

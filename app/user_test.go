@@ -569,7 +569,8 @@ func TestUser(t *testing.T) {
 				}
 
 				if u.DisplayInitials() != initials {
-					t.Fatalf("DisplayInitials are incorrect. Expected %s, got %s.", initials, u.DisplayInitials())
+					t.Fatalf("DisplayInitials are incorrect. Expected %s, got %s.", initials,
+						u.DisplayInitials())
 				}
 			})
 		}
@@ -580,114 +581,80 @@ func TestUser(t *testing.T) {
 		reset(t)
 
 		u, err := app.UserNew("testuser", "testuserpassword")
-		if err != nil {
-			t.Fatalf("Error adding user")
-		}
-		upload := getImageUpload(t, 5000, 5000)
+		ok(t, err)
 
-		err = u.UploadProfileImageDraft(upload, u.Version)
-		if err != nil {
-			t.Fatalf("Error uploading profile image draft: %s", err)
-		}
+		ok(t, u.UploadProfileImageDraft(getImageUpload(t, 5000, 5000), u.Version))
 
-		if u.ProfileImage() != nil {
-			t.Fatalf("User's profile image should not have been updated by the draft image")
-		}
+		assert(t, u.ProfileImage() == nil,
+			"User's profile image should not have been updated by the draft image")
 
 		rs, err := u.ProfileImageDraft().Full()
-		if err != nil {
-			t.Fatalf("Error getting fullsize draft image: %s", err)
-		}
+		ok(t, err)
 
 		img, err := png.Decode(rs)
-		if err != nil {
-			t.Fatalf("Unable to decode uploaded image: %s", err)
-		}
+		ok(t, err)
 
 		maxImageSize := 4096
 
 		// uploaded images larger than max size will get automatically scaled to max
 
-		if img.Bounds().Dx() != maxImageSize {
-			t.Fatalf("Incorrect profile image width. Expected %d, got %d", maxImageSize, img.Bounds().Dx())
-		}
-		if img.Bounds().Dy() != maxImageSize {
-			t.Fatalf("Incorrect profile image height. Expected %d, got %d", maxImageSize, img.Bounds().Dy())
-		}
+		assert(t, img.Bounds().Dx() == maxImageSize,
+			"Incorrect profile image width. Expected %d, got %d", maxImageSize, img.Bounds().Dx())
+		assert(t, img.Bounds().Dy() == maxImageSize,
+			"Incorrect profile image height. Expected %d, got %d", maxImageSize, img.Bounds().Dy())
 
 		origDraftID := u.ProfileImageDraft().ID
-		err = u.UploadProfileImageDraft(getImageUpload(t, 1000, 4000), u.Version)
-		if err != nil {
-			t.Fatalf("Error uploading profile image draft: %s", err)
-		}
+		ok(t, u.UploadProfileImageDraft(getImageUpload(t, 1000, 4000), u.Version))
 
-		if origDraftID == u.ProfileImageDraft().ID {
-			t.Fatalf("New draft image upload did not replace old draft image")
-		}
+		assert(t, origDraftID != u.ProfileImageDraft().ID,
+			"New draft image upload did not replace old draft image")
 
 		assertRow(t, data.NewQuery(`select count(*) as cnt from images where id = {{arg "id"}}`).
 			QueryRow(data.Arg("id", origDraftID)), 0)
 
-		err = u.SetProfileImageFromDraft(-1, 0, 100, 100)
-		if err != nil {
-			t.Fatalf("Error setting profile image: %s", err)
-		}
+		ok(t, u.SetProfileImageFromDraft(-1, 0, 100, 100))
 
-		err = u.Refresh()
-		if err != nil {
-			t.Fatalf("Error refreshing user: %s", err)
-		}
+		ok(t, u.Refresh())
 
-		if u.ProfileImageDraft() != nil {
-			t.Fatalf("Draft image was not set to null after setting Profile image: %s", u.ProfileImageDraft().ID)
-		}
+		assert(t, u.ProfileImageDraft() == nil,
+			"Draft image was not set to null after setting Profile image")
 
 		rs, err = u.ProfileImage().Full()
-		if err != nil {
-			t.Fatalf("Error getting fullsize profile image: %s", err)
-		}
+		ok(t, err)
 
 		img, err = png.Decode(rs)
-		if err != nil {
-			t.Fatalf("Unable to decode uploaded image: %s", err)
-		}
-		if img.Bounds().Dx() != 300 {
-			t.Fatalf("Incorrect profile image width. Expected %d, got %d", 300, img.Bounds().Dx())
-		}
-		if img.Bounds().Dy() != 300 {
-			t.Fatalf("Incorrect profile image height. Expected %d, got %d", 300, img.Bounds().Dy())
-		}
+		ok(t, err)
+
+		assert(t, img.Bounds().Dx() == 300,
+			"Incorrect profile image width. Expected %d, got %d", 300, img.Bounds().Dx())
+		assert(t, img.Bounds().Dy() == 300,
+			"Incorrect profile image height. Expected %d, got %d", 300, img.Bounds().Dy())
 
 		rs, err = u.ProfileImage().Thumb()
-		if err != nil {
-			t.Fatalf("Error getting fullsize profile image: %s", err)
-		}
+		ok(t, err)
 
 		img, err = png.Decode(rs)
-		if err != nil {
-			t.Fatalf("Unable to decode uploaded image: %s", err)
-		}
-		if img.Bounds().Dx() != 64 {
-			t.Fatalf("Incorrect profile image width. Expected %d, got %d", 64, img.Bounds().Dx())
-		}
-		if img.Bounds().Dy() != 64 {
-			t.Fatalf("Incorrect profile image height. Expected %d, got %d", 64, img.Bounds().Dy())
-		}
+		ok(t, err)
+		assert(t, img.Bounds().Dx() == 64,
+			"Incorrect profile image width. Expected %d, got %d", 64, img.Bounds().Dx())
+		assert(t, img.Bounds().Dy() == 64,
+			"Incorrect profile image height. Expected %d, got %d", 64, img.Bounds().Dy())
 		rs, err = u.ProfileImage().Placeholder()
-		if err != nil {
-			t.Fatalf("Error getting fullsize profile image: %s", err)
-		}
+		ok(t, err)
 
 		img, err = png.Decode(rs)
-		if err != nil {
-			t.Fatalf("Unable to decode uploaded image: %s", err)
-		}
-		if img.Bounds().Dx() != 30 {
-			t.Fatalf("Incorrect profile image width. Expected %d, got %d", 30, img.Bounds().Dx())
-		}
-		if img.Bounds().Dy() != 30 {
-			t.Fatalf("Incorrect profile image height. Expected %d, got %d", 30, img.Bounds().Dy())
-		}
+		ok(t, err)
+		assert(t, img.Bounds().Dx() == 30,
+			"Incorrect profile image width. Expected %d, got %d", 30, img.Bounds().Dx())
+
+		assert(t, img.Bounds().Dy() == 30,
+			"Incorrect profile image height. Expected %d, got %d", 30, img.Bounds().Dy())
+
+		t.Run("Replace Existing Image", func(t *testing.T) {
+			ok(t, u.UploadProfileImageDraft(getImageUpload(t, 300, 300), u.Version))
+
+			ok(t, u.SetProfileImageFromDraft(-1, 0, 100, 100))
+		})
 
 	})
 
@@ -697,68 +664,38 @@ func TestUser(t *testing.T) {
 		password := "reallygoodlongpassword"
 
 		u, err := app.UserNew(username, password)
-		if err != nil {
-			t.Fatalf("Error adding user for SetName testing")
-		}
+		ok(t, err)
 
 		err = u.SetUsername(admin.User().Username, u.Version)
-		if err == nil {
-			t.Fatalf("Setting username to existing user's username didn't fail")
-		}
+		assertFail(t, err, 400, "Setting username to existing user's username didn't fail")
 
 		newUsername := "testNewUser"
 		err = u.SetUsername(newUsername, u.Version)
-		if err != nil {
-			t.Fatalf("Error setting name: %s", err)
-		}
+		ok(t, err)
 
 		_, err = app.Login(username, password)
-		if err == nil {
-			t.Fatalf("Old username still works")
-		}
+		assertFail(t, err, 400, "Old username still works")
 
 		_, err = app.Login(newUsername, password)
-		if err != nil {
-			t.Fatalf("Error logging in with new username: %s", err)
-		}
-
+		ok(t, err)
 	})
 	t.Run("Remove Profile Image", func(t *testing.T) {
 		reset(t)
 
 		u, err := app.UserNew("testuser", "testuserpassword")
-		if err != nil {
-			t.Fatalf("Error adding user")
-		}
+		ok(t, err)
 		upload := getImageUpload(t, 5000, 5000)
 
-		err = u.UploadProfileImageDraft(upload, u.Version)
-		if err != nil {
-			t.Fatalf("Error uploading profile image draft: %s", err)
-		}
+		ok(t, u.UploadProfileImageDraft(upload, u.Version))
 
-		err = u.SetProfileImageFromDraft(-1, 0, 100, 100)
-		if err != nil {
-			t.Fatalf("Error setting profile image: %s", err)
-		}
+		ok(t, u.SetProfileImageFromDraft(-1, 0, 100, 100))
 
-		err = u.Refresh()
-		if err != nil {
-			t.Fatalf("Error refreshing user: %s", err)
-		}
+		ok(t, u.Refresh())
+		ok(t, u.RemoveProfileImage())
+		ok(t, u.Refresh())
 
-		err = u.RemoveProfileImage()
-		if err != nil {
-			t.Fatalf("Error removing profile image: %s", err)
-		}
-		err = u.Refresh()
-		if err != nil {
-			t.Fatalf("Error refreshing user: %s", err)
-		}
-
-		if u.ProfileImage() != nil {
-			t.Fatalf("User's profile image was not removed")
-		}
+		assert(t, u.ProfileImage() == nil,
+			"User's profile image was not removed")
 
 	})
 
