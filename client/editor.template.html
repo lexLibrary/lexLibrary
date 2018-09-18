@@ -41,11 +41,26 @@
 				{{error}}
 			</div>
 			[[with .Draft]]
-			<div id="editor" v-cloak class="container grid-md pt-8">
-				<button @click="save" class="btn btn-lg btn-primary float-right">Save</button>
+			<div id="editor" class="container grid-xl">
 				<h1>[[.Title]]</h1>
-				<div v-editor>
-					[[html .Content]]
+				<div class="columns">
+					<div class="col-9">
+						<div  v-cloak>
+							<div v-editor>
+								[[html .Content]]
+							</div>
+						</div>
+					</div>
+					<div class="col-3">
+						<div class="ml-4">
+							<button @click="save" class="btn btn-lg btn-primary">Save</button>
+							<button @click="publish" class="btn btn-lg btn-primary">Publish</button>
+						</div>
+						<ul>
+							<li>Labels</li>
+							<li>Statistics</li>
+						</ul>
+					</div>
 				</div>
 			</div>
 			[[end]]

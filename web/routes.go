@@ -158,6 +158,7 @@ func setupRoutes() http.Handler {
 	rootHandler.POST("/document/new", standard.handle(documentNew))
 	rootHandler.POST("/documents/:id/draft", standard.handle(draftNew))
 	rootHandler.PUT("/draft/:id", standard.handle(draftSave))
+	rootHandler.POST("/draft/:id", standard.handle(draftPublish))
 
 	editor := &editorPage{
 		templateHandler: &templateHandler{

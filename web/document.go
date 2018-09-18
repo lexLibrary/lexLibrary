@@ -141,3 +141,32 @@ func draftNew(w http.ResponseWriter, r *http.Request, c ctx) {
 
 	respond(w, created(draft))
 }
+
+func draftPublish(w http.ResponseWriter, r *http.Request, c ctx) {
+	if c.session == nil {
+		unauthorized(w, r)
+		return
+	}
+
+	u, err := c.session.User()
+	if errHandled(err, w, r) {
+		return
+	}
+
+	id, err := data.IDFromString(c.params.ByName("id"))
+	if err != nil {
+		notFound(w, r)
+	}
+
+	draft, err := u.Draft(id)
+	if errHandled(err, w, r) {
+		return
+	}
+	doc, err := draft.Publish()
+
+	if errHandled(err, w, r) {
+		return
+	}
+
+	respond(w, created(doc))
+}
