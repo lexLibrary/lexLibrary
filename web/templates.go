@@ -54,6 +54,14 @@ var templateFuncs = map[string]interface{}{
 		// placeholder
 		return ctx{}
 	},
+	"icon": func(icon string) (template.HTML, error) {
+		data, err := files.Asset(filepath.Join("icons/", icon+".svg"))
+		if err != nil {
+			return "", err
+		}
+
+		return template.HTML(data), nil
+	},
 }
 
 // template writers are passed into the http handler call

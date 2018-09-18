@@ -149,16 +149,21 @@ gulp.task('images', function() {
         .pipe(gulp.dest(path.join(assetDir, 'images')));
 });
 
+gulp.task('icons', function() {
+    return gulp.src('./icons/*')
+        .pipe(gulp.dest(path.join(assetDir, 'icons')));
+});
 
 // watch for changes
 gulp.task('watch', function() {
     gulp.watch(['./**/*.html'], ['html']);
     gulp.watch('./images/**/*', ['images']);
+    gulp.watch('./icons/**/*', ['icons']);
     gulp.watch(['./scss/**/*.scss'], ['devCss']);
     gulp.watch(['./js/**/*.js'], ['devJs']);
 });
 
-gulp.task('dev', ['html', 'images', 'devCss', 'devJs']);
+gulp.task('dev', ['html', 'images', 'icons', 'devCss', 'devJs']);
 
 // start default task
-gulp.task('default', ['html', 'images', 'css', 'js']);
+gulp.task('default', ['html', 'images', 'icons', 'css', 'js']);

@@ -5,6 +5,7 @@ package mssql
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"testing"
 	"time"
 
@@ -52,6 +53,7 @@ select Options = @@OPTIONS;
 }
 
 func TestParameterTypes(t *testing.T) {
+	checkConnStr(t)
 	pool, err := sql.Open("sqlserver", makeConnStr(t).String())
 	if err != nil {
 		t.Fatal(err)
@@ -63,11 +65,13 @@ func TestParameterTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var nv, v, dt1, dt2, tm, d, dto string
-	err = pool.QueryRow(`
+	var nv, v, nvcm, vcm, dt1, dt2, tm, d, dto string
+	row := pool.QueryRow(`
 select
 	nv = SQL_VARIANT_PROPERTY(@nv,'BaseType'),
 	v = SQL_VARIANT_PROPERTY(@v,'BaseType'),
+	@nvcm,
+    @vcm,
 	dt1 = SQL_VARIANT_PROPERTY(@dt1,'BaseType'),
 	dt2 = SQL_VARIANT_PROPERTY(@dt2,'BaseType'),
 	d = SQL_VARIANT_PROPERTY(@d,'BaseType'),
@@ -77,20 +81,30 @@ select
 	`,
 		sql.Named("nv", "base type nvarchar"),
 		sql.Named("v", VarChar("base type varchar")),
+		sql.Named("nvcm", NVarCharMax(strings.Repeat("x", 5000))),
+		sql.Named("vcm", VarCharMax(strings.Repeat("x", 5000))),
 		sql.Named("dt1", DateTime1(tin)),
 		sql.Named("dt2", civil.DateTimeOf(tin)),
 		sql.Named("d", civil.DateOf(tin)),
 		sql.Named("tm", civil.TimeOf(tin)),
 		sql.Named("dto", DateTimeOffset(tin)),
-	).Scan(&nv, &v, &dt1, &dt2, &d, &tm, &dto)
+	)
+	err = row.Scan(&nv, &v, &nvcm, &vcm, &dt1, &dt2, &d, &tm, &dto)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if nv != "nvarchar" {
 		t.Errorf(`want "nvarchar" got %q`, nv)
 	}
 	if v != "varchar" {
 		t.Errorf(`want "varchar" got %q`, v)
+	}
+	if nvcm != strings.Repeat("x", 5000) {
+		t.Errorf(`incorrect value returned for nvarchar(max): %q`, nvcm)
+	}
+	if vcm != strings.Repeat("x", 5000) {
+		t.Errorf(`incorrect value returned for varchar(max): %q`, vcm)
 	}
 	if dt1 != "datetime" {
 		t.Errorf(`want "datetime" got %q`, dt1)
@@ -110,6 +124,7 @@ select
 }
 
 func TestParameterValues(t *testing.T) {
+	checkConnStr(t)
 	pool, err := sql.Open("sqlserver", makeConnStr(t).String())
 	if err != nil {
 		t.Fatal(err)

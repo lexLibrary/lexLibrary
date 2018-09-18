@@ -81,7 +81,6 @@ func getClient(clientConf bigtable.ClientConfig) *bigtable.Client {
 		if err != nil {
 			log.Fatalf("Making bigtable.Client: %v", err)
 		}
-		opts = append(opts, option.WithUserAgent(cliUserAgent))
 	}
 	return client
 }
@@ -193,11 +192,13 @@ for production use. They are not subject to any SLA or deprecation policy.
 For convenience, values of the -project, -instance, -creds,
 -admin-endpoint and -data-endpoint flags may be specified in
 ~/.cbtrc in this format:
+
 	project = my-project-123
 	instance = my-instance
 	creds = path-to-account-key.json
 	admin-endpoint = hostname:port
 	data-endpoint = hostname:port
+
 All values are optional, and all will be overridden by flags.
 `
 
@@ -229,7 +230,7 @@ var commands = []struct {
 	},
 	{
 		Name: "createcluster",
-		Desc: "Create a cluster in the configured instance (replication alpha)",
+		Desc: "Create a cluster in the configured instance ",
 		do:   doCreateCluster,
 		Usage: "cbt createcluster <cluster-id> <zone> <num-nodes> <storage type>\n" +
 			"  cluster-id		Permanent, unique id for the cluster in the instance\n" +
@@ -273,7 +274,7 @@ var commands = []struct {
 	},
 	{
 		Name:     "deletecluster",
-		Desc:     "Delete a cluster from the configured instance (replication alpha)",
+		Desc:     "Delete a cluster from the configured instance ",
 		do:       doDeleteCluster,
 		Usage:    "cbt deletecluster <cluster>",
 		Required: cbtconfig.ProjectAndInstanceRequired,
@@ -283,7 +284,7 @@ var commands = []struct {
 		Desc: "Delete all cells in a column",
 		do:   doDeleteColumn,
 		Usage: "cbt deletecolumn <table> <row> <family> <column> [app-profile=<app profile id>]\n" +
-			"  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)\n",
+			"  app-profile=<app profile id>		The app profile id to use for the request\n",
 		Required: cbtconfig.ProjectAndInstanceRequired,
 	},
 	{
@@ -298,7 +299,7 @@ var commands = []struct {
 		Desc: "Delete a row",
 		do:   doDeleteRow,
 		Usage: "cbt deleterow <table> <row> [app-profile=<app profile id>]\n" +
-			"  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)\n",
+			"  app-profile=<app profile id>		The app profile id to use for the request\n",
 		Required: cbtconfig.ProjectAndInstanceRequired,
 	},
 	{
@@ -344,7 +345,7 @@ var commands = []struct {
 			"[app-profile=<app profile id>]\n" +
 			"  columns=[family]:[qualifier],...	Read only these columns, comma-separated\n" +
 			"  cells-per-column=<n> 			Read only this many cells per column\n" +
-			"  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)\n",
+			"  app-profile=<app profile id>		The app profile id to use for the request\n",
 		Required: cbtconfig.ProjectAndInstanceRequired,
 	},
 	{
@@ -376,7 +377,7 @@ var commands = []struct {
 			"  columns=[family]:[qualifier],...	Read only these columns, comma-separated\n" +
 			"  count=<n>				Read only this many rows\n" +
 			"  cells-per-column=<n>			Read only this many cells per column\n" +
-			"  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)\n",
+			"  app-profile=<app profile id>		The app profile id to use for the request\n",
 		Required: cbtconfig.ProjectAndInstanceRequired,
 	},
 	{
@@ -384,7 +385,7 @@ var commands = []struct {
 		Desc: "Set value of a cell",
 		do:   doSet,
 		Usage: "cbt set <table> <row> [app-profile=<app profile id>] family:column=val[@ts] ...\n" +
-			"  app-profile=<app profile id>		The app profile id to use for the request (replication alpha)\n" +
+			"  app-profile=<app profile id>		The app profile id to use for the request\n" +
 			"  family:column=val[@ts] may be repeated to set multiple cells.\n" +
 			"\n" +
 			"  ts is an optional integer timestamp.\n" +
@@ -396,7 +397,7 @@ var commands = []struct {
 		Name: "setgcpolicy",
 		Desc: "Set the GC policy for a column family",
 		do:   doSetGCPolicy,
-		Usage: "cbt setgcpolicy <table> <family> ( maxage=<d> | maxversions=<n> )\n" +
+		Usage: "cbt setgcpolicy <table> <family> ( maxage=<d> | maxversions=<n> | never)\n" +
 			"\n" +
 			`  maxage=<d>		Maximum timestamp age to preserve (e.g. "1h", "4d")` + "\n" +
 			"  maxversions=<n>	Maximum number of versions to preserve",
@@ -404,7 +405,7 @@ var commands = []struct {
 	},
 	{
 		Name:     "waitforreplication",
-		Desc:     "Block until all the completed writes have been replicated to all the clusters (replication alpha)",
+		Desc:     "Block until all the completed writes have been replicated to all the clusters",
 		do:       doWaitForReplicaiton,
 		Usage:    "cbt waitforreplication <table>",
 		Required: cbtconfig.ProjectAndInstanceRequired,
@@ -460,10 +461,9 @@ var commands = []struct {
 		Name: "createappprofile",
 		Desc: "Creates app profile for an instance",
 		do:   doCreateAppProfile,
-		Usage: "cbt createappprofile <instance-id> <profile-id> <description> <etag> <routing-policy> \n" +
-			"[cluster-id=<cluster-id>] [allow-transactional-writes=<allow-transactional-writes>] \n" +
-			"set multi_cluster_routing_use_any or single_cluster_routing as possible values for routing policy \n" +
-			"provide cluster-id=clusterID and allow-transactional-writes=true or false in case of single_cluster_routing ",
+		Usage: "usage: cbt createappprofile <instance-id> <profile-id> <description> " +
+			"(route-any | [ route-to=<cluster-id> : transactional-writes]) [optional flag] \n" +
+			"optional flags may be `force`",
 		Required: cbtconfig.ProjectAndInstanceRequired,
 	},
 	{
@@ -484,10 +484,9 @@ var commands = []struct {
 		Name: "updateappprofile",
 		Desc: "Updates app profile for an instance",
 		do:   doUpdateAppProfile,
-		Usage: "cbt updateappprofile  <instance-id> <profile-id> <description> <routing-policy>" +
-			"[cluster-id=<cluster-id>] [allow-transactional-writes=<allow-transactional-writes>] \n" +
-			"set multi_cluster_routing_use_any or single_cluster_routing as possible values for routing policy \n" +
-			"provide cluster-id=clusterID and allow-transactional-writes=true or false in case of single_cluster_routing ",
+		Usage: "usage: cbt updateappprofile  <instance-id> <profile-id> <description>" +
+			"(route-any | [ route-to=<cluster-id> : transactional-writes]) [optional flag] \n" +
+			"optional flags may be `force`",
 		Required: cbtconfig.ProjectAndInstanceRequired,
 	},
 	{
@@ -813,7 +812,7 @@ var docTemplate = template.Must(template.New("doc").Funcs(template.FuncMap{
 /*
 Cbt is a tool for doing basic interactions with Cloud Bigtable. To learn how to
 install the cbt tool, see the
-[cbt overview](https://cloud.google.com/bigtable/docs/go/cbt-overview).
+[cbt overview](https://cloud.google.com/bigtable/docs/cbt-overview).
 
 Usage:
 
@@ -1014,7 +1013,9 @@ var mddocTemplate = template.Must(template.New("mddoc").Funcs(template.FuncMap{
 	"indent": indentLines,
 }).
 	Parse(`
-Cbt is a tool for doing basic interactions with Cloud Bigtable.
+Cbt is a tool for doing basic interactions with Cloud Bigtable. To learn how to
+install the cbt tool, see the
+[cbt overview](https://cloud.google.com/bigtable/docs/cbt-overview).
 
 Usage:
 
@@ -1155,7 +1156,7 @@ func doSet(ctx context.Context, args ...string) {
 
 func doSetGCPolicy(ctx context.Context, args ...string) {
 	if len(args) < 3 {
-		log.Fatalf("usage: cbt setgcpolicy <table> <family> ( maxage=<d> | maxversions=<n> | maxage=<d> (and|or) maxversions=<n> )")
+		log.Fatalf("usage: cbt setgcpolicy <table> <family> ( maxage=<d> | maxversions=<n> | maxage=<d> (and|or) maxversions=<n> | never )")
 	}
 	table := args[0]
 	fam := args[1]
@@ -1183,6 +1184,7 @@ func doWaitForReplicaiton(ctx context.Context, args ...string) {
 
 func parseGCPolicy(policyStr string) (bigtable.GCPolicy, error) {
 	words := strings.Fields(policyStr)
+
 	switch len(words) {
 	case 1:
 		return parseSinglePolicy(words[0])
@@ -1211,10 +1213,16 @@ func parseGCPolicy(policyStr string) (bigtable.GCPolicy, error) {
 
 func parseSinglePolicy(s string) (bigtable.GCPolicy, error) {
 	words := strings.Split(s, "=")
-	if len(words) != 2 {
-		return nil, fmt.Errorf("Expected 'name=value', got %q", words)
+	if len(words) != 2 && words[0] != "never" {
+		return nil, fmt.Errorf("Expected 'name=value ', got %q", words)
 	}
+
 	switch words[0] {
+	case "never":
+		if len(words) != 1 {
+			return nil, fmt.Errorf("Expected 'never', got %q", s)
+		}
+		return bigtable.NoGcPolicy(), nil
 	case "maxage":
 		d, err := parseDuration(words[1])
 		if err != nil {
@@ -1228,7 +1236,7 @@ func parseSinglePolicy(s string) (bigtable.GCPolicy, error) {
 		}
 		return bigtable.MaxVersionsPolicy(int(n)), nil
 	default:
-		return nil, fmt.Errorf("Expected 'maxage' or 'maxversions', got %q", words[1])
+		return nil, fmt.Errorf("Expected 'maxage' or 'maxversions', got %q", words[len(words)-1])
 	}
 	return nil, nil
 }
@@ -1352,36 +1360,48 @@ func doDeleteSnapshot(ctx context.Context, args ...string) {
 }
 
 func doCreateAppProfile(ctx context.Context, args ...string) {
-	if len(args) < 5 {
-		log.Fatal("usage: cbt createappprofile <instance-id> <profile-id> <description> <etag> <routing-policy> \n" +
-			"[cluster-id=<cluster-id>] [allow-transactional-writes=<allow-transactional-writes>] \n" +
-			"set multi_cluster_routing_use_any or single_cluster_routing as possible values for routing policy \n" +
-			"provide cluster-id=clusterID and allow-transactional-writes=true or false in case of single_cluster_routing ")
+	if len(args) < 4 || len(args) > 6 {
+		log.Fatal("usage: cbt createappprofile <instance-id> <profile-id> <description> " +
+			" (route-any | [ route-to=<cluster-id> : transactional-writes]) [optional flag] \n" +
+			"optional flags may be `force`")
 	}
 
-	routingPolicy := args[4]
+	routingPolicy, clusterID, err := parseProfileRoute(args[3])
+	if err != nil {
+		log.Fatalln("Exactly one of (route-any | [route-to : transactional-writes]) must be specified.")
+	}
+
 	config := bigtable.ProfileConf{
 		RoutingPolicy: routingPolicy,
 		InstanceID:    args[0],
 		ProfileID:     args[1],
 		Description:   args[2],
-		Etag:          args[3],
 	}
+
+	opFlags := []string{"force", "transactional-writes"}
+	parseValues, err := parseArgs(args[4:], opFlags)
+	if err != nil {
+		log.Fatalf("optional flags can be specified as (force=<true>|transactional-writes=<true>) got %s ", args[4:])
+	}
+
+	for _, f := range opFlags {
+		fv, err := parseProfileOpts(f, parseValues)
+		if err != nil {
+			log.Fatalf("optional flags can be specified as (force=<true>|transactional-writes=<true>) got %s ", args[4:])
+		}
+
+		switch f {
+		case opFlags[0]:
+			config.IgnoreWarnings = fv
+		case opFlags[1]:
+			config.AllowTransactionalWrites = fv
+		default:
+
+		}
+	}
+
 	if routingPolicy == bigtable.SingleClusterRouting {
-		parsed, err := parseArgs(args[4:], []string{
-			"cluster-id", "allow-transactional-writes",
-		})
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		transactionWrites, err := strconv.ParseBool(parsed["allow-transactional-writes"])
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		config.ClusterID = parsed["cluster-id"]
-		config.AllowTransactionalWrites = transactionWrites
+		config.ClusterID = clusterID
 	}
 
 	profile, err := getInstanceAdminClient().CreateAppProfile(ctx, config)
@@ -1390,9 +1410,7 @@ func doCreateAppProfile(ctx context.Context, args ...string) {
 	}
 
 	fmt.Printf("Name: %s\n", profile.Name)
-	fmt.Printf("Etag: %v\n", profile.GetEtag())
-	fmt.Printf("Description: %s\n", profile.Description)
-	fmt.Printf("RoutingPolicy: %v\n", profile.GetRoutingPolicy())
+	fmt.Printf("RoutingPolicy: %v\n", profile.RoutingPolicy)
 }
 
 func doGetAppProfile(ctx context.Context, args ...string) {
@@ -1400,9 +1418,9 @@ func doGetAppProfile(ctx context.Context, args ...string) {
 		log.Fatalln("usage: cbt getappprofile <instance-id> <profile-id>")
 	}
 
-	instanceId := args[0]
-	profileId := args[1]
-	profile, err := getInstanceAdminClient().GetAppProfile(ctx, instanceId, profileId)
+	instanceID := args[0]
+	profileID := args[1]
+	profile, err := getInstanceAdminClient().GetAppProfile(ctx, instanceID, profileID)
 	if err != nil {
 		log.Fatalf("Failed to get app profile : %v", err)
 	}
@@ -1442,34 +1460,47 @@ func doListAppProfiles(ctx context.Context, args ...string) {
 func doUpdateAppProfile(ctx context.Context, args ...string) {
 
 	if len(args) < 4 {
-		log.Fatal("usage: cbt updateappprofile  <instance-id> <profile-id> <description> <routing-policy> [cluster-id=<cluster-id>] [allow-transactional-writes=<allow-transactional-writes>]")
+		log.Fatal("usage: cbt updateappprofile  <instance-id> <profile-id> <description>" +
+			" (route-any | [ route-to=<cluster-id> : transactional-writes]) [optional flag] \n" +
+			"optional flags may be `force`")
 	}
 
-	routingPolicy := args[3]
+	routingPolicy, clusterID, err := parseProfileRoute(args[3])
+	if err != nil {
+		log.Fatalln("Exactly one of (route-any | [route-to : transactional-writes]) must be specified.")
+	}
 	InstanceID := args[0]
 	ProfileID := args[1]
 	config := bigtable.ProfileAttrsToUpdate{
 		RoutingPolicy: routingPolicy,
 		Description:   args[2],
 	}
-	if routingPolicy == bigtable.SingleClusterRouting {
-		parsed, err := parseArgs(args[3:], []string{
-			"cluster-id", "allow-transactional-writes",
-		})
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		transactionWrites, err := strconv.ParseBool(parsed["allow-transactional-writes"])
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		config.ClusterID = parsed["cluster-id"]
-		config.AllowTransactionalWrites = transactionWrites
+	opFlags := []string{"force", "transactional-writes"}
+	parseValues, err := parseArgs(args[4:], opFlags)
+	if err != nil {
+		log.Fatalf("optional flags can be specified as (force=<true>|transactional-writes=<true>) got %s ", args[4:])
 	}
 
-	err := getInstanceAdminClient().UpdateAppProfile(ctx, InstanceID, ProfileID, config)
+	for _, f := range opFlags {
+		fv, err := parseProfileOpts(f, parseValues)
+		if err != nil {
+			log.Fatalf("optional flags can be specified as (force=<true>|transactional-writes=<true>) got %s ", args[4:])
+		}
+
+		switch f {
+		case opFlags[0]:
+			config.IgnoreWarnings = fv
+		case opFlags[1]:
+			config.AllowTransactionalWrites = fv
+		default:
+
+		}
+	}
+	if routingPolicy == bigtable.SingleClusterRouting {
+		config.ClusterID = clusterID
+	}
+
+	err = getInstanceAdminClient().UpdateAppProfile(ctx, InstanceID, ProfileID, config)
 	if err != nil {
 		log.Fatalf("Failed to update app profile : %v", err)
 	}
@@ -1598,4 +1629,42 @@ func columnFilter(column string) (bigtable.Filter, error) {
 	} else {
 		return nil, fmt.Errorf("Bad format for column %q", column)
 	}
+}
+
+func parseProfileRoute(str string) (routingPolicy, clusterID string, err error) {
+
+	route := strings.Split(str, "=")
+	switch route[0] {
+	case "route-any":
+		if len(route) > 1 {
+			err = fmt.Errorf("got %v", route)
+			break
+		}
+		routingPolicy = bigtable.MultiClusterRouting
+
+	case "route-to":
+		if len(route) != 2 || route[1] == "" {
+			err = fmt.Errorf("got %v", route)
+			break
+		}
+		routingPolicy = bigtable.SingleClusterRouting
+		clusterID = route[1]
+	default:
+		err = fmt.Errorf("got %v", route)
+	}
+
+	return
+}
+
+func parseProfileOpts(opt string, parsedArgs map[string]string) (bool, error) {
+
+	if val, ok := parsedArgs[opt]; ok {
+		status, err := strconv.ParseBool(val)
+		if err != nil {
+			return false, fmt.Errorf("expected %s = <true> got %s ", opt, val)
+		}
+
+		return status, nil
+	}
+	return false, nil
 }

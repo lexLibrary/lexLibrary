@@ -135,12 +135,12 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/admin/logs", admin.logs())
 	rootHandler.GET("/admin/logs/:id", admin.logs())
 	rootHandler.GET("/admin/users", admin.users())
-	rootHandler.GET("/admin/users/:username/", admin.user())
+	rootHandler.GET("/admin/users/:username", admin.user())
 	rootHandler.GET("/admin/registration", admin.registration())
 	rootHandler.GET("/admin/newregistration", admin.registrationNew())
 	rootHandler.GET("/admin/registration/:token", admin.registrationGet())
 
-	rootHandler.PUT("/admin/user/:username/", standard.handle(adminUserUpdate))
+	rootHandler.PUT("/admin/user/:username", standard.handle(adminUserUpdate))
 
 	// groups
 	rootHandler.GET("/groups", standard.handle(groupGet))
@@ -168,6 +168,7 @@ func setupRoutes() http.Handler {
 
 	rootHandler.GET("/document/new", editor.newDocument())
 	rootHandler.GET("/draft/:id", editor.edit())
+	rootHandler.GET("/draft/:id/:slug", editor.edit())
 
 	return rootHandler
 }

@@ -74,7 +74,7 @@ func testMain(m *testing.M) int {
 		if *record {
 			log.Fatal("cannot combine -short and -record")
 		}
-		if _, err := os.Stat(replayFilename); err == nil {
+		if testutil.CanReplay(replayFilename) {
 			initReplay()
 		}
 	} else if *record {
@@ -1262,6 +1262,9 @@ func testMutate(t *testing.T, mutate func(ctx context.Context, client *Client, m
 		NewUpdate(keys[0], &T{3}),
 		NewDelete(keys[1]),
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 	check(keys[0], 3)
 	check(keys[1], ErrNoSuchEntity)
 

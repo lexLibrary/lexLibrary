@@ -898,3 +898,13 @@ func (d *Document) RemoveGroup(groupID data.ID) error {
 
 	return err
 }
+
+// Slug returns a URL slug for the given document
+func (d *DocumentContent) Slug() string {
+	slug := makeSlug(d.Title)
+
+	if len(slug) > 64 {
+		slug = slug[:64]
+	}
+	return slug
+}

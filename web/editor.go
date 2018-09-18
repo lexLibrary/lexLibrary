@@ -3,6 +3,7 @@ package web
 
 import (
 	"net/http"
+	"path"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/lexLibrary/lexLibrary/app"
@@ -52,6 +53,7 @@ func (e *editorPage) newDocument() httprouter.Handle {
 
 func (e *editorPage) edit() httprouter.Handle {
 	return e.handle(func(w http.ResponseWriter, r *http.Request, c ctx) {
+
 		tData, err := e.data(c.session)
 		if errHandled(err, w, r) {
 			return
@@ -67,6 +69,22 @@ func (e *editorPage) edit() httprouter.Handle {
 		if errHandled(err, w, r) {
 			return
 		}
+
+		ogSlug := c.params.ByName("slug")
+		slug := draft.Slug()
+
+		if ogSlug != slug {
+			if ogSlug == "" {
+				http.Redirect(w, r, path.Join(r.URL.Path, slug), http.StatusPermanentRedirect)
+			} else {
+				// if title mis-matches, use a temporary redirect in case they change the title back
+				// to something they had previously, so we prevent a loop of redirects
+
+				http.Redirect(w, r, path.Join(path.Dir(r.URL.Path), slug), http.StatusTemporaryRedirect)
+			}
+			return
+		}
+
 		tData.Draft = draft
 
 		w.(*templateWriter).execute(tData)

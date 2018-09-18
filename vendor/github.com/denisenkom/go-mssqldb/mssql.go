@@ -13,7 +13,15 @@ import (
 	"reflect"
 	"strings"
 	"time"
+	"unicode"
 )
+
+// ReturnStatus may be used to return the return value from a proc.
+//
+//   var rs mssql.ReturnStatus
+//   _, err := db.Exec("theproc", &rs)
+//   log.Printf("return status = %d", rs)
+type ReturnStatus int32
 
 var driverInstance = &Driver{processQueryText: true}
 var driverInstanceNoProcess = &Driver{processQueryText: false}
@@ -128,7 +136,15 @@ type Conn struct {
 	processQueryText bool
 	connectionGood   bool
 
-	outs map[string]interface{}
+	outs         map[string]interface{}
+	returnStatus *ReturnStatus
+}
+
+func (c *Conn) setReturnStatus(s ReturnStatus) {
+	if c.returnStatus == nil {
+		return
+	}
+	*c.returnStatus = s
 }
 
 func (c *Conn) checkBadConn(err error) error {
@@ -459,10 +475,52 @@ func isProc(s string) bool {
 	if len(s) == 0 {
 		return false
 	}
-	if s[0] == '[' && s[len(s)-1] == ']' && strings.ContainsAny(s, "\n\r") == false {
-		return true
+	const (
+		outside = iota
+		text
+		escaped
+	)
+	st := outside
+	var rn1, rPrev rune
+	for _, r := range s {
+		rPrev = rn1
+		rn1 = r
+		switch r {
+		// No newlines or string sequences.
+		case '\n', '\r', '\'', ';':
+			return false
+		}
+		switch st {
+		case outside:
+			switch {
+			case unicode.IsSpace(r):
+				return false
+			case r == '[':
+				st = escaped
+				continue
+			case r == ']' && rPrev == ']':
+				st = escaped
+				continue
+			case unicode.IsLetter(r):
+				st = text
+			}
+		case text:
+			switch {
+			case r == '.':
+				st = outside
+				continue
+			case unicode.IsSpace(r):
+				return false
+			}
+		case escaped:
+			switch {
+			case r == ']':
+				st = outside
+				continue
+			}
+		}
 	}
-	return !strings.ContainsAny(s, " \t\n\r;")
+	return true
 }
 
 func (s *Stmt) makeRPCParams(args []namedValue, offset int) ([]param, []string, error) {
@@ -541,6 +599,8 @@ loop:
 			if token.isError() {
 				return nil, s.c.checkBadConn(token.getError())
 			}
+		case ReturnStatus:
+			s.c.setReturnStatus(token)
 		case error:
 			return nil, s.c.checkBadConn(token)
 		}
@@ -584,6 +644,8 @@ func (s *Stmt) processExec(ctx context.Context) (res driver.Result, err error) {
 			if token.isError() {
 				return nil, token.getError()
 			}
+		case ReturnStatus:
+			s.c.setReturnStatus(token)
 		case error:
 			return nil, token
 		}
@@ -729,17 +791,34 @@ func (s *Stmt) makeParam(val driver.Value) (res param, err error) {
 		res.buffer = make([]byte, 8)
 		res.ti.Size = 8
 		binary.LittleEndian.PutUint64(res.buffer, uint64(val))
+	case sql.NullInt64:
+		// only null values should be getting here
+		res.ti.TypeId = typeIntN
+		res.ti.Size = 8
+		res.buffer = []byte{}
+
 	case float64:
 		res.ti.TypeId = typeFltN
 		res.ti.Size = 8
 		res.buffer = make([]byte, 8)
 		binary.LittleEndian.PutUint64(res.buffer, math.Float64bits(val))
+	case sql.NullFloat64:
+		// only null values should be getting here
+		res.ti.TypeId = typeFltN
+		res.ti.Size = 8
+		res.buffer = []byte{}
+
 	case []byte:
 		res.ti.TypeId = typeBigVarBin
 		res.ti.Size = len(val)
 		res.buffer = val
 	case string:
 		res = makeStrParam(val)
+	case sql.NullString:
+		// only null values should be getting here
+		res.ti.TypeId = typeNVarChar
+		res.buffer = nil
+		res.ti.Size = 8000
 	case bool:
 		res.ti.TypeId = typeBitN
 		res.ti.Size = 1
@@ -747,6 +826,12 @@ func (s *Stmt) makeParam(val driver.Value) (res param, err error) {
 		if val {
 			res.buffer[0] = 1
 		}
+	case sql.NullBool:
+		// only null values should be getting here
+		res.ti.TypeId = typeBitN
+		res.ti.Size = 1
+		res.buffer = []byte{}
+
 	case time.Time:
 		if s.c.sess.loginAck.TDSVersion >= verTDS73 {
 			res.ti.TypeId = typeDateTimeOffsetN

@@ -579,4 +579,27 @@ func TestDocument(t *testing.T) {
 
 	})
 
+	t.Run("Slug", func(t *testing.T) {
+		reset(t)
+		tests := []struct {
+			title  string
+			result string
+		}{
+			{title: "Test Title", result: "test-title"},
+			{title: "Test  Title", result: "test-title"},
+			{title: "Test   Title", result: "test-title"},
+			{title: "Test    Title", result: "test-title"},
+			{title: "Test $another Title", result: "test-another-title"},
+			{title: "Test ç Title", result: "test-ç-title"},
+			{title: `Test %%$ Title`, result: "test-title"},
+		}
+
+		for _, test := range tests {
+			doc, err := user.NewDocument(test.title, app.Language(language.English))
+			ok(t, err)
+			slug := doc.Slug()
+			assert(t, test.result == slug, `For Title "%s" - Expected "%s", Got "%s"`,
+				test.title, test.result, slug)
+		}
+	})
 }

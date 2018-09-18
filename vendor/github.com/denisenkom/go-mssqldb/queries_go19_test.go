@@ -3,6 +3,7 @@
 package mssql
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -12,20 +13,6 @@ import (
 )
 
 func TestOutputParam(t *testing.T) {
-	sqltextcreate := `
-CREATE PROCEDURE abassign
-   @aid INT = 5,
-   @bid INT = NULL OUTPUT,
-   @cstr NVARCHAR(2000) = NULL OUTPUT,
-   @datetime datetime = NULL OUTPUT
-AS
-BEGIN
-   SELECT @bid = @aid, @cstr = 'OK', @datetime = '2010-01-01T00:00:00';
-END;
-`
-	sqltextdrop := `DROP PROCEDURE abassign;`
-	sqltextrun := `abassign`
-
 	checkConnStr(t)
 	SetLogger(testLogger{t})
 
@@ -38,198 +25,293 @@ END;
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db.ExecContext(ctx, sqltextdrop)
-	_, err = db.ExecContext(ctx, sqltextcreate)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.ExecContext(ctx, sqltextdrop)
-	if err != nil {
-		t.Error(err)
-	}
+	t.Run("sp with rows", func(t *testing.T) {
+		sqltextcreate := `
+CREATE PROCEDURE spwithrows
+   @intparam INT = NULL OUTPUT
+AS
+BEGIN
+   -- return 2 rows
+   SELECT @intparam
+   union
+   SELECT 20
 
-	t.Run("should work", func(t *testing.T) {
-		var bout int64
-		var cout string
-		_, err = db.ExecContext(ctx, sqltextrun,
-			sql.Named("aid", 5),
-			sql.Named("bid", sql.Out{Dest: &bout}),
-			sql.Named("cstr", sql.Out{Dest: &cout}),
-		)
-		if err != nil {
-			t.Error(err)
-		}
+   -- set output parameter value
+   SELECT @intparam = 10
+END;
+`
+		sqltextdrop := `DROP PROCEDURE spwithrows;`
+		sqltextrun := `spwithrows`
 
-		if bout != 5 {
-			t.Errorf("expected 5, got %d", bout)
-		}
-
-		if cout != "OK" {
-			t.Errorf("expected OK, got %s", cout)
-		}
-	})
-
-	t.Run("should work if aid is not passed", func(t *testing.T) {
-		var bout int64
-		var cout string
-		_, err = db.ExecContext(ctx, sqltextrun,
-			sql.Named("bid", sql.Out{Dest: &bout}),
-			sql.Named("cstr", sql.Out{Dest: &cout}),
-		)
-		if err != nil {
-			t.Error(err)
-		}
-
-		if bout != 5 {
-			t.Errorf("expected 5, got %d", bout)
-		}
-
-		if cout != "OK" {
-			t.Errorf("expected OK, got %s", cout)
-		}
-	})
-
-	t.Run("should work for DateTime1 parameter", func(t *testing.T) {
-		tin, err := time.Parse(time.RFC3339, "2006-01-02T22:04:05-07:00")
+		db.ExecContext(ctx, sqltextdrop)
+		_, err = db.ExecContext(ctx, sqltextcreate)
 		if err != nil {
 			t.Fatal(err)
 		}
-		expected, err := time.Parse(time.RFC3339, "2010-01-01T00:00:00-00:00")
+		defer db.ExecContext(ctx, sqltextdrop)
+		if err != nil {
+			t.Error(err)
+		}
+
+		var intparam int = 5
+		rows, err := db.QueryContext(ctx, sqltextrun,
+			sql.Named("intparam", sql.Out{Dest: &intparam}),
+		)
+		if err != nil {
+			t.Error(err)
+		}
+		// reading first row
+		if !rows.Next() {
+			t.Error("Next returned false")
+		}
+		var rowval int
+		err = rows.Scan(&rowval)
+		if err != nil {
+			t.Error(err)
+		}
+		if rowval != 5 {
+			t.Errorf("expected 5, got %d", rowval)
+		}
+
+		// if uncommented would trigger race condition warning
+		//if intparam != 10 {
+		//	t.Log("output parameter value is not yet 10, it is ", intparam)
+		//}
+
+		// reading second row
+		if !rows.Next() {
+			t.Error("Next returned false")
+		}
+		err = rows.Scan(&rowval)
+		if err != nil {
+			t.Error(err)
+		}
+		if rowval != 20 {
+			t.Errorf("expected 20, got %d", rowval)
+		}
+
+		if rows.Next() {
+			t.Error("Next returned true but should return false after last row was returned")
+		}
+
+		if intparam != 10 {
+			t.Errorf("expected 10, got %d", intparam)
+		}
+	})
+
+	t.Run("sp with no rows", func(t *testing.T) {
+		sqltextcreate := `
+CREATE PROCEDURE abassign
+   @aid INT = 5,
+   @bid INT = NULL OUTPUT,
+   @cstr NVARCHAR(2000) = NULL OUTPUT,
+   @datetime datetime = NULL OUTPUT
+AS
+BEGIN
+   SELECT @bid = @aid, @cstr = 'OK', @datetime = '2010-01-01T00:00:00';
+END;
+`
+		sqltextdrop := `DROP PROCEDURE abassign;`
+		sqltextrun := `abassign`
+
+		db.ExecContext(ctx, sqltextdrop)
+		_, err = db.ExecContext(ctx, sqltextcreate)
 		if err != nil {
 			t.Fatal(err)
 		}
-		var datetime_param DateTime1
-		datetime_param = DateTime1(tin)
-		_, err = db.ExecContext(ctx, sqltextrun,
-			sql.Named("datetime", sql.Out{Dest: &datetime_param}),
-		)
-		if err != nil {
-			t.Error(err)
-		}
-		if time.Time(datetime_param).UTC() != expected.UTC() {
-			t.Errorf("Datetime returned '%v' does not match expected value '%v'",
-				time.Time(datetime_param).UTC(), expected.UTC())
-		}
-	})
-
-	t.Run("destination is not a pointer", func(t *testing.T) {
-		var int_out int64
-		var str_out string
-		// test when destination is not a pointer
-		_, actual := db.ExecContext(ctx, sqltextrun,
-			sql.Named("bid", sql.Out{Dest: int_out}),
-			sql.Named("cstr", sql.Out{Dest: &str_out}),
-		)
-		pattern := ".*destination not a pointer.*"
-		match, err := regexp.MatchString(pattern, actual.Error())
-		if err != nil {
-			t.Error(err)
-		}
-		if !match {
-			t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
-		}
-	})
-
-	t.Run("should convert int64 to int", func(t *testing.T) {
-		var bout int
-		var cout string
-		_, err := db.ExecContext(ctx, sqltextrun,
-			sql.Named("bid", sql.Out{Dest: &bout}),
-			sql.Named("cstr", sql.Out{Dest: &cout}),
-		)
+		defer db.ExecContext(ctx, sqltextdrop)
 		if err != nil {
 			t.Error(err)
 		}
 
-		if bout != 5 {
-			t.Errorf("expected 5, got %d", bout)
-		}
-	})
+		t.Run("should work", func(t *testing.T) {
+			var bout int64
+			var cout string
+			_, err = db.ExecContext(ctx, sqltextrun,
+				sql.Named("aid", 5),
+				sql.Named("bid", sql.Out{Dest: &bout}),
+				sql.Named("cstr", sql.Out{Dest: &cout}),
+			)
+			if err != nil {
+				t.Error(err)
+			}
 
-	t.Run("should fail if destination has invalid type", func(t *testing.T) {
-		// Error type should not be supported
-		var err_out Error
-		_, err := db.ExecContext(ctx, sqltextrun,
-			sql.Named("bid", sql.Out{Dest: &err_out}),
-		)
-		if err == nil {
-			t.Error("Expected to fail but it didn't")
-		}
+			if bout != 5 {
+				t.Errorf("expected 5, got %d", bout)
+			}
 
-		// double inderection should not work
-		var out_out = sql.Out{Dest: &err_out}
-		_, err = db.ExecContext(ctx, sqltextrun,
-			sql.Named("bid", sql.Out{Dest: out_out}),
-		)
-		if err == nil {
-			t.Error("Expected to fail but it didn't")
-		}
-	})
+			if cout != "OK" {
+				t.Errorf("expected OK, got %s", cout)
+			}
+		})
 
-	t.Run("should fail if parameter has invalid type", func(t *testing.T) {
-		// passing invalid parameter type
-		var err_val Error
-		_, err = db.ExecContext(ctx, sqltextrun, err_val)
-		if err == nil {
-			t.Error("Expected to fail but it didn't")
-		}
-	})
+		t.Run("should work if aid is not passed", func(t *testing.T) {
+			var bout int64
+			var cout string
+			_, err = db.ExecContext(ctx, sqltextrun,
+				sql.Named("bid", sql.Out{Dest: &bout}),
+				sql.Named("cstr", sql.Out{Dest: &cout}),
+			)
+			if err != nil {
+				t.Error(err)
+			}
 
-	t.Run("destination is a nil pointer", func(t *testing.T) {
-		var str_out string
-		// test when destination is nil pointer
-		_, actual := db.ExecContext(ctx, sqltextrun,
-			sql.Named("bid", sql.Out{Dest: nil}),
-			sql.Named("cstr", sql.Out{Dest: &str_out}),
-		)
-		pattern := ".*destination is a nil pointer.*"
-		match, err := regexp.MatchString(pattern, actual.Error())
-		if err != nil {
-			t.Error(err)
-		}
-		if !match {
-			t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
-		}
-	})
+			if bout != 5 {
+				t.Errorf("expected 5, got %d", bout)
+			}
 
-	t.Run("destination is a nil pointer 2", func(t *testing.T) {
-		var int_ptr *int
-		_, actual := db.ExecContext(ctx, sqltextrun,
-			sql.Named("bid", sql.Out{Dest: int_ptr}),
-		)
-		pattern := ".*destination is a nil pointer.*"
-		match, err := regexp.MatchString(pattern, actual.Error())
-		if err != nil {
-			t.Error(err)
-		}
-		if !match {
-			t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
-		}
-	})
+			if cout != "OK" {
+				t.Errorf("expected OK, got %s", cout)
+			}
+		})
 
-	t.Run("pointer to a pointer", func(t *testing.T) {
-		var str_out *string
-		_, actual := db.ExecContext(ctx, sqltextrun,
-			sql.Named("cstr", sql.Out{Dest: &str_out}),
-		)
-		pattern := ".*destination is a pointer to a pointer.*"
-		match, err := regexp.MatchString(pattern, actual.Error())
-		if err != nil {
-			t.Error(err)
-		}
-		if !match {
-			t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
-		}
+		t.Run("should work for DateTime1 parameter", func(t *testing.T) {
+			tin, err := time.Parse(time.RFC3339, "2006-01-02T22:04:05-07:00")
+			if err != nil {
+				t.Fatal(err)
+			}
+			expected, err := time.Parse(time.RFC3339, "2010-01-01T00:00:00-00:00")
+			if err != nil {
+				t.Fatal(err)
+			}
+			var datetime_param DateTime1
+			datetime_param = DateTime1(tin)
+			_, err = db.ExecContext(ctx, sqltextrun,
+				sql.Named("datetime", sql.Out{Dest: &datetime_param}),
+			)
+			if err != nil {
+				t.Error(err)
+			}
+			if time.Time(datetime_param).UTC() != expected.UTC() {
+				t.Errorf("Datetime returned '%v' does not match expected value '%v'",
+					time.Time(datetime_param).UTC(), expected.UTC())
+			}
+		})
+
+		t.Run("destination is not a pointer", func(t *testing.T) {
+			var int_out int64
+			var str_out string
+			// test when destination is not a pointer
+			_, actual := db.ExecContext(ctx, sqltextrun,
+				sql.Named("bid", sql.Out{Dest: int_out}),
+				sql.Named("cstr", sql.Out{Dest: &str_out}),
+			)
+			pattern := ".*destination not a pointer.*"
+			match, err := regexp.MatchString(pattern, actual.Error())
+			if err != nil {
+				t.Error(err)
+			}
+			if !match {
+				t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
+			}
+		})
+
+		t.Run("should convert int64 to int", func(t *testing.T) {
+			var bout int
+			var cout string
+			_, err := db.ExecContext(ctx, sqltextrun,
+				sql.Named("bid", sql.Out{Dest: &bout}),
+				sql.Named("cstr", sql.Out{Dest: &cout}),
+			)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if bout != 5 {
+				t.Errorf("expected 5, got %d", bout)
+			}
+		})
+
+		t.Run("should fail if destination has invalid type", func(t *testing.T) {
+			// Error type should not be supported
+			var err_out Error
+			_, err := db.ExecContext(ctx, sqltextrun,
+				sql.Named("bid", sql.Out{Dest: &err_out}),
+			)
+			if err == nil {
+				t.Error("Expected to fail but it didn't")
+			}
+
+			// double inderection should not work
+			var out_out = sql.Out{Dest: &err_out}
+			_, err = db.ExecContext(ctx, sqltextrun,
+				sql.Named("bid", sql.Out{Dest: out_out}),
+			)
+			if err == nil {
+				t.Error("Expected to fail but it didn't")
+			}
+		})
+
+		t.Run("should fail if parameter has invalid type", func(t *testing.T) {
+			// passing invalid parameter type
+			var err_val Error
+			_, err = db.ExecContext(ctx, sqltextrun, err_val)
+			if err == nil {
+				t.Error("Expected to fail but it didn't")
+			}
+		})
+
+		t.Run("destination is a nil pointer", func(t *testing.T) {
+			var str_out string
+			// test when destination is nil pointer
+			_, actual := db.ExecContext(ctx, sqltextrun,
+				sql.Named("bid", sql.Out{Dest: nil}),
+				sql.Named("cstr", sql.Out{Dest: &str_out}),
+			)
+			pattern := ".*destination is a nil pointer.*"
+			match, err := regexp.MatchString(pattern, actual.Error())
+			if err != nil {
+				t.Error(err)
+			}
+			if !match {
+				t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
+			}
+		})
+
+		t.Run("destination is a nil pointer 2", func(t *testing.T) {
+			var int_ptr *int
+			_, actual := db.ExecContext(ctx, sqltextrun,
+				sql.Named("bid", sql.Out{Dest: int_ptr}),
+			)
+			pattern := ".*destination is a nil pointer.*"
+			match, err := regexp.MatchString(pattern, actual.Error())
+			if err != nil {
+				t.Error(err)
+			}
+			if !match {
+				t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
+			}
+		})
+
+		t.Run("pointer to a pointer", func(t *testing.T) {
+			var str_out *string
+			_, actual := db.ExecContext(ctx, sqltextrun,
+				sql.Named("cstr", sql.Out{Dest: &str_out}),
+			)
+			pattern := ".*destination is a pointer to a pointer.*"
+			match, err := regexp.MatchString(pattern, actual.Error())
+			if err != nil {
+				t.Error(err)
+			}
+			if !match {
+				t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
+			}
+		})
 	})
 }
 
 func TestOutputINOUTParam(t *testing.T) {
 	sqltextcreate := `
 CREATE PROCEDURE abinout
-   @aid INT,
-   @bid INT OUTPUT,
-   @cstr NVARCHAR(2000) OUTPUT,
-   @vout VARCHAR(2000) OUTPUT
+   @aid INT = 1,
+   @bid INT = 2 OUTPUT,
+   @cstr NVARCHAR(2000) = NULL OUTPUT,
+   @vout VARCHAR(2000) = NULL OUTPUT,
+   @nullint INT = NULL OUTPUT,
+   @nullfloat FLOAT = NULL OUTPUT,
+   @nullstr NVARCHAR(10) = NULL OUTPUT,
+   @nullbit BIT = NULL OUTPUT,
+   @varbin VARBINARY(10) = NULL OUTPUT
 AS
 BEGIN
    SELECT
@@ -259,30 +341,168 @@ END;
 	if err != nil {
 		t.Fatal(err)
 	}
-	var bout int64 = 3
-	var cout string
-	var vout VarChar
-	_, err = db.ExecContext(ctx, sqltextrun,
-		sql.Named("aid", 5),
-		sql.Named("bid", sql.Out{Dest: &bout}),
-		sql.Named("cstr", sql.Out{Dest: &cout}),
-		sql.Named("vout", sql.Out{Dest: &vout}),
-	)
 	defer db.ExecContext(ctx, sqltextdrop)
-	if err != nil {
-		t.Error(err)
-	}
 
-	if bout != 8 {
-		t.Errorf("expected 8, got %d", bout)
-	}
+	t.Run("original test", func(t *testing.T) {
+		var bout int64 = 3
+		var cout string
+		var vout VarChar
+		_, err = db.ExecContext(ctx, sqltextrun,
+			sql.Named("aid", 5),
+			sql.Named("bid", sql.Out{Dest: &bout}),
+			sql.Named("cstr", sql.Out{Dest: &cout}),
+			sql.Named("vout", sql.Out{Dest: &vout}),
+		)
+		if err != nil {
+			t.Error(err)
+		}
 
-	if cout != "OK" {
-		t.Errorf("expected OK, got %s", cout)
-	}
-	if string(vout) != "DREAM" {
-		t.Errorf("expected DREAM, got %s", vout)
-	}
+		if bout != 8 {
+			t.Errorf("expected 8, got %d", bout)
+		}
+
+		if cout != "OK" {
+			t.Errorf("expected OK, got %s", cout)
+		}
+		if string(vout) != "DREAM" {
+			t.Errorf("expected DREAM, got %s", vout)
+		}
+	})
+
+	t.Run("test null values returned into nullable", func(t *testing.T) {
+		var nullint sql.NullInt64
+		var nullfloat sql.NullFloat64
+		var nullstr sql.NullString
+		var nullbit sql.NullBool
+		_, err = db.ExecContext(ctx, sqltextrun,
+			sql.Named("nullint", sql.Out{Dest: &nullint}),
+			sql.Named("nullfloat", sql.Out{Dest: &nullfloat}),
+			sql.Named("nullstr", sql.Out{Dest: &nullstr}),
+			sql.Named("nullbit", sql.Out{Dest: &nullbit}),
+		)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if nullint.Valid {
+			t.Errorf("expected NULL, got %v", nullint)
+		}
+		if nullfloat.Valid {
+			t.Errorf("expected NULL, got %v", nullfloat)
+		}
+		if nullstr.Valid {
+			t.Errorf("expected NULL, got %v", nullstr)
+		}
+		if nullbit.Valid {
+			t.Errorf("expected NULL, got %v", nullbit)
+		}
+	})
+
+	// Not yet supported
+	//t.Run("test null values returned into pointers", func(t *testing.T) {
+	//	var nullint *int64
+	//	var nullfloat *float64
+	//	var nullstr *string
+	//	var nullbit *bool
+	//	_, err = db.ExecContext(ctx, sqltextrun,
+	//		sql.Named("nullint", sql.Out{Dest: &nullint}),
+	//		sql.Named("nullfloat", sql.Out{Dest: &nullfloat}),
+	//		sql.Named("nullstr", sql.Out{Dest: &nullstr}),
+	//		sql.Named("nullbit", sql.Out{Dest: &nullbit}),
+	//	)
+	//	if err != nil {
+	//		t.Error(err)
+	//	}
+
+	//	if nullint != nil {
+	//		t.Errorf("expected NULL, got %v", nullint)
+	//	}
+	//	if nullfloat != nil {
+	//		t.Errorf("expected NULL, got %v", nullfloat)
+	//	}
+	//	if nullstr != nil {
+	//		t.Errorf("expected NULL, got %v", nullstr)
+	//	}
+	//	if nullbit != nil {
+	//		t.Errorf("expected NULL, got %v", nullbit)
+	//	}
+	//})
+
+	t.Run("test non null values into nullable", func(t *testing.T) {
+		nullint := sql.NullInt64{10, true}
+		nullfloat := sql.NullFloat64{1.5, true}
+		nullstr := sql.NullString{"hello", true}
+		nullbit := sql.NullBool{true, true}
+		_, err = db.ExecContext(ctx, sqltextrun,
+			sql.Named("nullint", sql.Out{Dest: &nullint}),
+			sql.Named("nullfloat", sql.Out{Dest: &nullfloat}),
+			sql.Named("nullstr", sql.Out{Dest: &nullstr}),
+			sql.Named("nullbit", sql.Out{Dest: &nullbit}),
+		)
+		if err != nil {
+			t.Error(err)
+		}
+		if !nullint.Valid {
+			t.Error("expected non null value, but got null")
+		}
+		if nullint.Int64 != 10 {
+			t.Errorf("expected 10, got %d", nullint.Int64)
+		}
+		if !nullfloat.Valid {
+			t.Error("expected non null value, but got null")
+		}
+		if nullfloat.Float64 != 1.5 {
+			t.Errorf("expected 1.5, got %v", nullfloat.Float64)
+		}
+		if !nullstr.Valid {
+			t.Error("expected non null value, but got null")
+		}
+		if nullstr.String != "hello" {
+			t.Errorf("expected hello, got %s", nullstr.String)
+		}
+	})
+	t.Run("test return into byte[]", func(t *testing.T) {
+		cstr := []byte{1, 2, 3}
+		_, err = db.ExecContext(ctx, sqltextrun,
+			sql.Named("varbin", sql.Out{Dest: &cstr}),
+		)
+		if err != nil {
+			t.Error(err)
+		}
+		expected := []byte{1, 2, 3}
+		if bytes.Compare(cstr, expected) != 0 {
+			t.Errorf("expected [1,2,3], got %v", cstr)
+		}
+	})
+	t.Run("test int into string", func(t *testing.T) {
+		var str string
+		_, err = db.ExecContext(ctx, sqltextrun,
+			sql.Named("bid", sql.Out{Dest: &str}),
+		)
+		if err != nil {
+			t.Error(err)
+		}
+		if str != "1" {
+			t.Errorf("expected '1', got %v", str)
+		}
+	})
+	t.Run("typeless null for output parameter should return error", func(t *testing.T) {
+		var val interface{}
+		_, actual := db.ExecContext(ctx, sqltextrun,
+			sql.Named("bid", sql.Out{Dest: &val}),
+		)
+		if actual == nil {
+			t.Error("Expected to fail but didn't")
+		}
+		pattern := ".*MSSQL does not allow NULL value without type for OUTPUT parameters.*"
+		match, err := regexp.MatchString(pattern, actual.Error())
+		if err != nil {
+			t.Error(err)
+		}
+		if !match {
+			t.Errorf("Error  '%v', does not match pattern '%v'.", actual, pattern)
+		}
+	})
 }
 
 // TestTLSServerReadClose tests writing to an encrypted database connection.
@@ -608,5 +828,29 @@ func TestDateTimeParam19(t *testing.T) {
 				t.Errorf("expected: '%s', got: '%s' delta: %d", expected, res, expected.Sub(res))
 			}
 		})
+	}
+}
+
+func TestReturnStatus(t *testing.T) {
+	conn := open(t)
+	defer conn.Close()
+
+	_, err := conn.Exec("if object_id('retstatus') is not null drop proc retstatus;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = conn.Exec("create proc retstatus as return 2;")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var rs ReturnStatus
+	_, err = conn.Exec("retstatus", &rs)
+	conn.Exec("drop proc retstatus;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rs != 2 {
+		t.Errorf("expected status=2, got %d", rs)
 	}
 }

@@ -344,7 +344,7 @@ func (u *User) validate() error {
 		return NewFailureFromErr(err)
 	}
 
-	if !urlify(u.Username).is() {
+	if !isSlug(u.Username) {
 		return NewFailure("A username can only contain letters, numbers and dashes")
 	}
 
