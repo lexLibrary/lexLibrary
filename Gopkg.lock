@@ -229,8 +229,8 @@
 [[projects]]
   name = "github.com/timshannon/sequence"
   packages = ["."]
-  revision = "99d9905e43e684d55fe706427be3da63ebce88f2"
-  version = "v0.0.6"
+  revision = "11b5619c477fe96707f9a9830b5a41e3d253d906"
+  version = "v0.0.7"
 
 [[projects]]
   branch = "master"
@@ -305,8 +305,8 @@
 [[projects]]
   name = "google.golang.org/appengine"
   packages = ["cloudsql"]
-  revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
-  version = "v1.1.0"
+  revision = "ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06"
+  version = "v1.2.0"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"

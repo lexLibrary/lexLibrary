@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/tebeka/selenium"
@@ -126,6 +127,18 @@ func (s *Sequence) End() error {
 		return s.err
 	}
 	return nil
+}
+
+// OK ends a sequence and fails and stopped the tests passed in if the sequence is in error
+func (s *Sequence) Ok(tb testing.TB) {
+	if s.err != nil {
+		if s.onErr != nil {
+			s.onErr(*s.err, s)
+		}
+
+		fmt.Printf("Sequence failed: %s", s.err)
+		tb.FailNow()
+	}
 }
 
 // OnError registers a function to call when an error occurs in the sequence.
@@ -620,6 +633,11 @@ func (s *Sequence) Screenshot(filename string) *Sequence {
 // End Completes a sequence and returns any errors
 func (e *Elements) End() error {
 	return e.seq.End()
+}
+
+// Ok is a shortcut for Sequence.Ok
+func (e *Elements) Ok(tb testing.TB) {
+	e.seq.Ok(tb)
 }
 
 // Wait sleeps for the given duration
