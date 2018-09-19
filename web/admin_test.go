@@ -380,7 +380,7 @@ func TestAdmin(t *testing.T) {
 			func(we *sequence.Elements) error {
 				return we.Text().Contains("John Doe").End()
 			}).Click().And().
-			URL().Path("/admin/users/loggedin/").
+			URL().Path("/admin/users/loggedin").
 			Ok(t)
 
 		uri.Path = "/admin/users/loggedin/"
