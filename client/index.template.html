@@ -9,13 +9,21 @@
 <body>
 	<div class="page-container">
 		[[template "nav" .]]
-		<div class="page-content container grid-lg">
+		<div class="page-content container">
 			<ul>
 				[[if .User]]
 					<li><a href="/admin">Admin Page</a></li>
 					<li><a href="/document/new">New Document</a></li>
 				[[end]]
 			</ul>
+
+			<div class="testing">
+				<button class="btn btn-primary loading">Test with a lot of text</button>
+				<button class="btn btn-primary btn-sm loading">Test with a lot of text</button>
+				<button class="btn btn-primary btn-lg loading">Test with a lot of text</button>
+				<span class="loading"></span>
+			</div>
+
 		</div>
 		[[template "footer" .]]
 	</div>

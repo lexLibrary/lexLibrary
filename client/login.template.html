@@ -11,88 +11,84 @@
 </head>
 
 <body>
-<div class="page-container">
-<div id="login" class="page-content section container grid-xs">
-	<div class="columns">
-		<div class="column">
-			[[if .Unauthorized]]
-				<h1 class="text-center">You Do Not Have Access to this Page</h1>
-				<h4 class="text-center text-gray">Please log in with another user</h4>
-			[[else]]
-				<h1 class="text-center">Log In to Lex Library</h1>
-			[[end]]
-			<div class="card">
-				<div class="card-body">
-					<div v-if="error" v-cloak class="toast toast-error">
-						<button @click="error=null" class="btn btn-clear float-right"></button>
-						{{error}}
-					</div>
+	<div class="page-container">
+		<div id="login" class="form-auth text-center page-content">
+			<form @submit="login">
+				<div v-if="error" v-cloak class="alert alert-danger">
+					{{error}}
+						<button type="button" @click="error=null" class="close" data-dismiss="alert" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+				</div>
 
-					<form @submit="login">
-						<div class="form-group">
-							<label class="form-label" for="inputUsername">Username</label>
-							<input v-model="username" v-focus type="text" class="form-input" id="inputUsername" 
-								maxlength="[[fieldMax `user.username`]]" placeholder="Enter username">
-						</div>
-						<div class="form-group">
-							<label class="form-label" for="inputPassword">Password</label>
-							<input v-model="password" type="password" class="form-input" id="inputPassword"
-								placeholder="Enter password">
-						</div>
-						<div class="form-group">
-							<label class="form-switch" for="inputRememberMe">
-								<input v-model="rememberMe" type="checkbox" id="inputRememberMe">
-								<i class="form-icon"></i>Remember Me	
-							</label>
-						</div>
-						<button type="submit" :class="{'loading': loading}" class="btn btn-primary btn-block">Log In</button>
-					</form>
-				</div>
-				
-				[[if .AllowSignup]]
-				<div class="card-footer">
-					<span>
-						Don't have a login?  <a href="/signup">Signup!</a>
-					</span>
-				</div>
+				<!-- <img class="mb-4" src="" alt="" width="72" height="72"> -->
+				<!-- TODO: Add logo -->
+				[[if .Unauthorized]]
+					<h1 class="h3 mb-3 font-weight-normal">You Do Not Have Access to this Page</h1>
+					<h4 class="text-muted">Please log in with another user</h4>
+				[[else]]
+					<h1 class="h3 mb-3 font-weight-normal">Log in to Lex Library</h1>
 				[[end]]
-			</div>
-		</div>
-	</div>
 
-	<div :class="{'active': showModal}" class="modal">
-		<div class="modal-overlay"></div>
-		<div class="modal-container">
-			<header class="modal-header">
-				<div class="modal-title h5">{{modalTitle}}</div>
-			</header>
+				<label class="sr-only" for="inputUsername">Username</label>
+				<input v-model="username" v-focus type="text" class="form-control input-top" id="inputUsername" 
+					maxlength="[[fieldMax `user.username`]]" placeholder="Username">
+
+				<label for="inputPassword" class="sr-only">Password</label>
+				<input v-model="password" type="password" class="form-control input-bottom" id="inputPassword"
+					placeholder="Password">
+
+				<div class="checkbox mb-3">
+					<label>
+						<input v-model="rememberMe" type="checkbox" id="inputRememberMe"> Remember me
+					</label>
+				</div>
+				<button type="submit" :class="{'loading': loading}" class="btn btn-lg btn-primary btn-block">Log In</button>
+				[[if .AllowSignup]]
+					<p class="mt-5 mb-4">Don't have a login?  <a href="/signup">Signup!</a></p>
+				[[end]]
+			</form>
+		</div> <!-- #login -->
+		<div class="d-none d-md-block">
+			[[template "footer" .]]
+		</div>
+
+
+		<modal ref="modal">
+			<div class="modal-header">
+        <h5 class="modal-title">{{modalTitle}}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
 			<form @submit="changePassword">
-				<section class="modal-body">
+				<div class="modal-body">
 					<div class="content">
-						<div :class="{'has-error': passwordErr}" class="form-group">
-							<label class="form-label" for="inputNewPassword">Choose a New Password</label>
+						<div class="form-group">
+							<label for="inputNewPassword">Choose a New Password</label>
 							<input v-model="newPassword" @blur="validatePassword" @keydown="passwordErr=null" autofocus
-									 type="password" class="form-input" id="inputNewPassword"	placeholder="Enter a new password">
-							<p v-if="passwordErr" v-cloak class="form-input-hint">{{passwordErr}}</p>
+								type="password" :class="{'is-invalid': passwordErr}" class="form-control" id="inputNewPassword"	
+								placeholder="Enter a new password">
+							<div class="invalid-feedback">{{passwordErr}}</div>
 						</div>
-						<div :class="{'has-error': password2Err}"	class="form-group">
+						<div class="form-group">
 							<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"	type="password" 
-							 class="form-input" id="inputPassword2" placeholder="Enter password again">
-							<p v-if="password2Err" v-cloak class="form-input-hint">{{password2Err}}</p>
+						 		:class="{'is-invalid': password2Err}" class="form-control" id="inputPassword2" 
+								placeholder="Enter password again">
+							<div class="invalid-feedback">{{password2Err}}</div>
 						</div>
 					</div>
-				</section>
-				<footer class="modal-footer">
+				</div>
+				<div class="modal-footer">
 					<button v-if="user" @click="navigate" type="button" class="btn">Skip</button>
-					<button @click="changePassword" type="submit" :class="{'loading': loading}" class="btn btn-primary">Submit</button>
-				</footer>
+					<button @click="changePassword" type="submit" :class="{'loading': loading}" class="btn btn-primary">
+						Submit
+					</button>
+				</div>
 			</form>
-		</div>
-	</div> <!-- modal -->
+		</modal>
 
-</div> <!-- page-content -->
-[[template "footer" .]]
-</div> <!-- page-container -->
+	</div> <!-- page-container -->
 </body>
 <script src="/js/vue.js"></script>
 <script src="/js/login.js"></script>

@@ -365,7 +365,8 @@ func TestAdmin(t *testing.T) {
 			Text().Contains("neverloggedin").
 			Text().Contains("inactive").
 			Find(".admin-users tbody > tr.secondary").Count(1).Text().Contains("inactive").
-			Find("#userSearch").Clear().SendKeys("doe").SendKeys(selenium.EnterKey).Wait(100 * time.Millisecond).
+			Find("#userSearch").Clear().SendKeys("doe").SendKeys(selenium.EnterKey).
+			Wait(100 * time.Millisecond).
 			Find(".btn-group > .active").Text().Equals("All").
 			Find(".admin-users tbody > tr > td:nth-child(2)").Count(2).Any().
 			Text().Contains("John Doe").

@@ -170,3 +170,29 @@ func draftPublish(w http.ResponseWriter, r *http.Request, c ctx) {
 
 	respond(w, created(doc))
 }
+
+type documentPage struct {
+	*templateHandler
+}
+
+type documentData struct {
+	User     *app.User
+	Document *app.Document
+	Page     string
+}
+
+// func (e *editorPage) data(s *app.Session) (*editorData, error) {
+// 	if s == nil {
+// 		return nil, app.Unauthorized("You do not have access to this page")
+// 	}
+
+// 	u, err := s.User()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return &editorData{
+// 		User:      u,
+// 		Languages: app.LanguagesSupported,
+// 	}, nil
+// }

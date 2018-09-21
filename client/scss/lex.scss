@@ -5,7 +5,7 @@
 @import "variables";
 
 // spectre
-@import "spectre";
+@import "bootstrap";
 
 // Lex
 @import "mixins";
@@ -16,9 +16,9 @@
 @import "crop";
 @import "images";
 @import "tables";
-@import "transitions";
 
 // Pages
+@import "pages/login";
 @import "pages/profile";
 @import "pages/admin";
 @import "pages/editor";

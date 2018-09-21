@@ -1,52 +1,26 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 
-$section-padding: 3rem 1.5rem !default;
-$section-padding-medium: 9rem 1.5rem !default;
-$section-padding-large: 18rem 1.5rem !default;
-
-.section {
-  padding: $section-padding;
-  // Responsiveness
-	@media screen and (min-width: $size-lg) {
-		.section-md {
-			padding: $section-padding-medium;
-		}
-		.section-lg {
-			padding: $section-padding-large;
-		}
-	}
-}
-
-
 // Standard page layout with footer
 html {
 	height: 100%;
 }
+
 body {
 	height: 100%;
 }
 
-.navbar .navbar-brand {
-	font-size: $unit-5;
-}
-
 .page-footer {
-	font-size: $unit-3;
 	text-align: center;
 	width: 100%;
 	position: absolute;
 	bottom: 0;
 	height: 60px;
+	display: flex;
+	justify-content: center;
+	> a {
+		margin: $spacer;
+	}
 }
-
-.page-footer-links {
-    display: flex;
-    list-style: none;
-    li {
-        margin-right: $unit-8;
-    }
-}
-
 
 .page-container {
 	position: relative;
@@ -58,11 +32,11 @@ body {
 }
 
 
-.tile-row {
-	display: flex;
-	flex-flow: row wrap;
-	.tile {
-		padding-right: $unit-6;
-		padding-bottom: $unit-6;
-	}
-}
+// .tile-row {
+// 	display: flex;
+// 	flex-flow: row wrap;
+// 	.tile {
+// 		padding-right: $unit-6;
+// 		padding-bottom: $unit-6;
+// 	}
+// }

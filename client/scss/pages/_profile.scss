@@ -1,34 +1,34 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 // Profile page specific CSS
 
-$profile-offset: ($unit-10 + ($avatar-full-size / 2));
-$profile-offset-xs: ($unit-8 + ($avatar-full-size-xs / 2));
+// $profile-offset: ($unit-10 + ($avatar-full-size / 2));
+// $profile-offset-xs: ($unit-8 + ($avatar-full-size-xs / 2));
 
-.profile {
-	padding-top: $profile-offset-xs;
-	@media (min-width: $size-xs) {
-		padding-top: $profile-offset;
-	}
-}
+// .profile {
+// 	padding-top: $profile-offset-xs;
+// 	@media (min-width: $size-xs) {
+// 		padding-top: $profile-offset;
+// 	}
+// }
 
-.profile-avatar {
-	// to cut the full-size avatar in half, we'll need half the avatar size +  the size of the name underneath
-	margin-top: $profile-offset-xs*-1;
-	@media (min-width: $size-xs) {
-		margin-top: $profile-offset*-1;
-	}
-}
+// .profile-avatar {
+// 	// to cut the full-size avatar in half, we'll need half the avatar size +  the size of the name underneath
+// 	margin-top: $profile-offset-xs*-1;
+// 	@media (min-width: $size-xs) {
+// 		margin-top: $profile-offset*-1;
+// 	}
+// }
 
-.profile-edit {
-	position: absolute;
-	top: $layout-spacing-lg;
-	right: $layout-spacing-lg;
-}
+// .profile-edit {
+// 	position: absolute;
+// 	top: $layout-spacing-lg;
+// 	right: $layout-spacing-lg;
+// }
 
-.profile-section {
-	margin-bottom: $gap;
-	margin-left: $gap;
-}
+// .profile-section {
+// 	margin-bottom: $gap;
+// 	margin-left: $gap;
+// }
 
 .profile-image-remove {
 	position: absolute;

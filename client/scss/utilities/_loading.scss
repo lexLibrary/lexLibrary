@@ -1,0 +1,46 @@
+// Copyright (c) 2017-2018 Townsourced Inc.
+// Loading
+
+$loading-size: 1.5em;
+
+.loading {
+  color: transparent !important;
+  min-height: $loading-size;
+  pointer-events: none;
+  position: relative;
+  &::after {
+    animation: loading 500ms infinite linear;
+    border: 3px solid $primary;
+    border-radius: 50%;
+    border-right-color: transparent;
+    border-top-color: transparent;
+    content: "";
+    display: block;
+    height: $loading-size;
+    left: 50%;
+    margin-left: -($loading-size/2);
+    margin-top: -($loading-size/2);
+    position: absolute;
+    top: 50%;
+    width: $loading-size;
+    z-index: 0;
+  }
+}
+
+.btn {
+ &.loading {
+		&::after {
+			border-bottom-color: $yiq-text-light;
+			border-left-color: $yiq-text-light;
+		}
+	}
+}
+
+@keyframes loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

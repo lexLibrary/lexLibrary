@@ -170,6 +170,8 @@ func setupRoutes() http.Handler {
 	rootHandler.GET("/document/new", editor.newDocument())
 	rootHandler.GET("/draft/:id", editor.edit())
 	rootHandler.GET("/draft/:id/:slug", editor.edit())
+	rootHandler.GET("/documents/:id", editor.edit())
+	rootHandler.GET("/documents/:id/:slug", editor.edit())
 
 	return rootHandler
 }

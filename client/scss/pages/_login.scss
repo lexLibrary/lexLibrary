@@ -1,0 +1,49 @@
+// Copyright (c) 2017-2018 Townsourced Inc.
+// Login page specific CSS
+
+// login and signup
+.form-auth {
+	display: flex;
+	height: 100vh;
+	justify-content: center;
+	align-items: center;
+
+	form {
+		width: 100%;
+		max-width: 330px;
+		padding: 15px;
+		margin: auto;
+
+		.form-control {
+			position: relative;
+			box-sizing: border-box;
+			height: auto;
+			padding: 10px;
+			font-size: 16px;
+
+			&:focus {
+				z-index: 2;
+			}
+
+			&.input-top {
+				margin-bottom: -1px;
+				border-bottom-right-radius: 0;
+				border-bottom-left-radius: 0;
+			}
+			&.input-middle {
+				border-bottom-right-radius: 0;
+				border-bottom-left-radius: 0;
+				border-top-left-radius: 0;
+				border-top-right-radius: 0;
+				margin-bottom: -1px;
+			}
+			&.input-bottom {
+				margin-bottom: 10px;
+				border-top-left-radius: 0;
+				border-top-right-radius: 0;
+			}
+
+		}
+	}
+	
+}

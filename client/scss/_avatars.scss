@@ -1,12 +1,55 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 
+$avatar-size: 2rem !default;
 $avatar-full-size: 12rem;
 $avatar-full-size-xs: 8rem;
+
+
+// Avatar mixin
+@mixin avatar-base($size: $avatar-size) {
+	font-size: $size / 2;
+	height: $size;
+	width: $size;
+}
+
+// Avatars
+.avatar {
+	@include avatar-base();
+	background: $primary;
+	border-radius: 50%;
+	color: $yiq-text-light;
+	display: inline-block;
+	font-weight: 300;
+	line-height: 1.25;
+	margin: 0;
+	position: relative;
+	vertical-align: middle;
+
+	img {
+		border-radius: 50%;
+		height: 100%;
+		position: relative;
+		width: 100%;
+		z-index: 0;
+	}
+
+	&[data-initial]::before {
+		color: currentColor;
+		content: attr(data-initial);
+		left: 50%;
+		position: absolute;
+		top: 50%;
+		transform: translate(-50%, -50%);
+		z-index: 0;
+	}
+}
 
 .avatar.avatar-full {
 	@include avatar-base($avatar-full-size-xs);
 
-	@media (min-width: $size-xs) {
+  @include media-breakpoint-up(sm) {
 		@include avatar-base($avatar-full-size);
 	}
 }
+
+

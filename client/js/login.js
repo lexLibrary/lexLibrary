@@ -6,8 +6,10 @@ import {
 }
 from './lib/url';
 
+import modal from './components/modal';
+
 var vm = new Vue({
-    el: '#login',
+    el: '.page-container',
     data: function() {
         return {
             username: '',
@@ -15,7 +17,6 @@ var vm = new Vue({
             rememberMe: false,
             error: null,
             loading: false,
-            showModal: false,
             modalTitle: "",
             newPassword: null,
             password2: null,
@@ -23,6 +24,9 @@ var vm = new Vue({
             password2Err: null,
             user: null,
         };
+    },
+    components: {
+        'modal': modal,
     },
     directives: {
         focus: {
@@ -45,7 +49,7 @@ var vm = new Vue({
                         this.loading = false;
                         if (result.response.expired) {
                             this.modalTitle = "Your password has expired";
-                            this.showModal = true;
+                            this.$refs.modal.show();
                             return;
                         } else if (result.response.passwordExpiration) {
                             this.user = result.response;
@@ -54,7 +58,7 @@ var vm = new Vue({
                             range.setDate(range.getDate() - 7);
                             if (range <= expires) {
                                 this.modalTitle = `Your password will expire soon`;
-                                this.showModal = true;
+                                this.$refs.modal.show();
                                 return;
                             }
                         }
