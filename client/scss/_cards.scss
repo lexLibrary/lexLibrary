@@ -1,76 +1,10 @@
-// // Copyright (c) 2017-2018 Townsourced Inc.
-// $column-gap: $layout-spacing;
+// Copyright (c) 2017-2018 Townsourced Inc.
 
-// // credit bootstrap v4
-// .card-columns {
-// 	.card {
-//     margin-bottom: $column-gap;
-// 		margin-top: 1px; // fixes issue with drop shadow
-//   } 
-
-// 	@media (min-width: $size-md) {
-// 		column-count: 3;
-// 		&.col-sm {
-// 			column-count: 3;
-// 		}
-// 		&.col-md {
-// 			column-count: 2;
-// 		}
-// 		&.col-lg {
-// 			column-count: 1;
-// 		}
-// 		&.col-xl {
-// 			column-count: 1;
-// 		}
-//     column-gap: $column-gap;
-//   }
-
-// 	@media (min-width: $size-lg) {
-// 		column-count: 4;
-// 		&.col-sm {
-// 			column-count: 4;
-// 		}
-// 		&.col-md {
-// 			column-count: 3;
-// 		}
-// 		&.col-lg {
-// 			column-count: 2;
-// 		}
-// 		&.col-xl {
-// 			column-count: 1;
-// 		}
-//     column-gap: $column-gap*2;
-// 		.card {
-// 			margin-bottom: $column-gap*2;
-// 			margin-top: 1px; // fixes issue with drop shadow
-// 		}
-//   }
-
-// 	@media (min-width: $size-xl) {
-//     column-count: 5;
-// 		&.col-sm {
-// 			column-count: 5;
-// 		}
-// 		&.col-md {
-// 			column-count: 4;
-// 		}
-// 		&.col-lg {
-// 			column-count: 3;
-// 		}
-// 		&.col-xl {
-// 			column-count: 2;
-// 		}
-//     column-gap: $column-gap*2;
-// 		.card {
-// 			margin-bottom: $column-gap*2;
-// 			margin-top: 1px; // fixes issue with drop shadow
-// 		}
-//   }
-
-// 	.card {
-// 		display: inline-block; // Don't let them vertically span multiple columns
-// 		width: 100%; // Don't let their width change
-// 	}
-// }
-
-
+.card-columns {
+    @include media-breakpoint-only(lg) {
+        column-count: 4;
+    }
+    @include media-breakpoint-only(xl) {
+        column-count: 5;
+    }
+}

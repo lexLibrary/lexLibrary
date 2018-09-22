@@ -4,16 +4,20 @@ import {
     payload
 } from './lib/data';
 
+import modal from './components/modal';
+
 var vm = new Vue({
     el: '#main',
-    data: function() {
+    components: {
+        'modal': modal,
+    },
+    data: function () {
         return {
             runtime: payload("runtime"),
             browser: payload("browser"),
             version: payload("version"),
             buildDate: payload("buildDate"),
             userAgent: payload("userAgent"),
-            showModal: false,
             label: "bug",
             subject: null,
             subjectError: null,
@@ -22,13 +26,13 @@ var vm = new Vue({
         };
     },
     computed: {
-        issueURL: function() {
+        issueURL: function () {
             let subject = encodeURI(this.subject);
             let body = encodeURI(this.description);
             return `https://github.com/lexLibrary/lexLibrary/issues/new?title=${subject}&body=${this.serverInfo}
 			${this.browserInfo}${body}&labels=${this.label}`;
         },
-        serverInfo: function() {
+        serverInfo: function () {
             if (!this.runtime) {
                 return '';
             }
@@ -50,7 +54,7 @@ var vm = new Vue({
 
 `);
         },
-        browserInfo: function() {
+        browserInfo: function () {
             if (!this.browser) {
                 return '';
             }
@@ -73,5 +77,9 @@ var vm = new Vue({
         },
     },
     directives: {},
-    methods: {},
+    methods: {
+        'showModal': function () {
+            this.$refs.modal.show();
+        },
+    },
 });
