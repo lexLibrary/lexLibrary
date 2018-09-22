@@ -9,10 +9,10 @@
 <body>
 	<div class="page-container">
 		[[template "nav" .]]
-		<div id="main" class="page-content container grid-lg">
+		<div id="main" class="page-content container">
+			<a href="#" v-if="runtime" v-cloak @click="showModal=true" class="float-right">Report an issue</a>
 			<h2>Lex Library</h2>
-			<a v-if="runtime" v-cloak @click="showModal=true" class="btn btn-link float-right">Report an issue</a>
-			<h4>Version: [[.Version]] <small>([[.BuildDate]])</small></h4>
+			<h4 class="text-muted">Version: [[.Version]] <small>([[.BuildDate]])</small></h4>
 			<p>The latest news and updates on Lex Library can be found at 
 				<a href="https://www.lexlibrary.io">LexLibrary.io</a>
 			</p>

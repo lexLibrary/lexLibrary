@@ -28,12 +28,15 @@ $loading-size: 1.5em;
 }
 
 .btn {
- &.loading {
+  &.loading {
+    opacity: $btn-disabled-opacity;
+    @include box-shadow(none);
+
 		&::after {
-			border-bottom-color: $yiq-text-light;
+      border-bottom-color: $yiq-text-light;
 			border-left-color: $yiq-text-light;
-		}
-	}
+    }
+  }
 }
 
 @keyframes loading {
