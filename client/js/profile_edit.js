@@ -6,7 +6,7 @@ import {
 } from './lib/data';
 
 import file_input from './components/file_input';
-
+import modal from './components/modal';
 import * as croppie from 'croppie';
 
 let Croppie = croppie.default.Croppie;
@@ -16,6 +16,7 @@ var vm = new Vue({
     el: '.page-content',
     components: {
         'file-input': file_input,
+		'modal': modal,
     },
     data: function() {
         return {

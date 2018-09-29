@@ -39,6 +39,10 @@ func (c ctx) Language() app.Language {
 	return c.language
 }
 
+func (c ctx) LoggedIn() bool {
+	return c.session != nil
+}
+
 type llHandler func(http.ResponseWriter, *http.Request, ctx)
 
 type handleMaker struct {

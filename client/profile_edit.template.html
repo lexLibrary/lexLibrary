@@ -9,32 +9,24 @@
 <body>
 <div class="page-container">
 [[template "nav" .]]
-<section class="page-content section">
+<div class="page-content">
 
-<div class="container grid-lg">
-	<div class="columns">
-		<div class="column col-3">
-			<ul class="menu">
-				<li class="menu-item">
-					<div>
-						<h4>Settings</h4>
-					</div>
-				</li>
-				<li class="divider">
-				</li>
-				<li class="menu-item">
-					<a class='[[if eq .Tab "profile"]]active[[end]]' href="/profile/edit/">
-						Profile
-					</a>
-				</li>
-				<li class="menu-item">
-					<a class='[[if eq .Tab "account"]]active[[end]]' href="/profile/edit/account">
-						Account
-					</a>
-				</li>
-			</ul>
+<div class="container">
+	<div class="row">
+		<div class="col-3">
+
+			<h4>Settings</h4>
+			<div class="list-group">
+				<a class='list-group-item list-group-item-action [[if eq .Tab "profile"]]active[[end]]' href="/profile/edit/">
+					Profile
+				</a>
+				<a class='list-group-item list-group-item-action [[if eq .Tab "account"]]active[[end]]' href="/profile/edit/account">
+					Account
+				</a>
+			</div>
+
 		</div>
-		<div class="column">
+		<div class="col-9">
 			[[if eq .Tab "profile"]]
 				<div class="profile-section">
 					<h3>Update Profile</h3>
@@ -134,8 +126,9 @@
 		</div>
 	</div>
 </div>
+</div> <!-- page-content-->
 [[if eq .Tab "profile"]]
-<div :class="{'active': imageModal}" class="modal">
+<modal>
 	<div @click="closeImageModal" class="modal-overlay"></div>
 	<div class="modal-container">
 		<header class="modal-header">
@@ -163,10 +156,9 @@
 			<button @click="setImage" type="button" :class="{'loading': imageLoading}" class="btn btn-primary">Set Image</button>
 		</footer>
 	</div>
-</div> <!-- modal -->
+</modal>
 [[end]]
 
-</section>
 [[template "footer" .]]
 </div> <!-- page-container -->
 </body>

@@ -44,14 +44,14 @@ func aboutTemplate(w http.ResponseWriter, r *http.Request, c ctx) {
 	w.(*templateWriter).execute(struct {
 		User        *app.User
 		Version     string
-		BuildDate   string
+		BuildDate   time.Time
 		Runtime     *app.RuntimeInfo
 		Attribution []attribute
 		Browser     browserInfo
 	}{
 		User:        u,
 		Version:     app.Version(),
-		BuildDate:   app.BuildDate().Format(time.RFC1123),
+		BuildDate:   app.BuildDate(),
 		Runtime:     app.Runtime(u),
 		Attribution: attribution,
 		Browser: browserInfo{

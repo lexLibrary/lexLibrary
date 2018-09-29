@@ -1,0 +1,88 @@
+// Copyright (c) 2017-2018 Townsourced Inc.
+// CSS only tooltips
+
+$tooltip-offset: .2rem;
+$tooltip-duration: 0.2s;
+$tooltip-delay: 0.5s;
+
+// Tooltips
+.tooltip {
+  position: relative;
+  &::after {
+    background: $tooltip-bg;
+    border-radius: $tooltip-border-radius;
+    bottom: 100%;
+    color: $tooltip-color;
+    content: attr(data-tooltip);
+    display: block;
+    font-size: $tooltip-font-size;
+    left: 50%;
+    max-width: $tooltip-max-width;
+    opacity: 0;
+    overflow: hidden;
+    padding: $tooltip-padding-y $tooltip-padding-x;
+    pointer-events: none;
+    position: absolute;
+    text-overflow: ellipsis;
+    transform: translate(-50%, $tooltip-offset*2);
+    transition: all $tooltip-duration ease;
+		transition-delay: 0s;
+    white-space: pre;
+    z-index: $zindex-tooltip;
+  }
+  &:focus,
+  &:hover {
+    &::after {
+			opacity: $tooltip-opacity;
+      transform: translate(-50%, -$tooltip-offset);
+		transition-delay: $tooltip-delay;
+    }
+  }
+  &[disabled],
+  &.disabled {
+    pointer-events: auto;
+  }
+
+  &.tooltip-right {
+    &::after {
+      bottom: 50%;
+      left: 100%;
+      transform: translate(-$tooltip-offset, 50%);
+    }
+    &:focus,
+    &:hover {
+      &::after {
+        transform: translate($tooltip-offset, 50%);
+      }
+    }
+  }
+
+  &.tooltip-bottom {
+    &::after {
+      bottom: auto;
+      top: 100%;
+      transform: translate(-50%, -($tooltip-offset*2));
+    }
+    &:focus,
+    &:hover {
+      &::after {
+        transform: translate(-50%, $tooltip-offset);
+      }
+    }
+  }
+  
+  &.tooltip-left {
+    &::after {
+      bottom: 50%;
+      left: auto;
+      right: 100%;
+      transform: translate($tooltip-offset*2, 50%);
+    }
+    &:focus,
+    &:hover {
+      &::after {
+        transform: translate(-$tooltip-offset, 50%);
+      }
+    }
+  }
+}
