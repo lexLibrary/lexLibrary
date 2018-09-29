@@ -26,6 +26,12 @@ export default {
             backdrop: this.backdrop,
             keyboard: this.keyboard,
         });
+        this.$el.addEventListener('shown', (event) => {
+            this.$emit('shown');
+        }, false);
+        this.$el.addEventListener('hidden', (event) => {
+            this.$emit('hidden');
+        }, false);
     },
     methods: {
         'show': function () {

@@ -16,14 +16,13 @@ var vm = new Vue({
     el: '.page-content',
     components: {
         'file-input': file_input,
-		'modal': modal,
+        'modal': modal,
     },
-    data: function() {
+    data: function () {
         return {
             user: payload(),
             nameLoading: false,
             nameErr: null,
-            imageModal: false,
             uploadComplete: false,
             imageProgress: 0,
             imageErr: null,
@@ -51,7 +50,7 @@ var vm = new Vue({
         };
     },
     computed: {
-        draftImage: function() {
+        draftImage: function () {
             // prevent 404 on inital load by not setting this value until the draft is uploaded
             if (this.uploadComplete) {
                 return '/profile/image?draft';
@@ -61,13 +60,13 @@ var vm = new Vue({
     },
     directives: {},
     methods: {
-        'changeName': function(e) {
+        'changeName': function (e) {
             e.preventDefault();
             this.nameLoading = true;
             xhr.put('/profile/name', {
-                    name: this.user.name,
-                    version: this.user.version,
-                })
+                name: this.user.name,
+                version: this.user.version,
+            })
                 .then(() => {
                     location.reload(true);
                 })
@@ -76,8 +75,9 @@ var vm = new Vue({
                     this.nameErr = err.response;
                 });
         },
-        'uploadImage': function(files) {
-            this.imageModal = true;
+        'uploadImage': function (files) {
+            this.$refs.modal.show();
+
             this.uploadComplete = false;
             let progress = (e) => {
                 this.imageProgress = 0;
@@ -93,23 +93,23 @@ var vm = new Vue({
                     this.imageErr = err.response;
                 });
         },
-        'closeImageModal': function() {
-            this.imageModal = false;
+        'closeImageModal': function () {
+            this.$refs.modal.hide()
             this.imageLoading = false;
             this.crop.destroy();
         },
-        'setImage': function(e) {
+        'setImage': function (e) {
             e.preventDefault();
             this.imageLoading = true;
             let c = this.crop.get();
             this.crop.destroy();
 
             xhr.put('/profile/image', {
-                    x0: parseFloat(c.points[0]),
-                    y0: parseFloat(c.points[1]),
-                    x1: parseFloat(c.points[2]),
-                    y1: parseFloat(c.points[3]),
-                })
+                x0: parseFloat(c.points[0]),
+                y0: parseFloat(c.points[1]),
+                x1: parseFloat(c.points[2]),
+                y1: parseFloat(c.points[3]),
+            })
                 .then(() => {
                     location.reload(true);
                 })
@@ -118,7 +118,7 @@ var vm = new Vue({
                     this.uploadErr = err.response;
                 });
         },
-        'loadCrop': function(e) {
+        'loadCrop': function (e) {
             this.crop = new Croppie(e.target, {
                 viewport: {
                     width: 200,
@@ -131,7 +131,7 @@ var vm = new Vue({
                 },
             });
         },
-        'removeImage': function(e) {
+        'removeImage': function (e) {
             e.preventDefault();
 
             xhr.del('/profile/image')
@@ -142,7 +142,7 @@ var vm = new Vue({
                     this.error = err.response;
                 });
         },
-        'changePassword': function(e) {
+        'changePassword': function (e) {
             e.preventDefault();
             this.password.old.err = null;
             if (this.password.new.err || this.password.confirm.err) {
@@ -162,10 +162,10 @@ var vm = new Vue({
             }
             this.password.loading = true;
             xhr.put('/profile/password', {
-                    version: this.user.version,
-                    oldPassword: this.password.old.val,
-                    newPassword: this.password.new.val,
-                })
+                version: this.user.version,
+                oldPassword: this.password.old.val,
+                newPassword: this.password.new.val,
+            })
                 .then(() => {
                     location.reload(true);
                 })
@@ -174,7 +174,7 @@ var vm = new Vue({
                     this.password.old.err = err.response;
                 });
         },
-        'validatePassword': function() {
+        'validatePassword': function () {
             if (this.password.new.err) {
                 return;
             }
@@ -182,13 +182,13 @@ var vm = new Vue({
                 return;
             }
             xhr.put('/signup/password', {
-                    password: this.password.new.val
-                })
+                password: this.password.new.val
+            })
                 .catch((err) => {
                     this.password.new.err = err.response;
                 });
         },
-        'validatePassword2': function() {
+        'validatePassword2': function () {
             if (this.password.confirm.err) {
                 return;
             }
@@ -199,13 +199,13 @@ var vm = new Vue({
                 this.password.confirm.err = 'Passwords do not match';
             }
         },
-        'changeUsername': function(e) {
+        'changeUsername': function (e) {
             e.preventDefault();
             this.usernameLoading = true;
             xhr.put('/profile/username', {
-                    username: this.user.username,
-                    version: this.user.version,
-                })
+                username: this.user.username,
+                version: this.user.version,
+            })
                 .then(() => {
                     location.reload(true);
                 })

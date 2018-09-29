@@ -40,7 +40,7 @@
 							<form id="changeName" @sumbit="changeName">
 								<div :class="{'has-error': nameErr}" class="form-group">
 									<label class="form-label" for="inputName">Name</label>
-									<input v-model="user.name" type="text" class="form-input" id="inputName" 
+									<input v-model="user.name" type="text" class="form-control" id="inputName" 
 										maxlength="[[fieldMax `user.name`]]" placeholder="Enter a name">
 									<p v-if="nameErr" v-cloak class="form-input-hint">{{nameErr}}</p>
 								</div>
@@ -81,18 +81,18 @@
 						<form id="changePassword" @sumbit="changePassword">
 							<div :class="{'has-error': password.old.err}" class="form-group">
 								<label class="form-label" for="inputPasswordOld">Current Password</label>
-								<input v-model="password.old.val" type="password" class="form-input" id="inputPasswordOld" 
+								<input v-model="password.old.val" type="password" class="form-control" id="inputPasswordOld" 
 									placeholder="Enter your current password">
 								<p v-if="password.old.err" v-cloak class="form-input-hint">{{password.old.err}}</p>
 							</div>
 							<div :class="{'has-error': password.new.err}" class="form-group">
 								<label class="form-label" for="inputPasswordNew">New Password</label>
-								<input v-model="password.new.val" type="password" class="form-input" id="inputPasswordNew" 
+								<input v-model="password.new.val" type="password" class="form-control" id="inputPasswordNew" 
 									placeholder="Enter a new password" @blur="validatePassword" @keydown="password.new.err=null">
 								<p v-if="password.new.err" v-cloak class="form-input-hint">{{password.new.err}}</p>
 							</div>
 							<div :class="{'has-error': password.confirm.err}" class="form-group">
-								<input v-model="password.confirm.val" type="password" class="form-input" id="inputPasswordConfirm" 
+								<input v-model="password.confirm.val" type="password" class="form-control" id="inputPasswordConfirm" 
 									placeholder="Confirm new password" @blur="validatePassword2" @keydown="password.confirm.err=null">
 								<p v-if="password.confirm.err" v-cloak class="form-input-hint">{{password.confirm.err}}</p>
 							</div>
@@ -111,7 +111,7 @@
 						<form id="changeUsername" @sumbit="changeUsername">
 							<div :class="{'has-error': usernameErr}" class="form-group">
 								<label class="form-label" for="inputUsername">Username</label>
-								<input v-model="user.username" type="text" class="form-input" id="inputUsername" 
+								<input v-model="user.username" type="text" class="form-control" id="inputUsername" 
 								maxlength="[[fieldMax `user.username`]]" placeholder="Enter a username">
 								<p v-if="usernameErr" v-cloak class="form-input-hint">{{usernameErr}}</p>
 							</div>
@@ -126,39 +126,39 @@
 		</div>
 	</div>
 </div>
-</div> <!-- page-content-->
 [[if eq .Tab "profile"]]
-<modal>
-	<div @click="closeImageModal" class="modal-overlay"></div>
-	<div class="modal-container">
-		<header class="modal-header">
-			<a @click="closeImageModal" class="btn btn-clear float-right" aria-label="Close"></a>
-      <div class="modal-title h5">Set Profile Image</div>
-    </header>
-		<section class="modal-body">
-			<div class="content text-center">
-				<div v-if="uploadErr" class="toast toast-error">
-					<button @click="uploadErr=null"class="btn btn-clear float-right"></button>
-					{{uploadErr}}
-				</div>
-				<div v-if="uploadComplete">
-					<img @load="loadCrop" :src="draftImage" class="profile-img-upload img-responsive" alt="[[.User.DisplayName]]">
-				</div>
-				<div v-if="!uploadComplete" class="bar">
-					<div class="bar-item" role="progressbar" :style="{width: imageProgress+'%'}" 
-						:aria-valuenow="imageProgress" aria-valuemin="0" aria-valuemax="100">
-						{{imageProgress}}%
-					</div>
+<modal ref="modal">
+	<div class="modal-header">
+		<h5 class="modal-title">Set Profile Image</h5>
+		<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			<span aria-hidden="true">&times;</span>
+		</button>
+	</div>
+	<div class="modal-body">
+		<div class="content text-center">
+			<div v-if="uploadErr" class="alert alert-danger">
+				<button type="button" @click="uploadErr=null" class="close" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+				{{uploadErr}}
+			</div>
+			<div v-if="uploadComplete">
+				<img @load="loadCrop" :src="draftImage" class="profile-img-upload img-responsive" alt="[[.User.DisplayName]]">
+			</div>
+			<div v-if="!uploadComplete" class="bar">
+				<div class="bar-item" role="progressbar" :style="{width: imageProgress+'%'}" 
+					:aria-valuenow="imageProgress" aria-valuemin="0" aria-valuemax="100">
+					{{imageProgress}}%
 				</div>
 			</div>
-		</section>
-		<footer v-if="uploadComplete" class="modal-footer">
-			<button @click="setImage" type="button" :class="{'loading': imageLoading}" class="btn btn-primary">Set Image</button>
-		</footer>
+		</div>
+	</div> <!-- modal-body -->
+	<div v-if="uploadComplete" class="modal-footer">
+		<button @click="setImage" type="button" :class="{'loading': imageLoading}" class="btn btn-primary">Set Image</button>
 	</div>
 </modal>
 [[end]]
-
+</div> <!-- page-content-->
 [[template "footer" .]]
 </div> <!-- page-container -->
 </body>
