@@ -30,7 +30,7 @@
 					<div class="card">
 						<div class="card-body">
 							<div class="card-title h5"><a href="[[.URL]]" target="_blank">[[.Name]]</a></div>
-							<div class="card-subtitle text-muted">([[.LicenseType]])</div>
+							<div class="card-subtitle text-muted">(<a class="text-muted" href="[[.LicenseURL]]">[[.LicenseType]]</a>)</div>
 							<div class="card-text">
 								[[.Author]]
 							</div>
@@ -65,10 +65,10 @@
 	<div class="modal-body">
 		<form class="form-horizontal">
 			<div class="form-group">
-				<div class="col-3 col-sm-12">
+				<div class="col-12">
 					<label>Issue Type</label>
 				</div>
-				<div class="col-4 col-sm-6">
+				<div class="col-10 col-sm-6">
 					<select v-model="label" class="form-control">
 						<option value="bug">Bug Report</option>
 						<option value="performance">Performance Issue</option>
@@ -77,15 +77,15 @@
 				</div>
 			</div> <!-- type form-group -->
 			<div class="form-group">
-				<div class="col-3 col-sm-12">
+				<div class="col-12">
 					<label>Subject</label>
 				</div>
-				<div class="col-9 col-sm-12">
+				<div class="col-12">
 					<input v-model="subject" class="form-control" type="text" placeholder="Write a few words describing the issue">
 				</div>
 			</div> <!-- subject form-group -->
 			<div class="form-group">
-				<div class="col-9 col-sm-12 col-ml-auto">
+				<div class="col-12">
 					<p v-if="label==='bug'" class="form-text">Describe in detail the steps needed to replicate the issue, including
 						what result was expected and what result occurred.</p>
 					<p v-if="label==='enhancement'" class="form-text">Describe in detail a single feature that you think will 
@@ -95,10 +95,10 @@
 				</div>
 			</div> <!-- help form-group -->
 			<div class="form-group">
-				<div class="col-3 col-sm-12">
+				<div class="col-12">
 					<label>Description</label>
 				</div>
-				<div class="col-9 col-sm-12">
+				<div class="col-12">
 					<textarea v-model="description" class="form-control" rows="10" placeholder="Describe the issue in detail">
 					</textarea>
 				</div>

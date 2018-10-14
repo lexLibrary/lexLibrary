@@ -16,34 +16,34 @@ export default {
         'backdrop',
         'keyboard',
     ],
-    data: function () {
+    data: function() {
         return {
             modal: null,
         };
     },
-    mounted: function () {
+    mounted: function() {
         this.modal = new bs.Modal(this.$el, {
             backdrop: this.backdrop,
             keyboard: this.keyboard,
         });
-        this.$el.addEventListener('shown', (event) => {
+        this.$el.addEventListener('shown.bs.modal', (event) => {
             this.$emit('shown');
         }, false);
-        this.$el.addEventListener('hidden', (event) => {
+        this.$el.addEventListener('hidden.bs.modal', (event) => {
             this.$emit('hidden');
         }, false);
     },
     methods: {
-        'show': function () {
+        'show': function() {
             this.modal.show();
         },
-        'hide': function () {
+        'hide': function() {
             this.modal.hide();
         },
-        'toggle': function () {
+        'toggle': function() {
             this.modal.toggle();
         },
-        'update': function () {
+        'update': function() {
             this.modal.update();
         },
     },

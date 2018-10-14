@@ -1,9 +1,8 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 
-$avatar-size: 2em !default;
-$avatar-full-size: 6em;
-$avatar-full-size-xs: 5em;
-
+$avatar-size: 2rem;
+$avatar-full-size: 18rem;
+$avatar-full-size-xs: 12rem;
 
 // Avatar mixin
 @mixin avatar-base($size: $avatar-size) {

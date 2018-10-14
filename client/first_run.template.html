@@ -8,35 +8,37 @@
 
 <body>
 <div class="page-container">
-<div class="page-content section container grid-sm">
-	<div id="setup" class="columns">
+<div class="page-content d-flex align-items-center justify-content-center container vh-100">
+	<div id="setup" class="">
 		<!-- Admin Setup -->
-		<div class="column">
-			<h1 class="text-center">Lex Library First Run Setup</h1>
+		<div>
+			<h1 class="text-center pb-4">Lex Library First Run Setup</h1>
 			<div v-if="!showSettings" class="card">
 				<div class="card-header">
 					<div class="card-title h5">Administration</div>
-					<div class="card-subtitle text-gray">
+					<div class="card-subtitle text-muted">
 						Before you can start using Lex Library, you'll need to to setup an adminstrative user.
 					</div>
 				</div>
 				<div class="card-body">
 					<form @submit="signup">
-						<div :class="{'has-error': error}" class="form-group">
-							<label class="form-label" for="inputUsername">Username</label>
-							<input v-model="username" v-focus type="text" class="form-input" id="inputUsername" placeholder="Enter username">
-							<p v-if="error" v-cloak class="form-input-hint">{{error}}</p>
+						<div class="form-group">
+							<label for="inputUsername">Username</label>
+							<input v-model="username" v-focus type="text" class="form-control" id="inputUsername" 
+								:class="{'is-invalid': error}" placeholder="Enter username">
+							<div class="invalid-feedback">{{error}}</div>
 						</div>
 
 						<div class="form-group">
-							<label for="inputPassword" class="form-label">Password</label>
-							<input v-model="password" type="password" class="form-input" id="inputPassword" placeholder="Enter password">
+							<label for="inputPassword">Password</label>
+							<input v-model="password" type="password" class="form-control" id="inputPassword" 
+								placeholder="Enter password">
 						</div>
-						<div :class="{'has-error': password2Err}" class="form-group">
+						<div class="form-group">
 							<input v-model="password2" @blur="validatePassword2" @keydown="password2Err=null"
-									v-bind:class="{'is-danger': password2Err}" type="password" class="form-input"	id="inputPassword2" 
-									placeholder="Enter password again">
-							<p v-if="password2Err" v-cloak class="form-input-hint">{{password2Err}}</p>
+								v-bind:class="{'is-invalid': password2Err}" type="password" class="form-control"	id="inputPassword2" 
+								placeholder="Enter password again">
+							<div class="invalid-feedback">{{password2Err}}</div>
 						</div>
 						<button id="submit" type="submit" class="btn btn-primary btn-block">Create User</button>
 					</form>
@@ -45,54 +47,60 @@
 			<!-- Settings -->
 			<div v-if="showSettings" v-cloak id="settings" class="card">
 				<div class="card-body">
-					<div v-if="error" v-cloak class="toast toast-error">
+					<div v-if="error" v-cloak class="alert alert-danger">
 						{{error}}
-						<button @click="error=null" class="btn btn-clear float-right"></button>
+						<button type="button" @click="error=null" class="close" data-dismiss="alert" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
 					</div>
 
-					<div :class="{'has-error': urlErr}" class="form-group">
-						<label for="inputInstanceURL" class="h6 form-label">Instance URL</label>
+					<div class="form-group">
+						<label for="inputInstanceURL" class="h6">Instance URL</label>
 						<input v-model="instanceURL" @blur="validateURL" @keydown="urlErr=null"
-								v-bind:class="{'is-danger': instanceURL}" type="text" class="form-input"	id="inputInstanceURL" 
+								v-bind:class="{'is-invalid': urlErr}" type="text" class="form-control" id="inputInstanceURL" 
 								placeholder="Enter the base URL of the current instance">
-						<p v-if="urlErr" v-cloak class="form-input-hint">{{urlErr}}</p>
+						<div class="invalid-feedback">{{urlErr}}</div>
+						<small class="form-text text-muted">Confirm, or update the URL to where Lex Library will be running.</small>
 					</div>
-					<p class="form-input-hint">Confirm, or update the URL to where Lex Library will be running.</p>
+					<label for="inputInstanceURL" class="h6">What type of instance will this server be:</label>
 					<fieldset :disabled="showAdvanced">
 						<div class="form-group">
-							<label for="inputInstanceURL" class="h6 form-label">What type of instance will this server be:</label>
-							<label class="form-radio">
-								<input v-model="instanceType" type="radio" id="inputPrivate" name="public-private" value="private">
-								<i class="form-icon"></i>
-								<strong>Private:</strong><br>
-								<small>New logins are managed by admins. A login is required to view all documents.</small>
-							</label>
+							<div class="form-check">
+								<input v-model="instanceType" type="radio" class="form-check-input" id="inputPrivate" 
+									name="public-private" value="private">
+								<label class="form-check-label">Private:</label>
+							</div>
+							<small class="form-text text-muted">
+								New logins are managed by admins. A login is required to view all documents.
+							</small>
 						</div>
 						<div class="form-group">
-							<label class="form-radio">
-								<input v-model="instanceType" type="radio" name="public-private" id="inputPublic" value="public">
-								<i class="form-icon"></i>
-								<strong>Public:</strong><br>
-								<small>Anyone can create a login. Documents can be published publically.</small>
-							</label>
+							<div class="form-check">
+								<input v-model="instanceType" type="radio" class="form-check-input" name="public-private" 
+									id="inputPublic" value="public">
+								<label class="form-check-label">Public:</label>
+							</div>
+							<small class="form-text text-muted">
+								Anyone can create a login. Documents can be published publically.
+							</small>
 						</div>
 					</fieldset>
 					<button class="btn btn-link" @click="showAdvanced = !showAdvanced" id="showAdvanced">
-						<small v-if="showAdvanced">Advanced<i class="ml-1 icon icon-arrow-down"></i></small>
-						<small v-else>Advanced<i class="ml-1 icon icon-arrow-right"></i></small>
+						<small v-if="showAdvanced">Advanced<i class="ml-2 caret-down"></i></small>
+						<small v-else>Advanced<i class="ml-2 caret-right"></i></small>
 					</button>
 					<div v-if="showAdvanced">
 						<div class="form-group">
-							<label class="form-switch" for="allowPublicDocs">
-								<input v-model="publicDocs" type="checkbox" id="allowPublicDocs">
-								<i class="form-icon"></i>Allow documents to be published publically
-							</label>
+							<div class="form-check" for="allowPublicDocs">
+								<input v-model="publicDocs" type="checkbox" class="form-check-input" id="allowPublicDocs">
+								<label class="form-check-label">Allow documents to be published publically</label>
+							</div>
 						</div>
 						<div class="form-group">
-							<label class="form-switch" for="allowPublicSignup">
-								<input v-model="publicSignup" type="checkbox" id="allowPublicSignup">
-								<i class="form-icon"></i>Allow anyone to create a login
-							</label>
+							<div class="form-check" for="allowPublicSignup">
+								<input v-model="publicSignup" type="checkbox" class="form-check-input" id="allowPublicSignup">
+								<label class="form-check-label">Allow anyone to create a login</label>
+							</div>
 						</div>
 					</div>
 				</div> <!-- card body -->
@@ -100,8 +108,8 @@
 					<button @click="setSettings" id="setSettings" class="btn btn-primary">Continue</button>
 				</div>
 			</div> <!-- card -->
-		</div> <!-- column -->
-	</div> <!-- columns -->
+		</div>
+	</div>
 </div>
 [[template "footer" .]]
 </div>

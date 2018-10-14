@@ -3,7 +3,7 @@
 export default {
     template: `
 	<span @click="openDialog">
-		<input ref="input" type="file" :accept="accept" :multiple="multiple" @change="selectFiles" style="display:none">
+		<input ref="input" type="file" :accept="accept" :multiple="multiple" @input="selectFiles" style="display:none">
 		<slot></slot>
 	</span>
 	`,
@@ -11,15 +11,18 @@ export default {
         'accept',
         'multiple',
     ],
-    data: function () {
+    data: function() {
         return {};
     },
     methods: {
-        'openDialog': function () {
+        'openDialog': function() {
+			this.$refs.input.value = null;
             this.$refs.input.click();
         },
-        'selectFiles': function (e) {
-            this.$emit('change', e.target.files);
+        'selectFiles': function(e) {
+            if (e.target.files.length > 0) {
+                this.$emit('change', e.target.files);
+            }
         },
     },
 };

@@ -13,27 +13,28 @@
 
 <div class="container">
 	<div class="row">
-		<div class="col-3">
-
-			<h4>Settings</h4>
-			<div class="list-group">
-				<a class='list-group-item list-group-item-action [[if eq .Tab "profile"]]active[[end]]' href="/profile/edit/">
+		<div class="col-sm-3">
+			<h4 class="text-muted">Settings</h4>
+			<nav class="nav nav-pills flex-column pb-4">
+				<a class='nav-link [[if eq .Tab "profile"]]active[[end]]' href="/profile/edit/">
 					Profile
 				</a>
-				<a class='list-group-item list-group-item-action [[if eq .Tab "account"]]active[[end]]' href="/profile/edit/account">
+				<a class='nav-link [[if eq .Tab "account"]]active[[end]]' href="/profile/edit/account">
 					Account
 				</a>
-			</div>
+			</nav>
 
 		</div>
-		<div class="col-9">
+		<div class="col-sm-9">
 			[[if eq .Tab "profile"]]
 				<div class="profile-section">
 					<h3>Update Profile</h3>
-					<div class="columns">
-						<div class="column">
-							<div v-if="error" v-cloak class="toast toast-error">
-								<button @click="error=null"class="btn btn-clear float-right"></button>
+					<div class="row">
+						<div class="col">
+							<div v-if="error" v-cloak class="alert alert-danger">
+								<button @click="error=null"class="close" aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>
 								{{error}}
 							</div>
 
@@ -48,86 +49,88 @@
 									Update
 								</button>
 							</form>
-						</div> <!-- column -->
+						</div> <!-- col -->
 
-						<div class="column">
+						<div class="col">
 							<div class="text-center">
 								<figure class="avatar avatar-full" data-initial="[[.User.DisplayInitials]]">
 									[[if .User.ProfileImage]]
 										<img src="/profile/image" alt="[[.User.DisplayName]]">
 									[[end]]
 								</figure>
-								<div class="relative">
+								<div class="mt-3">
 									<file-input accept="image/jpeg,image/gif,image/png" @change="uploadImage">
-										<button class="mt-2 btn">Select an Image</button>
+										<button class="btn btn-secondary">Select an Image</button>
 									</file-input>
 									[[if .User.ProfileImage]]
 										<button @click="removeImage" data-tooltip="Remove Profile Image"
-											class="profile-image-remove tooltip tooltip-top btn btn-error btn-action">
-											<i class="icon icon-delete"></i>
+											class="tooltip tooltip-top btn btn-danger">
+											<span class="icon">[[icon "trash-alt-regular"]]</span>
 										</button>
 									[[end]]
 								</div>
 							</div>
-						</div> <!-- column -->
-					</div> <!-- columns -->
+						</div> <!-- col -->
+					</div> <!-- row -->
 				</div>
 			[[end]]
 			[[if eq .Tab "account"]]
 			<div class="profile-section">
 				<h3>Change Password </h3>
-				<div class="columns">
-					<div class="column col-6 col-mr-auto">
+				<div class="row">
+					<div class="col-md-6">
 						<form id="changePassword" @sumbit="changePassword">
-							<div :class="{'has-error': password.old.err}" class="form-group">
+							<div class="form-group">
 								<label class="form-label" for="inputPasswordOld">Current Password</label>
-								<input v-model="password.old.val" type="password" class="form-control" id="inputPasswordOld" 
-									placeholder="Enter your current password">
-								<p v-if="password.old.err" v-cloak class="form-input-hint">{{password.old.err}}</p>
+								<input v-model="password.old.val" :class="{'is-invalid': password.old.err}" type="password" 
+									class="form-control" id="inputPasswordOld" placeholder="Enter your current password">
+								<div class="invalid-feedback">{{password.old.err}}</div>
 							</div>
-							<div :class="{'has-error': password.new.err}" class="form-group">
+							<div class="form-group">
 								<label class="form-label" for="inputPasswordNew">New Password</label>
-								<input v-model="password.new.val" type="password" class="form-control" id="inputPasswordNew" 
-									placeholder="Enter a new password" @blur="validatePassword" @keydown="password.new.err=null">
-								<p v-if="password.new.err" v-cloak class="form-input-hint">{{password.new.err}}</p>
+								<input v-model="password.new.val" :class="{'is-invalid': password.new.err}" type="password" 
+									class="form-control" id="inputPasswordNew" placeholder="Enter a new password" 
+									@blur="validatePassword" @keydown="password.new.err=null">
+								<div class="invalid-feedback">{{password.new.err}}</div>
 							</div>
-							<div :class="{'has-error': password.confirm.err}" class="form-group">
-								<input v-model="password.confirm.val" type="password" class="form-control" id="inputPasswordConfirm" 
-									placeholder="Confirm new password" @blur="validatePassword2" @keydown="password.confirm.err=null">
-								<p v-if="password.confirm.err" v-cloak class="form-input-hint">{{password.confirm.err}}</p>
+							<div class="form-group">
+								<input v-model="password.confirm.val" :class="{'is-invalid': password.confirm.err}" type="password" 
+									class="form-control" id="inputPasswordConfirm" placeholder="Confirm new password" 
+									@blur="validatePassword2" @keydown="password.confirm.err=null">
+								<div class="invalid-feedback">{{password.confirm.err}}</div>
 							</div>
 
 							<button type="submit" :class="{'loading': password.loading}" class="btn btn-primary" @click="changePassword">
 								Change Password
 							</button>
 						</form>
-					</div> <!-- column -->
-				</div> <!-- columns -->
+					</div> <!-- col -->
+				</div> <!-- row -->
 			</div>
 			<div class="profile-section">
 				<h3>Change Username</h3>
-				<div class="columns">
-					<div class="column col-6 col-mr-auto">
+				<div class="row">
+					<div class="col-md-6 col-mr-auto">
 						<form id="changeUsername" @sumbit="changeUsername">
-							<div :class="{'has-error': usernameErr}" class="form-group">
+							<div class="form-group">
 								<label class="form-label" for="inputUsername">Username</label>
-								<input v-model="user.username" type="text" class="form-control" id="inputUsername" 
-								maxlength="[[fieldMax `user.username`]]" placeholder="Enter a username">
-								<p v-if="usernameErr" v-cloak class="form-input-hint">{{usernameErr}}</p>
+								<input v-model="user.username" :class="{'is-invalid': usernameErr}" type="text" class="form-control" 
+									id="inputUsername" maxlength="[[fieldMax `user.username`]]" placeholder="Enter a username">
+								<div class="invalid-feedback">{{usernameErr}}</div>
 							</div>
 							<button type="submit" :class="{'loading': usernameLoading}" class="btn btn-primary" @click="changeUsername">
 								Change Username
 							</button>
 						</form>
-					</div> <!-- column -->
-				</div> <!-- columns -->
+					</div> <!-- col -->
+				</div> <!-- row -->
 			</div>
 			[[end]]
 		</div>
 	</div>
 </div>
 [[if eq .Tab "profile"]]
-<modal ref="modal">
+<modal v-cloak ref="modal" @hidden="closeImageModal">
 	<div class="modal-header">
 		<h5 class="modal-title">Set Profile Image</h5>
 		<button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -136,25 +139,29 @@
 	</div>
 	<div class="modal-body">
 		<div class="content text-center">
-			<div v-if="uploadErr" class="alert alert-danger">
-				<button type="button" @click="uploadErr=null" class="close" aria-label="Close">
+			<div v-if="imageErr" class="alert alert-danger">
+				<button type="button" @click="imageErr=null" class="close" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
-				{{uploadErr}}
+				{{imageErr}}
 			</div>
-			<div v-if="uploadComplete">
-				<img @load="loadCrop" :src="draftImage" class="profile-img-upload img-responsive" alt="[[.User.DisplayName]]">
-			</div>
-			<div v-if="!uploadComplete" class="bar">
-				<div class="bar-item" role="progressbar" :style="{width: imageProgress+'%'}" 
-					:aria-valuenow="imageProgress" aria-valuemin="0" aria-valuemax="100">
-					{{imageProgress}}%
+			<div v-if="!imageLoading">
+				<div v-if="uploadComplete">
+					<img @load="loadCrop" :src="draftImage" class="profile-img-upload img-responsive" alt="[[.User.DisplayName]]">
+				</div>
+				<div v-if="!uploadComplete" class="progress">
+					<div class="progress-bar" role="progressbar" :style="{width: imageProgress+'%'}" 
+						:aria-valuenow="imageProgress" aria-valuemin="0" aria-valuemax="100">
+						{{imageProgress}}%
+					</div>
 				</div>
 			</div>
 		</div>
 	</div> <!-- modal-body -->
 	<div v-if="uploadComplete" class="modal-footer">
-		<button @click="setImage" type="button" :class="{'loading': imageLoading}" class="btn btn-primary">Set Image</button>
+		<button @click="setImage" type="button" :class="{'loading': imageLoading}" class="btn btn-primary">
+			Set Image
+		</button>
 	</div>
 </modal>
 [[end]]

@@ -12,7 +12,7 @@
 
 <body>
 	<div class="page-container">
-		<div id="login" class="form-auth text-center page-content">
+		<div id="login" class="form-auth text-center page-content vh-100">
 			<form @submit="login">
 				<div v-if="error" v-cloak class="alert alert-danger">
 					{{error}}
@@ -49,12 +49,10 @@
 				[[end]]
 			</form>
 		</div> <!-- #login -->
-		<div class="d-none d-md-block">
-			[[template "footer" .]]
-		</div>
+		[[template "footer" .]]
 
 
-		<modal ref="modal">
+		<modal v-cloak ref="modal">
 			<div class="modal-header">
 				<h5 class="modal-title">{{modalTitle}}</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">

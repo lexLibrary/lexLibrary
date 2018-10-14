@@ -1,12 +1,14 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 // SVG icon positioning
 
-.form-group.has-icon {
-    position: relative;
-    .icon {
-        position: absolute;
-        right: .5em;
-        top: 50%;
-        margin: .75em;
-    }
+.icon {
+	display: inline;
+	vertical-align: base	;
+	svg {
+		margin-top: -0.125em;
+		font-size: inherit;
+		overflow: visible;
+		height: 1em;
+	}
 }
+

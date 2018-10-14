@@ -226,9 +226,16 @@ var attribution = []attribute{
 	},
 	attribute{
 		Name:        "Quill",
-		URL:         "hyttps://quilljs.com",
+		URL:         "https://quilljs.com",
 		Author:      "Slab",
 		LicenseType: "BSD 3-Clause",
 		LicenseURL:  "https://github.com/quilljs/quill/blob/develop/LICENSE",
+	},
+	attribute{
+		Name:        "Font-Awesome",
+		URL:         "https://fontawesome.com",
+		Author:      "Font Awesome Team",
+		LicenseType: "CC BY 4.0",
+		LicenseURL:  "https://fontawesome.com/license/free",
 	},
 }
