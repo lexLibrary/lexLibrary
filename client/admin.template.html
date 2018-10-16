@@ -9,15 +9,15 @@
 <body>
 	<div class="page-container">
 		[[template "nav" .]]
-		<div class="page-content container grid-xl">
+		<div class="page-content container">
 			<h1>Administration</h1>
-			<ul class="tab tab-block">
-				<li class='tab-item [[if eq .Tab "overview"]]active[[end]]'><a href="/admin">Overview</a></li>
-				<li class='tab-item [[if eq .Tab "users"]]active[[end]]'><a href="/admin/users">Users</a></li>
-				<li class='tab-item [[if eq .Tab "registration"]]active[[end]]'><a href="/admin/registration">Registration</a></li>
-				<li class='tab-item [[if eq .Tab "logs"]]active[[end]]'><a href="/admin/logs">Logs</a></li>
-				<li class='tab-item [[if eq .Tab "settings"]]active[[end]]'><a href="/admin/settings">Settings</a></li>
-			</ul>
+			<nav class="nav nav-pills nav-justified">
+				<a class='nav-item nav-link [[if eq .Tab "overview"]]active[[end]]' href="/admin">Overview</a>
+				<a class='nav-item nav-link [[if eq .Tab "users"]]active[[end]]' href="/admin/users">Users</a>
+				<a class='nav-item nav-link [[if eq .Tab "registration"]]active[[end]]' href="/admin/registration">Registration</a>
+				<a class='nav-item nav-link [[if eq .Tab "logs"]]active[[end]]' href="/admin/logs">Logs</a>
+				<a class='nav-item nav-link [[if eq .Tab "settings"]]active[[end]]' href="/admin/settings">Settings</a>
+			</nav>
 			<div id="admin">
 				[[if eq .Tab "overview"]]
 					[[template "overview" .]]
@@ -42,164 +42,165 @@
 
 
 [[define "overview"]]
-<section class="pt-2">
-	<div class="columns">
-		<div class="column text-center">
+<section class="pt-4">
+	<div class="row">
+		<div class="col text-center">
 			<h5 class="title"><small>Users</small></h5>
 			<h3>[[.Overview.Instance.Users]]</h3>
 		</div>
-		<div class="column text-center">
+		<div class="col text-center">
 			<h5 class="title"><small>Logged In</small></h5>
 			<h3>[[.Overview.Instance.Sessions]]</h3>
 		</div>
-		<div class="column text-center">
+		<div class="col text-center">
 			<h5 class="title"><small>Documents</small></h5>
 			<h3>[[.Overview.Instance.Documents]]</h3>
 		</div>
 	</div>
 </section>
 <section class="pt-4">
-	<div class="card-columns col-lg">
+	<div class="card-columns">
 		
 		<div class="card">
-			<div class="card-header">
-				<div class="card-title h5">Instance Information</div>
-			</div>
+				<div class="card-header">
+					<h5 class="card-title">Instance Information</h5>
+				</div>
 			<div class="card-body">
 				[[with .Overview.Instance]]
-				<table class="admin-overview table">
-					<tbody>
-						<tr><td>Version</td><td>[[.Version]]</td></tr>
-						<tr><td>Build Date</td><td title="[[time .BuildDate]]">[[time .BuildDate]]</td></tr>
-						<tr><td>Uptime</td><td>[[duration .Uptime]]</td></tr>
-						<tr><td>First Launch</td><td title="[[time .FirstLaunch]]">[[since .FirstLaunch]]</td></tr>
-						<tr><td>Errors Since Last Start</td><td>[[.ErrorsSinceStart]]</td></tr>
-						<tr><td>Total Number of Errors</td><td>[[.ErrorsTotal]]</td></tr>
-					</tbody>
-				</table>
-				[[end]]
-			</div>
-		</div> <!-- card -->
-		<div class="card">
-			<div class="card-header">
-				<div class="card-title h5">Data Usage</div>
-				[[if eq .Overview.Config.DatabaseType "sqlite"]]
-					<div class="card-subtitle text-gray">Image Size is not available on SQLITE</div>
-				[[else if eq .Overview.Config.DatabaseType "cockroachdb"]]
-					<div class="card-subtitle text-gray">Data Sizes are not currently availble on Cockroach DB</div>
-				[[end]]
-			</div>
-			<div class="card-body">
-				<table class="admin-overview table">
-					<tbody>
-						[[with .Overview.Instance.Size]]
-						<tr><td>Database Size</td><td>[[bytes .Data]]</td></tr>
-						<tr><td>Image Size</td><td>[[bytes .Image]]</td></tr>
-						<tr><td>Search Index Size</td><td>[[bytes .Search]]</td></tr>
-						<tr><td>Total Size</td><td>[[bytes .Total]]</td></tr>
-						[[end]]
-						<tr><td>Space Available</td><td>[[bytes .Overview.System.FreeSpace]]</td></tr>
-					</tbody>
-				</table>
-			</div>
-		</div> <!-- card -->
-		<div class="card">
-			<div class="card-header">
-				<div class="card-title h5">System Information</div>
-			</div>
-			<div class="card-body">
-				[[with .Overview.System]]
-				<table class="admin-overview table">
-					<tbody>
-						<tr><td>Uptime</td><td>[[duration .Uptime]]</td></tr>
-						<tr><td>Total RAM</td><td>[[bytes .Totalram]]</td></tr>
-						<tr><td>Free RAM</td><td>[[bytes .Freeram]]</td></tr>
-						<tr><td>Shared RAM</td><td>[[bytes .Sharedram]]</td></tr>
-						<tr><td>Total Swap</td><td>[[bytes .Totalswap]]</td></tr>
-						<tr><td>Free Swap</td><td>[[bytes .Freeswap]]</td></tr>
-						<tr><td>Free Space</td><td>[[bytes .FreeSpace]]</td></tr>
-						<tr><td>Total Space</td><td>[[bytes .TotalSpace]]</td></tr>
-					</tbody>
-				</table>
+				<dl class="row">
+					<dt class="col-lg-5">Version</dt><dd class="col-lg-7">[[.Version]]</dd>
+					<dt class="col-lg-5">Build Date</dt><dd class="col-lg-7">[[time .BuildDate]]</dd>
+					<dt class="col-lg-5">Uptime</dt><dd class="col-lg-7"> [[duration .Uptime]]</dd>
+					<dt class="col-lg-5">First Launch</dt>
+						<dd class="col-lg-7 tooltip tooltip-top" data-tooltip="[[time .FirstLaunch]]">[[since .FirstLaunch]]</dd>
+					<dt class="col-lg-12"><hr></dt>
+					<dt class="col-lg-8">Errors Since Last Start</dt><dd class="col-lg-4">[[.ErrorsSinceStart]]</dd>
+					<dt class="col-lg-8">Total Number of Errors</dt><dd class="col-lg-4">[[.ErrorsTotal]]</dd>
+				</dl>
 				[[end]]
 			</div>
 		</div> <!-- card -->
 
 		<div class="card">
 			<div class="card-header">
-				<div class="card-title h5">Runtime</div>
+				<h5 class="card-title">Data Usage</h5>
+				[[if eq .Overview.Config.DatabaseType "sqlite"]]
+					<h6 class="card-subtitle text-muted">Image Size is not available on SQLITE</h6>
+				[[else if eq .Overview.Config.DatabaseType "cockroachdb"]]
+					<h6 class="card-subtitle text-muted">Data Sizes are not currently availble on Cockroach DB</h6>
+				[[end]]
+			</div>
+			<div class="card-body">
+				<dl class="row">
+					[[with .Overview.Instance.Size]]
+					<dt class="col-lg-6">Database Size</dt><dd class="col-lg-6">[[bytes .Data]]</dd>
+					<dt class="col-lg-6">Image Size</dt><dd class="col-lg-6">[[bytes .Image]]</dd>
+					<dt class="col-lg-6">Search Index Size</dt><dd class="col-lg-6">[[bytes .Search]]</dd>
+					<dt class="col-lg-6">Total Size</dt><dd class="col-lg-6">[[bytes .Total]]</dd>
+					[[end]]
+					<dt class="col-lg-6">Space Available</dt><dd class="col-lg-6">[[bytes .Overview.System.FreeSpace]]</dd>
+				</dl>
+			</div>
+		</div> <!-- card -->
+
+		<div class="card">
+			<div class="card-header">
+				<h5 class="card-title">System Information</h5>
+			</div>
+			<div class="card-body">
+				[[with .Overview.System]]
+				<dl class="row">
+					<dt class="col-lg-5">Uptime</dt><dd class="col-lg-7">[[duration .Uptime]]</dd>
+					<dt class="col-lg-12"><hr></dt>
+					<dt class="col-lg-5">Total RAM</dt><dd class="col-lg-7">[[bytes .Totalram]]</dd>
+					<dt class="col-lg-5">Free RAM</dt><dd class="col-lg-7">[[bytes .Freeram]]</dd>
+					<dt class="col-lg-5">Shared RAM</dt><dd class="col-lg-7">[[bytes .Sharedram]]</dd>
+					<dt class="col-lg-5">Total Swap</dt><dd class="col-lg-7">[[bytes .Totalswap]]</dd>
+					<dt class="col-lg-5">Free Swap</dt><dd class="col-lg-7">[[bytes .Freeswap]]</dd>
+					<dt class="col-lg-12"><hr></dt>
+					<dt class="col-lg-5">Free Space</dt><dd class="col-lg-7">[[bytes .FreeSpace]]</dd>
+					<dt class="col-lg-5">Total Space</dt><dd class="col-lg-7">[[bytes .TotalSpace]]</dd>
+				</dl>
+				[[end]]
+			</div>
+		</div> <!-- card -->
+
+		<div class="card">
+			<div class="card-header">
+				<h5 class="card-title">Runtime</h5>
 			</div>
 			<div class="card-body">
 				[[with .Overview.Runtime]]
-				<table class="admin-overview table">
-					<tbody>
-						<tr><td>OS</td><td>[[.OS]]</td></tr>
-						<tr><td>Go Version</td><td>[[.GoVer]]</td></tr>
-						<tr><td>Architecture</td><td>[[.Arch]]</td></tr>
-						<tr><td>Compiler</td><td>[[.Compiler]]</td></tr>
-						<tr><td>Max Procs</td><td>[[.MaxProcs]]</td></tr>
-						<tr><td>Number of CPUs</td><td>[[.NumCPU]]</td></tr>
-					</tbody>
-				</table>
+				<dl class="row">
+					<dt class="col-lg-6">OS</dt><dd class="col-lg-6">[[.OS]]</dd>
+					<dt class="col-lg-6">Go Version</dt><dd class="col-lg-6">[[.GoVer]]</dd>
+					<dt class="col-lg-6">Architecture</dt><dd class="col-lg-6">[[.Arch]]</dd>
+					<dt class="col-lg-6">Compiler</dt><dd class="col-lg-6">[[.Compiler]]</dd>
+					<dt class="col-lg-6">Max Procs</dt><dd class="col-lg-6">[[.MaxProcs]]</dd>
+					<dt class="col-lg-6">Number of CPUs</dt><dd class="col-lg-6">[[.NumCPU]]</dd>
+				</dl>
 				[[end]]
 			</div>
 		</div> <!-- card -->
+
 		<div class="card">
 			[[with .WebConfig]]
 			<div class="card-header">
-				<div class="card-title h5">Web Configuration</div>
+				<h5 class="card-title">Web Configuration</h5>
 				[[if ne .Location ""]]
-				<div class="card-subtitle text-gray">
-					Values are set in the <span class="label" title="[[.Location]]">configuration file</span>.
-				</div>
+				<h6 class="card-subtitle text-muted">
+					Values are set in the configuration file.
+				</h6>
+				<p class="text-muted"><small>[[.Location]]</small></p>
 				[[else]]
-					<div class="card-subtitle text-gray">Values are defaults or set environment variable.</div>
+					<h6 class="card-subtitle text-muted">Values are defaults or set environment variable.</h6>
 				[[end]]
 			</div>
 			<div class="card-body">
-				<table class="admin-overview table">
-					<tbody>
-						<tr><td>Read Timeout</td><td>[[.ReadTimeout]]</td></tr>
-						<tr><td>Write Timeout</td><td>[[.WriteTimeout]]</td></tr>
-						<tr><td>Max Header Bytes</td><td>[[.MaxHeaderBytes]]</td></tr>
-						<tr><td>Min TLS Version</td><td>[[.MinTLSVersion]]</td></tr>
-						<tr><td>Certificate File</td><td title="[[.CertFile]]">[[.CertFile]]</td></tr>
-						<tr><td>Key File</td><td title="[[.KeyFile]]">[[.KeyFile]]</td></tr>
-						<tr><td>Max Upload Memory (MB)</td><td>[[.MaxUploadMemoryMB]]</td></tr>
-						<tr><td>Port</td><td>[[.Port]]</td></tr>
-					</tbody>
-				</table>
+				<dl class="row">
+					<dt class="col-lg-9">Read Timeout</dt><dd class="col-lg-3">[[.ReadTimeout]]</dd>
+					<dt class="col-lg-9">Write Timeout</dt><dd class="col-lg-3">[[.WriteTimeout]]</dd>
+					<dt class="col-lg-9">Max Header Bytes</dt><dd class="col-lg-3">[[.MaxHeaderBytes]]</dd>
+					<dt class="col-lg-9">Min TLS Version</dt><dd class="col-lg-3">[[.MinTLSVersion]]</dd>
+					<dt class="col-lg-9">Max Upload Memory (MB)</dt><dd class="col-lg-3">[[.MaxUploadMemoryMB]]</dd>
+					<dt class="col-lg-9">Port</dt><dd class="col-lg-3">[[.Port]]</dd>
+					<dt class="col-lg-12"><hr></dt>
+					<dt class="col-lg-5">Certificate File</dt><dd class="col-lg-7"><small>[[.CertFile]]</small></dd>
+					<dt class="col-lg-5">Key File</dt><dd class="col-lg-7"><small>[[.KeyFile]]</small></dd>
+				</dl>
 			</div>
 			[[end]]
 		</div> <!-- card -->
+
 		<div class="card">
 			[[with .Overview.Config]]
 			<div class="card-header">
-				<div class="card-title h5">Data Configuration</div>
+				<h5 class="card-title">Data Configuration</h5>
 				[[if ne .Location ""]]
-				<div class="card-subtitle text-gray">
-					Values are set in the <span class="label" title="[[.Location]]">configuration file</span>.
-				</div>
+				<h6 class="card-subtitle text-muted">
+					Values are set in the configuration file.
+				</h6>
+				<p class="text-muted"><small>[[.Location]]</small></p>
 				[[else]]
-					<div class="card-subtitle text-gray">Values are defaults or set environment variable.</div>
+					<h6 class="card-subtitle text-muted">Values are defaults or set environment variable.</h6>
 				[[end]]
 			</div>
 			<div class="card-body">
-				<table class="admin-overview table">
-					<tbody>
-						[[if eq .DatabaseType "sqlite"]]
-						<tr><td>Data File</td><td title="[[.DatabaseFile]]">[[.DatabaseFile]]</td></tr>
-						[[end]]
-						<tr><td>Search File</td><td title="[[.SearchFile]]">[[.SearchFile]]</td></tr>
-						<tr><td>Database Type</td><td>[[.DatabaseType]]</td></tr>
-						<tr><td>SSL Cert</td><td title="[[.SSLCert]]">[[.SSLCert]]</td></tr>
-						<tr><td>SSL Key</td><td title="[[.SSLKey]]">[[.SSLKey]]</td></tr>
-						<tr><td>SSL Root Cert</td><td title="[[.SSLRootCert]]">[[.SSLRootCert]]</td></tr>
-						<tr><td>Max Idle Connections</td><td>[[.MaxIdleConnections]]</td></tr>
-						<tr><td>Max Open Connections</td><td>[[.MaxOpenConnections]]</td></tr>
-						<tr><td>Max Connection Lifetime</td><td>[[.MaxConnectionLifetime]]</td></tr>
-					</tbody>
-				</table>
+				<dl class="row">
+					[[if eq .DatabaseType "sqlite"]]
+					<dt class="col-lg-5">Data File</dt><dd class="col-lg-7">[[.DatabaseFile]]</dd>
+					[[end]]
+					<dt class="col-lg-5">Search File</dt><dd class="col-lg-7">[[.SearchFile]]</dd>
+					<dt class="col-lg-5">Database Type</dt><dd class="col-lg-7">[[.DatabaseType]]</dd>
+					<dt class="col-lg-12"><hr></dt>
+					<dt class="col-lg-5">SSL Cert</dt><dd class="col-lg-7">[[.SSLCert]]</dd>
+					<dt class="col-lg-5">SSL Key</dt><dd class="col-lg-7">[[.SSLKey]]</dd>
+					<dt class="col-lg-5">SSL Root Cert</dt><dd class="col-lg-7">[[.SSLRootCert]]</dd>
+					<dt class="col-lg-12"><hr></dt>
+					<dt class="col-lg-9">Max Idle Connections</dt><dd class="col-lg-3">[[.MaxIdleConnections]]</dd>
+					<dt class="col-lg-9">Max Open Connections</dt><dd class="col-lg-3">[[.MaxOpenConnections]]</dd>
+					<dt class="col-lg-9">Max Connection Lifetime</dt><dd class="col-lg-3">[[.MaxConnectionLifetime]]</dd>
+				</dl>
 			</div>
 			[[end]]
 		</div> <!-- card -->
@@ -210,7 +211,7 @@
 
 
 [[define "settings"]]
-<section id="settings" class="pt-8">
+<section id="settings" class="pt-4">
 	<div class="container grid-lg">
 		<div class="columns">
 			<div class="column col-3">
@@ -434,7 +435,7 @@
 
 [[define "logs"]]
 	[[with .Log]]
-	<section class="admin-logs pt-8">
+	<section class="admin-logs pt-4">
 		[[if .Entry]]
 			[[with .Entry]]
 				<h4>Log Entry from [[time .Occurred]] <small class="text-gray">([[.ID]])</small></h4>
@@ -483,12 +484,12 @@
 		[[else if .Single]]
 			[[template "single registration" .Single]]
 		[[else]]
-		<section class="registration container grid-lg pt-8">
-			<a href="/admin/newregistration" class="float-right btn btn-lg btn-primary">New</a>
-			<div class="flex-centered">
+		<section class="registration pt-4">
+			<a href="/admin/newregistration" class="float-right btn btn-primary">New</a>
+			<div class="text-center pb-4">
 				<div class="btn-group">
-					<a href="/admin/registration" class="btn btn-lg [[if not .All]]active[[end]]">Active</a>
-					<a href="/admin/registration?all" class="btn btn-lg [[if .All]]active[[end]]">All</a>
+					<a href="/admin/registration" class="btn btn-[[if .All]]outline-[[end]]primary">Active</a>
+					<a href="/admin/registration?all" class="btn btn-[[if not .All]]outline-[[end]]primary">All</a>
 				</div>
 			</div>
 			<table class="table">
@@ -501,7 +502,7 @@
 				</thead>
 				<tbody>
 					[[range .Tokens]]
-						<tr class="[[if not .Valid]]secondary[[end]]">
+						<tr class="[[if not .Valid]]active font-italic[[end]]">
 							<td><a href="/admin/registration/[[.Token]]">[[.Description]]</a></td>
 							<td>[[time .Created]]</td>
 							<td class="text-right">[[template "avatar" .Creator]]</td>
@@ -516,83 +517,88 @@
 [[end]]
 
 [[define "new registration"]]
-<div id="newRegistration" class="container grid-xs pt-8">
-	<div class="columns">
-		<div class="column">
+<div id="newRegistration" class="pt-4">
+	<div class="row justify-content-center">
+		<div class="col-6">
 			<h3>Create a Registration URL</h3>
-			<h6 class="text-gray">Registration URLs allow new users to sign up for this Lex Library instance when
+			<h6 class="text-muted">Registration URLs allow new users to sign up for this Lex Library instance when
 			public signups are not allowed</h6>
 
-
-			<div v-if="error" v-cloak class="toast toast-error">
-				<button @click="error=null"class="btn btn-clear float-right"></button>
+			<div v-if="error" v-cloak class="alert alert-danger">
 				{{error}}
+				<button type="button" @click="error=null" class="close" data-dismiss="alert" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
-			<form @submit="submit" class="form-horizontal">
-				<div :class="{'has-error': descriptionErr}" class="form-group">
-					<div class="col-3">
-						<label class="form-label" for="tokenDescription">Description</label>
+			<form @submit="submit">
+				<div class="form-row">
+					<div class="form-group col-3">
+						<label for="tokenDescription">Description</label>
 					</div>
-					<div class="col-9">
-						<input v-model="description" class="form-input" type="text" id="tokenDescription" placeholder="Description">
-						<p v-if="descriptionErr" v-cloak class="form-input-hint">{{descriptionErr}}</p>
+					<div class="form-group col-9">
+						<input v-model="description" :class="{'is-invalid': descriptionErr}" class="form-control" type="text" 
+							id="tokenDescription" placeholder="Description">
+						<div class="invalid-feedback">{{descriptionErr}}</div>
 					</div>
 				</div>
-				<div :class="{'has-error': limitErr}" class="form-group" id="tokenLimit">
-					<div class="col-9">
-						<label class="form-switch">
-							<input v-model="hasLimit" type="checkbox">
-							<i class="form-icon"></i> Limit the number of users created
+				<div class="form-row">
+					<div class="form-group col-8">
+						<div class="form-check">
+							<input v-model="hasLimit" class="form-check-input" type="checkbox">
+							<label class="form-check-label">Limit the number of users created</label>
+						</div>
+					</div>
+					<div class="form-group col-4">
+						<input v-model="limit" :disabled="!hasLimit" :class="{'is-invalid': limitErr}" class="form-control" 
+							type="number" placeholder="1">
+						<div class="invalid-feedback">{{limitErr}}</div>
+					</div>
+				</div> <!-- row -->
+				<div id="tokenExpiration" class="form-row">
+					<div class="form-group col-7">
+						<div class="form-check">
+							<input v-model="hasExpiration" class="form-check-input" type="checkbox">
+							<label class="form-check-label">Valid until a specific date</label>
+						</div>
+					</div>
+					<div class="form-group col-5">
+						<input v-model="expires" :disabled="!hasExpiration" :class="{'is-invalid': expireErr}" class="form-control" 
+							type="date" placeholder="mm/dd/yyyy">
+						<div class="invalid-feedback">{{expireErr}}</div>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-group">
+						<label for="groupSearch">
+							When registering with this link, users become members of the following groups:
 						</label>
+						<div v-cloak class="m-2">
+							<span v-for="group in groups" class="badge badge-primary">
+								{{group.name}}
+								<button type="button" @click="removeGroup(group, $event)" class="close btn-link" aria-label="Close" 
+									role="button"></button>
+							</span>
+						</div>
 					</div>
-					<div class="col-3">
-						<input v-model="limit" :disabled="!hasLimit" class="form-input" type="number" placeholder="1">
+				</div> <!-- row -->
+				<div class="form-row">
+					<div class="form-group col-3 ">
+						<label for="groupSearch">Group Name</label>
 					</div>
-					<p v-if="limitErr" v-cloak class="form-input-hint">{{limitErr}}</p>
-				</div>
-				<div :class="{'has-error': expireErr}"  id="tokenExpiration" class="form-group">
-					<div class="col-7">
-						<label class="form-switch">
-							<input v-model="hasExpiration" type="checkbox">
-							<i class="form-icon"></i> Valid until a specific date
-						</label>
-					</div>
-					<div class="col-5">
-						<input v-model="expires" :disabled="!hasExpiration" class="form-input" type="date" placeholder="mm/dd/yyyy">
-						<p v-if="expireErr" v-cloak class="form-input-hint">{{expireErr}}</p>
-					</div>
-				</div>
-				<div class="form-group">
-					<label class="form-label" for="groupSearch">
-						When registering with this link, users become members of the following groups:
-					</label>
-					<div v-cloak class="chips m-2">
-						<span v-for="group in groups" class="chip">
-							{{group.name}}<a href="" @click="removeGroup(group, $event)" class="btn btn-clear" aria-label="Close" 
-								role="button"></a>
-						</span>
-					</div>
-				</div>
-				<div class="form-group">
-					<div class="col-3 ">
-						<label class="form-label" for="groupSearch">Group Name</label>
-					</div>
-					<div class="col-9">
+					<div class="form-group col-9">
 						<group-search @select="addGroup" @error="error=$event" maxlength="[[fieldMax `group.name`]]" class="w-100">
 						</group-search>
 					</div>
-				</div>
-				<div class="text-right">
-					<button type="submit" class="btn btn-primary">Create URL</button>
-				</div>
+				</div> <!-- row -->
+				<button type="submit" class="btn btn-primary">Create URL</button>
 			</form>
-		</div> <!-- column -->
-	</div> <!-- columns -->
+		</div> <!-- col -->
+	</div> <!-- row -->
 </div>
 [[end]]
 
 [[define "single registration"]]
-<div id="singleRegistration" class="container grid-lg pt-8">
+<div id="singleRegistration" class="container grid-lg pt-4">
 	<div v-if="error" v-cloak class="mb-4 toast toast-error">
 		<button @click="error=null"class="btn btn-clear float-right"></button>
 		{{error}}
@@ -623,7 +629,7 @@
 	</div> <!-- columns -->
 
 	[[if .Valid]]
-		<div class="columns pt-8">
+		<div class="columns pt-4">
 			<div class="column">
 				<div class="input-group">
 					<button @click.stop.prevent="copy" class="input-group-btn btn btn-primary btn-lg">Copy</button>
@@ -663,9 +669,9 @@
 [[define "users"]]
 [[with .Users]]
 	[[with .User]]
-		<section id="user" class="admin-user container grid-lg pt-8">
-			<div class="columns">
-				<div class="column">
+		<section id="user" class="pt-4">
+			<div class="row align-items-center justify-content-center">
+				<div class="col-md-auto">
 					<a href="/user/[[.Username]]">
 						<figure class="avatar avatar-full" data-initial="[[.DisplayInitials]]">
 							[[if .ProfileImage]]
@@ -674,46 +680,46 @@
 						</figure>
 					</a>
 				</div>
-				<div class="column">
-					<div v-if="error" v-cloak class="toast toast-error">
-						<button @click="error=null"class="btn btn-clear float-right"></button>
+				<div class="col-md-4">
+					<div v-if="error" v-cloak class="alert alert-danger">
 						{{error}}
+						<button type="button" @click="error=null" class="close" data-dismiss="alert" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
 					</div>
 					<h4>[[.DisplayName]]
 						[[if not .Active]] 
-							<small><em>(inactive)</em></small>
+							<small class="text-muted"><em>(inactive)</em></small>
 						[[else if .IsAdmin]]
-							<small>(admin)</small>
+							<small class="text-muted">(admin)</small>
 						[[end]]
 					</h4>
-					<div class="text-gray">Created [[since .Created]] <small>([[time .Created]])</small></div>
+					<h6>Created [[since .Created]] <small class="text-muted">([[time .Created]])</small></h6>
 					[[if .LastLogin.Valid]]
-					<div class="text-gray">Last Login [[since .LastLogin.Time]] <small>([[time .LastLogin.Time]])</small></div>
+					<h6>Last Login [[since .LastLogin.Time]] <small class="text-muted">([[time .LastLogin.Time]])</small></h6>
 					[[end]]
 				
-					<div class="form-group">
-						<label class="form-switch">
-							<input @input="setActive('[[.Username]]', [[not .Active]])" type="checkbox" [[if .Active]]checked[[end]]>
-							<i class="form-icon"></i> Active
-						</label>
+					<div class="form-group form-check form-check-inline">
+						<input class="form-check-input" @input="setActive('[[.Username]]', [[not .Active]])" 
+								type="checkbox" [[if .Active]]checked[[end]]>
+						<label class="form-check-label">Active</label>
 					</div>
-					<div class="form-group">
-						<label @input="setAdmin('[[.Username]]', [[not .IsAdmin]])" class="form-switch">
-							<input type="checkbox" [[if .IsAdmin]]checked[[end]]>
-							<i class="form-icon"></i> Admin
-						</label>
+					<div class="form-group form-check form-check-inline">
+						<input @input="setAdmin('[[.Username]]', [[not .IsAdmin]])" class="form-check-input" type="checkbox"
+							[[if .IsAdmin]]checked[[end]]>
+						<label class="form-check-label">Admin</label>
 					</div>
 
-				</div>
-			</div> <!-- columns -->
+				</div> <!-- col -->
+			</div> <!-- row -->
 		</section>
 	[[else]]
-		<section id="users" class="admin-users container grid-lg pt-8">
-			<div class="flex-centered">
+		<section id="users" class="admin-users pt-4">
+			<div class="text-center pb-4">
 				<div class="btn-group">
-					<a href="/admin/users?active" class="btn btn-lg [[if .Active]]active[[end]]">Active</a>
-					<a href="/admin/users?loggedin" class="btn btn-lg [[if .LoggedIn]]active[[end]]">Logged In</a>
-					<a href="/admin/users?all" class="btn btn-lg [[if .All]]active[[end]]">All</a>
+					<a href="/admin/users?active" class="btn btn[[if not .Active]]-outline[[end]]-primary">Active</a>
+					<a href="/admin/users?loggedin" class="btn btn[[if not .LoggedIn]]-outline[[end]]-primary">Logged In</a>
+					<a href="/admin/users?all" class="btn btn[[if not .All]]-outline[[end]]-primary">All</a>
 				</div>
 			</div>
 
@@ -723,7 +729,7 @@
 						<th class="avatar-column"></th>
 						<th>
 							<form @submit="submit">
-								<input @input="search" v-focus class="form-input" type="text" id="userSearch" value="[[.Search]]" 
+								<input @input="search" v-focus class="form-control" type="text" id="userSearch" value="[[.Search]]" 
 									placeholder="Search Users">
 							</form>
 						</th>
@@ -733,7 +739,7 @@
 				</thead>
 				<tbody>
 					[[range .Users]]
-						<tr class="[[if not .Active]]secondary[[end]]">
+						<tr class="[[if not .Active]]table-active font-italic[[end]]">
 							<td><a href="/user/[[.Username]]">[[template "avatar" .]]</a></td>
 							<td>
 								<a href="/admin/users/[[.Username]]">[[.DisplayName]]</a>

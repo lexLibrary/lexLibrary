@@ -338,13 +338,14 @@ var users = new Vue({
             if (e) {
                 e.preventDefault();
             }
+            let q = query();
             let search = document.getElementById("userSearch");
             if (!search || !search.value) {
-                return;
+                q.search = "";
+            } else {
+                q.search = search.value;
             }
 
-            let q = query();
-            q.search = search.value;
 
             window.location = '/admin/users' + q.toString();
         },
@@ -362,7 +363,7 @@ var user = new Vue({
     data: function() {
         return {
             error: null,
-		};
+        };
     },
     computed: {},
     methods: {

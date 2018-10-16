@@ -8,22 +8,21 @@ import {
 export default {
     template: `
 	<div id="groupSearch" :class="{'active': showSearch}" class="dropdown">
-		<div :class="{'has-icon-right': loading}">
-			<input v-model="searchValue" @keydown="search" @focus="focus=true" @blur="focus=false" class="form-input" 
+		<div :class="{'has-icon': loading}">
+			<input v-model="searchValue" @keydown="search" @focus="focus=true" @blur="focus=false" class="form-control" 
 				type="text" :maxlength="maxlength" autocomplete="off" placeholder="Enter a group name to search">
-			<i v-if="loading" v-cloak class="form-icon loading"></i>
+			<span v-if="loading" v-cloak class="loading"></span>
 		</div>
-		<ul v-cloak class="menu">
-			<li v-for="group in result" class="menu-item">
-				<a @click="addGroup(group, $event)" href="">
-					{{group.start}}<strong>{{group.middle}}</strong>{{group.end}}
-				</a>
-			</li>
-			<li v-if="showAddGroup" class="divider"></li>
-			<li v-if="showAddGroup" class="menu-item">
-				<a @click="createGroup" href="">Create group <strong>{{searchValue}}</strong></a>
-			</li>
-		</ul>
+		<div v-cloak class="dropdown-menu">
+			<a v-for="group in result" class="dropdown-item"
+				@click="addGroup(group, $event)" href="">
+				{{group.start}}<strong>{{group.middle}}</strong>{{group.end}}
+			</a>
+			<div v-if="showAddGroup" class="dropdown-divider"></div>
+			<a v-if="showAddGroup" class="dropdown-item"
+				@click="createGroup" href="">Create group <strong>{{searchValue}}</strong>
+			</a>
+		</div>
 	</div>
 	`,
     props: [

@@ -1,18 +1,6 @@
 // Copyright (c) 2017-2018 Townsourced Inc.
 // Admin page specific CSS
 
-.admin-overview.table  {
-	table-layout: fixed;
-	td {
-		// padding: $unit-1;	
-		border-bottom: 0;
-		overflow-x: hidden;
-		overflow-y: auto;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-}
-
 .admin-logs > .table {
 	table-layout: fixed;
 	.date {
@@ -32,9 +20,9 @@
 .admin-users > .table {
 	table-layout: fixed;
 	.date {
-		width: 180px;
+		width: 220px;
 	}
 	.avatar-column {
-		width: 80px;
+		width: 60px;
 	}
 }

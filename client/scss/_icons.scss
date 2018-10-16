@@ -3,7 +3,7 @@
 
 .icon {
 	display: inline;
-	vertical-align: base	;
+	vertical-align: base;
 	svg {
 		margin-top: -0.125em;
 		font-size: inherit;
@@ -12,3 +12,15 @@
 	}
 }
 
+.has-icon {
+	position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  width: 100%;
+	.icon {
+    position: absolute;
+    right: 1em;
+    top: 25%;
+	}
+}

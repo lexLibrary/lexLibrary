@@ -3,10 +3,18 @@
 
 $loading-size: 1.5em;
 
+@keyframes loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .loading {
   color: transparent !important;
   min-height: $loading-size;
-  pointer-events: none;
   position: relative;
   &::after {
     animation: loading 500ms infinite linear;
@@ -27,23 +35,19 @@ $loading-size: 1.5em;
   }
 }
 
-.btn {
-  &.loading {
-    opacity: $btn-disabled-opacity;
-    @include box-shadow(none);
+.btn.loading {
+	opacity: $btn-disabled-opacity;
+	@include box-shadow(none);
+  pointer-events: none;
 
-		&::after {
-      border-bottom-color: $yiq-text-light;
-			border-left-color: $yiq-text-light;
-    }
-  }
+	&::after {
+		border-bottom-color: $yiq-text-light;
+		border-left-color: $yiq-text-light;
+	}
 }
 
-@keyframes loading {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.has-icon {
+	.loading {
+		right: $loading-size;
+	}
 }
