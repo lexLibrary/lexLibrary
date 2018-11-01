@@ -87,14 +87,14 @@ pipeline {
                     '''
                     }
                 }
-                // stage('cockroachdb') {
-                //     steps {
-                //     sh '''
-                //         cd ci
-                //         sh ./testInDocker.sh cockroachdb
-                //     '''
-                //     }
-                // }
+                stage('cockroachdb') {
+		     steps {
+		     sh '''
+			 cd ci
+			 sh ./testInDocker.sh cockroachdb
+		     '''
+		     }
+                 }
                 stage('sqlserver') {
                     steps {
                     sh '''

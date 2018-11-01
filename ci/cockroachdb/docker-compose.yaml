@@ -1,7 +1,7 @@
 version: '3'
 services:
   cockroachdb:
-    image: cockroachdb/cockroach:latest
+    image: cockroachdb/cockroach:v2.1.0
     command: start --insecure
   tests:
     build: "../build"
